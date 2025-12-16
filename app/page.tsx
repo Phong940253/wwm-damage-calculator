@@ -32,10 +32,7 @@ const STAT_GROUPS: Record<string, string[]> = {
     "AttributeAttackPenetrationOfYOURType",
     "AttributeAttackDMGBonusOfYOURType",
   ],
-  Secondary: [
-    "MINAttributeAttackOfOtherType",
-    "MAXAttributeAttackOfOtherType",
-  ],
+  Secondary: ["MINAttributeAttackOfOtherType", "MAXAttributeAttackOfOtherType"],
   Rates: [
     "PrecisionRate",
     "CriticalRate",
@@ -87,18 +84,18 @@ export default function DMGOptimizer() {
     const g = (k: string) => stats[k].current + stats[k].increase;
 
     const normalAvg =
-      ((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
+      (((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
         (1 + g("PhysicalPenetration") / 200) *
         (1 + g("PhysicalDMGBonus")) +
-        (g("MINAttributeAttackOfOtherType") >= g("MAXAttributeAttackOfOtherType")
+        (g("MINAttributeAttackOfOtherType") >=
+        g("MAXAttributeAttackOfOtherType")
           ? g("MINAttributeAttackOfOtherType") * 2
           : g("MINAttributeAttackOfOtherType") +
             g("MAXAttributeAttackOfOtherType"))) /
-        2 *
+        2) *
         (g("PhysicalAttackMultiplier") / 100) +
       g("FlatDamage") +
-      ((g("MINAttributeAttackOfYOURType") +
-        g("MAXAttributeAttackOfYOURType")) /
+      ((g("MINAttributeAttackOfYOURType") + g("MAXAttributeAttackOfYOURType")) /
         2) *
         (g("MainElementMultiplier") / 100) *
         (1 +
@@ -132,8 +129,10 @@ export default function DMGOptimizer() {
   }, [stats]);
 
   return (
-    <div className="min-h-screen p-6 text-foreground transition-colors
-      bg-gradient-to-br from-background via-background/95 to-muted/40">
+    <div
+      className="min-h-screen p-6 text-foreground transition-colors
+      bg-gradient-to-br from-background via-background/95 to-muted/40"
+    >
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -190,7 +189,7 @@ export default function DMGOptimizer() {
                         {keys.map((k) => (
                           <Card
                             key={k}
-                            className="bg-card/60 border border-border/40
+                            className="bg-card/60 border border-[#2b2a33]
                               hover:bg-card/80 hover:border-emerald-500/40
                               transition-all"
                           >
@@ -219,7 +218,7 @@ export default function DMGOptimizer() {
                                   onChange={(e) =>
                                     onChange(k, "current", +e.target.value)
                                   }
-                                  className="bg-background/60 border-border/50
+                                  className="bg-background/60 border-[#363b3d]
                                     focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                                 />
                                 <Input
@@ -228,7 +227,7 @@ export default function DMGOptimizer() {
                                   onChange={(e) =>
                                     onChange(k, "increase", +e.target.value)
                                   }
-                                  className="bg-background/60 border-border/50
+                                  className="bg-background/60 border-[#363b3d]
                                     focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                                 />
                               </div>
@@ -259,7 +258,6 @@ export default function DMGOptimizer() {
               transition-all duration-300
             "
           >
-
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="text-yellow-500" /> Damage Output
@@ -267,9 +265,21 @@ export default function DMGOptimizer() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              <DamageLine label="Normal Average" value={result.normal} color="emerald" />
-              <DamageLine label="Critical Average" value={result.critical} color="yellow" />
-              <DamageLine label="Affinity" value={result.affinity} color="rose" />
+              <DamageLine
+                label="Normal Average"
+                value={result.normal}
+                color="emerald"
+              />
+              <DamageLine
+                label="Critical Average"
+                value={result.critical}
+                color="yellow"
+              />
+              <DamageLine
+                label="Affinity"
+                value={result.affinity}
+                color="rose"
+              />
 
               <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
 
