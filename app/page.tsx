@@ -10,8 +10,8 @@ import { ArrowUpRight, Swords, Zap, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 interface Stat {
-  current: number;
-  increase: number;
+  current: number | "";
+  increase: number | "";
 }
 
 interface InputStats {
@@ -32,10 +32,7 @@ const STAT_GROUPS: Record<string, string[]> = {
     "AttributeAttackPenetrationOfYOURType",
     "AttributeAttackDMGBonusOfYOURType",
   ],
-  Secondary: [
-    "MINAttributeAttackOfOtherType",
-    "MAXAttributeAttackOfOtherType",
-  ],
+  Secondary: ["MINAttributeAttackOfOtherType", "MAXAttributeAttackOfOtherType"],
   Rates: [
     "PrecisionRate",
     "CriticalRate",
@@ -79,61 +76,157 @@ export default function DMGOptimizer() {
     AttributeAttackDMGBonusOfYOURType: { current: 1.6, increase: 0 },
   });
 
-  const onChange = (k: string, f: keyof Stat, v: number) => {
-    setStats((s) => ({ ...s, [k]: { ...s[k], [f]: v } }));
+  const STORAGE_KEY = "wwm_dmg_current_stats";
+
+  const saveCurrentStats = () => {
+    const ok = window.confirm(
+      "Save current stats?\n(Increase values will NOT be saved)"
+    );
+    if (!ok) return;
+
+    const data: Record<string, number> = {};
+    Object.keys(stats).forEach((k) => {
+      data[k] = Number(stats[k].current || 0);
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  };
+
+  const applyIncreaseToCurrent = () => {
+    setStats((prev) => {
+      const next: InputStats = { ...prev };
+
+      Object.keys(next).forEach((k) => {
+        const cur = Number(next[k].current || 0);
+        const inc = Number(next[k].increase || 0);
+
+        next[k] = {
+          current: cur + inc,
+          increase: 0,
+        };
+      });
+
+      return next;
+    });
+  };
+
+  React.useEffect(() => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const saved = JSON.parse(raw) as Record<string, number>;
+      setStats((prev) => {
+        const next = { ...prev };
+        Object.keys(saved).forEach((k) => {
+          if (next[k]) {
+            next[k] = {
+              current: saved[k],
+              increase: 0,
+            };
+          }
+        });
+        return next;
+      });
+    } catch { }
+  }, []);
+
+
+  const onChange = (
+    k: string,
+    f: keyof Stat,
+    v: string
+  ) => {
+    setStats((s) => ({
+      ...s,
+      [k]: {
+        ...s[k],
+        [f]: v === "" ? "" : Number(v),
+      },
+    }));
   };
 
   const result = useMemo(() => {
-    const g = (k: string) => stats[k].current + stats[k].increase;
+    const gBase = (k: string) =>
+      Number(stats[k].current || 0);
 
-    const normalAvg =
-      ((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
-        (1 + g("PhysicalPenetration") / 200) *
-        (1 + g("PhysicalDMGBonus")) +
-        (g("MINAttributeAttackOfOtherType") >= g("MAXAttributeAttackOfOtherType")
-          ? g("MINAttributeAttackOfOtherType") * 2
-          : g("MINAttributeAttackOfOtherType") +
+    const gFinal = (k: string) =>
+      Number(stats[k].current || 0) + Number(stats[k].increase || 0);
+
+    const calc = (g: (k: string) => number) => {
+      const baseNormal =
+        (((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
+          (1 + g("PhysicalPenetration") / 200) *
+          (1 + g("PhysicalDMGBonus")) +
+          (g("MINAttributeAttackOfOtherType") >=
+            g("MAXAttributeAttackOfOtherType")
+            ? g("MINAttributeAttackOfOtherType") * 2
+            : g("MINAttributeAttackOfOtherType") +
             g("MAXAttributeAttackOfOtherType"))) /
-        2 *
+          2) *
         (g("PhysicalAttackMultiplier") / 100) +
-      g("FlatDamage") +
-      ((g("MINAttributeAttackOfYOURType") +
-        g("MAXAttributeAttackOfYOURType")) /
-        2) *
+        g("FlatDamage") +
+        ((g("MINAttributeAttackOfYOURType") +
+          g("MAXAttributeAttackOfYOURType")) /
+          2) *
         (g("MainElementMultiplier") / 100) *
         (1 +
           g("AttributeAttackPenetrationOfYOURType") / 200 +
           g("AttributeAttackDMGBonusOfYOURType") / 100);
 
-    const affinity =
-      ((g("MaxPhysicalAttack") *
-        (1 + g("PhysicalPenetration") / 200) *
-        (1 + g("PhysicalDMGBonus")) +
-        Math.max(
-          g("MINAttributeAttackOfOtherType"),
-          g("MAXAttributeAttackOfOtherType")
-        )) *
-        (g("PhysicalAttackMultiplier") / 100) +
-        g("FlatDamage") +
-        g("MAXAttributeAttackOfYOURType") *
+      const critFactor =
+        (g("CriticalRate") / 100) * (g("CriticalDMGBonus") / 100);
+
+      const affinityFactor =
+        (g("AffinityRate") / 100) * (g("AffinityDMGBonus") / 100);
+
+      const expectedNormal =
+        baseNormal * (1 + critFactor + affinityFactor);
+
+      const affinity =
+        ((g("MaxPhysicalAttack") *
+          (1 + g("PhysicalPenetration") / 200) *
+          (1 + g("PhysicalDMGBonus")) +
+          Math.max(
+            g("MINAttributeAttackOfOtherType"),
+            g("MAXAttributeAttackOfOtherType")
+          )) *
+          (g("PhysicalAttackMultiplier") / 100) +
+          g("FlatDamage") +
+          g("MAXAttributeAttackOfYOURType") *
           (g("MainElementMultiplier") / 100) *
           (1 +
             g("AttributeAttackPenetrationOfYOURType") / 200 +
             g("AttributeAttackDMGBonusOfYOURType") / 100)) *
-      (1 + g("AffinityDMGBonus") / 100);
+        (1 + g("AffinityDMGBonus") / 100);
 
-    const criticalAvg = normalAvg * (1 + g("CriticalDMGBonus") / 100);
+      return { normal: expectedNormal, affinity };
+    };
+
+    const base = calc(gBase);
+    const final = calc(gFinal);
+
+    const pct = (b: number, f: number) =>
+      b === 0 ? 0 : ((f - b) / b) * 100;
 
     return {
-      normal: Math.round(normalAvg * 10) / 10,
-      critical: Math.round(criticalAvg * 10) / 10,
-      affinity: Math.round(affinity * 10) / 10,
+      normal: {
+        value: Math.round(final.normal * 10) / 10,
+        percent: pct(base.normal, final.normal),
+      },
+      affinity: {
+        value: Math.round(final.affinity * 10) / 10,
+        percent: pct(base.affinity, final.affinity),
+      },
     };
   }, [stats]);
 
+
   return (
-    <div className="min-h-screen p-6 text-foreground transition-colors
-      bg-gradient-to-br from-background via-background/95 to-muted/40">
+    <div
+      className="min-h-screen p-6 text-foreground transition-colors
+      bg-gradient-to-br from-background via-background/95 to-muted/40"
+    >
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -190,7 +283,7 @@ export default function DMGOptimizer() {
                         {keys.map((k) => (
                           <Card
                             key={k}
-                            className="bg-card/60 border border-border/40
+                            className="bg-card/60 border border-[#2b2a33]
                               hover:bg-card/80 hover:border-emerald-500/40
                               transition-all"
                           >
@@ -215,21 +308,33 @@ export default function DMGOptimizer() {
                               <div className="grid grid-cols-2 gap-2">
                                 <Input
                                   type="number"
-                                  value={stats[k].current}
+                                  value={stats[k].current === 0 ? "" : stats[k].current}
                                   onChange={(e) =>
-                                    onChange(k, "current", +e.target.value)
+                                    onChange(k, "current", e.target.value)
                                   }
-                                  className="bg-background/60 border-border/50
+                                  onBlur={() => {
+                                    if (stats[k].current === "") {
+                                      onChange(k, "current", "0");
+                                    }
+                                  }}
+                                  className="bg-background/60 border-[#363b3d]
                                     focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                                  onWheel={(e) => e.currentTarget.blur()}
                                 />
                                 <Input
                                   type="number"
-                                  value={stats[k].increase}
+                                  value={stats[k].increase === 0 ? "" : stats[k].increase}
                                   onChange={(e) =>
-                                    onChange(k, "increase", +e.target.value)
+                                    onChange(k, "increase", e.target.value)
                                   }
-                                  className="bg-background/60 border-border/50
+                                  onBlur={() => {
+                                    if (stats[k].increase === "") {
+                                      onChange(k, "increase", "0");
+                                    }
+                                  }}
+                                  className="bg-background/60 border-[#363b3d]
                                     focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                                  onWheel={(e) => e.currentTarget.blur()}
                                 />
                               </div>
                             </CardContent>
@@ -259,7 +364,6 @@ export default function DMGOptimizer() {
               transition-all duration-300
             "
           >
-
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="text-yellow-500" /> Damage Output
@@ -267,11 +371,49 @@ export default function DMGOptimizer() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              <DamageLine label="Normal Average" value={result.normal} color="emerald" />
-              <DamageLine label="Critical Average" value={result.critical} color="yellow" />
-              <DamageLine label="Affinity" value={result.affinity} color="rose" />
+              <DamageLine
+                label="Normal Average (Expected)"
+                value={result.normal.value}
+                percent={result.normal.percent}
+                color="emerald"
+              />
+
+              <DamageLine
+                label="Affinity (Max Proc)"
+                value={result.affinity.value}
+                percent={result.affinity.percent}
+                color="amber"
+              />
 
               <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={applyIncreaseToCurrent}
+                  className="
+      rounded-xl px-3 py-2 text-sm font-medium
+      bg-emerald-500/15 text-emerald-400
+      border border-emerald-500/30
+      hover:bg-emerald-500/25
+      transition
+    "
+                >
+                  Apply Increase → Current
+                </button>
+
+                <button
+                  onClick={saveCurrentStats}
+                  className="
+      rounded-xl px-3 py-2 text-sm font-medium
+      bg-amber-500/15 text-amber-400
+      border border-amber-500/30
+      hover:bg-amber-500/25
+      transition
+    "
+                >
+                  Save Current
+                </button>
+              </div>
 
               <div className="text-xs text-muted-foreground flex items-center gap-1">
                 <ArrowUpRight size={14} /> Auto update · Min–Max formula
@@ -287,19 +429,45 @@ export default function DMGOptimizer() {
 function DamageLine({
   label,
   value,
+  percent,
   color,
 }: {
   label: string;
   value: number;
-  color: "emerald" | "yellow" | "rose";
+  percent: number;
+  color: "emerald" | "amber";
 }) {
+  const colorClasses = {
+    emerald: "text-emerald-500",
+    amber: "text-amber-500",
+  };
+  const bgClasses = {
+    emerald: "bg-emerald-500/20",
+    amber: "bg-amber-500/20",
+  };
+
   return (
-    <div>
+    <div className="space-y-1">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={`relative text-3xl font-bold text-${color}-500`}>
-        <span className={`absolute inset-0 blur-xl bg-${color}-500/20`} />
-        <span className="relative">{value.toLocaleString()}</span>
-      </p>
+
+      <div className="flex items-end justify-between">
+        <p className={`relative text-3xl font-bold ${colorClasses[color]}`}>
+          <span className={`absolute inset-0 blur-xl ${bgClasses[color]}`} />
+          <span className="relative">{value.toLocaleString()}</span>
+        </p>
+
+        {percent !== 0 && (
+          <Badge
+            className={`
+              bg-${color}-500/15
+              text-${color}-400
+              border border-${color}-500/30
+            `}
+          >
+            +{percent.toFixed(2)}%
+          </Badge>
+        )}
+      </div>
     </div>
   );
 }
