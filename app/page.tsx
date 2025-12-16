@@ -18,6 +18,8 @@ interface InputStats {
   [key: string]: Stat;
 }
 
+const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
+
 const STAT_GROUPS: Record<string, string[]> = {
   Core: [
     "MinPhysicalAttack",
@@ -146,6 +148,73 @@ export default function DMGOptimizer() {
     }));
   };
 
+  const calcExpectedNormal = (g: (k: string) => number) => {
+    const baseNormal =
+      (((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
+        (1 + g("PhysicalPenetration") / 200) *
+        (1 + g("PhysicalDMGBonus")) +
+        (g("MINAttributeAttackOfOtherType") >=
+          g("MAXAttributeAttackOfOtherType")
+          ? g("MINAttributeAttackOfOtherType") * 2
+          : g("MINAttributeAttackOfOtherType") +
+          g("MAXAttributeAttackOfOtherType"))) /
+        2) *
+      (g("PhysicalAttackMultiplier") / 100) +
+      g("FlatDamage") +
+      ((g("MINAttributeAttackOfYOURType") +
+        g("MAXAttributeAttackOfYOURType")) /
+        2) *
+      (g("MainElementMultiplier") / 100) *
+      (1 +
+        g("AttributeAttackPenetrationOfYOURType") / 200 +
+        g("AttributeAttackDMGBonusOfYOURType") / 100);
+
+    const affinityDamage = calcAffinityDamage(g);
+
+    // ---- SAFE & CAPPED RATES ----
+    const Pp = clamp01(g("PrecisionRate") / 100);
+
+    const PcRaw = clamp01(g("CriticalRate") / 100);
+    const PaRaw = clamp01(g("AffinityRate") / 100);
+
+    // Crit + Affinity cannot exceed 100% of precision
+    const scale = PcRaw + PaRaw > 1 ? 1 / (PcRaw + PaRaw) : 1;
+
+    const Pc = PcRaw * scale;
+    const Pa = PaRaw * scale;
+
+    const critBonus = g("CriticalDMGBonus") / 100;
+
+    return (
+      baseNormal +
+      Pp * Pc * baseNormal * critBonus +
+      Pp * Pa * (affinityDamage - baseNormal)
+    );
+  };
+
+
+  const calcAffinityDamage = (g: (k: string) => number) => {
+    return (
+      ((g("MaxPhysicalAttack") *
+        (1 + g("PhysicalPenetration") / 200) *
+        (1 + g("PhysicalDMGBonus")) +
+        Math.max(
+          g("MINAttributeAttackOfOtherType"),
+          g("MAXAttributeAttackOfOtherType")
+        )) *
+        (g("PhysicalAttackMultiplier") / 100) +
+        g("FlatDamage") +
+        g("MAXAttributeAttackOfYOURType") *
+        (g("MainElementMultiplier") / 100) *
+        (1 +
+          g("AttributeAttackPenetrationOfYOURType") / 200 +
+          g("AttributeAttackDMGBonusOfYOURType") / 100)
+      ) * (1 + g("AffinityDMGBonus") / 100)
+    );
+  };
+
+
+
   const result = useMemo(() => {
     const gBase = (k: string) =>
       Number(stats[k].current || 0);
@@ -154,53 +223,10 @@ export default function DMGOptimizer() {
       Number(stats[k].current || 0) + Number(stats[k].increase || 0);
 
     const calc = (g: (k: string) => number) => {
-      const baseNormal =
-        (((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
-          (1 + g("PhysicalPenetration") / 200) *
-          (1 + g("PhysicalDMGBonus")) +
-          (g("MINAttributeAttackOfOtherType") >=
-            g("MAXAttributeAttackOfOtherType")
-            ? g("MINAttributeAttackOfOtherType") * 2
-            : g("MINAttributeAttackOfOtherType") +
-            g("MAXAttributeAttackOfOtherType"))) /
-          2) *
-        (g("PhysicalAttackMultiplier") / 100) +
-        g("FlatDamage") +
-        ((g("MINAttributeAttackOfYOURType") +
-          g("MAXAttributeAttackOfYOURType")) /
-          2) *
-        (g("MainElementMultiplier") / 100) *
-        (1 +
-          g("AttributeAttackPenetrationOfYOURType") / 200 +
-          g("AttributeAttackDMGBonusOfYOURType") / 100);
-
-      const critFactor =
-        (g("CriticalRate") / 100) * (g("CriticalDMGBonus") / 100);
-
-      const affinityFactor =
-        (g("AffinityRate") / 100) * (g("AffinityDMGBonus") / 100);
-
-      const expectedNormal =
-        baseNormal * (1 + critFactor + affinityFactor);
-
-      const affinity =
-        ((g("MaxPhysicalAttack") *
-          (1 + g("PhysicalPenetration") / 200) *
-          (1 + g("PhysicalDMGBonus")) +
-          Math.max(
-            g("MINAttributeAttackOfOtherType"),
-            g("MAXAttributeAttackOfOtherType")
-          )) *
-          (g("PhysicalAttackMultiplier") / 100) +
-          g("FlatDamage") +
-          g("MAXAttributeAttackOfYOURType") *
-          (g("MainElementMultiplier") / 100) *
-          (1 +
-            g("AttributeAttackPenetrationOfYOURType") / 200 +
-            g("AttributeAttackDMGBonusOfYOURType") / 100)) *
-        (1 + g("AffinityDMGBonus") / 100);
-
-      return { normal: expectedNormal, affinity };
+      return {
+        normal: calcExpectedNormal(g),
+        affinity: calcAffinityDamage(g),
+      };
     };
 
     const base = calc(gBase);
@@ -220,6 +246,34 @@ export default function DMGOptimizer() {
       },
     };
   }, [stats]);
+
+  const statImpact = useMemo(() => {
+    const baseG = (k: string) =>
+      Number(stats[k].current || 0);
+
+    const baseDmg = calcExpectedNormal(baseG);
+
+    const result: Record<string, number> = {};
+
+    Object.keys(stats).forEach((key) => {
+      const inc = Number(stats[key].increase || 0);
+      if (inc === 0 || baseDmg === 0) {
+        result[key] = 0;
+        return;
+      }
+
+      const testG = (k: string) =>
+        k === key
+          ? Number(stats[k].current || 0) + inc
+          : Number(stats[k].current || 0);
+
+      const dmg = calcExpectedNormal(testG);
+      result[key] = ((dmg - baseDmg) / baseDmg) * 100;
+    });
+
+    return result;
+  }, [stats]);
+
 
 
   return (
@@ -298,11 +352,28 @@ export default function DMGOptimizer() {
                                     .replace(/MAX/g, "Max ")
                                     .trim()}
                                 </span>
-                                {stats[k].increase !== 0 && (
-                                  <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                    +{stats[k].increase}
-                                  </Badge>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  {stats[k].increase !== 0 && (
+                                    <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                      {Number(stats[k].increase) > 0 ? "+" : ""}
+                                      {stats[k].increase}
+                                    </Badge>
+                                  )}
+
+                                  {statImpact[k] !== 0 && (
+                                    <Badge
+                                      className="
+                                      bg-amber-500/15
+                                      text-amber-400
+                                      border border-amber-500/30
+                                    "
+                                    >
+                                      {statImpact[k] > 0 ? "+" : ""}
+                                      {statImpact[k].toFixed(2)}%
+                                    </Badge>
+                                  )}
+                                </div>
+
                               </div>
 
                               <div className="grid grid-cols-2 gap-2">
@@ -418,6 +489,18 @@ export default function DMGOptimizer() {
               <div className="text-xs text-muted-foreground flex items-center gap-1">
                 <ArrowUpRight size={14} /> Auto update · Min–Max formula
               </div>
+
+              {Number(stats.CriticalRate.current || 0) + Number(stats.AffinityRate.current || 0) > 100 && (
+                <Badge className="bg-red-500/15 text-red-400 border border-red-500/30">
+                  Crit + Affinity &gt; 100%
+                </Badge>
+              )}
+
+              {Number(stats.AffinityRate.current || 0) + Number(stats.AffinityRate.increase || 0) > 100 && (
+                <Badge className="bg-red-500/15 text-red-400 border border-red-500/30">
+                  Affinity &gt; 100%
+                </Badge>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -464,7 +547,8 @@ function DamageLine({
               border border-${color}-500/30
             `}
           >
-            +{percent.toFixed(2)}%
+            {percent > 0 ? "+" : ""}
+            {percent.toFixed(2)}%
           </Badge>
         )}
       </div>
