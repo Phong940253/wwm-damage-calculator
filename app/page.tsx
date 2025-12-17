@@ -12,7 +12,6 @@ import { useDamage } from "./hooks/useDamage";
 import { aggregateGearStats } from "./utils/gear";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-import GearPanel from "./gear/GearPanel"; 
 import StatsPanel from "./ui/StatsPanel";
 import DamagePanel from "./ui/DamagePanel";
 import FormulaPanel from "./ui/FormulaPanel";
