@@ -148,6 +148,28 @@ export default function DMGOptimizer() {
     }));
   };
 
+  // ROUND(... * 1.02, 1)
+  const calcMinimumDamage = (g: (k: string) => number) => {
+    const dmg =
+      ((
+        g("MinPhysicalAttack") *
+          (1 + g("PhysicalPenetration") / 200) *
+          (1 + g("PhysicalDMGBonus")) +
+        g("MINAttributeAttackOfOtherType")
+      ) *
+        (g("PhysicalAttackMultiplier") / 100) +
+        g("FlatDamage") +
+        g("MINAttributeAttackOfYOURType") *
+          (g("MainElementMultiplier") / 100) *
+          (1 +
+            g("AttributeAttackPenetrationOfYOURType") / 200 +
+            g("AttributeAttackDMGBonusOfYOURType") / 100)
+      ) * 1.02; // fixed 2% bonus
+
+    return Math.round(dmg * 10) / 10;
+  };
+
+
   const calcExpectedNormal = (g: (k: string) => number) => {
     const baseNormal =
       (((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
@@ -216,36 +238,42 @@ export default function DMGOptimizer() {
 
 
   const result = useMemo(() => {
-    const gBase = (k: string) =>
-      Number(stats[k].current || 0);
+  const gBase = (k: string) =>
+    Number(stats[k].current || 0);
 
-    const gFinal = (k: string) =>
-      Number(stats[k].current || 0) + Number(stats[k].increase || 0);
+  const gFinal = (k: string) =>
+    Number(stats[k].current || 0) + Number(stats[k].increase || 0);
 
-    const calc = (g: (k: string) => number) => {
-      return {
-        normal: calcExpectedNormal(g),
-        affinity: calcAffinityDamage(g),
-      };
-    };
-
-    const base = calc(gBase);
-    const final = calc(gFinal);
-
-    const pct = (b: number, f: number) =>
-      b === 0 ? 0 : ((f - b) / b) * 100;
-
+  const calc = (g: (k: string) => number) => {
     return {
-      normal: {
-        value: Math.round(final.normal * 10) / 10,
-        percent: pct(base.normal, final.normal),
-      },
-      affinity: {
-        value: Math.round(final.affinity * 10) / 10,
-        percent: pct(base.affinity, final.affinity),
-      },
+      min: calcMinimumDamage(g),
+      normal: calcExpectedNormal(g),
+      affinity: calcAffinityDamage(g),
     };
-  }, [stats]);
+  };
+
+  const base = calc(gBase);
+  const final = calc(gFinal);
+
+  const pct = (b: number, f: number) =>
+    b === 0 ? 0 : ((f - b) / b) * 100;
+
+  return {
+    min: {
+      value: final.min,
+      percent: pct(base.min, final.min),
+    },
+    normal: {
+      value: Math.round(final.normal * 10) / 10,
+      percent: pct(base.normal, final.normal),
+    },
+    affinity: {
+      value: Math.round(final.affinity * 10) / 10,
+      percent: pct(base.affinity, final.affinity),
+    },
+  };
+}, [stats]);
+
 
   const statImpact = useMemo(() => {
     const baseG = (k: string) =>
@@ -441,7 +469,14 @@ export default function DMGOptimizer() {
 
             <CardContent className="space-y-6">
               <DamageLine
-                label="Normal Average (Expected)"
+                label="Abrasion Damage"
+                value={result.min.value}
+                percent={result.min.percent}
+                color="silver"
+              />
+
+              <DamageLine
+                label="Average (Expected)"
                 value={result.normal.value}
                 percent={result.normal.percent}
                 color="emerald"
@@ -516,16 +551,20 @@ function DamageLine({
   label: string;
   value: number;
   percent: number;
-  color: "emerald" | "amber";
+  color: "emerald" | "amber" | "silver";
 }) {
   const colorClasses = {
     emerald: "text-emerald-500",
     amber: "text-amber-500",
+    silver: "text-zinc-300",
   };
   const bgClasses = {
     emerald: "bg-emerald-500/20",
     amber: "bg-amber-500/20",
+    silver: "bg-zinc-300/20",
   };
+
+
 
   return (
     <div className="space-y-1">
