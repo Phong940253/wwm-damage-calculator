@@ -10,9 +10,15 @@ import { useGear } from "./hooks/useGear";
 import { useDamage } from "./hooks/useDamage";
 
 import { aggregateGearStats } from "./utils/gear";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+import GearPanel from "./gear/GearPanel"; 
 import StatsPanel from "./ui/StatsPanel";
 import DamagePanel from "./ui/DamagePanel";
 import FormulaPanel from "./ui/FormulaPanel";
+
+import GearEquippedTab from "./gear/GearEquippedTab";
+import GearCustomizeTab from "./gear/GearCustomizeTab";
 
 import { InputStats } from "./types";
 
@@ -167,20 +173,44 @@ export default function DMGOptimizer() {
 
         {/* ---------- content ---------- */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-          {/* LEFT */}
-          <StatsPanel
-            stats={stats}
-            statImpact={statImpact}
-            onChange={onChange}
-          />
 
-          {/* RIGHT */}
+          {/* ================= LEFT ================= */}
+          <Tabs defaultValue="stats" className="space-y-4">
+
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="stats">All Stats</TabsTrigger>
+              <TabsTrigger value="equipped">Gear Equipped</TabsTrigger>
+              <TabsTrigger value="custom">Gear Customize</TabsTrigger>
+            </TabsList>
+
+            {/* -------- All Stats -------- */}
+            <TabsContent value="stats" className="mt-4">
+              <StatsPanel
+                stats={stats}
+                statImpact={statImpact}
+                onChange={onChange}
+              />
+            </TabsContent>
+
+            {/* -------- Gear Equipped -------- */}
+            <TabsContent value="equipped" className="mt-4">
+              <GearEquippedTab />
+            </TabsContent>
+
+            {/* -------- Gear Customize -------- */}
+            <TabsContent value="custom" className="mt-4">
+              <GearCustomizeTab />
+            </TabsContent>
+
+          </Tabs>
+
+          {/* ================= RIGHT ================= */}
           <DamagePanel
             result={result}
             onApplyIncrease={applyIncreaseToCurrent}
             onSaveCurrent={saveCurrentStats}
             showFormula={showFormula}
-            toggleFormula={() => setShowFormula((v) => !v)}
+            toggleFormula={() => setShowFormula(v => !v)}
             formulaSlot={<FormulaPanel />}
             warnings={warnings}
           />

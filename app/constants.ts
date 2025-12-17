@@ -1,3 +1,5 @@
+import { GearSlot } from "./types";
+
 export const STAT_GROUPS: Record<string, string[]> = {
   Core: [
     "MinPhysicalAttack",
@@ -31,13 +33,18 @@ export const STAT_GROUPS: Record<string, string[]> = {
   ],
 };
 
-export const GEAR_SLOTS = [
-  "weapon_1",
-  "weapon_2",
-  "ring",
-  "talisman",
-  "head",
-  "chest",
-  "hand",
-  "leg",
-] as const;
+
+export const GEAR_SLOTS: {
+  key: GearSlot;
+  label: string;
+  icon: string; // image key (future)
+}[] = [
+  { key: "weapon_1", label: "Weapon I", icon: "weapon" },
+  { key: "weapon_2", label: "Weapon II", icon: "weapon" },
+  { key: "ring", label: "Ring", icon: "ring" },
+  { key: "talisman", label: "Talisman", icon: "talisman" },
+  { key: "head", label: "Head", icon: "head" }, // paint
+  { key: "chest", label: "Chest", icon: "chest" },
+  { key: "hand", label: "Hand", icon: "hand" },
+  { key: "leg", label: "Leg", icon: "leg" },
+];
