@@ -346,7 +346,7 @@ export default function DMGOptimizer() {
                                 <span className="text-sm text-muted-foreground">
                                   {k
                                     .replace(/([a-z])([A-Z])/g, "$1 $2")
-                                    .replace(/YOUR Type/g, "Your Type")
+                                    .replace(/YOURType/g, "Your Type")
                                     .replace(/DMG/g, "DMG ")
                                     .replace(/MIN/g, "Min ")
                                     .replace(/MAX/g, "Max ")
@@ -363,9 +363,8 @@ export default function DMGOptimizer() {
                                   {statImpact[k] !== 0 && (
                                     <Badge
                                       className="
-                                      bg-amber-500/15
-                                      text-amber-400
-                                      border border-amber-500/30
+                                      bg-emerald-500/15 text-emerald-400
+                                      border-emerald-500/30
                                     "
                                     >
                                       {statImpact[k] > 0 ? "+" : ""}
@@ -423,16 +422,15 @@ export default function DMGOptimizer() {
           <Card
             className="
               sticky top-6
+              max-h-[calc(100vh-3rem)]   /* 24px top + breathing room */
+              flex flex-col              /* IMPORTANT */
+
               bg-gradient-to-b from-card/95 to-card/60
               border border-yellow-500/30
-
               shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]
               shadow-yellow-500/20
-
               ring-1 ring-yellow-500/20
               backdrop-blur-xl
-
-              transition-all duration-300
             "
           >
             <CardHeader>
@@ -462,12 +460,12 @@ export default function DMGOptimizer() {
                 <button
                   onClick={applyIncreaseToCurrent}
                   className="
-      rounded-xl px-3 py-2 text-sm font-medium
-      bg-emerald-500/15 text-emerald-400
-      border border-emerald-500/30
-      hover:bg-emerald-500/25
-      transition
-    "
+                    rounded-xl px-3 py-2 text-sm font-medium
+                    bg-emerald-500/15 text-emerald-400
+                    border border-emerald-500/30
+                    hover:bg-emerald-500/25
+                    transition
+                  "
                 >
                   Apply Increase → Current
                 </button>
@@ -475,12 +473,12 @@ export default function DMGOptimizer() {
                 <button
                   onClick={saveCurrentStats}
                   className="
-      rounded-xl px-3 py-2 text-sm font-medium
-      bg-amber-500/15 text-amber-400
-      border border-amber-500/30
-      hover:bg-amber-500/25
-      transition
-    "
+                    rounded-xl px-3 py-2 text-sm font-medium
+                    bg-amber-500/15 text-amber-400
+                    border border-amber-500/30
+                    hover:bg-amber-500/25
+                    transition
+                  "
                 >
                   Save Current
                 </button>
