@@ -1,6 +1,10 @@
-import { GearSlot } from "./types";
+import { GearSlot, InputStats } from "./types";
 
-export const STAT_GROUPS: Record<string, string[]> = {
+/* =======================
+   Stat groups (UI only)
+======================= */
+
+export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
   Core: [
     "MinPhysicalAttack",
     "MaxPhysicalAttack",
@@ -33,6 +37,9 @@ export const STAT_GROUPS: Record<string, string[]> = {
   ],
 };
 
+/* =======================
+   Gear slots
+======================= */
 
 export const GEAR_SLOTS: {
   key: GearSlot;

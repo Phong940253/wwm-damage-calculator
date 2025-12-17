@@ -8,15 +8,25 @@ import { Separator } from "@/components/ui/separator";
 import { STAT_GROUPS } from "../constants";
 import { InputStats } from "../types";
 
+/* =======================
+   Types
+======================= */
+
+type StatKey = Extract<keyof InputStats, string>;
+
 interface Props {
   stats: InputStats;
-  statImpact: Record<string, number>;
+  statImpact: Partial<Record<StatKey, number>>;
   onChange: (
-    key: string,
+    key: StatKey,
     field: "current" | "increase",
     value: string
   ) => void;
 }
+
+/* =======================
+   Component
+======================= */
 
 export default function StatsPanel({
   stats,
@@ -41,72 +51,77 @@ export default function StatsPanel({
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
-              {keys.map((k) => (
-                <Card
-                  key={k}
-                  className="
-                    bg-card/60 border border-[#2b2a33]
-                    hover:bg-card/80 hover:border-emerald-500/40
-                    transition-all
-                  "
-                >
-                  <CardContent className="pt-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        {formatStatName(k)}
-                      </span>
+              {(keys as StatKey[]).map((k) => {
+                const stat = stats[k];
+                const impact = statImpact[k] ?? 0;
 
-                      <div className="flex gap-2">
-                        {stats[k].increase !== 0 && (
-                          <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            {Number(stats[k].increase) > 0 ? "+" : ""}
-                            {stats[k].increase}
-                          </Badge>
-                        )}
+                return (
+                  <Card
+                    key={k}
+                    className="
+                      bg-card/60 border border-[#2b2a33]
+                      hover:bg-card/80 hover:border-emerald-500/40
+                      transition-all
+                    "
+                  >
+                    <CardContent className="pt-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          {formatStatName(k)}
+                        </span>
 
-                        {statImpact[k] !== 0 && (
-                          <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            {statImpact[k] > 0 ? "+" : ""}
-                            {statImpact[k].toFixed(2)}%
-                          </Badge>
-                        )}
+                        <div className="flex gap-2">
+                          {stat.increase !== 0 && (
+                            <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              {Number(stat.increase) > 0 ? "+" : ""}
+                              {stat.increase}
+                            </Badge>
+                          )}
+
+                          {impact !== 0 && (
+                            <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              {impact > 0 ? "+" : ""}
+                              {impact.toFixed(2)}%
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        value={stats[k].current === 0 ? "" : stats[k].current}
-                        onChange={(e) =>
-                          onChange(k, "current", e.target.value)
-                        }
-                        onBlur={() => {
-                          if (stats[k].current === "") {
-                            onChange(k, "current", "0");
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          value={stat.current === 0 ? "" : stat.current}
+                          onChange={(e) =>
+                            onChange(k, "current", e.target.value)
                           }
-                        }}
-                        onWheel={(e) => e.currentTarget.blur()}
-                        className="bg-background/60 border-[#363b3d]"
-                      />
+                          onBlur={() => {
+                            if (stat.current === "") {
+                              onChange(k, "current", "0");
+                            }
+                          }}
+                          onWheel={(e) => e.currentTarget.blur()}
+                          className="bg-background/60 border-[#363b3d]"
+                        />
 
-                      <Input
-                        type="number"
-                        value={stats[k].increase === 0 ? "" : stats[k].increase}
-                        onChange={(e) =>
-                          onChange(k, "increase", e.target.value)
-                        }
-                        onBlur={() => {
-                          if (stats[k].increase === "") {
-                            onChange(k, "increase", "0");
+                        <Input
+                          type="number"
+                          value={stat.increase === 0 ? "" : stat.increase}
+                          onChange={(e) =>
+                            onChange(k, "increase", e.target.value)
                           }
-                        }}
-                        onWheel={(e) => e.currentTarget.blur()}
-                        className="bg-background/60 border-[#363b3d]"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                          onBlur={() => {
+                            if (stat.increase === "") {
+                              onChange(k, "increase", "0");
+                            }
+                          }}
+                          onWheel={(e) => e.currentTarget.blur()}
+                          className="bg-background/60 border-[#363b3d]"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </section>
         ))}
@@ -114,6 +129,10 @@ export default function StatsPanel({
     </Card>
   );
 }
+
+/* =======================
+   Utils
+======================= */
 
 function formatStatName(k: string) {
   return k
