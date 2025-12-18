@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useGear } from "../hooks/useGear";
+import { useGear } from "../gear/GearContext";
 import { CustomGear, GearSlot, InputStats } from "../types";
 import { GEAR_SLOTS, STAT_GROUPS } from "../constants";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,8 @@ export default function GearForm({
   initialGear,
   onSuccess,
 }: GearFormProps) {
-  const { setCustomGears } = useGear();
+  const { setCustomGears, setEquipped } = useGear();
+
 
   const [name, setName] = useState("");
   const [slot, setSlot] = useState<GearSlot>("weapon_1");
@@ -64,24 +65,48 @@ export default function GearForm({
   /* -------------------- submit -------------------- */
   const submit = () => {
     if (!name) return;
-
+  
+    const id = initialGear?.id ?? crypto.randomUUID();
+  
     const gear: CustomGear = {
-      id: initialGear?.id ?? crypto.randomUUID(),
+      id,
       name,
       slot,
       main,
       subs,
       addition: addition ?? undefined,
     };
-
+  
     setCustomGears(g =>
       initialGear
-        ? g.map(x => (x.id === gear.id ? gear : x))
+        ? g.map(x => (x.id === id ? gear : x))
         : [...g, gear]
     );
-
+  
+    // 🔥 migrate equipped safely
+    if (initialGear) {
+      setEquipped(prev => {
+        const next = { ...prev };
+  
+        // if this gear was equipped before
+        const prevSlot = initialGear.slot;
+        const newSlot = slot;
+  
+        if (prev[prevSlot] === id) {
+          // remove old slot
+          delete next[prevSlot];
+  
+          // assign new slot
+          next[newSlot] = id;
+        }
+  
+        return next;
+      });
+    }
+  
     onSuccess?.();
   };
+  
 
   /* -------------------- helpers -------------------- */
   const addSub = () => {

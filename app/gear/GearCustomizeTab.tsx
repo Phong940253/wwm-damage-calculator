@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useGear } from "../hooks/useGear";
+import { useGear } from "../gear/GearContext";
 import GearForm from "./GearForm";
 import { CustomGear } from "@/app/types";
 
