@@ -1,4 +1,4 @@
-// app/gear/components/GearCard.tsx
+// app/gear/GearCard.tsx
 "use client";
 
 import { CustomGear } from "../types";
@@ -30,11 +30,23 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
     }));
   };
 
+  const unequip = () => {
+    setEquipped((prev) => {
+      const next = { ...prev };
+      delete next[gear.slot];
+      return next;
+    });
+  };
+
   return (
     <Card className="p-4 space-y-3 relative">
       {/* Equipped badge */}
-      {isEquipped && (
+      {isEquipped ? (
         <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
+          Equipped
+        </span>
+      ) : (
+        <span className="absolute top-2 right-2 text-xs hidden px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
           Equipped
         </span>
       )}
@@ -54,9 +66,11 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem disabled={isEquipped} onClick={equip}>
-              Equip
-            </DropdownMenuItem>
+            {isEquipped ? (
+              <DropdownMenuItem onClick={unequip}>Unequip</DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={equip}>Equip</DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
             <DropdownMenuItem className="text-red-400" onClick={onDelete}>
               Delete
@@ -66,7 +80,7 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
       </div>
 
       {/* Main stat */}
-      <div className="border border-yellow-500/30 bg-yellow-500/5 p-2">
+      <div className="border border-yellow-500/30 bg-yellow-500/5 p-2 rounded-lg">
         <p className="text-xs text-muted-foreground">Main</p>
         <p className="text-sm font-medium">
           {gear.main.stat} +{gear.main.value}
