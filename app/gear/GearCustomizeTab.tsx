@@ -13,6 +13,7 @@ import {
 import { useGear } from "../gear/GearContext";
 import GearForm from "./GearForm";
 import { CustomGear } from "@/app/types";
+import GearCard from "./GearCard";
 
 export default function GearCustomizeTab() {
   const { customGears, setCustomGears } = useGear();
@@ -21,7 +22,7 @@ export default function GearCustomizeTab() {
   const [editingGear, setEditingGear] = useState<CustomGear | null>(null);
 
   const removeGear = (id: string) => {
-    setCustomGears(g => g.filter(x => x.id !== id));
+    setCustomGears((g) => g.filter((x) => x.id !== id));
   };
 
   const openAddDialog = () => {
@@ -43,48 +44,16 @@ export default function GearCustomizeTab() {
       </div>
 
       {/* Gear List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Custom Gear List</CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-3">
-          {customGears.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No custom gear yet.
-            </p>
-          )}
-
-          {customGears.map(g => (
-            <div
-              key={g.id}
-              className="flex justify-between items-center border-b pb-2"
-            >
-              <div>
-                <p className="font-medium">{g.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {g.slot} · {g.main.stat} +{g.main.value}
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  className="text-xs text-emerald-400"
-                  onClick={() => openEditDialog(g)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="text-xs text-red-400"
-                  onClick={() => removeGear(g.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {customGears.map((g) => (
+          <GearCard
+            key={g.id}
+            gear={g}
+            onEdit={() => openEditDialog(g)}
+            onDelete={() => removeGear(g.id)}
+          />
+        ))}
+      </div>
 
       {/* Add / Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
