@@ -7,7 +7,7 @@ export const ELEMENT_TYPES = [
   { key: "bamboocut", label: "Bamboocut" },
 ] as const;
 
-export type ElementKey = typeof ELEMENT_TYPES[number]["key"];
+export type ElementKey = (typeof ELEMENT_TYPES)[number]["key"];
 
 export const ELEMENT_DEFAULTS: Record<
   ElementKey,
@@ -19,15 +19,12 @@ export const ELEMENT_DEFAULTS: Record<
   bamboocut: { min: 10, max: 30, penetration: 0, bonus: 0 },
 };
 
-const ELEMENT_STAT_KEYS = ELEMENT_TYPES.flatMap(({ label }) => {
-  const prefix = label.replace(/\s+/g, "");
-  return [
-    `${prefix}Min`,
-    `${prefix}Max`,
-    `${prefix}Penetration`,
-    `${prefix}DMGBonus`,
-  ];
-}) as (keyof InputStats)[];
+const ELEMENT_STAT_KEYS = ELEMENT_TYPES.flatMap(({ key }) => [
+  `${key}Min`,
+  `${key}Max`,
+  `${key}Penetration`,
+  `${key}DMGBonus`,
+]) as (keyof InputStats)[];
 
 /* =======================
    Stat groups (UI only)

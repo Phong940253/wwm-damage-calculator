@@ -1,3 +1,4 @@
+// app\gear\GearCustomizeTab.tsx
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -13,11 +14,12 @@ import {
 
 import { useGear } from "../gear/GearContext";
 import GearForm from "./GearForm";
-import { CustomGear, GearSlot, InputStats } from "@/app/types";
+import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
 import GearCard from "./GearCard";
 import { GEAR_SLOTS } from "@/app/constants";
 import { aggregateGearStats } from "@/app/utils/gear";
 import { calcAffinityDamage, calcExpectedNormal } from "@/app/utils/damage";
+import { calculateDamageUnified } from "@/app/utils/calcDamageUnified";
 
 const MAX_COMBINATIONS = 200_000;
 const DEFAULT_MAX_DISPLAY = 200;
@@ -25,6 +27,7 @@ const MAX_RESULTS_CAP = 10000;
 
 interface GearCustomizeTabProps {
   stats: InputStats;
+  elementStats: ElementStats;
 }
 
 interface OptimizeResult {
@@ -36,17 +39,20 @@ interface OptimizeResult {
 
 interface OptimizePayload {
   stats: InputStats;
+  elementStats: ElementStats;
   customGears: CustomGear[];
   equipped: Partial<Record<GearSlot, string | undefined>>;
 }
-
 interface OptimizeComputation {
   baseDamage: number;
   totalCombos: number;
   results: OptimizeResult[];
 }
 
-export default function GearCustomizeTab({ stats }: GearCustomizeTabProps) {
+export default function GearCustomizeTab({
+  stats,
+  elementStats,
+}: GearCustomizeTabProps) {
   const {
     customGears,
     setCustomGears,
@@ -83,11 +89,16 @@ export default function GearCustomizeTab({ stats }: GearCustomizeTabProps) {
     setOptimizing(true);
     setOptimizeError(null);
     try {
-      const computation = computeOptimizeResults({
-        stats,
-        customGears,
-        equipped,
-      }, maxDisplay);
+      const computation = computeOptimizeResults(
+        {
+          stats,
+          elementStats,
+          customGears,
+          equipped,
+        },
+        maxDisplay
+      );
+
 
       setOptimizeResults(computation.results);
       setCombinationCount(computation.totalCombos);
@@ -310,13 +321,18 @@ export default function GearCustomizeTab({ stats }: GearCustomizeTabProps) {
   );
 }
 
-function computeOptimizeResults({
-  stats,
-  customGears,
-  equipped,
-}: OptimizePayload, desiredDisplay: number): OptimizeComputation {
+function computeOptimizeResults(
+  {
+    stats,
+    elementStats,
+    customGears,
+    equipped,
+  }: OptimizePayload,
+  desiredDisplay: number
+): OptimizeComputation {
   const baseBonus = aggregateGearStats(customGears, equipped ?? {});
-  const baseDamage = calculateDamage(stats, baseBonus);
+  const baseDamage =
+    calculateDamageUnified(stats, elementStats, baseBonus).normal;
 
   if (customGears.length === 0) {
     return { baseDamage, totalCombos: 0, results: [] };
@@ -337,82 +353,71 @@ function computeOptimizeResults({
 
   if (estimated > MAX_COMBINATIONS) {
     throw new Error(
-      `Too many combinations (${estimated.toLocaleString()}). Remove some gear per slot to narrow down the search.`
+      `Too many combinations (${estimated.toLocaleString()}). Remove some gear per slot.`
     );
   }
 
   const displayLimit = Math.max(1, Math.min(desiredDisplay, MAX_RESULTS_CAP));
 
-  const combos: OptimizeResult[] = [];
+  const results: OptimizeResult[] = [];
   const bonus: Record<string, number> = {};
   const selection: Partial<Record<GearSlot, CustomGear>> = {};
   let total = 0;
 
-  const addGear = (gear: CustomGear, direction: 1 | -1) => {
+  const addGear = (gear: CustomGear, dir: 1 | -1) => {
     const attrs = [gear.main, ...gear.subs];
     if (gear.addition) attrs.push(gear.addition);
-    attrs.forEach((attr) => {
-      bonus[attr.stat] = (bonus[attr.stat] || 0) + direction * attr.value;
+    attrs.forEach((a) => {
+      bonus[a.stat] = (bonus[a.stat] || 0) + dir * a.value;
     });
   };
 
-  const dfs = (index: number) => {
-    if (index === slotOptions.length) {
-      total += 1;
-      const damage = calculateDamage(stats, bonus);
-      combos.push({
+  const dfs = (i: number) => {
+    if (i === slotOptions.length) {
+      total++;
+
+      const dmg =
+        calculateDamageUnified(stats, elementStats, bonus).normal;
+
+      results.push({
         key: buildSelectionKey(selection),
-        damage,
+        damage: dmg,
         percentGain:
-          baseDamage === 0 ? 0 : ((damage - baseDamage) / baseDamage) * 100,
+          baseDamage === 0 ? 0 : ((dmg - baseDamage) / baseDamage) * 100,
         selection: { ...selection },
       });
       return;
     }
 
-    const { slot, items } = slotOptions[index];
+    const { slot, items } = slotOptions[i];
 
     items.forEach((gear) => {
       if (gear) {
         selection[slot] = gear;
         addGear(gear, 1);
-        dfs(index + 1);
+        dfs(i + 1);
         addGear(gear, -1);
         delete selection[slot];
       } else {
         delete selection[slot];
-        dfs(index + 1);
+        dfs(i + 1);
       }
     });
   };
 
   dfs(0);
 
-  combos.sort((a, b) => {
-    if (b.percentGain === a.percentGain) {
-      return b.damage - a.damage;
-    }
-    return b.percentGain - a.percentGain;
-  });
+  results.sort((a, b) =>
+    b.percentGain === a.percentGain
+      ? b.damage - a.damage
+      : b.percentGain - a.percentGain
+  );
 
   return {
     baseDamage,
     totalCombos: total,
-    results: combos.slice(0, displayLimit),
+    results: results.slice(0, displayLimit),
   };
-}
-
-function calculateDamage(
-  stats: InputStats,
-  bonus: Record<string, number>
-): number {
-  const getter = (key: string) =>
-    Number(stats[key]?.current || 0) +
-    Number(stats[key]?.increase || 0) +
-    (bonus[key] || 0);
-
-  const affinity = calcAffinityDamage(getter);
-  return calcExpectedNormal(getter, affinity);
 }
 
 function buildSelectionKey(

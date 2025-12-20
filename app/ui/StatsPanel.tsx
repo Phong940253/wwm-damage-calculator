@@ -47,35 +47,27 @@ export default function StatsPanel({
   const getStatValue = (
     key: string,
     field: "current" | "increase"
-  ): number | "" | undefined => {
-    if (
-      key.includes("bellstrike") ||
-      key.includes("stonesplit") ||
-      key.includes("silkbind") ||
-      key.includes("bamboocut")
-    ) {
-      return elementStats[key as ElementStatKey]?.[field];
-    } else {
-      return stats[key as StatKey]?.[field];
-    }
+  ) => {
+    return isElementKey(key)
+      ? elementStats[key]?.[field]
+      : stats[key as StatKey]?.[field];
   };
+
+  const isElementKey = (key: string): key is ElementStatKey =>
+    key in elementStats && key !== "selected";
 
   const handleStatChange = (
     key: string,
     field: "current" | "increase",
     value: string
   ) => {
-    if (
-      key.includes("bellstrike") ||
-      key.includes("stonesplit") ||
-      key.includes("silkbind") ||
-      key.includes("bamboocut")
-    ) {
-      onElementChange(key as ElementStatKey, field, value);
+    if (isElementKey(key)) {
+      onElementChange(key, field, value);
     } else {
       onChange(key as StatKey, field, value);
     }
   };
+
 
   return (
     <Card
@@ -122,11 +114,9 @@ export default function StatsPanel({
             {/* ---------- Stats Grid ---------- */}
             <div className="grid md:grid-cols-2 gap-4">
               {(keys as (StatKey | ElementStatKey)[]).map((k) => {
-                const stat = (
-                  k.includes("Min") || k.includes("Max") || k.includes("Penetration") || k.includes("DMGBonus")
-                    ? elementStats[k as ElementStatKey]
-                    : stats[k as StatKey]
-                );
+                const stat = isElementKey(k)
+                  ? elementStats[k]
+                  : stats[k as StatKey];
                 if (!stat) return null;
 
                 const impact = statImpact[k] ?? 0;

@@ -1,3 +1,4 @@
+// app\hooks\useDamage.ts
 import { useMemo } from "react";
 import { InputStats } from "../types";
 import {
@@ -28,13 +29,9 @@ export const useDamage = (
   // ---------- helpers ----------
   const gBase = (k: string) => {
     if (k === "MINAttributeAttackOfYOURType")
-      return Number(
-        elementStats[`${elementStats.selected}Min`]?.current || 0
-      );
+      return Number(elementStats[`${elementStats.selected}Min`]?.current || 0);
     if (k === "MAXAttributeAttackOfYOURType")
-      return Number(
-        elementStats[`${elementStats.selected}Max`]?.current || 0
-      );
+      return Number(elementStats[`${elementStats.selected}Max`]?.current || 0);
     if (k === "AttributeAttackPenetrationOfYOURType")
       return Number(
         elementStats[`${elementStats.selected}Penetration`]?.current || 0
@@ -134,8 +131,7 @@ export const useDamage = (
     const base = calc(gBase);
     const final = calc(gFinal);
 
-    const pct = (b: number, f: number) =>
-      b === 0 ? 0 : ((f - b) / b) * 100;
+    const pct = (b: number, f: number) => (b === 0 ? 0 : ((f - b) / b) * 100);
 
     return {
       min: {
@@ -167,15 +163,10 @@ export const useDamage = (
 
       const testG = (k: string) =>
         k === key
-          ? Number(stats[k]?.current || 0) +
-            inc +
-            (gearBonus[k] || 0)
+          ? Number(stats[k]?.current || 0) + inc + (gearBonus[k] || 0)
           : gBase(k);
 
-      const dmg = calcExpectedNormal(
-        testG,
-        calcAffinityDamage(testG)
-      );
+      const dmg = calcExpectedNormal(testG, calcAffinityDamage(testG));
 
       impact[key] = ((dmg - baseDmg) / baseDmg) * 100;
     });
