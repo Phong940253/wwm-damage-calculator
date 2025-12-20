@@ -199,7 +199,7 @@ export default function DMGOptimizer() {
 
             {/* -------- Gear Customize -------- */}
             <TabsContent value="custom" className="mt-4">
-              <GearCustomizeTab />
+              <GearCustomizeTab stats={stats} />
             </TabsContent>
 
           </Tabs>
