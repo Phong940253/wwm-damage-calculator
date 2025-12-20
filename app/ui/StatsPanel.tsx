@@ -5,23 +5,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { STAT_GROUPS } from "../constants";
-import { InputStats } from "../types";
-
+import { STAT_GROUPS, ELEMENT_TYPES, ElementKey } from "../constants";
+import { InputStats, ElementStats } from "../types";
 
 /* =======================
    Types
 ======================= */
 
 type StatKey = Extract<keyof InputStats, string>;
+type ElementStatKey = Exclude<keyof ElementStats, "selected">;
 
 interface Props {
   stats: InputStats;
-  statImpact: Partial<Record<StatKey, number>>;
+  elementStats: ElementStats;
+  statImpact: Partial<Record<StatKey | ElementStatKey, number>>;
   gearBonus: Record<string, number>;
   onChange: (
     key: StatKey,
     field: "current" | "increase",
+    value: string
+  ) => void;
+  onElementChange: (
+    key: ElementStatKey | "selected",
+    field: "current" | "increase" | "selected",
     value: string
   ) => void;
 }
@@ -32,10 +38,45 @@ interface Props {
 
 export default function StatsPanel({
   stats,
+  elementStats,
   statImpact,
   gearBonus,
   onChange,
+  onElementChange,
 }: Props) {
+  const getStatValue = (
+    key: string,
+    field: "current" | "increase"
+  ): number | "" | undefined => {
+    if (
+      key.includes("bellstrike") ||
+      key.includes("stonesplit") ||
+      key.includes("silkbind") ||
+      key.includes("bamboocut")
+    ) {
+      return elementStats[key as ElementStatKey]?.[field];
+    } else {
+      return stats[key as StatKey]?.[field];
+    }
+  };
+
+  const handleStatChange = (
+    key: string,
+    field: "current" | "increase",
+    value: string
+  ) => {
+    if (
+      key.includes("bellstrike") ||
+      key.includes("stonesplit") ||
+      key.includes("silkbind") ||
+      key.includes("bamboocut")
+    ) {
+      onElementChange(key as ElementStatKey, field, value);
+    } else {
+      onChange(key as StatKey, field, value);
+    }
+  };
+
   return (
     <Card
       className="
@@ -46,6 +87,30 @@ export default function StatsPanel({
       "
     >
       <CardContent className="pt-6 space-y-10">
+        {/* Element Selection */}
+        <section className="space-y-5">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Elements</h2>
+            <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Main Element</label>
+            <select
+              className="w-full border rounded px-2 py-2 bg-background"
+              value={elementStats.selected}
+              onChange={(e) =>
+                onElementChange("selected", "selected", e.target.value)
+              }
+            >
+              {ELEMENT_TYPES.map((el) => (
+                <option key={el.key} value={el.key}>
+                  {el.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
+
         {Object.entries(STAT_GROUPS).map(([group, keys]) => (
           <section key={group} className="space-y-5">
             {/* ---------- Group Header ---------- */}
@@ -56,8 +121,14 @@ export default function StatsPanel({
 
             {/* ---------- Stats Grid ---------- */}
             <div className="grid md:grid-cols-2 gap-4">
-              {(keys as StatKey[]).map((k) => {
-                const stat = stats[k];
+              {(keys as (StatKey | ElementStatKey)[]).map((k) => {
+                const stat = (
+                  k.includes("Min") || k.includes("Max") || k.includes("Penetration") || k.includes("DMGBonus")
+                    ? elementStats[k as ElementStatKey]
+                    : stats[k as StatKey]
+                );
+                if (!stat) return null;
+
                 const impact = statImpact[k] ?? 0;
 
                 const gear = gearBonus[k] || 0;
@@ -104,17 +175,17 @@ export default function StatsPanel({
                         onChange={(e) => {
                           const v = e.target.value;
                           if (v === "") {
-                            onChange(k, "current", "");
+                            handleStatChange(k, "current", "");
                             return;
                           }
 
                           // Base = Total - Gear
                           const nextBase = Number(v) - gear;
-                          onChange(k, "current", String(nextBase));
+                          handleStatChange(k, "current", String(nextBase));
                         }}
                         onBlur={() => {
-                          if (stat.current === "") {
-                            onChange(k, "current", "0");
+                          if (getStatValue(k, "current") === "") {
+                            handleStatChange(k, "current", "0");
                           }
                         }}
                         onWheel={(e) => e.currentTarget.blur()}
@@ -140,13 +211,13 @@ export default function StatsPanel({
                         </span>
                         <Input
                           type="number"
-                          value={stat.increase === 0 ? "" : stat.increase}
+                          value={getStatValue(k, "increase") === 0 ? "" : getStatValue(k, "increase")}
                           onChange={(e) =>
-                            onChange(k, "increase", e.target.value)
+                            handleStatChange(k, "increase", e.target.value)
                           }
                           onBlur={() => {
-                            if (stat.increase === "") {
-                              onChange(k, "increase", "0");
+                            if (getStatValue(k, "increase") === "") {
+                              handleStatChange(k, "increase", "0");
                             }
                           }}
                           onWheel={(e) => e.currentTarget.blur()}

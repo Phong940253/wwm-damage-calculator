@@ -7,8 +7,30 @@ export interface Stat {
   increase: number | "";
 }
 
+import { ElementKey } from "./constants";
+
 export interface InputStats {
   [key: string]: Stat;
+}
+
+export interface ElementStats {
+  selected: ElementKey;
+  bellstrikeMin: Stat;
+  bellstrikeMax: Stat;
+  bellstrikePenetration: Stat;
+  bellstrikeDMGBonus: Stat;
+  stonesplitMin: Stat;
+  stonesplitMax: Stat;
+  stonesplitPenetration: Stat;
+  stonesplitDMGBonus: Stat;
+  silkbindMin: Stat;
+  silkbindMax: Stat;
+  silkbindPenetration: Stat;
+  silkbindDMGBonus: Stat;
+  bamboocutMin: Stat;
+  bamboocutMax: Stat;
+  bamboocutPenetration: Stat;
+  bamboocutDMGBonus: Stat;
 }
 
 /* =======================

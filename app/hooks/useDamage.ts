@@ -17,18 +17,108 @@ export interface DamageResult {
   affinity: DamageValue;
 }
 
+import { ElementKey, ELEMENT_TYPES } from "../constants";
+import { ElementStats } from "../types";
+
 export const useDamage = (
   stats: InputStats,
+  elementStats: ElementStats,
   gearBonus: Record<string, number>
 ) => {
   // ---------- helpers ----------
-  const gBase = (k: string) =>
-    Number(stats[k]?.current || 0) + (gearBonus[k] || 0);
+  const gBase = (k: string) => {
+    if (k === "MINAttributeAttackOfYOURType")
+      return Number(
+        elementStats[`${elementStats.selected}Min`]?.current || 0
+      );
+    if (k === "MAXAttributeAttackOfYOURType")
+      return Number(
+        elementStats[`${elementStats.selected}Max`]?.current || 0
+      );
+    if (k === "AttributeAttackPenetrationOfYOURType")
+      return Number(
+        elementStats[`${elementStats.selected}Penetration`]?.current || 0
+      );
+    if (k === "AttributeAttackDMGBonusOfYOURType")
+      return Number(
+        elementStats[`${elementStats.selected}DMGBonus`]?.current || 0
+      );
+    if (k === "MINAttributeAttackOfOtherType") {
+      const otherElements = ELEMENT_TYPES.filter(
+        (e) => e.key !== elementStats.selected
+      );
+      return otherElements.reduce(
+        (acc, e) => acc + Number(elementStats[`${e.key}Min`]?.current || 0),
+        0
+      );
+    }
+    if (k === "MAXAttributeAttackOfOtherType") {
+      const otherElements = ELEMENT_TYPES.filter(
+        (e) => e.key !== elementStats.selected
+      );
+      return otherElements.reduce(
+        (acc, e) => acc + Number(elementStats[`${e.key}Max`]?.current || 0),
+        0
+      );
+    }
+    return Number(stats[k]?.current || 0) + (gearBonus[k] || 0);
+  };
 
-  const gFinal = (k: string) =>
-    Number(stats[k]?.current || 0) +
-    Number(stats[k]?.increase || 0) +
-    (gearBonus[k] || 0);
+  const gFinal = (k: string) => {
+    if (k === "MINAttributeAttackOfYOURType")
+      return (
+        Number(elementStats[`${elementStats.selected}Min`]?.current || 0) +
+        Number(elementStats[`${elementStats.selected}Min`]?.increase || 0)
+      );
+    if (k === "MAXAttributeAttackOfYOURType")
+      return (
+        Number(elementStats[`${elementStats.selected}Max`]?.current || 0) +
+        Number(elementStats[`${elementStats.selected}Max`]?.increase || 0)
+      );
+    if (k === "AttributeAttackPenetrationOfYOURType")
+      return (
+        Number(
+          elementStats[`${elementStats.selected}Penetration`]?.current || 0
+        ) +
+        Number(
+          elementStats[`${elementStats.selected}Penetration`]?.increase || 0
+        )
+      );
+    if (k === "AttributeAttackDMGBonusOfYOURType")
+      return (
+        Number(elementStats[`${elementStats.selected}DMGBonus`]?.current || 0) +
+        Number(elementStats[`${elementStats.selected}DMGBonus`]?.increase || 0)
+      );
+    if (k === "MINAttributeAttackOfOtherType") {
+      const otherElements = ELEMENT_TYPES.filter(
+        (e) => e.key !== elementStats.selected
+      );
+      return otherElements.reduce(
+        (acc, e) =>
+          acc +
+          (Number(elementStats[`${e.key}Min`]?.current || 0) +
+            Number(elementStats[`${e.key}Min`]?.increase || 0)),
+        0
+      );
+    }
+    if (k === "MAXAttributeAttackOfOtherType") {
+      const otherElements = ELEMENT_TYPES.filter(
+        (e) => e.key !== elementStats.selected
+      );
+      return otherElements.reduce(
+        (acc, e) =>
+          acc +
+          (Number(elementStats[`${e.key}Max`]?.current || 0) +
+            Number(elementStats[`${e.key}Max`]?.increase || 0)),
+        0
+      );
+    }
+    return (
+      Number(stats[k]?.current || 0) +
+      Number(stats[k]?.increase || 0) +
+      (gearBonus[k] || 0)
+    );
+  };
 
   // ---------- main damage ----------
   const result = useMemo<DamageResult>(() => {
@@ -61,7 +151,7 @@ export const useDamage = (
         percent: pct(base.affinity, final.affinity),
       },
     };
-  }, [stats, gearBonus]);
+  }, [stats, elementStats, gearBonus]);
 
   // ---------- stat impact ----------
   const statImpact = useMemo<Record<string, number>>(() => {
@@ -91,7 +181,7 @@ export const useDamage = (
     });
 
     return impact;
-  }, [stats, gearBonus]);
+  }, [stats, elementStats, gearBonus]);
 
   return { result, statImpact };
 };

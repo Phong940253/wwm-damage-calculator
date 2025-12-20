@@ -1,5 +1,34 @@
 import { GearSlot, InputStats } from "./types";
 
+export const ELEMENT_TYPES = [
+  { key: "bellstrike", label: "Bellstrike" },
+  { key: "stonesplit", label: "Stonesplit" },
+  { key: "silkbind", label: "Silkbind" },
+  { key: "bamboocut", label: "Bamboocut" },
+] as const;
+
+export type ElementKey = typeof ELEMENT_TYPES[number]["key"];
+
+export const ELEMENT_DEFAULTS: Record<
+  ElementKey,
+  { min: number; max: number; penetration: number; bonus: number }
+> = {
+  bellstrike: { min: 100, max: 300, penetration: 3.1, bonus: 1.6 },
+  stonesplit: { min: 10, max: 30, penetration: 0, bonus: 0 },
+  silkbind: { min: 10, max: 30, penetration: 0, bonus: 0 },
+  bamboocut: { min: 10, max: 30, penetration: 0, bonus: 0 },
+};
+
+const ELEMENT_STAT_KEYS = ELEMENT_TYPES.flatMap(({ label }) => {
+  const prefix = label.replace(/\s+/g, "");
+  return [
+    `${prefix}Min`,
+    `${prefix}Max`,
+    `${prefix}Penetration`,
+    `${prefix}DMGBonus`,
+  ];
+}) as (keyof InputStats)[];
+
 /* =======================
    Stat groups (UI only)
 ======================= */
@@ -11,17 +40,7 @@ export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
     "PhysicalAttackMultiplier",
     "FlatDamage",
   ],
-  Element: [
-    "MINAttributeAttackOfYOURType",
-    "MAXAttributeAttackOfYOURType",
-    "MainElementMultiplier",
-    "AttributeAttackPenetrationOfYOURType",
-    "AttributeAttackDMGBonusOfYOURType",
-  ],
-  Secondary: [
-    "MINAttributeAttackOfOtherType",
-    "MAXAttributeAttackOfOtherType",
-  ],
+  Element: ["MainElementMultiplier", ...ELEMENT_STAT_KEYS],
   Rates: [
     "PrecisionRate",
     "CriticalRate",

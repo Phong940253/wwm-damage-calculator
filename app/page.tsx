@@ -19,7 +19,8 @@ import FormulaPanel from "./ui/FormulaPanel";
 import GearEquippedTab from "./gear/GearEquippedTab";
 import GearCustomizeTab from "./gear/GearCustomizeTab";
 
-import { InputStats } from "./types";
+import { InputStats, ElementStats } from "./types";
+import { ELEMENT_DEFAULTS } from "./constants";
 
 /* ------------------ initial stats ------------------ */
 
@@ -36,16 +37,54 @@ const INITIAL_STATS: InputStats = {
   CriticalDMGBonus: { current: 50.0, increase: 0 },
   AffinityRate: { current: 25, increase: 0 },
   AffinityDMGBonus: { current: 35.0, increase: 0 },
-  MINAttributeAttackOfYOURType: { current: 100, increase: 0 },
-  MAXAttributeAttackOfYOURType: { current: 300, increase: 0 },
-  MINAttributeAttackOfOtherType: { current: 10, increase: 0 },
-  MAXAttributeAttackOfOtherType: { current: 30, increase: 0 },
   PhysicalPenetration: { current: 10, increase: 0 },
   PhysicalResistance: { current: 1.8, increase: 0 },
   PhysicalDMGBonus: { current: 0.0, increase: 0 },
   PhysicalDMGReduction: { current: 0.0, increase: 0 },
-  AttributeAttackPenetrationOfYOURType: { current: 3.1, increase: 0 },
-  AttributeAttackDMGBonusOfYOURType: { current: 1.6, increase: 0 },
+};
+
+const INITIAL_ELEMENT_STATS: ElementStats = {
+  selected: "bellstrike",
+  bellstrikeMin: { current: ELEMENT_DEFAULTS.bellstrike.min, increase: 0 },
+  bellstrikeMax: { current: ELEMENT_DEFAULTS.bellstrike.max, increase: 0 },
+  bellstrikePenetration: {
+    current: ELEMENT_DEFAULTS.bellstrike.penetration,
+    increase: 0,
+  },
+  bellstrikeDMGBonus: {
+    current: ELEMENT_DEFAULTS.bellstrike.bonus,
+    increase: 0,
+  },
+  stonesplitMin: { current: ELEMENT_DEFAULTS.stonesplit.min, increase: 0 },
+  stonesplitMax: { current: ELEMENT_DEFAULTS.stonesplit.max, increase: 0 },
+  stonesplitPenetration: {
+    current: ELEMENT_DEFAULTS.stonesplit.penetration,
+    increase: 0,
+  },
+  stonesplitDMGBonus: {
+    current: ELEMENT_DEFAULTS.stonesplit.bonus,
+    increase: 0,
+  },
+  silkbindMin: { current: ELEMENT_DEFAULTS.silkbind.min, increase: 0 },
+  silkbindMax: { current: ELEMENT_DEFAULTS.silkbind.max, increase: 0 },
+  silkbindPenetration: {
+    current: ELEMENT_DEFAULTS.silkbind.penetration,
+    increase: 0,
+  },
+  silkbindDMGBonus: {
+    current: ELEMENT_DEFAULTS.silkbind.bonus,
+    increase: 0,
+  },
+  bamboocutMin: { current: ELEMENT_DEFAULTS.bamboocut.min, increase: 0 },
+  bamboocutMax: { current: ELEMENT_DEFAULTS.bamboocut.max, increase: 0 },
+  bamboocutPenetration: {
+    current: ELEMENT_DEFAULTS.bamboocut.penetration,
+    increase: 0,
+  },
+  bamboocutDMGBonus: {
+    current: ELEMENT_DEFAULTS.bamboocut.bonus,
+    increase: 0,
+  },
 };
 
 /* ------------------ main component ------------------ */
@@ -56,13 +95,16 @@ export default function DMGOptimizer() {
 
   /* ---------- stats ---------- */
   const { stats, setStats } = useStats(INITIAL_STATS);
+  const [elementStats, setElementStats] = useState<ElementStats>(
+    INITIAL_ELEMENT_STATS
+  );
 
   /* ---------- gear ---------- */
   const { customGears, equipped } = useGear();
   const gearBonus = aggregateGearStats(customGears, equipped);
 
   /* ---------- damage ---------- */
-  const { result, statImpact } = useDamage(stats, gearBonus);
+  const { result, statImpact } = useDamage(stats, elementStats, gearBonus);
 
   /* ---------- handlers ---------- */
 
@@ -80,17 +122,36 @@ export default function DMGOptimizer() {
     }));
   };
 
+  const onElementChange = (
+    key: keyof ElementStats,
+    field: "current" | "increase" | "selected",
+    value: string
+  ) => {
+    setElementStats((prev) => ({ ...prev, [key]: value }));
+  };
+
   const applyIncreaseToCurrent = () => {
     setStats((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((k) => {
         next[k] = {
-          current:
-            Number(next[k].current || 0) +
-            Number(next[k].increase || 0),
+          current: Number(next[k].current || 0) + Number(next[k].increase || 0),
           increase: 0,
         };
       });
+      return next;
+    });
+
+    setElementStats((prev) => {
+      const next = { ...prev };
+      for (const key in next) {
+        if (key === "selected") continue;
+        const stat = next[key as keyof Omit<ElementStats, "selected">];
+        next[key as keyof Omit<ElementStats, "selected">] = {
+          current: Number(stat.current || 0) + Number(stat.increase || 0),
+          increase: 0,
+        };
+      }
       return next;
     });
   };
@@ -105,11 +166,18 @@ export default function DMGOptimizer() {
     Object.keys(stats).forEach((k) => {
       data[k] = Number(stats[k].current || 0);
     });
+    localStorage.setItem("wwm_dmg_current_stats", JSON.stringify(data));
 
-    localStorage.setItem(
-      "wwm_dmg_current_stats",
-      JSON.stringify(data)
-    );
+    const elementData: Record<string, number | string> = {
+      selected: elementStats.selected,
+    };
+    for (const key in elementStats) {
+      if (key === "selected") continue;
+      elementData[key] = Number(
+        elementStats[key as keyof Omit<ElementStats, "selected">].current || 0
+      );
+    }
+    localStorage.setItem("wwm_element_stats", JSON.stringify(elementData));
   };
 
   /* ---------- warnings ---------- */
@@ -186,8 +254,10 @@ export default function DMGOptimizer() {
             <TabsContent value="stats" className="mt-4">
               <StatsPanel
                 stats={stats}
+                elementStats={elementStats}
                 statImpact={statImpact}
                 onChange={onChange}
+                onElementChange={onElementChange}
                 gearBonus={gearBonus}
               />
             </TabsContent>
@@ -199,7 +269,7 @@ export default function DMGOptimizer() {
 
             {/* -------- Gear Customize -------- */}
             <TabsContent value="custom" className="mt-4">
-              <GearCustomizeTab stats={stats} />
+              <GearCustomizeTab stats={stats} elementStats={elementStats} />
             </TabsContent>
 
           </Tabs>
