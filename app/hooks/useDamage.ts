@@ -18,7 +18,7 @@ export interface DamageResult {
   affinity: DamageValue;
 }
 
-import { ElementKey, ELEMENT_TYPES } from "../constants";
+import { ELEMENT_TYPES } from "../constants";
 import { ElementStats } from "../types";
 
 export const useDamage = (
