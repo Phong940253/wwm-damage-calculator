@@ -71,3 +71,30 @@ export const GEAR_SLOTS: {
   { key: "hand", label: "Hand", icon: "hand" },
   { key: "leg", label: "Leg", icon: "leg" },
 ];
+
+export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
+  // ---- Core ----
+  MinPhysicalAttack: "Min Physical ATK",
+  MaxPhysicalAttack: "Max Physical ATK",
+  PhysicalAttackMultiplier: "Physical ATK Multiplier",
+  FlatDamage: "Flat Damage",
+
+  // ---- Rates ----
+  PrecisionRate: "Precision",
+  CriticalRate: "Critical Rate",
+  CriticalDMGBonus: "Critical DMG",
+  AffinityRate: "Affinity Rate",
+  AffinityDMGBonus: "Affinity DMG",
+
+  // ---- Defense ----
+  HP: "HP",
+  PhysicalDefense: "Physical DEF",
+  PhysicalResistance: "Physical RES",
+  PhysicalDMGReduction: "Physical DMG Reduction",
+
+  // ---- Element (generic parts) ----
+  Min: "Min",
+  Max: "Max",
+  Penetration: "Penetration",
+  DMGBonus: "DMG Bonus",
+};
