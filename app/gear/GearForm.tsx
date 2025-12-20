@@ -65,9 +65,9 @@ export default function GearForm({
   /* -------------------- submit -------------------- */
   const submit = () => {
     if (!name) return;
-  
+
     const id = initialGear?.id ?? crypto.randomUUID();
-  
+
     const gear: CustomGear = {
       id,
       name,
@@ -76,37 +76,37 @@ export default function GearForm({
       subs,
       addition: addition ?? undefined,
     };
-  
+
     setCustomGears(g =>
       initialGear
         ? g.map(x => (x.id === id ? gear : x))
         : [...g, gear]
     );
-  
+
     // 🔥 migrate equipped safely
     if (initialGear) {
       setEquipped(prev => {
         const next = { ...prev };
-  
+
         // if this gear was equipped before
         const prevSlot = initialGear.slot;
         const newSlot = slot;
-  
+
         if (prev[prevSlot] === id) {
           // remove old slot
           delete next[prevSlot];
-  
+
           // assign new slot
           next[newSlot] = id;
         }
-  
+
         return next;
       });
     }
-  
+
     onSuccess?.();
   };
-  
+
 
   /* -------------------- helpers -------------------- */
   const addSub = () => {
