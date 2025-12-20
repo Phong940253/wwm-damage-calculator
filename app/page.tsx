@@ -118,7 +118,7 @@ export default function DMGOptimizer() {
 
   if (
     Number(stats.CriticalRate.current || 0) +
-      Number(stats.AffinityRate.current || 0) >
+    Number(stats.AffinityRate.current || 0) >
     100
   ) {
     warnings.push("Crit + Affinity > 100%");
@@ -126,7 +126,7 @@ export default function DMGOptimizer() {
 
   if (
     Number(stats.AffinityRate.current || 0) +
-      Number(stats.AffinityRate.increase || 0) >
+    Number(stats.AffinityRate.increase || 0) >
     100
   ) {
     warnings.push("Affinity > 100%");
@@ -188,6 +188,7 @@ export default function DMGOptimizer() {
                 stats={stats}
                 statImpact={statImpact}
                 onChange={onChange}
+                gearBonus={gearBonus}
               />
             </TabsContent>
 
