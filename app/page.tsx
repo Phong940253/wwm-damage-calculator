@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 
 import { useStats } from "./hooks/useStats";
-import { useGear } from "./hooks/useGear";
+import { useGear } from "./gear/GearContext";
 import { useDamage } from "./hooks/useDamage";
 
 import { aggregateGearStats } from "./utils/gear";
