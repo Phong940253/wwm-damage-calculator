@@ -18,30 +18,23 @@ interface GearFormProps {
   onSuccess?: () => void;
 }
 
-/* Flatten stat options from STAT_GROUPS */
+/* Flatten stat options */
 const STAT_OPTIONS: GearStatKey[] = Object.values(STAT_GROUPS).flat();
 
 /* =======================
    Component
 ======================= */
 
-export default function GearForm({
-  initialGear,
-  onSuccess,
-}: GearFormProps) {
+export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const { setCustomGears, setEquipped } = useGear();
-
 
   const [name, setName] = useState("");
   const [slot, setSlot] = useState<GearSlot>("weapon_1");
 
-  const [main, setMain] = useState<{
-    stat: GearStatKey;
-    value: number;
-  }>({
-    stat: "MaxPhysicalAttack",
-    value: 0,
-  });
+  /** 🔥 MULTI MAIN */
+  const [mains, setMains] = useState<
+    { stat: GearStatKey; value: number }[]
+  >([{ stat: "MaxPhysicalAttack", value: 0 }]);
 
   const [subs, setSubs] = useState<
     { stat: GearStatKey; value: number }[]
@@ -51,20 +44,22 @@ export default function GearForm({
     { stat: GearStatKey; value: number } | null
   >(null);
 
-  /* -------------------- init for edit -------------------- */
+  /* -------------------- init (edit mode) -------------------- */
   useEffect(() => {
     if (!initialGear) return;
 
     setName(initialGear.name);
     setSlot(initialGear.slot);
-    setMain(initialGear.main);
+
+    setMains(initialGear.mains);
+
     setSubs(initialGear.subs ?? []);
     setAddition(initialGear.addition ?? null);
   }, [initialGear]);
 
   /* -------------------- submit -------------------- */
   const submit = () => {
-    if (!name) return;
+    if (!name || mains.length === 0) return;
 
     const id = initialGear?.id ?? crypto.randomUUID();
 
@@ -72,7 +67,7 @@ export default function GearForm({
       id,
       name,
       slot,
-      main,
+      mains,
       subs,
       addition: addition ?? undefined,
     };
@@ -83,23 +78,13 @@ export default function GearForm({
         : [...g, gear]
     );
 
-    // 🔥 migrate equipped safely
     if (initialGear) {
       setEquipped(prev => {
         const next = { ...prev };
-
-        // if this gear was equipped before
-        const prevSlot = initialGear.slot;
-        const newSlot = slot;
-
-        if (prev[prevSlot] === id) {
-          // remove old slot
-          delete next[prevSlot];
-
-          // assign new slot
-          next[newSlot] = id;
+        if (prev[initialGear.slot] === id) {
+          delete next[initialGear.slot];
+          next[slot] = id;
         }
-
         return next;
       });
     }
@@ -107,19 +92,26 @@ export default function GearForm({
     onSuccess?.();
   };
 
-
   /* -------------------- helpers -------------------- */
-  const addSub = () => {
+  const addMain = () =>
+    setMains(m => [...m, { stat: "MaxPhysicalAttack", value: 0 }]);
+
+  const removeMain = (i: number) =>
+    setMains(m => m.filter((_, idx) => idx !== i));
+
+  const addSub = () =>
     setSubs(s => [...s, { stat: "CriticalRate", value: 0 }]);
-  };
 
-  const removeSub = (idx: number) => {
-    setSubs(s => s.filter((_, i) => i !== idx));
-  };
+  const removeSub = (i: number) =>
+    setSubs(s => s.filter((_, idx) => idx !== i));
 
-  /* -------------------- UI -------------------- */
+  /* =======================
+     UI
+  ======================= */
+
   return (
     <div className="space-y-4">
+
       {/* Basic info */}
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -143,33 +135,54 @@ export default function GearForm({
         </div>
       </div>
 
-      {/* Main attribute */}
+      {/* 🔥 Main attributes */}
       <div className="border rounded p-3 space-y-2">
-        <p className="text-sm font-medium">Main Attribute</p>
-
-        <div className="flex gap-2">
-          <select
-            className="flex-1 border rounded px-2 py-1"
-            value={main.stat}
-            onChange={e =>
-              setMain({ ...main, stat: e.target.value as GearStatKey })
-            }
-          >
-            {STAT_OPTIONS.map(s => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-
-          <Input
-            type="number"
-            value={main.value}
-            onChange={e =>
-              setMain({ ...main, value: Number(e.target.value) })
-            }
-          />
+        <div className="flex justify-between items-center">
+          <p className="text-sm font-medium">Main Attributes</p>
+          <Button size="sm" variant="secondary" onClick={addMain}>
+            + Add
+          </Button>
         </div>
+
+        {mains.map((m, i) => (
+          <div key={i} className="flex gap-2">
+            <select
+              className="flex-1 border rounded px-2 py-1"
+              value={m.stat}
+              onChange={e => {
+                const v = [...mains];
+                v[i].stat = e.target.value as GearStatKey;
+                setMains(v);
+              }}
+            >
+              {STAT_OPTIONS.map(s => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <Input
+              type="number"
+              value={m.value}
+              onChange={e => {
+                const v = [...mains];
+                v[i].value = Number(e.target.value);
+                setMains(v);
+              }}
+            />
+
+            {mains.length > 1 && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => removeMain(i)}
+              >
+                ✕
+              </Button>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Sub attributes */}
@@ -209,18 +222,14 @@ export default function GearForm({
               }}
             />
 
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => removeSub(i)}
-            >
+            <Button size="icon" variant="ghost" onClick={() => removeSub(i)}>
               ✕
             </Button>
           </div>
         ))}
       </div>
 
-      {/* Addition attribute */}
+      {/* Addition */}
       <div className="border rounded p-3 space-y-2">
         <p className="text-sm font-medium">Additional Attribute</p>
 
@@ -230,10 +239,7 @@ export default function GearForm({
               className="flex-1 border rounded px-2 py-1"
               value={addition.stat}
               onChange={e =>
-                setAddition({
-                  ...addition,
-                  stat: e.target.value as GearStatKey,
-                })
+                setAddition({ ...addition, stat: e.target.value as GearStatKey })
               }
             >
               {STAT_OPTIONS.map(s => (
@@ -247,18 +253,11 @@ export default function GearForm({
               type="number"
               value={addition.value}
               onChange={e =>
-                setAddition({
-                  ...addition,
-                  value: Number(e.target.value),
-                })
+                setAddition({ ...addition, value: Number(e.target.value) })
               }
             />
 
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setAddition(null)}
-            >
+            <Button size="icon" variant="ghost" onClick={() => setAddition(null)}>
               ✕
             </Button>
           </div>
@@ -276,7 +275,7 @@ export default function GearForm({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between items-center pt-2">
+      <div className="flex justify-between pt-2">
         <Button onClick={submit}>
           {initialGear ? "Save Changes" : "Add Gear"}
         </Button>

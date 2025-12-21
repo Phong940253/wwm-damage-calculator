@@ -65,7 +65,8 @@ export interface CustomGear {
   slot: GearSlot;
 
   /** exactly 1 */
-  main: GearAttribute;
+  main?: GearAttribute | null;
+  mains: GearAttribute[];
 
   /** 0..n */
   subs: GearAttribute[];

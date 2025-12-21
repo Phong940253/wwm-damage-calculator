@@ -7,14 +7,13 @@ export const aggregateGearStats = (
   const bonus: Record<string, number> = {};
 
   Object.values(equipped).forEach((id) => {
-    const gear = gears.find(g => g.id === id);
+    const gear = gears.find((g) => g.id === id);
     if (!gear) return;
 
-    [gear.main, ...gear.subs, gear.addition]
+    [...gear.mains, ...gear.subs, gear.addition]
       .filter(Boolean)
-      .forEach(attr => {
-        bonus[attr!.stat] =
-          (bonus[attr!.stat] || 0) + attr!.value;
+      .forEach((attr) => {
+        bonus[attr!.stat] = (bonus[attr!.stat] || 0) + attr!.value;
       });
   });
 

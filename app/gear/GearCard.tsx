@@ -24,19 +24,22 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
   const isEquipped = equipped[gear.slot] === gear.id;
 
   const equip = () => {
-    setEquipped((prev) => ({
+    setEquipped(prev => ({
       ...prev,
       [gear.slot]: gear.id,
     }));
   };
 
   const unequip = () => {
-    setEquipped((prev) => {
+    setEquipped(prev => {
       const next = { ...prev };
       delete next[gear.slot];
       return next;
     });
   };
+
+  /** 🔁 backward compatibility */
+  const mains = gear.mains;
 
   return (
     <Card className="p-4 space-y-3 relative">
@@ -67,25 +70,36 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
 
           <DropdownMenuContent align="end">
             {isEquipped ? (
-              <DropdownMenuItem onClick={unequip}>Unequip</DropdownMenuItem>
+              <DropdownMenuItem onClick={unequip}>
+                Unequip
+              </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={equip}>Equip</DropdownMenuItem>
+              <DropdownMenuItem onClick={equip}>
+                Equip
+              </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-400" onClick={onDelete}>
+            <DropdownMenuItem
+              className="text-red-400"
+              onClick={onDelete}
+            >
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Main stat */}
-      <div className="border border-yellow-500/30 bg-yellow-500/5 p-2 rounded-lg">
-        <p className="text-xs text-muted-foreground">Main</p>
-        <p className="text-sm font-medium">
-          {gear.main.stat} +{gear.main.value}
-        </p>
-      </div>
+      {/* 🔥 Main stats */}
+      {mains.length > 0 && (
+        <div className="border border-yellow-500/30 bg-yellow-500/5 p-2 rounded-lg space-y-1">
+          <p className="text-xs text-muted-foreground">Main</p>
+          {mains.map((m, i) => (
+            <p key={i} className="text-sm font-medium">
+              • {m.stat} +{m.value}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* Sub stats */}
       {gear.subs?.length > 0 && (

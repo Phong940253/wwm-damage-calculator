@@ -59,7 +59,7 @@ export function computeOptimizeResults(
   let total = 0;
 
   const addGear = (gear: CustomGear, dir: 1 | -1) => {
-    const attrs = [gear.main, ...gear.subs];
+    const attrs = [...gear.mains, ...gear.subs];
     if (gear.addition) attrs.push(gear.addition);
     attrs.forEach((a) => {
       bonus[a.stat] = (bonus[a.stat] || 0) + dir * a.value;
