@@ -1,3 +1,4 @@
+// app\constants.ts
 import { GearSlot, InputStats } from "./types";
 
 export const ELEMENT_TYPES = [

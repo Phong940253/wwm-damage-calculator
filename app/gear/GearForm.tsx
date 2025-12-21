@@ -6,6 +6,13 @@ import { CustomGear, GearSlot, InputStats } from "../types";
 import { GEAR_SLOTS, STAT_GROUPS } from "../constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { callGeminiVision } from "@/lib/gemini";
+import { normalizeStatKey } from "@/lib/normalizeStat";
+import { fileToBase64 } from "@/lib/utils";
+import { GEAR_OCR_PROMPT } from "./gearOcrSchema";
+import { GearOcrResult } from "./gearOcrSchema";
+import { useRef } from "react";
+
 
 /* =======================
    Types
@@ -21,6 +28,7 @@ interface GearFormProps {
 /* Flatten stat options */
 const STAT_OPTIONS: GearStatKey[] = Object.values(STAT_GROUPS).flat();
 
+
 /* =======================
    Component
 ======================= */
@@ -32,6 +40,8 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const [slot, setSlot] = useState<GearSlot>("weapon_1");
 
   /** 🔥 MULTI MAIN */
+
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const [mains, setMains] = useState<
     { stat: GearStatKey; value: number }[]
   >([{ stat: "MaxPhysicalAttack", value: 0 }]);
@@ -43,6 +53,69 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const [addition, setAddition] = useState<
     { stat: GearStatKey; value: number } | null
   >(null);
+
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const handleOcr = async (file: File) => {
+    console.log("OCR start", file.name, file.size);
+    setOcrLoading(true);
+
+    try {
+      const base64 = await fileToBase64(file);
+      const result: GearOcrResult = await callGeminiVision(
+        base64,
+        GEAR_OCR_PROMPT
+      );
+
+      if (result.name) setName(result.name);
+      if (result.slot) setSlot(result.slot as GearSlot);
+
+      if (result.mains) {
+        const parsedMains: { stat: keyof InputStats; value: number }[] =
+          result.mains
+            .map((m: { stat: string; value: number }) => {
+              const stat = normalizeStatKey(m.stat);
+              if (!stat) return null;
+              return { stat, value: m.value };
+            })
+            .filter(
+              (v): v is { stat: keyof InputStats; value: number } =>
+                v !== null
+            );
+
+        setMains(parsedMains);
+      }
+
+      if (result.subs) {
+        const parsedSubs: { stat: keyof InputStats; value: number }[] =
+          result.subs
+            .map((s: { stat: string; value: number }) => {
+              const stat = normalizeStatKey(s.stat);
+              if (!stat) return null;
+              return { stat, value: s.value };
+            })
+            .filter(
+              (v): v is { stat: keyof InputStats; value: number } =>
+                v !== null
+            );
+
+        setSubs(parsedSubs);
+      }
+
+
+      if (result.addition) {
+        const stat = normalizeStatKey(result.addition.stat);
+        if (stat) {
+          setAddition({
+            stat,
+            value: result.addition.value,
+          });
+        }
+      }
+
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   /* -------------------- init (edit mode) -------------------- */
   useEffect(() => {
@@ -279,10 +352,29 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         <Button onClick={submit}>
           {initialGear ? "Save Changes" : "Add Gear"}
         </Button>
-
-        <Button variant="outline" disabled>
-          OCR (TODO)
+        <Button
+          variant="outline"
+          onClick={() => fileRef.current?.click()}
+        >
+          OCR
         </Button>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            console.log("Selected file:", file); // 🔍 DEBUG
+            handleOcr(file);
+
+            // allow re-select same image
+            e.target.value = "";
+          }}
+        />
       </div>
     </div>
   );
