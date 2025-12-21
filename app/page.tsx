@@ -134,10 +134,15 @@ export default function DMGOptimizer() {
     value: string
   ) => {
     setElementStats((prev) => {
+      // ---- selected element ----
       if (key === "selected") {
-        return { ...prev, selected: value as any };
+        return {
+          ...prev,
+          selected: value as ElementStats["selected"],
+        };
       }
 
+      // ---- element stat ----
       return {
         ...prev,
         [key]: {

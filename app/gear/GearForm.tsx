@@ -54,6 +54,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     { stat: GearStatKey; value: number } | null
   >(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [ocrLoading, setOcrLoading] = useState(false);
   const handleOcr = async (file: File) => {
     console.log("OCR start", file.name, file.size);
@@ -64,7 +65,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       const result: GearOcrResult = await callGeminiVision(
         base64,
         GEAR_OCR_PROMPT
-      );
+      ) as GearOcrResult;
 
       if (result.name) setName(result.name);
       if (result.slot) setSlot(result.slot as GearSlot);
