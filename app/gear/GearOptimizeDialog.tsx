@@ -79,7 +79,8 @@ export default function GearOptimizeDialog({
                                         <div className="flex justify-between">
                                             <span>#{i + 1}</span>
                                             <span className="text-emerald-500">
-                                                +{r.percentGain.toFixed(2)}%
+                                                {r.percentGain >= 0 ? "+" : ""}
+                                                {r.percentGain.toFixed(2)}%
                                             </span>
                                         </div>
                                         <div className="text-2xl font-bold">

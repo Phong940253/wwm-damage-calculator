@@ -53,6 +53,7 @@ export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
     "PhysicalDefense",
     "PhysicalResistance",
     "PhysicalDMGReduction",
+    "PhysicalPenetration",
   ],
 };
 
@@ -101,6 +102,7 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   PhysicalDefense: "Physical Defense",
   PhysicalResistance: "Physical Resistance",
   PhysicalDMGReduction: "Physical DMG Reduction",
+  PhysicalPenetration: "Physical Penetration",
 
   // ---- Element (generic parts) ----
   Min: "Min",

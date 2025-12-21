@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 
 import { useStats } from "./hooks/useStats";
+import { useElementStats } from "./hooks/useElementStats";
 import { useGear } from "./gear/GearContext";
 import { useDamage } from "./hooks/useDamage";
 
@@ -101,9 +102,8 @@ export default function DMGOptimizer() {
 
   /* ---------- stats ---------- */
   const { stats, setStats } = useStats(INITIAL_STATS);
-  const [elementStats, setElementStats] = useState<ElementStats>(
-    INITIAL_ELEMENT_STATS
-  );
+  const { elementStats, setElementStats } =
+    useElementStats(INITIAL_ELEMENT_STATS);
 
   /* ---------- gear ---------- */
   const { customGears, equipped } = useGear();
@@ -133,8 +133,21 @@ export default function DMGOptimizer() {
     field: "current" | "increase" | "selected",
     value: string
   ) => {
-    setElementStats((prev) => ({ ...prev, [key]: value }));
+    setElementStats((prev) => {
+      if (key === "selected") {
+        return { ...prev, selected: value as any };
+      }
+
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [field]: value === "" ? "" : Number(value),
+        },
+      };
+    });
   };
+
 
   const applyIncreaseToCurrent = () => {
     setStats((prev) => {
@@ -168,23 +181,28 @@ export default function DMGOptimizer() {
     );
     if (!ok) return;
 
+    // ----- normal stats -----
     const data: Record<string, number> = {};
     Object.keys(stats).forEach((k) => {
       data[k] = Number(stats[k].current || 0);
     });
     localStorage.setItem("wwm_dmg_current_stats", JSON.stringify(data));
 
+    // ----- element stats (FULL STRUCTURE) -----
     const elementData: Record<string, number | string> = {
       selected: elementStats.selected,
     };
+
     for (const key in elementStats) {
       if (key === "selected") continue;
       elementData[key] = Number(
         elementStats[key as keyof Omit<ElementStats, "selected">].current || 0
       );
     }
+
     localStorage.setItem("wwm_element_stats", JSON.stringify(elementData));
   };
+
 
   /* ---------- warnings ---------- */
 
