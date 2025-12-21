@@ -76,18 +76,18 @@ export const GEAR_SLOTS: {
 ];
 
 export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
-  // ---- Core ----
-  MinPhysicalAttack: "Min Physical Attack",
-  MaxPhysicalAttack: "Max Physical Attack",
-  PhysicalAttackMultiplier: "Physical ATK Multiplier",
-  FlatDamage: "Flat Damage",
-
   // ---- Attributes ----
   Body: "Body",
   Power: "Power",
   Defense: "Defense",
   Agility: "Agility",
   Momentum: "Momentum",
+
+  // ---- Core ----
+  MinPhysicalAttack: "Min Physical Attack",
+  MaxPhysicalAttack: "Max Physical Attack",
+  PhysicalAttackMultiplier: "Physical ATK Multiplier",
+  FlatDamage: "Flat Damage",
 
   // ---- Rates ----
   PrecisionRate: "Precision Rate",

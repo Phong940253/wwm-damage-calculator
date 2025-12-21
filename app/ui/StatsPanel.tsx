@@ -33,6 +33,26 @@ interface Props {
   ) => void;
 }
 
+const getDerivedFromAttributes = (
+  stats: InputStats,
+  gearBonus: Record<string, number>
+) => {
+  const v = (k: keyof InputStats) =>
+    Number(stats[k]?.current || 0) + (gearBonus[k] || 0);
+
+  const agility = v("Agility");
+  const momentum = v("Momentum");
+  const power = v("Power");
+
+  return {
+    MinPhysicalAttack: agility * 1 + power * 0.246,
+    MaxPhysicalAttack: momentum * 0.9 + power * 1.315,
+    CriticalRate: agility * 0.075,
+    AffinityRate: momentum * 0.04,
+  };
+};
+
+
 /* =======================
    Component
 ======================= */
@@ -122,9 +142,12 @@ export default function StatsPanel({
 
                 const impact = statImpact[k] ?? 0;
 
+                const derived = getDerivedFromAttributes(stats, gearBonus);
+
                 const gear = gearBonus[k] || 0;
+                const derivedValue = derived[k as keyof typeof derived] || 0;
                 const base = Number(stat.current || 0);
-                const total = base + gear;
+                const total = base + gear + derivedValue;
 
                 return (
                   <Card
@@ -171,7 +194,7 @@ export default function StatsPanel({
                           }
 
                           // Base = Total - Gear
-                          const nextBase = Number(v) - gear;
+                          const nextBase = Number(v) - gear - derivedValue;
                           handleStatChange(k, "current", String(nextBase));
                         }}
                         onBlur={() => {
@@ -189,7 +212,13 @@ export default function StatsPanel({
                           Gear: {gear > 0 ? "+" : ""}
                           {gear}
                         </span>
+                        {derivedValue !== 0 && (
+                          <span className="text-purple-400">
+                            Attr: +{derivedValue.toFixed(2)}
+                          </span>
+                        )}
                       </div>
+
 
                       {/* ---------- Increase ---------- */}
                       <div className="flex items-center gap-2">
