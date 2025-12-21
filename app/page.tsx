@@ -42,6 +42,11 @@ const INITIAL_STATS: InputStats = {
   PhysicalDMGBonus: { current: 0.0, increase: 0 },
   PhysicalDMGReduction: { current: 0.0, increase: 0 },
   DamageBoost: { current: 0.0, increase: 0 },
+  Body: { current: 0, increase: 0 },
+  Power: { current: 0, increase: 0 },
+  Defense: { current: 0, increase: 0 },
+  Agility: { current: 0, increase: 0 },
+  Momentum: { current: 0, increase: 0 },
 };
 
 const INITIAL_ELEMENT_STATS: ElementStats = {

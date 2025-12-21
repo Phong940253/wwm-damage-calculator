@@ -38,6 +38,7 @@ export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
     "PhysicalAttackMultiplier",
     "FlatDamage",
   ],
+  Attributes: ["Body", "Power", "Defense", "Agility", "Momentum"],
   Element: ["MainElementMultiplier", ...ELEMENT_STAT_KEYS],
   Rates: [
     "PrecisionRate",
@@ -80,6 +81,13 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   MaxPhysicalAttack: "Max Physical Attack",
   PhysicalAttackMultiplier: "Physical ATK Multiplier",
   FlatDamage: "Flat Damage",
+
+  // ---- Attributes ----
+  Body: "Body",
+  Power: "Power",
+  Defense: "Defense",
+  Agility: "Agility",
+  Momentum: "Momentum",
 
   // ---- Rates ----
   PrecisionRate: "Precision Rate",

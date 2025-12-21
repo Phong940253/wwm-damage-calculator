@@ -26,8 +26,38 @@ export const useDamage = (
   elementStats: ElementStats,
   gearBonus: Record<string, number>
 ) => {
+  const getDerivedFromAttributes = (useFinal: boolean) => {
+    const cur = (k: keyof InputStats) => Number(stats[k]?.current || 0);
+
+    const inc = (k: keyof InputStats) => Number(stats[k]?.increase || 0);
+
+    const gear = (k: keyof InputStats) => Number(gearBonus[k] || 0);
+
+    // value used for damage calculation
+    const v = (k: keyof InputStats) =>
+      useFinal ? cur(k) + inc(k) + gear(k) : cur(k) + gear(k);
+
+    const agility = v("Agility");
+    const momentum = v("Momentum");
+    const power = v("Power");
+
+    return {
+      // ---- Derived Physical Attack ----
+      minAtk: agility * 1 + power * 0.246,
+
+      maxAtk: momentum * 0.9 + power * 1.315,
+
+      // ---- Derived Rates ----
+      critRate: agility * 0.075,
+
+      affinityRate: momentum * 0.04,
+    };
+  };
+
   // ---------- helpers ----------
   const gBase = (k: string) => {
+    const derived = getDerivedFromAttributes(true);
+
     if (k === "MINAttributeAttackOfYOURType")
       return Number(elementStats[`${elementStats.selected}Min`]?.current || 0);
     if (k === "MAXAttributeAttackOfYOURType")
@@ -58,10 +88,44 @@ export const useDamage = (
         0
       );
     }
+    if (k === "MinPhysicalAttack") {
+      return (
+        Number(stats.MinPhysicalAttack?.current || 0) +
+        (gearBonus.MinPhysicalAttack || 0) +
+        derived.minAtk
+      );
+    }
+
+    if (k === "MaxPhysicalAttack") {
+      return (
+        Number(stats.MaxPhysicalAttack?.current || 0) +
+        (gearBonus.MaxPhysicalAttack || 0) +
+        derived.maxAtk
+      );
+    }
+
+    if (k === "CriticalRate") {
+      return (
+        Number(stats.CriticalRate?.current || 0) +
+        (gearBonus.CriticalRate || 0) +
+        derived.critRate
+      );
+    }
+
+    if (k === "AffinityRate") {
+      return (
+        Number(stats.AffinityRate?.current || 0) +
+        (gearBonus.AffinityRate || 0) +
+        derived.affinityRate
+      );
+    }
+
     return Number(stats[k]?.current || 0) + (gearBonus[k] || 0);
   };
 
   const gFinal = (k: string) => {
+    const derived = getDerivedFromAttributes(false);
+
     if (k === "MINAttributeAttackOfYOURType")
       return (
         Number(elementStats[`${elementStats.selected}Min`]?.current || 0) +
@@ -110,6 +174,43 @@ export const useDamage = (
         0
       );
     }
+
+    if (k === "MinPhysicalAttack") {
+      return (
+        Number(stats.MinPhysicalAttack?.current || 0) +
+        Number(stats.MinPhysicalAttack?.increase || 0) +
+        (gearBonus.MinPhysicalAttack || 0) +
+        derived.minAtk
+      );
+    }
+
+    if (k === "MaxPhysicalAttack") {
+      return (
+        Number(stats.MaxPhysicalAttack?.current || 0) +
+        Number(stats.MaxPhysicalAttack?.increase || 0) +
+        (gearBonus.MaxPhysicalAttack || 0) +
+        derived.maxAtk
+      );
+    }
+
+    if (k === "CriticalRate") {
+      return (
+        Number(stats.CriticalRate?.current || 0) +
+        Number(stats.CriticalRate?.increase || 0) +
+        (gearBonus.CriticalRate || 0) +
+        derived.critRate
+      );
+    }
+
+    if (k === "AffinityRate") {
+      return (
+        Number(stats.AffinityRate?.current || 0) +
+        Number(stats.AffinityRate?.increase || 0) +
+        (gearBonus.AffinityRate || 0) +
+        derived.affinityRate
+      );
+    }
+
     return (
       Number(stats[k]?.current || 0) +
       Number(stats[k]?.increase || 0) +
