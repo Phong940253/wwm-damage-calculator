@@ -17,7 +17,7 @@ export function getStatLabel(key: string, elementStats?: ElementStats): string {
         const suffix = key.slice(el.key.length); // Min / Max / Penetration / DMGBonus
         const suffixLabel = STAT_LABELS[suffix] ?? splitCamelCase(suffix);
         if (suffix === "Min" || suffix === "Max") {
-          return `${el.label} ${suffixLabel} Attack`;
+          return `${suffixLabel} ${el.label} Attack`;
         }
 
         return `${el.label} ${suffixLabel}`;

@@ -44,6 +44,7 @@ export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
     "CriticalDMGBonus",
     "AffinityRate",
     "AffinityDMGBonus",
+    "DamageBoost",
   ],
   Defense: [
     "HP",
@@ -74,22 +75,22 @@ export const GEAR_SLOTS: {
 
 export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   // ---- Core ----
-  MinPhysicalAttack: "Min Physical ATK",
-  MaxPhysicalAttack: "Max Physical ATK",
+  MinPhysicalAttack: "Min Physical Attack",
+  MaxPhysicalAttack: "Max Physical Attack",
   PhysicalAttackMultiplier: "Physical ATK Multiplier",
   FlatDamage: "Flat Damage",
 
   // ---- Rates ----
-  PrecisionRate: "Precision",
+  PrecisionRate: "Precision Rate",
   CriticalRate: "Critical Rate",
   CriticalDMGBonus: "Critical DMG",
   AffinityRate: "Affinity Rate",
   AffinityDMGBonus: "Affinity DMG",
 
   // ---- Defense ----
-  HP: "HP",
-  PhysicalDefense: "Physical DEF",
-  PhysicalResistance: "Physical RES",
+  HP: "Max HP",
+  PhysicalDefense: "Physical Defense",
+  PhysicalResistance: "Physical Resistance",
   PhysicalDMGReduction: "Physical DMG Reduction",
 
   // ---- Element (generic parts) ----
@@ -97,4 +98,5 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   Max: "Max",
   Penetration: "Penetration",
   DMGBonus: "DMG Bonus",
+  DamageBoost: "Damage Boost",
 };

@@ -25,7 +25,7 @@ import { ELEMENT_DEFAULTS } from "./constants";
 /* ------------------ initial stats ------------------ */
 
 const INITIAL_STATS: InputStats = {
-  HP: { current: 36264, increase: 0 },
+  HP: { current: 50000, increase: 0 },
   PhysicalAttackMultiplier: { current: 326.29, increase: 0 },
   PhysicalDefense: { current: 179, increase: 0 },
   FlatDamage: { current: 378, increase: 0 },
@@ -41,6 +41,7 @@ const INITIAL_STATS: InputStats = {
   PhysicalResistance: { current: 1.8, increase: 0 },
   PhysicalDMGBonus: { current: 0.0, increase: 0 },
   PhysicalDMGReduction: { current: 0.0, increase: 0 },
+  DamageBoost: { current: 0.0, increase: 0 },
 };
 
 const INITIAL_ELEMENT_STATS: ElementStats = {
