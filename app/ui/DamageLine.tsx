@@ -6,7 +6,7 @@ interface Props {
   label: string;
   value: number;
   percent: number;
-  color: "emerald" | "amber" | "silver";
+  color: "emerald" | "amber" | "silver" | "gold";
 }
 
 export default function DamageLine({
@@ -19,12 +19,14 @@ export default function DamageLine({
     emerald: "text-emerald-500",
     amber: "text-amber-500",
     silver: "text-zinc-300",
+    gold: "text-yellow-300",
   };
 
   const glowClasses = {
     emerald: "bg-emerald-500/20",
     amber: "bg-amber-500/20",
     silver: "bg-zinc-300/20",
+    gold: "bg-yellow-300/20",
   };
 
   return (

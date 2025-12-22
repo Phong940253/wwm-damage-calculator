@@ -16,6 +16,7 @@ interface Props {
   result: {
     min: DamageResult;
     normal: DamageResult;
+    critical: DamageResult;
     affinity: DamageResult;
   };
   onApplyIncrease: () => void;
@@ -72,6 +73,13 @@ export default function DamagePanel({
           value={result.normal.value}
           percent={result.normal.percent}
           color="emerald"
+        />
+
+        <DamageLine
+          label="Critical (Max Proc)"
+          value={result.critical.value}
+          percent={result.critical.percent}
+          color="gold"
         />
 
         <DamageLine

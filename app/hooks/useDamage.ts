@@ -5,6 +5,7 @@ import {
   calcMinimumDamage,
   calcAffinityDamage,
   calcExpectedNormal,
+  calcCriticalDamage,
 } from "../utils/damage";
 
 interface DamageValue {
@@ -15,6 +16,7 @@ interface DamageValue {
 export interface DamageResult {
   min: DamageValue;
   normal: DamageValue;
+  critical: DamageValue;
   affinity: DamageValue;
 }
 
@@ -225,6 +227,7 @@ export const useDamage = (
       return {
         min: calcMinimumDamage(g),
         normal: calcExpectedNormal(g, affinity),
+        critical: calcCriticalDamage(g),
         affinity,
       };
     };
@@ -242,6 +245,10 @@ export const useDamage = (
       normal: {
         value: Math.round(final.normal * 10) / 10,
         percent: pct(base.normal, final.normal),
+      },
+      critical: {
+        value: Math.round(final.critical * 10) / 10,
+        percent: pct(base.critical, final.critical),
       },
       affinity: {
         value: Math.round(final.affinity * 10) / 10,
