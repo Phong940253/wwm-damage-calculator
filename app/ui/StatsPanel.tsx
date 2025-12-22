@@ -52,7 +52,6 @@ const getDerivedFromAttributes = (
   };
 };
 
-
 /* =======================
    Component
 ======================= */
@@ -166,13 +165,6 @@ export default function StatsPanel({
                         </span>
 
                         <div className="flex gap-2">
-                          {gear !== 0 && (
-                            <Badge className="bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                              Gear {gear > 0 ? "+" : ""}
-                              {gear}
-                            </Badge>
-                          )}
-
                           {impact !== 0 && (
                             <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                               {impact > 0 ? "+" : ""}
@@ -206,17 +198,27 @@ export default function StatsPanel({
                         className="bg-background/60 border-[#363b3d]"
                       />
                       {/* ---------- Breakdown ---------- */}
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Base: {base}</span>
-                        <span className="text-blue-400">
-                          Gear: {gear > 0 ? "+" : ""}
-                          {gear}
-                        </span>
-                        {derivedValue !== 0 && (
-                          <span className="text-purple-400">
-                            Attr: +{derivedValue.toFixed(2)}
-                          </span>
+                      <div className="flex text-xs text-muted-foreground gap-2">
+                        {
+                          base !== 0 && (
+                            <Badge className="bg-gray-500/15 text-gray-400 border border-gray-500/30">
+                              Base {base.toFixed(2)}
+                            </Badge>
+                          )
+                        }
+                        {gear !== 0 && (
+                          <Badge className="bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                            Gear {gear > 0 ? "+" : ""}
+                            {gear.toFixed(2)}
+                          </Badge>
                         )}
+                        {
+                          derivedValue !== 0 && (
+                            <Badge className="bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                              Attr +{derivedValue.toFixed(2)}
+                            </Badge>
+                          )
+                        }
                       </div>
 
 

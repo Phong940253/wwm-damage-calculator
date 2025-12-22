@@ -28,6 +28,96 @@ export const useDamage = (
   elementStats: ElementStats,
   gearBonus: Record<string, number>
 ) => {
+  const makeTestGWithIncrease = (key: string) => {
+    return (k: string) => {
+      const derived = getDerivedFromAttributes(true);
+
+      // element stats
+      if (k === "MINAttributeAttackOfYOURType")
+        return (
+          Number(elementStats[`${elementStats.selected}Min`]?.current || 0) +
+          (k === key
+            ? Number(elementStats[`${elementStats.selected}Min`]?.increase || 0)
+            : 0)
+        );
+      if (k === "MAXAttributeAttackOfYOURType")
+        return (
+          Number(elementStats[`${elementStats.selected}Max`]?.current || 0) +
+          (k === key
+            ? Number(elementStats[`${elementStats.selected}Max`]?.increase || 0)
+            : 0)
+        );
+      if (k === "AttributeAttackPenetrationOfYOURType")
+        return (
+          Number(
+            elementStats[`${elementStats.selected}Penetration`]?.current || 0
+          ) +
+          (k === key
+            ? Number(
+                elementStats[`${elementStats.selected}Penetration`]?.increase ||
+                  0
+              )
+            : 0)
+        );
+      if (k === "AttributeAttackDMGBonusOfYOURType")
+        return (
+          Number(
+            elementStats[`${elementStats.selected}DMGBonus`]?.current || 0
+          ) +
+          (k === key
+            ? Number(
+                elementStats[`${elementStats.selected}DMGBonus`]?.increase || 0
+              )
+            : 0)
+        );
+
+      if (k === "MINAttributeAttackOfOtherType") {
+        const otherElements = ELEMENT_TYPES.filter(
+          (e) => e.key !== elementStats.selected
+        );
+        return otherElements.reduce(
+          (acc, e) =>
+            acc +
+            (Number(elementStats[`${e.key}Min`]?.current || 0) +
+              (k === key
+                ? Number(elementStats[`${e.key}Min`]?.increase || 0)
+                : 0)),
+          0
+        );
+      }
+      if (k === "MAXAttributeAttackOfOtherType") {
+        const otherElements = ELEMENT_TYPES.filter(
+          (e) => e.key !== elementStats.selected
+        );
+        return otherElements.reduce(
+          (acc, e) =>
+            acc +
+            (Number(elementStats[`${e.key}Max`]?.current || 0) +
+              (k === key
+                ? Number(elementStats[`${e.key}Max`]?.increase || 0)
+                : 0)),
+          0
+        );
+      }
+
+      // normal stats
+      const base =
+        Number(stats[k as keyof InputStats]?.current || 0) +
+        (gearBonus[k] || 0);
+
+      const inc =
+        k === key ? Number(stats[k as keyof InputStats]?.increase || 0) : 0;
+
+      // derived stats are always recalculated from attributes
+      if (k === "MinPhysicalAttack") return base + inc + derived.minAtk;
+      if (k === "MaxPhysicalAttack") return base + inc + derived.maxAtk;
+      if (k === "CriticalRate") return base + inc + derived.critRate;
+      if (k === "AffinityRate") return base + inc + derived.affinityRate;
+
+      return base + inc;
+    };
+  };
+
   const getDerivedFromAttributes = (useFinal: boolean) => {
     const cur = (k: keyof InputStats) => Number(stats[k]?.current || 0);
 
@@ -269,10 +359,7 @@ export const useDamage = (
         return;
       }
 
-      const testG = (k: string) =>
-        k === key
-          ? Number(stats[k]?.current || 0) + inc + (gearBonus[k] || 0)
-          : gBase(k);
+      const testG = makeTestGWithIncrease(key);
 
       const dmg = calcExpectedNormal(testG, calcAffinityDamage(testG));
 
