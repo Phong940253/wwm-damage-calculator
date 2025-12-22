@@ -12,6 +12,7 @@ import { fileToBase64 } from "@/lib/utils";
 import { GEAR_OCR_PROMPT } from "./gearOcrSchema";
 import { GearOcrResult } from "./gearOcrSchema";
 import { useRef } from "react";
+import { Loader2 } from "lucide-react";
 
 
 /* =======================
@@ -54,7 +55,6 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     { stat: GearStatKey; value: number } | null
   >(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [ocrLoading, setOcrLoading] = useState(false);
   const handleOcr = async (file: File) => {
     console.log("OCR start", file.name, file.size);
@@ -356,8 +356,16 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         <Button
           variant="outline"
           onClick={() => fileRef.current?.click()}
+          disabled={ocrLoading}
         >
-          OCR
+          {ocrLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            "OCR"
+          )}
         </Button>
 
         <input
