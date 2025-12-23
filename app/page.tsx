@@ -1,16 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Swords, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
-
-import { useStats } from "./hooks/useStats";
-import { useElementStats } from "./hooks/useElementStats";
-import { useGear } from "./gear/GearContext";
-import { useDamage } from "./hooks/useDamage";
-
-import { aggregateGearStats } from "./utils/gear";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import StatsPanel from "./ui/StatsPanel";
@@ -21,10 +14,18 @@ import GearEquippedTab from "./gear/GearEquippedTab";
 import GearCustomizeTab from "./gear/GearCustomizeTab";
 import GearCompareTab from "./gear/GearCompareTab";
 
+import { useStats } from "./hooks/useStats";
+import { useElementStats } from "./hooks/useElementStats";
+import { useGear } from "./gear/GearContext";
+import { useDamage } from "./hooks/useDamage";
+
+import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { InputStats, ElementStats } from "./types";
 import { ELEMENT_DEFAULTS } from "./constants";
 
-/* ------------------ initial stats ------------------ */
+/* =========================
+   INITIAL STATS
+========================= */
 
 const INITIAL_STATS: InputStats = {
   HP: { current: 50000, increase: 0 },
@@ -36,14 +37,14 @@ const INITIAL_STATS: InputStats = {
   MaxPhysicalAttack: { current: 1000, increase: 0 },
   PrecisionRate: { current: 85, increase: 0 },
   CriticalRate: { current: 35, increase: 0 },
-  CriticalDMGBonus: { current: 50.0, increase: 0 },
+  CriticalDMGBonus: { current: 50, increase: 0 },
   AffinityRate: { current: 25, increase: 0 },
-  AffinityDMGBonus: { current: 35.0, increase: 0 },
+  AffinityDMGBonus: { current: 35, increase: 0 },
   PhysicalPenetration: { current: 10, increase: 0 },
   PhysicalResistance: { current: 1.8, increase: 0 },
-  PhysicalDMGBonus: { current: 0.0, increase: 0 },
-  PhysicalDMGReduction: { current: 0.0, increase: 0 },
-  DamageBoost: { current: 0.0, increase: 0 },
+  PhysicalDMGBonus: { current: 0, increase: 0 },
+  PhysicalDMGReduction: { current: 0, increase: 0 },
+  DamageBoost: { current: 0, increase: 0 },
   Body: { current: 0, increase: 0 },
   Power: { current: 0, increase: 0 },
   Defense: { current: 0, increase: 0 },
@@ -53,6 +54,7 @@ const INITIAL_STATS: InputStats = {
 
 const INITIAL_ELEMENT_STATS: ElementStats = {
   selected: "bellstrike",
+
   bellstrikeMin: { current: ELEMENT_DEFAULTS.bellstrike.min, increase: 0 },
   bellstrikeMax: { current: ELEMENT_DEFAULTS.bellstrike.max, increase: 0 },
   bellstrikePenetration: {
@@ -63,6 +65,7 @@ const INITIAL_ELEMENT_STATS: ElementStats = {
     current: ELEMENT_DEFAULTS.bellstrike.bonus,
     increase: 0,
   },
+
   stonesplitMin: { current: ELEMENT_DEFAULTS.stonesplit.min, increase: 0 },
   stonesplitMax: { current: ELEMENT_DEFAULTS.stonesplit.max, increase: 0 },
   stonesplitPenetration: {
@@ -73,6 +76,7 @@ const INITIAL_ELEMENT_STATS: ElementStats = {
     current: ELEMENT_DEFAULTS.stonesplit.bonus,
     increase: 0,
   },
+
   silkbindMin: { current: ELEMENT_DEFAULTS.silkbind.min, increase: 0 },
   silkbindMax: { current: ELEMENT_DEFAULTS.silkbind.max, increase: 0 },
   silkbindPenetration: {
@@ -83,6 +87,7 @@ const INITIAL_ELEMENT_STATS: ElementStats = {
     current: ELEMENT_DEFAULTS.silkbind.bonus,
     increase: 0,
   },
+
   bamboocutMin: { current: ELEMENT_DEFAULTS.bamboocut.min, increase: 0 },
   bamboocutMax: { current: ELEMENT_DEFAULTS.bamboocut.max, increase: 0 },
   bamboocutPenetration: {
@@ -95,31 +100,34 @@ const INITIAL_ELEMENT_STATS: ElementStats = {
   },
 };
 
-/* ------------------ main component ------------------ */
+/* =========================
+   MAIN PAGE
+========================= */
 
 export default function DMGOptimizer() {
   const { theme, setTheme } = useTheme();
-  const [showFormula, setShowFormula] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showFormula, setShowFormula] = useState(false);
 
-  // Fix hydration mismatch for theme toggle
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  /* ---------- stats ---------- */
+  /* ---------- state ---------- */
   const { stats, setStats } = useStats(INITIAL_STATS);
-  const { elementStats, setElementStats } =
-    useElementStats(INITIAL_ELEMENT_STATS);
+  const { elementStats, setElementStats } = useElementStats(
+    INITIAL_ELEMENT_STATS
+  );
 
-  /* ---------- gear ---------- */
   const { customGears, equipped } = useGear();
-  const gearBonus = aggregateGearStats(customGears, equipped);
+
+  /* ---------- gear bonus ---------- */
+  const gearBonus = aggregateEquippedGearBonus(customGears, equipped);
 
   /* ---------- damage ---------- */
-  const { result, statImpact } = useDamage(stats, elementStats, gearBonus);
+  const result = useDamage(stats, elementStats, gearBonus);
 
-  /* ---------- handlers ---------- */
+  /* =========================
+     HANDLERS
+  ========================= */
 
   const onChange = (
     key: string,
@@ -141,15 +149,10 @@ export default function DMGOptimizer() {
     value: string
   ) => {
     setElementStats((prev) => {
-      // ---- selected element ----
       if (key === "selected") {
-        return {
-          ...prev,
-          selected: value as ElementStats["selected"],
-        };
+        return { ...prev, selected: value as ElementStats["selected"] };
       }
 
-      // ---- element stat ----
       return {
         ...prev,
         [key]: {
@@ -159,7 +162,6 @@ export default function DMGOptimizer() {
       };
     });
   };
-
 
   const applyIncreaseToCurrent = () => {
     setStats((prev) => {
@@ -177,9 +179,9 @@ export default function DMGOptimizer() {
       const next = { ...prev };
       for (const key in next) {
         if (key === "selected") continue;
-        const stat = next[key as keyof Omit<ElementStats, "selected">];
+        const s = next[key as keyof Omit<ElementStats, "selected">];
         next[key as keyof Omit<ElementStats, "selected">] = {
-          current: Number(stat.current || 0) + Number(stat.increase || 0),
+          current: Number(s.current || 0) + Number(s.increase || 0),
           increase: 0,
         };
       }
@@ -188,19 +190,15 @@ export default function DMGOptimizer() {
   };
 
   const saveCurrentStats = () => {
-    const ok = window.confirm(
-      "Save current stats?\n(Increase values will NOT be saved)"
-    );
-    if (!ok) return;
+    if (!confirm("Save current stats? (Increase will not be saved)")) return;
 
-    // ----- normal stats -----
-    const data: Record<string, number> = {};
+    const statsData: Record<string, number> = {};
     Object.keys(stats).forEach((k) => {
-      data[k] = Number(stats[k].current || 0);
+      statsData[k] = Number(stats[k].current || 0);
     });
-    localStorage.setItem("wwm_dmg_current_stats", JSON.stringify(data));
 
-    // ----- element stats (FULL STRUCTURE) -----
+    localStorage.setItem("wwm_dmg_current_stats", JSON.stringify(statsData));
+
     const elementData: Record<string, number | string> = {
       selected: elementStats.selected,
     };
@@ -215,42 +213,32 @@ export default function DMGOptimizer() {
     localStorage.setItem("wwm_element_stats", JSON.stringify(elementData));
   };
 
-
-  /* ---------- warnings ---------- */
+  /* =========================
+     WARNINGS
+  ========================= */
 
   const warnings: string[] = [];
 
   if (
     Number(stats.CriticalRate.current || 0) +
-    Number(stats.AffinityRate.current || 0) >
+      Number(stats.AffinityRate.current || 0) >
     100
   ) {
     warnings.push("Crit + Affinity > 100%");
   }
 
-  if (
-    Number(stats.AffinityRate.current || 0) +
-    Number(stats.AffinityRate.increase || 0) >
-    100
-  ) {
-    warnings.push("Affinity > 100%");
-  }
-
-  /* ------------------ render ------------------ */
+  /* =========================
+     RENDER
+  ========================= */
 
   return (
-    <div
-      className="
-        min-h-screen p-6 text-foreground transition-colors
-        bg-gradient-to-br from-background via-background/95 to-muted/40
-      "
-    >
+    <div className="min-h-screen p-6 bg-gradient-to-br from-background via-background/95 to-muted/40">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* ---------- header ---------- */}
+        {/* ---------- HEADER ---------- */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Swords className="text-emerald-500" />
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold">
               Where Winds Meet – DMG Optimizer
             </h1>
             <Badge className="border border-emerald-500/40 text-emerald-500">
@@ -260,71 +248,57 @@ export default function DMGOptimizer() {
 
           {mounted && (
             <button
-              onClick={() =>
-                setTheme(theme === "dark" ? "light" : "dark")
-              }
-              className="
-                flex items-center gap-2 rounded-xl
-                border border-border/50
-                bg-card/60 px-3 py-2 text-sm
-                hover:bg-card transition
-              "
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="rounded-xl border px-3 py-2 flex items-center gap-2"
             >
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-              {theme === "dark" ? " Light" : " Dark"}
+              {theme === "dark" ? "Light" : "Dark"}
             </button>
           )}
         </div>
 
-        {/* ---------- content ---------- */}
+        {/* ---------- CONTENT ---------- */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-
-          {/* ================= LEFT ================= */}
-          <Tabs defaultValue="stats" className="space-y-4">
-
-            <TabsList className="w-full justify-start">
+          {/* LEFT */}
+          <Tabs defaultValue="stats">
+            <TabsList>
               <TabsTrigger value="stats">All Stats</TabsTrigger>
               <TabsTrigger value="equipped">Gear Equipped</TabsTrigger>
               <TabsTrigger value="custom">Gear Customize</TabsTrigger>
               <TabsTrigger value="compare">Gear Compare</TabsTrigger>
             </TabsList>
 
-            {/* -------- All Stats -------- */}
-            <TabsContent value="stats" className="mt-4">
+            <TabsContent value="stats">
               <StatsPanel
                 stats={stats}
                 elementStats={elementStats}
-                statImpact={statImpact}
+                gearBonus={gearBonus}
+                statImpact={{}}
                 onChange={onChange}
                 onElementChange={onElementChange}
-                gearBonus={gearBonus}
               />
             </TabsContent>
 
-            {/* -------- Gear Equipped -------- */}
-            <TabsContent value="equipped" className="mt-4">
+            <TabsContent value="equipped">
               <GearEquippedTab />
             </TabsContent>
 
-            {/* -------- Gear Customize -------- */}
-            <TabsContent value="custom" className="mt-4">
+            <TabsContent value="custom">
               <GearCustomizeTab stats={stats} elementStats={elementStats} />
             </TabsContent>
 
-            {/* -------- Gear Compare -------- */}
-            <TabsContent value="compare" className="mt-4">
+            <TabsContent value="compare">
               <GearCompareTab stats={stats} elementStats={elementStats} />
             </TabsContent>
-
           </Tabs>
 
-          {/* ================= RIGHT ================= */}
+          {/* RIGHT */}
           <DamagePanel
             result={result}
             onApplyIncrease={applyIncreaseToCurrent}
             onSaveCurrent={saveCurrentStats}
             showFormula={showFormula}
-            toggleFormula={() => setShowFormula(v => !v)}
+            toggleFormula={() => setShowFormula((v) => !v)}
             formulaSlot={<FormulaPanel />}
             warnings={warnings}
           />

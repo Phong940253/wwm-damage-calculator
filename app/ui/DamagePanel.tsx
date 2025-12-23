@@ -7,19 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Zap, ArrowUpRight } from "lucide-react";
 import DamageLine from "./DamageLine";
-
-interface DamageResult {
-  value: number;
-  percent: number;
-}
+import { DamageResult } from "../domain/damage/type";
 
 interface Props {
-  result: {
-    min: DamageResult;
-    normal: DamageResult;
-    critical: DamageResult;
-    affinity: DamageResult;
-  };
+  result: DamageResult;
   onApplyIncrease: () => void;
   onSaveCurrent: () => void;
   showFormula: boolean;
