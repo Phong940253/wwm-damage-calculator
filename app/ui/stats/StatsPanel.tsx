@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { STAT_GROUPS, ELEMENT_TYPES } from "../constants";
-import { InputStats, ElementStats } from "../types";
+import { STAT_GROUPS, ELEMENT_TYPES } from "../../constants";
+import { InputStats, ElementStats } from "../../types";
 import { getStatLabel } from "@/app/utils/statLabel";
 
 /* =======================

@@ -2,7 +2,7 @@
 "use client";
 
 import { Separator } from "@/components/ui/separator";
-import { MathFormula, FormulaLegend } from "../formula";
+import { MathFormula, FormulaLegend } from "../../formula";
 
 export default function FormulaPanel() {
   return (

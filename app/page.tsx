@@ -1,19 +1,21 @@
 "use client";
 
-import StatsPanel from "./ui/StatsPanel";
-import DamagePanel from "./ui/DamagePanel";
-import FormulaPanel from "./ui/FormulaPanel";
+import StatsPanel from "./ui/stats/StatsPanel";
+import DamagePanel from "./ui/damage/DamagePanel";
+import FormulaPanel from "./ui/formula/FormulaPanel";
 import { useDMGOptimizer } from "./hooks/useDMGOptimizer";
 import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "./constants";
 import { useState } from "react";
 import { ElementStats } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import GearEquippedTab from "./gear/GearEquippedTab";
-import GearCustomizeTab from "./gear/GearCustomizeTab";
-import GearCompareTab from "./gear/GearCompareTab";
+import GearEquippedTab from "./ui/gear/GearEquippedTab";
+import GearCustomizeTab from "./ui/gear/GearCustomizeTab";
+import GearCompareTab from "./ui/gear/GearCompareTab";
 import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { Moon, Sun, Swords } from "lucide-react";
+import { useEffect } from "react";
+
 
 export default function DMGOptimizer() {
   const {
@@ -32,7 +34,12 @@ export default function DMGOptimizer() {
   const [showFormula, setShowFormula] = useState(false);
 
   const { theme, setTheme } = useTheme();
+
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const applyIncreaseToCurrent = () => {
     setStats((prev) => {

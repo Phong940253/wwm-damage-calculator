@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useGear } from "./GearContext";
+import { useGear } from "../../providers/GearContext";
 import GearCard from "./GearCard";
 import GearForm from "./GearForm";
 import GearOptimizeDialog from "./GearOptimizeDialog";
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useGearOptimize } from "../hooks/useGearOptimize";
+import { useGearOptimize } from "../../hooks/useGearOptimize";
 
 interface Props {
   stats: InputStats;

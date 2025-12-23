@@ -2,8 +2,8 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { useGear } from "../hooks/useGear";
-import { GEAR_SLOTS } from "../constants";
+import { useGear } from "../../hooks/useGear";
+import { GEAR_SLOTS } from "../../constants";
 
 export default function GearEquippedTab() {
   const { customGears, equipped, setEquipped } = useGear();

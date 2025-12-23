@@ -2,16 +2,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useGear } from "../gear/GearContext";
-import { CustomGear, GearSlot, InputStats } from "../types";
-import { GEAR_SLOTS, STAT_GROUPS } from "../constants";
+import { useGear } from "../../providers/GearContext";
+import { CustomGear, GearSlot, InputStats } from "../../types";
+import { GEAR_SLOTS, STAT_GROUPS } from "../../constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { callGeminiVision } from "@/lib/gemini";
 import { normalizeStatKey } from "@/lib/normalizeStat";
 import { fileToBase64 } from "@/lib/utils";
-import { GEAR_OCR_PROMPT } from "./gearOcrSchema";
-import { GearOcrResult } from "./gearOcrSchema";
+import { GEAR_OCR_PROMPT } from "../../domain/gear/gearOcrSchema";
+import { GearOcrResult } from "../../domain/gear/gearOcrSchema";
 import { useRef } from "react";
 import { Loader2 } from "lucide-react";
 

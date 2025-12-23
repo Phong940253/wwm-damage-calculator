@@ -1,6 +1,18 @@
-import { InputStats, ElementStats } from "@/app/types";
-import { ELEMENT_TYPES } from "@/app/constants";
+import {
+  InputStats,
+  ElementStats,
+  ElementStatKey,
+  ElementStatSuffix,
+} from "@/app/types";
+import { ELEMENT_TYPES, ElementKey } from "@/app/constants";
 import { computeDerivedStats } from "../stats/derivedStats";
+
+function elementKey(
+  element: ElementKey,
+  suffix: ElementStatSuffix
+): ElementStatKey {
+  return `${element}${suffix}` as ElementStatKey;
+}
 
 export interface DamageContext {
   get: (key: string) => number;
@@ -22,7 +34,7 @@ export function buildDamageContext(
     (gearBonus[k] || 0);
 
   // Element stat + increase
-  const ele = (k: keyof Omit<ElementStats, "selected">) =>
+  const ele = (k: ElementStatKey) =>
     Number(elementStats[k]?.current || 0) +
     Number(elementStats[k]?.increase || 0);
 
@@ -48,29 +60,29 @@ export function buildDamageContext(
     /* ---------- YOUR Element ---------- */
 
     if (k === "MINAttributeAttackOfYOURType")
-      return ele(`${elementStats.selected}Min` as any);
+      return ele(elementKey(elementStats.selected, "Min"));
 
     if (k === "MAXAttributeAttackOfYOURType")
-      return ele(`${elementStats.selected}Max` as any);
+      return ele(elementKey(elementStats.selected, "Max"));
 
     if (k === "AttributeAttackPenetrationOfYOURType")
-      return ele(`${elementStats.selected}Penetration` as any);
+      return ele(elementKey(elementStats.selected, "Penetration"));
 
     if (k === "AttributeAttackDMGBonusOfYOURType")
-      return ele(`${elementStats.selected}DMGBonus` as any);
+      return ele(elementKey(elementStats.selected, "DMGBonus"));
 
     /* ---------- OTHER Elements ---------- */
 
     if (k === "MINAttributeAttackOfOtherType") {
       return ELEMENT_TYPES.filter(
         (e) => e.key !== elementStats.selected
-      ).reduce((s, e) => s + ele(`${e.key}Min` as any), 0);
+      ).reduce((sum, e) => sum + ele(elementKey(e.key, "Min")), 0);
     }
 
     if (k === "MAXAttributeAttackOfOtherType") {
       return ELEMENT_TYPES.filter(
         (e) => e.key !== elementStats.selected
-      ).reduce((s, e) => s + ele(`${e.key}Max` as any), 0);
+      ).reduce((sum, e) => sum + ele(elementKey(e.key, "Max")), 0);
     }
 
     /* ---------- Derived ---------- */

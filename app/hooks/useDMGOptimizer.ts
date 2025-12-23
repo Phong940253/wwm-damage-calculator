@@ -1,10 +1,13 @@
 import { useStats } from "./useStats";
 import { useElementStats } from "./useElementStats";
-import { useGear } from "../gear/GearContext";
+import { useGear } from "../providers/GearContext";
 import { useDamage } from "./useDamage";
 import { aggregateEquippedGearBonus } from "../domain/gear/gearAggregate";
 import { InputStats, ElementStats } from "../types";
 import { useStatImpact } from "./useStatImpact";
+import { ElementKey } from "../constants";
+
+type ElementField = "current" | "increase";
 
 export function useDMGOptimizer(
   initialStats: InputStats,
@@ -34,20 +37,27 @@ export function useDMGOptimizer(
 
   const onElementChange = (
     key: keyof ElementStats | "selected",
-    field: "current" | "increase" | "selected",
+    field: ElementField | "selected",
     value: string
   ) => {
-    setElementStats((prev) =>
-      key === "selected"
-        ? { ...prev, selected: value as any }
-        : {
-            ...prev,
-            [key]: {
-              ...prev[key],
-              [field]: value === "" ? "" : Number(value),
-            },
-          }
-    );
+    setElementStats((prev) => {
+      // ✅ handle selected element
+      if (key === "selected") {
+        return {
+          ...prev,
+          selected: value as ElementKey,
+        };
+      }
+
+      // ✅ handle element stat
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [field]: value === "" ? "" : Number(value),
+        },
+      };
+    });
   };
 
   const warnings: string[] = [];

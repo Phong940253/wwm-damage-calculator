@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider"; // Adjust path if needed
 import "katex/dist/katex.min.css";
-import { GearProvider } from "./gear/GearContext";
+import { GearProvider } from "./providers/GearContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

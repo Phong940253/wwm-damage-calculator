@@ -1,8 +1,8 @@
 // app/gear/GearCard.tsx
 "use client";
 
-import { CustomGear } from "../types";
-import { useGear } from "./GearContext";
+import { CustomGear } from "../../types";
+import { useGear } from "../../providers/GearContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {

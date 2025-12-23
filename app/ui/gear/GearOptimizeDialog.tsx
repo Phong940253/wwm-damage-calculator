@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { GEAR_SLOTS } from "@/app/constants";
-import { OptimizeResult } from "../domain/gear/gearOptimize";
+import { OptimizeResult } from "../../domain/gear/gearOptimize";
 
 interface Props {
   open: boolean;
