@@ -1,4 +1,4 @@
-import { clamp01 } from "./clamp";
+import { clamp01 } from "@/app/utils/clamp";
 
 /* =========================
    Minimum Damage
@@ -23,8 +23,8 @@ export const calcMinimumDamage = (g: (k: string) => number) => {
 };
 
 /* =========================
-   Critical (Max) Damage
-========================= */
+     Critical (Max) Damage
+  ========================= */
 export const calcCriticalDamage = (g: (k: string) => number) =>
   ((g("MaxPhysicalAttack") *
     (1 + g("PhysicalPenetration") / 200) *
@@ -44,8 +44,8 @@ export const calcCriticalDamage = (g: (k: string) => number) =>
   (1 + g("DamageBoost") / 100);
 
 /* =========================
-   Affinity (Max) Damage
-========================= */
+     Affinity (Max) Damage
+  ========================= */
 export const calcAffinityDamage = (g: (k: string) => number) =>
   ((g("MaxPhysicalAttack") *
     (1 + g("PhysicalPenetration") / 200) *
@@ -65,8 +65,8 @@ export const calcAffinityDamage = (g: (k: string) => number) =>
   (1 + g("DamageBoost") / 100);
 
 /* =========================
-   Expected Average Damage
-========================= */
+     Expected Average Damage
+  ========================= */
 export const calcExpectedNormal = (
   g: (k: string) => number,
   affinityDamage: number

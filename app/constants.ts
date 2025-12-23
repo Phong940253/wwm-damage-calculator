@@ -1,5 +1,5 @@
 // app\constants.ts
-import { GearSlot, InputStats } from "./types";
+import { ElementStats, GearSlot, InputStats } from "./types";
 
 export const ELEMENT_TYPES = [
   { key: "bellstrike", label: "Bellstrike" },
@@ -110,4 +110,118 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   Penetration: "Penetration",
   DMGBonus: "DMG Bonus",
   DamageBoost: "Damage Boost",
+};
+
+/* =========================
+   INITIAL BASE STATS
+========================= */
+
+export const INITIAL_STATS: InputStats = {
+  HP: { current: 50000, increase: 0 },
+
+  MinPhysicalAttack: { current: 500, increase: 0 },
+  MaxPhysicalAttack: { current: 1000, increase: 0 },
+  PhysicalAttackMultiplier: { current: 326.29, increase: 0 },
+  FlatDamage: { current: 378, increase: 0 },
+
+  PrecisionRate: { current: 85, increase: 0 },
+  CriticalRate: { current: 35, increase: 0 },
+  CriticalDMGBonus: { current: 50, increase: 0 },
+  AffinityRate: { current: 25, increase: 0 },
+  AffinityDMGBonus: { current: 35, increase: 0 },
+
+  DamageBoost: { current: 0, increase: 0 },
+
+  PhysicalDefense: { current: 179, increase: 0 },
+  PhysicalResistance: { current: 1.8, increase: 0 },
+  PhysicalDMGBonus: { current: 0, increase: 0 },
+  PhysicalDMGReduction: { current: 0, increase: 0 },
+  PhysicalPenetration: { current: 10, increase: 0 },
+
+  /* ---------- Attributes ---------- */
+  Body: { current: 0, increase: 0 },
+  Power: { current: 0, increase: 0 },
+  Defense: { current: 0, increase: 0 },
+  Agility: { current: 0, increase: 0 },
+  Momentum: { current: 0, increase: 0 },
+};
+
+/* =========================
+   INITIAL ELEMENT STATS
+========================= */
+
+export const INITIAL_ELEMENT_STATS: ElementStats = {
+  selected: "bellstrike",
+
+  /* ---------- Bellstrike ---------- */
+  bellstrikeMin: {
+    current: ELEMENT_DEFAULTS.bellstrike.min,
+    increase: 0,
+  },
+  bellstrikeMax: {
+    current: ELEMENT_DEFAULTS.bellstrike.max,
+    increase: 0,
+  },
+  bellstrikePenetration: {
+    current: ELEMENT_DEFAULTS.bellstrike.penetration,
+    increase: 0,
+  },
+  bellstrikeDMGBonus: {
+    current: ELEMENT_DEFAULTS.bellstrike.bonus,
+    increase: 0,
+  },
+
+  /* ---------- Stonesplit ---------- */
+  stonesplitMin: {
+    current: ELEMENT_DEFAULTS.stonesplit.min,
+    increase: 0,
+  },
+  stonesplitMax: {
+    current: ELEMENT_DEFAULTS.stonesplit.max,
+    increase: 0,
+  },
+  stonesplitPenetration: {
+    current: ELEMENT_DEFAULTS.stonesplit.penetration,
+    increase: 0,
+  },
+  stonesplitDMGBonus: {
+    current: ELEMENT_DEFAULTS.stonesplit.bonus,
+    increase: 0,
+  },
+
+  /* ---------- Silkbind ---------- */
+  silkbindMin: {
+    current: ELEMENT_DEFAULTS.silkbind.min,
+    increase: 0,
+  },
+  silkbindMax: {
+    current: ELEMENT_DEFAULTS.silkbind.max,
+    increase: 0,
+  },
+  silkbindPenetration: {
+    current: ELEMENT_DEFAULTS.silkbind.penetration,
+    increase: 0,
+  },
+  silkbindDMGBonus: {
+    current: ELEMENT_DEFAULTS.silkbind.bonus,
+    increase: 0,
+  },
+
+  /* ---------- Bamboocut ---------- */
+  bamboocutMin: {
+    current: ELEMENT_DEFAULTS.bamboocut.min,
+    increase: 0,
+  },
+  bamboocutMax: {
+    current: ELEMENT_DEFAULTS.bamboocut.max,
+    increase: 0,
+  },
+  bamboocutPenetration: {
+    current: ELEMENT_DEFAULTS.bamboocut.penetration,
+    increase: 0,
+  },
+  bamboocutDMGBonus: {
+    current: ELEMENT_DEFAULTS.bamboocut.bonus,
+    increase: 0,
+  },
 };

@@ -1,12 +1,12 @@
+// app/ui/StatsPanel.tsx
 "use client";
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { STAT_GROUPS, ELEMENT_TYPES } from "../constants";
-import { InputStats, ElementStats } from "../types";
+import { STAT_GROUPS, ELEMENT_TYPES } from "../../constants";
+import { InputStats, ElementStats } from "../../types";
 import { getStatLabel } from "@/app/utils/statLabel";
 
 /* =======================
@@ -19,15 +19,15 @@ type ElementStatKey = Exclude<keyof ElementStats, "selected">;
 interface Props {
   stats: InputStats;
   elementStats: ElementStats;
-  statImpact: Partial<Record<StatKey | ElementStatKey, number>>;
   gearBonus: Record<string, number>;
-  onChange: (
-    key: StatKey,
+  statImpact?: Partial<Record<string, number>>; // ✅ optional
+  onStatChange: (
+    key: keyof InputStats,
     field: "current" | "increase",
     value: string
   ) => void;
   onElementChange: (
-    key: ElementStatKey | "selected",
+    key: keyof ElementStats | "selected",
     field: "current" | "increase" | "selected",
     value: string
   ) => void;
@@ -59,9 +59,9 @@ const getDerivedFromAttributes = (
 export default function StatsPanel({
   stats,
   elementStats,
-  statImpact,
   gearBonus,
-  onChange,
+  statImpact = {}, // ✅ default object
+  onStatChange,
   onElementChange,
 }: Props) {
   const getStatValue = (
@@ -84,7 +84,7 @@ export default function StatsPanel({
     if (isElementKey(key)) {
       onElementChange(key, field, value);
     } else {
-      onChange(key as StatKey, field, value);
+      onStatChange(key as StatKey, field, value);
     }
   };
 

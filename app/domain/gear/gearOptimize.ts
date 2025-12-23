@@ -1,13 +1,8 @@
-// app/gear/gearOptimize.ts
 import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
-import { aggregateGearStats } from "@/app/utils/gear";
-
-import { buildDamageGetter } from "@/app/utils/buildDamageGetter";
-import { calcExpectedNormal, calcAffinityDamage } from "@/app/utils/damage";
-
-export const MAX_COMBINATIONS = 1_000_000_000;
-export const MAX_RESULTS_CAP = 10_000;
+import { aggregateEquippedGearBonus } from "./gearAggregate";
+import { buildDamageContext } from "../damage/damageContext";
+import { calculateDamage } from "../damage/damageCalculator";
 
 export interface OptimizeResult {
   key: string;
@@ -22,6 +17,9 @@ export interface OptimizeComputation {
   results: OptimizeResult[];
 }
 
+export const MAX_RESULTS_CAP = 10_000;
+export const MAX_COMBINATIONS = 1_000_000_000;
+
 export function computeOptimizeResults(
   stats: InputStats,
   elementStats: ElementStats,
@@ -29,15 +27,16 @@ export function computeOptimizeResults(
   equipped: Partial<Record<GearSlot, string | undefined>>,
   desiredDisplay: number
 ): OptimizeComputation {
-  const baseBonus = aggregateGearStats(customGears, equipped ?? {});
-
-  const gBase = buildDamageGetter(stats, elementStats, baseBonus);
-  const baseDamage = calcExpectedNormal(gBase, calcAffinityDamage(gBase));
+  /* ---------- base damage ---------- */
+  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
+  const baseCtx = buildDamageContext(stats, elementStats, baseBonus);
+  const baseDamage = calculateDamage(baseCtx).normal;
 
   if (customGears.length === 0) {
     return { baseDamage, totalCombos: 0, results: [] };
   }
 
+  /* ---------- slot options ---------- */
   const slotOptions = GEAR_SLOTS.map(({ key }) => {
     const items = customGears.filter((g) => g.slot === key);
     return { slot: key, items: items.length ? items : [null] };
@@ -49,37 +48,40 @@ export function computeOptimizeResults(
   );
 
   if (estimated > MAX_COMBINATIONS) {
-    throw new Error(`Too many combinations (${estimated.toLocaleString()}).`);
+    throw new Error(`Too many combinations (${estimated.toLocaleString()})`);
   }
 
   const limit = Math.min(Math.max(desiredDisplay, 1), MAX_RESULTS_CAP);
 
-  const bonus: Record<string, number> = {};
-  const selection: Partial<Record<GearSlot, CustomGear>> = {};
+  /* ---------- DFS ---------- */
   const results: OptimizeResult[] = [];
   let total = 0;
 
-  const addGear = (gear: CustomGear, dir: 1 | -1) => {
-    const attrs = [...gear.mains, ...gear.subs];
-    if (gear.addition) attrs.push(gear.addition);
-    attrs.forEach((a) => {
-      bonus[a.stat] = (bonus[a.stat] || 0) + dir * a.value;
-    });
+  const selection: Partial<Record<GearSlot, CustomGear>> = {};
+  const bonus: Record<string, number> = { ...baseBonus };
+
+  const applyGear = (gear: CustomGear, dir: 1 | -1) => {
+    [...gear.mains, ...gear.subs, gear.addition]
+      .filter(Boolean)
+      .forEach((a) => {
+        bonus[a!.stat] = (bonus[a!.stat] || 0) + dir * a!.value;
+      });
   };
 
   const dfs = (i: number) => {
     if (i === slotOptions.length) {
       total++;
-      const g = buildDamageGetter(stats, elementStats, bonus);
-      const damage = calcExpectedNormal(g, calcAffinityDamage(g));
+
+      const ctx = buildDamageContext(stats, elementStats, bonus);
+      const dmg = calculateDamage(ctx).normal;
 
       results.push({
         key: GEAR_SLOTS.map(({ key }) => selection[key]?.id ?? "none").join(
           "|"
         ),
-        damage,
+        damage: dmg,
         percentGain:
-          baseDamage === 0 ? 0 : ((damage - baseDamage) / baseDamage) * 100,
+          baseDamage === 0 ? 0 : ((dmg - baseDamage) / baseDamage) * 100,
         selection: { ...selection },
       });
       return;
@@ -90,9 +92,9 @@ export function computeOptimizeResults(
     items.forEach((gear) => {
       if (gear) {
         selection[slot] = gear;
-        addGear(gear, 1);
+        applyGear(gear, 1);
         dfs(i + 1);
-        addGear(gear, -1);
+        applyGear(gear, -1);
         delete selection[slot];
       } else {
         delete selection[slot];
@@ -103,6 +105,7 @@ export function computeOptimizeResults(
 
   dfs(0);
 
+  /* ---------- sort ---------- */
   results.sort((a, b) =>
     b.percentGain === a.percentGain
       ? b.damage - a.damage

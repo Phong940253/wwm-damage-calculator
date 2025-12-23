@@ -1,8 +1,9 @@
-"use client";
-
 import { useCallback, useState } from "react";
 import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
-import { computeOptimizeResults, OptimizeResult } from "./gearOptimize";
+import {
+  computeOptimizeResults,
+  OptimizeResult,
+} from "@/app/domain/gear/gearOptimize";
 
 export function useGearOptimize(
   stats: InputStats,
@@ -44,12 +45,5 @@ export function useGearOptimize(
     [stats, elementStats, customGears, equipped]
   );
 
-  return {
-    run,
-    loading,
-    error,
-    results,
-    baseDamage,
-    combos,
-  };
+  return { run, loading, error, results, baseDamage, combos };
 }

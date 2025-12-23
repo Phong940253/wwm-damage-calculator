@@ -1,3 +1,4 @@
+// app/hooks/useGear.ts
 import { useEffect, useState } from "react";
 import { CustomGear, GearSlot } from "../types";
 

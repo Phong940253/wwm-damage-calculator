@@ -33,6 +33,26 @@ export interface ElementStats {
   bamboocutDMGBonus: Stat;
 }
 
+export type ElementStatSuffix = "Min" | "Max" | "Penetration" | "DMGBonus";
+
+export type ElementStatKey =
+  | "bellstrikeMin"
+  | "bellstrikeMax"
+  | "bellstrikePenetration"
+  | "bellstrikeDMGBonus"
+  | "stonesplitMin"
+  | "stonesplitMax"
+  | "stonesplitPenetration"
+  | "stonesplitDMGBonus"
+  | "silkbindMin"
+  | "silkbindMax"
+  | "silkbindPenetration"
+  | "silkbindDMGBonus"
+  | "bamboocutMin"
+  | "bamboocutMax"
+  | "bamboocutPenetration"
+  | "bamboocutDMGBonus";
+
 /* =======================
    Gear domain
 ======================= */
