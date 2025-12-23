@@ -19,6 +19,7 @@ import FormulaPanel from "./ui/FormulaPanel";
 
 import GearEquippedTab from "./gear/GearEquippedTab";
 import GearCustomizeTab from "./gear/GearCustomizeTab";
+import GearCompareTab from "./gear/GearCompareTab";
 
 import { InputStats, ElementStats } from "./types";
 import { ELEMENT_DEFAULTS } from "./constants";
@@ -99,6 +100,12 @@ const INITIAL_ELEMENT_STATS: ElementStats = {
 export default function DMGOptimizer() {
   const { theme, setTheme } = useTheme();
   const [showFormula, setShowFormula] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Fix hydration mismatch for theme toggle
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /* ---------- stats ---------- */
   const { stats, setStats } = useStats(INITIAL_STATS);
@@ -251,20 +258,22 @@ export default function DMGOptimizer() {
             </Badge>
           </div>
 
-          <button
-            onClick={() =>
-              setTheme(theme === "dark" ? "light" : "dark")
-            }
-            className="
-              flex items-center gap-2 rounded-xl
-              border border-border/50
-              bg-card/60 px-3 py-2 text-sm
-              hover:bg-card transition
-            "
-          >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-            {theme === "dark" ? "Light" : "Dark"}
-          </button>
+          {mounted && (
+            <button
+              onClick={() =>
+                setTheme(theme === "dark" ? "light" : "dark")
+              }
+              className="
+                flex items-center gap-2 rounded-xl
+                border border-border/50
+                bg-card/60 px-3 py-2 text-sm
+                hover:bg-card transition
+              "
+            >
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === "dark" ? " Light" : " Dark"}
+            </button>
+          )}
         </div>
 
         {/* ---------- content ---------- */}
@@ -277,6 +286,7 @@ export default function DMGOptimizer() {
               <TabsTrigger value="stats">All Stats</TabsTrigger>
               <TabsTrigger value="equipped">Gear Equipped</TabsTrigger>
               <TabsTrigger value="custom">Gear Customize</TabsTrigger>
+              <TabsTrigger value="compare">Gear Compare</TabsTrigger>
             </TabsList>
 
             {/* -------- All Stats -------- */}
@@ -299,6 +309,11 @@ export default function DMGOptimizer() {
             {/* -------- Gear Customize -------- */}
             <TabsContent value="custom" className="mt-4">
               <GearCustomizeTab stats={stats} elementStats={elementStats} />
+            </TabsContent>
+
+            {/* -------- Gear Compare -------- */}
+            <TabsContent value="compare" className="mt-4">
+              <GearCompareTab stats={stats} elementStats={elementStats} />
             </TabsContent>
 
           </Tabs>
