@@ -1,9 +1,10 @@
+// app/gear/gearOptimize.ts
 import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
 import { aggregateGearStats } from "@/app/utils/gear";
 import { calculateDamageUnified } from "@/app/utils/calcDamageUnified";
 
-export const MAX_COMBINATIONS = 200_000;
+export const MAX_COMBINATIONS = 1_000_000_000;
 export const MAX_RESULTS_CAP = 10_000;
 
 export interface OptimizeResult {

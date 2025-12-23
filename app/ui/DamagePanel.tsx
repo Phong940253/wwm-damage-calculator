@@ -1,3 +1,4 @@
+// app/ui/DamagePanel.tsx
 "use client";
 
 import React from "react";
