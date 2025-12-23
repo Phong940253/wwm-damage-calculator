@@ -1,3 +1,4 @@
+// app/gear/GearForm.tsx
 "use client";
 
 import { useEffect, useState } from "react";

@@ -1,42 +1,40 @@
-// app/utils/buildDamageGetter.ts
 import { InputStats, ElementStats } from "@/app/types";
 import { ELEMENT_TYPES } from "@/app/constants";
+import { computeDerivedStats } from "../stats/derivedStats";
 
-export function buildDamageGetter(
+export interface DamageContext {
+  get: (key: string) => number;
+}
+
+export function buildDamageContext(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>
-) {
-  const cur = (k: keyof InputStats) => Number(stats[k]?.current || 0);
-  const gear = (k: keyof InputStats) => Number(gearBonus[k] || 0);
+): DamageContext {
+  const cur = (k: keyof InputStats) =>
+    Number(stats[k]?.current || 0) + (gearBonus[k] || 0);
 
-  const agility = cur("Agility") + gear("Agility");
-  const momentum = cur("Momentum") + gear("Momentum");
-  const power = cur("Power") + gear("Power");
+  const derived = computeDerivedStats(stats, gearBonus);
 
-  const derived = {
-    minAtk: agility * 1 + power * 0.246,
-    maxAtk: momentum * 0.9 + power * 1.315,
-    critRate: agility * 0.075,
-    affinityRate: momentum * 0.04,
-  };
-
-  return (k: string): number => {
-    // ===== ELEMENT (YOUR TYPE) =====
+  const get = (k: string): number => {
+    // ===== Element YOUR =====
     if (k === "MINAttributeAttackOfYOURType")
       return Number(elementStats[`${elementStats.selected}Min`]?.current || 0);
+
     if (k === "MAXAttributeAttackOfYOURType")
       return Number(elementStats[`${elementStats.selected}Max`]?.current || 0);
+
     if (k === "AttributeAttackPenetrationOfYOURType")
       return Number(
         elementStats[`${elementStats.selected}Penetration`]?.current || 0
       );
+
     if (k === "AttributeAttackDMGBonusOfYOURType")
       return Number(
         elementStats[`${elementStats.selected}DMGBonus`]?.current || 0
       );
 
-    // ===== ELEMENT (OTHER 4 TYPES) =====
+    // ===== Element OTHER =====
     if (k === "MINAttributeAttackOfOtherType") {
       return ELEMENT_TYPES.filter(
         (e) => e.key !== elementStats.selected
@@ -55,24 +53,16 @@ export function buildDamageGetter(
       );
     }
 
-    // ===== PHYSICAL + DERIVED =====
+    // ===== Derived =====
     if (k === "MinPhysicalAttack")
-      return (
-        cur("MinPhysicalAttack") + gear("MinPhysicalAttack") + derived.minAtk
-      );
-
+      return cur("MinPhysicalAttack") + derived.minAtk;
     if (k === "MaxPhysicalAttack")
-      return (
-        cur("MaxPhysicalAttack") + gear("MaxPhysicalAttack") + derived.maxAtk
-      );
+      return cur("MaxPhysicalAttack") + derived.maxAtk;
+    if (k === "CriticalRate") return cur("CriticalRate") + derived.critRate;
+    if (k === "AffinityRate") return cur("AffinityRate") + derived.affinityRate;
 
-    if (k === "CriticalRate")
-      return cur("CriticalRate") + gear("CriticalRate") + derived.critRate;
-
-    if (k === "AffinityRate")
-      return cur("AffinityRate") + gear("AffinityRate") + derived.affinityRate;
-
-    // ===== DEFAULT =====
-    return cur(k as keyof InputStats) + gear(k as keyof InputStats);
+    return cur(k as keyof InputStats);
   };
+
+  return { get };
 }

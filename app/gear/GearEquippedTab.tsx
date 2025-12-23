@@ -1,3 +1,4 @@
+// app/gear/GearEquippedTab.tsx
 "use client";
 
 import { Card } from "@/components/ui/card";

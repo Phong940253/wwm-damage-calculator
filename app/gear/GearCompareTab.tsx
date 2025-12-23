@@ -1,3 +1,4 @@
+// app/gear/GearCompareTab.tsx
 "use client";
 
 import { useState } from "react";

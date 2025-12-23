@@ -1,3 +1,4 @@
+// app/gear/gearOcrSchema.ts
 export interface GearOcrResult {
   name?: string;
   slot?: string;

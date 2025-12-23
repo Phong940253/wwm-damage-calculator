@@ -1,3 +1,4 @@
+// app/hooks/useStats.ts
 import { useEffect, useState } from "react";
 import { InputStats } from "../types";
 
