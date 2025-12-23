@@ -1,10 +1,10 @@
 import { InputStats, ElementStats } from "../types";
+import { ELEMENT_TYPES } from "../constants";
 import {
-  calcMinimumDamage,
   calcAffinityDamage,
   calcExpectedNormal,
-} from "./damage";
-import { ELEMENT_TYPES } from "../constants";
+  calcMinimumDamage,
+} from "../domain/damage/damageFormula";
 
 /**
  * EXACT same logic as useDamage,
