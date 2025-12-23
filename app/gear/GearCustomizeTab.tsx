@@ -7,7 +7,6 @@ import { useGear } from "./GearContext";
 import GearCard from "./GearCard";
 import GearForm from "./GearForm";
 import GearOptimizeDialog from "./GearOptimizeDialog";
-import { useGearOptimize } from "./useGearOptimize";
 import { CustomGear, InputStats, ElementStats, GearSlot } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
 import {
@@ -16,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useGearOptimize } from "../hooks/useGearOptimize";
 
 interface Props {
   stats: InputStats;
@@ -55,7 +55,12 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
           <Button variant="outline" onClick={() => setOptOpen(true)}>
             Optimize
           </Button>
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
             + Add Gear
           </Button>
         </div>
@@ -66,7 +71,10 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
           <GearCard
             key={g.id}
             gear={g}
-            onEdit={() => { setEditing(g); setOpen(true); }}
+            onEdit={() => {
+              setEditing(g);
+              setOpen(true);
+            }}
             onDelete={() =>
               setCustomGears((x) => x.filter((i) => i.id !== g.id))
             }
@@ -77,18 +85,12 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>
-              {editing ? "Edit Gear" : "Add New Gear"}
-            </DialogTitle>
+            <DialogTitle>{editing ? "Edit Gear" : "Add New Gear"}</DialogTitle>
           </DialogHeader>
 
-          <GearForm
-            initialGear={editing}
-            onSuccess={() => setOpen(false)}
-          />
+          <GearForm initialGear={editing} onSuccess={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
-
 
       <GearOptimizeDialog
         open={optOpen}

@@ -1,20 +1,8 @@
 import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
-
-import { aggregateGearStats } from "@/app/utils/gear";
-import { buildDamageContext } from "@/app/domain/damage/damageContext";
-import { calculateDamage } from "@/app/domain/damage/damageCalculator";
-
-/* =======================
-   Limits
-======================= */
-
-export const MAX_COMBINATIONS = 1_000_000_000;
-export const MAX_RESULTS_CAP = 10_000;
-
-/* =======================
-   Types
-======================= */
+import { aggregateEquippedGearBonus } from "./gearAggregate";
+import { buildDamageContext } from "../damage/damageContext";
+import { calculateDamage } from "../damage/damageCalculator";
 
 export interface OptimizeResult {
   key: string;
@@ -29,9 +17,8 @@ export interface OptimizeComputation {
   results: OptimizeResult[];
 }
 
-/* =======================
-   Core Optimize
-======================= */
+export const MAX_RESULTS_CAP = 10_000;
+export const MAX_COMBINATIONS = 1_000_000_000;
 
 export function computeOptimizeResults(
   stats: InputStats,
@@ -40,60 +27,47 @@ export function computeOptimizeResults(
   equipped: Partial<Record<GearSlot, string | undefined>>,
   desiredDisplay: number
 ): OptimizeComputation {
-  /* ---------- Base damage (currently equipped) ---------- */
-  const baseGearBonus = aggregateGearStats(customGears, equipped);
-
-  const baseCtx = buildDamageContext(stats, elementStats, baseGearBonus);
+  /* ---------- base damage ---------- */
+  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
+  const baseCtx = buildDamageContext(stats, elementStats, baseBonus);
   const baseDamage = calculateDamage(baseCtx).normal;
 
   if (customGears.length === 0) {
-    return {
-      baseDamage,
-      totalCombos: 0,
-      results: [],
-    };
+    return { baseDamage, totalCombos: 0, results: [] };
   }
 
-  /* ---------- Slot → available gears ---------- */
+  /* ---------- slot options ---------- */
   const slotOptions = GEAR_SLOTS.map(({ key }) => {
     const items = customGears.filter((g) => g.slot === key);
-    return {
-      slot: key,
-      items: items.length > 0 ? items : [null],
-    };
+    return { slot: key, items: items.length ? items : [null] };
   });
 
-  /* ---------- Estimate combinations ---------- */
-  const estimatedCombos = slotOptions.reduce(
-    (acc, s) => acc * s.items.length,
+  const estimated = slotOptions.reduce(
+    (acc, { items }) => acc * items.length,
     1
   );
 
-  if (estimatedCombos > MAX_COMBINATIONS) {
-    throw new Error(
-      `Too many combinations (${estimatedCombos.toLocaleString()}).`
-    );
+  if (estimated > MAX_COMBINATIONS) {
+    throw new Error(`Too many combinations (${estimated.toLocaleString()})`);
   }
 
   const limit = Math.min(Math.max(desiredDisplay, 1), MAX_RESULTS_CAP);
 
-  /* ---------- DFS state ---------- */
-  const bonus: Record<string, number> = {};
-  const selection: Partial<Record<GearSlot, CustomGear>> = {};
+  /* ---------- DFS ---------- */
   const results: OptimizeResult[] = [];
   let total = 0;
 
-  /* ---------- Helpers ---------- */
-  const applyGear = (gear: CustomGear, dir: 1 | -1) => {
-    const attrs = [...gear.mains, ...gear.subs];
-    if (gear.addition) attrs.push(gear.addition);
+  const selection: Partial<Record<GearSlot, CustomGear>> = {};
+  const bonus: Record<string, number> = { ...baseBonus };
 
-    for (const a of attrs) {
-      bonus[a.stat] = (bonus[a.stat] || 0) + dir * a.value;
-    }
+  const applyGear = (gear: CustomGear, dir: 1 | -1) => {
+    [...gear.mains, ...gear.subs, gear.addition]
+      .filter(Boolean)
+      .forEach((a) => {
+        bonus[a!.stat] = (bonus[a!.stat] || 0) + dir * a!.value;
+      });
   };
 
-  /* ---------- DFS ---------- */
   const dfs = (i: number) => {
     if (i === slotOptions.length) {
       total++;
@@ -110,13 +84,12 @@ export function computeOptimizeResults(
           baseDamage === 0 ? 0 : ((dmg - baseDamage) / baseDamage) * 100,
         selection: { ...selection },
       });
-
       return;
     }
 
     const { slot, items } = slotOptions[i];
 
-    for (const gear of items) {
+    items.forEach((gear) => {
       if (gear) {
         selection[slot] = gear;
         applyGear(gear, 1);
@@ -127,12 +100,12 @@ export function computeOptimizeResults(
         delete selection[slot];
         dfs(i + 1);
       }
-    }
+    });
   };
 
   dfs(0);
 
-  /* ---------- Sort & trim ---------- */
+  /* ---------- sort ---------- */
   results.sort((a, b) =>
     b.percentGain === a.percentGain
       ? b.damage - a.damage
