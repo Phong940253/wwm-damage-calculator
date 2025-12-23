@@ -2,7 +2,9 @@
 import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
 import { aggregateGearStats } from "@/app/utils/gear";
-import { calculateDamageUnified } from "@/app/utils/calcDamageUnified";
+
+import { buildDamageGetter } from "@/app/utils/buildDamageGetter";
+import { calcExpectedNormal, calcAffinityDamage } from "@/app/utils/damage";
 
 export const MAX_COMBINATIONS = 1_000_000_000;
 export const MAX_RESULTS_CAP = 10_000;
@@ -28,11 +30,9 @@ export function computeOptimizeResults(
   desiredDisplay: number
 ): OptimizeComputation {
   const baseBonus = aggregateGearStats(customGears, equipped ?? {});
-  const baseDamage = calculateDamageUnified(
-    stats,
-    elementStats,
-    baseBonus
-  ).normal;
+
+  const gBase = buildDamageGetter(stats, elementStats, baseBonus);
+  const baseDamage = calcExpectedNormal(gBase, calcAffinityDamage(gBase));
 
   if (customGears.length === 0) {
     return { baseDamage, totalCombos: 0, results: [] };
@@ -70,7 +70,8 @@ export function computeOptimizeResults(
   const dfs = (i: number) => {
     if (i === slotOptions.length) {
       total++;
-      const damage = calculateDamageUnified(stats, elementStats, bonus).normal;
+      const g = buildDamageGetter(stats, elementStats, bonus);
+      const damage = calcExpectedNormal(g, calcAffinityDamage(g));
 
       results.push({
         key: GEAR_SLOTS.map(({ key }) => selection[key]?.id ?? "none").join(
