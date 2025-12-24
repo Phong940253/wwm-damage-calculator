@@ -28,12 +28,23 @@ export function computeOptimizeResults(
   desiredDisplay: number
 ): OptimizeComputation {
   /* ---------- base damage ---------- */
-  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
+
+  const emptyEquipped: Partial<Record<GearSlot, string>> = {};
+
+  const baseBonus = aggregateEquippedGearBonus(customGears, emptyEquipped);
   const baseCtx = buildDamageContext(stats, elementStats, baseBonus);
   const baseDamage = calculateDamage(baseCtx).normal;
 
+  const baseBonusWithGears = aggregateEquippedGearBonus(customGears, equipped);
+  const baseCtxWithGears = buildDamageContext(
+    stats,
+    elementStats,
+    baseBonusWithGears
+  );
+  const baseDamageWithGears = calculateDamage(baseCtxWithGears).normal;
+
   if (customGears.length === 0) {
-    return { baseDamage, totalCombos: 0, results: [] };
+    return { baseDamage: baseDamageWithGears, totalCombos: 0, results: [] };
   }
 
   /* ---------- slot options ---------- */
@@ -81,7 +92,9 @@ export function computeOptimizeResults(
         ),
         damage: dmg,
         percentGain:
-          baseDamage === 0 ? 0 : ((dmg - baseDamage) / baseDamage) * 100,
+          baseDamageWithGears === 0
+            ? 0
+            : ((dmg - baseDamageWithGears) / baseDamageWithGears) * 100,
         selection: { ...selection },
       });
       return;
@@ -113,7 +126,7 @@ export function computeOptimizeResults(
   );
 
   return {
-    baseDamage,
+    baseDamage: baseDamageWithGears,
     totalCombos: total,
     results: results.slice(0, limit),
   };
