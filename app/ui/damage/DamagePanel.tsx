@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Zap, ArrowUpRight } from "lucide-react";
 import DamageLine from "./DamageLine";
 import { DamageResult } from "../../domain/damage/type";
+import AverageDamagePie from "./AverageDamagePie";
 
 interface Props {
   result: DamageResult;
@@ -53,33 +54,46 @@ export default function DamagePanel({
           scrollbar-thin scrollbar-thumb-zinc-600/40
         "
       >
-        <DamageLine
-          label="Abrasion Damage"
-          value={result.min.value}
-          percent={result.min.percent}
-          color="silver"
-        />
+        <div className="flex flex-col">
+          <div className="flex flex-col align-center justify-center flex-1">
+            <DamageLine
+              label="Abrasion Damage"
+              value={result.min.value}
+              percent={result.min.percent}
+              color="silver"
+            />
 
-        <DamageLine
-          label="Average (Expected)"
-          value={result.normal.value}
-          percent={result.normal.percent}
-          color="emerald"
-        />
+            <DamageLine
+              label="Average (Expected)"
+              value={result.normal.value}
+              percent={result.normal.percent}
+              color="emerald"
+            />
 
-        <DamageLine
-          label="Critical (Max Proc)"
-          value={result.critical.value}
-          percent={result.critical.percent}
-          color="gold"
-        />
+            <DamageLine
+              label="Critical (Max Proc)"
+              value={result.critical.value}
+              percent={result.critical.percent}
+              color="gold"
+            />
 
-        <DamageLine
-          label="Affinity (Max Proc)"
-          value={result.affinity.value}
-          percent={result.affinity.percent}
-          color="amber"
-        />
+            <DamageLine
+              label="Affinity (Max Proc)"
+              value={result.affinity.value}
+              percent={result.affinity.percent}
+              color="amber"
+            />
+          </div>
+          <Separator className="bg-gradient-to-r from-transparent via-border to-transparent m-4" />
+          {result.averageBreakdown && (
+            <div className="flex flex-1 flex-col">
+              <div className="text-sm font-medium mb-2 text-muted-foreground text-center">
+                Average Damage Composition
+              </div>
+              <AverageDamagePie data={result.averageBreakdown} />
+            </div>
+          )}
+        </div>
 
         <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
 

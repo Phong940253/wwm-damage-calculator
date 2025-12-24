@@ -10,12 +10,7 @@ interface Props {
   color: "emerald" | "amber" | "silver" | "gold";
 }
 
-export default function DamageLine({
-  label,
-  value,
-  percent,
-  color,
-}: Props) {
+export default function DamageLine({ label, value, percent, color }: Props) {
   const colorClasses = {
     emerald: "text-emerald-500",
     amber: "text-amber-500",
@@ -31,17 +26,13 @@ export default function DamageLine({
   };
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 text-center">
       <p className="text-sm text-muted-foreground">{label}</p>
 
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-center">
         <p className={`relative text-3xl font-bold ${colorClasses[color]}`}>
-          <span
-            className={`absolute inset-0 blur-xl ${glowClasses[color]}`}
-          />
-          <span className="relative">
-            {value.toLocaleString()}
-          </span>
+          <span className={`absolute inset-0 blur-xl ${glowClasses[color]}`} />
+          <span className="relative">{value.toLocaleString()}</span>
         </p>
 
         {percent !== 0 && (

@@ -3,6 +3,7 @@ import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { InputStats, ElementStats } from "@/app/types";
 import { DamageResult } from "../domain/damage/type";
+import { calcExpectedNormalBreakdown } from "../domain/damage/damageFormula";
 
 export function useDamage(
   stats: InputStats,
@@ -27,11 +28,10 @@ export function useDamage(
 
     const pct = (b: number, f: number) => (b === 0 ? 0 : ((f - b) / b) * 100);
 
+    const breakdown = calcExpectedNormalBreakdown(finalCtx.get, final.affinity);
+
     return {
-      min: {
-        value: final.min,
-        percent: pct(base.min, final.min),
-      },
+      min: { value: final.min, percent: pct(base.min, final.min) },
       normal: {
         value: Math.round(final.normal * 10) / 10,
         percent: pct(base.normal, final.normal),
@@ -44,6 +44,7 @@ export function useDamage(
         value: Math.round(final.affinity * 10) / 10,
         percent: pct(base.affinity, final.affinity),
       },
+      averageBreakdown: breakdown,
     };
   }, [stats, elementStats, gearBonus]);
 }

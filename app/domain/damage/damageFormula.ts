@@ -112,3 +112,46 @@ export const calcExpectedNormal = (
 
   return (1 - P) * noPrecision + P * precision;
 };
+
+export const calcExpectedNormalBreakdown = (
+  g: (k: string) => number,
+  affinityDamage: number
+) => {
+  const minDamage = calcMinimumDamage(g);
+  const maxDamage = affinityDamage;
+
+  const base =
+    ((((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
+      (1 + g("PhysicalPenetration") / 200) *
+      (1 + g("PhysicalDMGBonus")) +
+      (g("MINAttributeAttackOfOtherType") >= g("MAXAttributeAttackOfOtherType")
+        ? g("MINAttributeAttackOfOtherType") * 2
+        : g("MINAttributeAttackOfOtherType") +
+          g("MAXAttributeAttackOfOtherType"))) /
+      2) *
+      (g("PhysicalAttackMultiplier") / 100) +
+      g("FlatDamage") +
+      ((g("MINAttributeAttackOfYOURType") + g("MAXAttributeAttackOfYOURType")) /
+        2) *
+        (g("MainElementMultiplier") / 100) *
+        (1 +
+          g("AttributeAttackPenetrationOfYOURType") / 200 +
+          g("AttributeAttackDMGBonusOfYOURType") / 100)) *
+    (1 + g("DamageBoost") / 100);
+
+  const P = Math.min(1, Math.max(0, g("PrecisionRate") / 100));
+  const A = Math.min(1, Math.max(0, g("AffinityRate") / 100));
+  const C = Math.min(1, Math.max(0, g("CriticalRate") / 100));
+  const CD = g("CriticalDMGBonus") / 100;
+
+  const scale = A + C > 1 ? 1 / (A + C) : 1;
+  const As = A * scale;
+  const Cs = C * scale;
+
+  return {
+    abrasion: (1 - P) * (1 - As) * minDamage,
+    affinity: ((1 - P) * As + P * As) * maxDamage,
+    critical: P * Cs * maxDamage * (1 + CD),
+    normal: P * (1 - As - Cs) * base,
+  };
+};
