@@ -15,11 +15,23 @@ interface GearCompareTabProps {
   elementStats: ElementStats;
 }
 
+// helper
+function buildEquippedWithOverride(
+  equipped: Partial<Record<string, string>>,
+  overrideGearId: string,
+  overrideSlot: string
+) {
+  return {
+    ...equipped,
+    [overrideSlot]: overrideGearId, // 👈 replace slot
+  };
+}
+
 export default function GearCompareTab({
   stats,
   elementStats,
 }: GearCompareTabProps) {
-  const { customGears } = useGear();
+  const { customGears, equipped } = useGear();
 
   const [gearA, setGearA] = useState<string>("");
   const [gearB, setGearB] = useState<string>("");
@@ -90,53 +102,53 @@ export default function GearCompareTab({
         <div className="space-y-4">
           {(selectedGearA.mains.length > 0 ||
             selectedGearB.mains.length > 0) && (
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-muted/50 px-4 py-2">
-                  <h3 className="font-medium">Main Attributes</h3>
-                </div>
-                <table className="w-full">
-                  <thead className="bg-muted/30">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-sm">Stat</th>
-                      <th className="px-4 py-2 text-right text-sm text-emerald-500">
-                        Gear A
-                      </th>
-                      <th className="px-4 py-2 text-right text-sm text-blue-500">
-                        Gear B
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {Array.from(
-                      new Set([
-                        ...selectedGearA.mains.map((m) => m.stat),
-                        ...selectedGearB.mains.map((m) => m.stat),
-                      ])
-                    ).map((stat) => {
-                      const valueA = selectedGearA.mains.find(
-                        (m) => m.stat === stat
-                      )?.value;
-                      const valueB = selectedGearB.mains.find(
-                        (m) => m.stat === stat
-                      )?.value;
-                      return (
-                        <tr key={stat}>
-                          <td className="px-4 py-2 text-sm font-medium">
-                            {stat}
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm">
-                            {valueA !== undefined ? valueA : "-"}
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm">
-                            {valueB !== undefined ? valueB : "-"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-muted/50 px-4 py-2">
+                <h3 className="font-medium">Main Attributes</h3>
               </div>
-            )}
+              <table className="w-full">
+                <thead className="bg-muted/30">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-sm">Stat</th>
+                    <th className="px-4 py-2 text-right text-sm text-emerald-500">
+                      Gear A
+                    </th>
+                    <th className="px-4 py-2 text-right text-sm text-blue-500">
+                      Gear B
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {Array.from(
+                    new Set([
+                      ...selectedGearA.mains.map((m) => m.stat),
+                      ...selectedGearB.mains.map((m) => m.stat),
+                    ])
+                  ).map((stat) => {
+                    const valueA = selectedGearA.mains.find(
+                      (m) => m.stat === stat
+                    )?.value;
+                    const valueB = selectedGearB.mains.find(
+                      (m) => m.stat === stat
+                    )?.value;
+                    return (
+                      <tr key={stat}>
+                        <td className="px-4 py-2 text-sm font-medium">
+                          {stat}
+                        </td>
+                        <td className="px-4 py-2 text-right text-sm">
+                          {valueA !== undefined ? valueA : "-"}
+                        </td>
+                        <td className="px-4 py-2 text-right text-sm">
+                          {valueB !== undefined ? valueB : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {(selectedGearA.subs.length > 0 || selectedGearB.subs.length > 0) && (
             <div className="border rounded-lg overflow-hidden">
@@ -208,18 +220,34 @@ export default function GearCompareTab({
               </thead>
               <tbody className="divide-y">
                 {(() => {
-                  const bonusA = aggregateEquippedGearBonus(
-                    [selectedGearA],
-                    {}
-                  );
-                  const bonusB = aggregateEquippedGearBonus(
-                    [selectedGearB],
-                    {}
+                  // Build equipped sets
+                  const equippedA = buildEquippedWithOverride(
+                    equipped,
+                    selectedGearA.id,
+                    selectedGearA.slot
                   );
 
+                  const equippedB = buildEquippedWithOverride(
+                    equipped,
+                    selectedGearB.id,
+                    selectedGearB.slot
+                  );
+
+                  // Aggregate full gear bonus
+                  const bonusA = aggregateEquippedGearBonus(
+                    customGears,
+                    equippedA
+                  );
+                  const bonusB = aggregateEquippedGearBonus(
+                    customGears,
+                    equippedB
+                  );
+
+                  // Calculate damage
                   const damageA = calculateDamage(
                     buildDamageContext(stats, elementStats, bonusA)
                   );
+
                   const damageB = calculateDamage(
                     buildDamageContext(stats, elementStats, bonusB)
                   );
@@ -261,12 +289,13 @@ export default function GearCompareTab({
                           {row.valueB.toLocaleString()}
                         </td>
                         <td
-                          className={`px-4 py-2 text-right text-sm font-medium ${isPositive
-                            ? "text-green-500"
-                            : isNegative
+                          className={`px-4 py-2 text-right text-sm font-medium ${
+                            isPositive
+                              ? "text-green-500"
+                              : isNegative
                               ? "text-red-500"
                               : ""
-                            }`}
+                          }`}
                         >
                           <div className="flex items-center justify-end gap-1">
                             {isPositive && <TrendingUp className="w-4 h-4" />}
@@ -276,12 +305,13 @@ export default function GearCompareTab({
                           </div>
                         </td>
                         <td
-                          className={`px-4 py-2 text-right text-sm font-medium ${isPositive
-                            ? "text-green-500"
-                            : isNegative
+                          className={`px-4 py-2 text-right text-sm font-medium ${
+                            isPositive
+                              ? "text-green-500"
+                              : isNegative
                               ? "text-red-500"
                               : ""
-                            }`}
+                          }`}
                         >
                           {percent > 0 ? "+" : ""}
                           {percent.toFixed(2)}%
