@@ -1,9 +1,9 @@
-// app/gear/GearEquippedTab.tsx
 "use client";
 
 import { Card } from "@/components/ui/card";
 import { useGear } from "../../hooks/useGear";
 import { GEAR_SLOTS } from "../../constants";
+import GearDetailCard from "@/app/ui/gear/GearDetailCard";
 
 export default function GearEquippedTab() {
   const { customGears, equipped, setEquipped } = useGear();
@@ -11,10 +11,11 @@ export default function GearEquippedTab() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {GEAR_SLOTS.map(({ key, label }) => {
-        const available = customGears.filter(g => g.slot === key);
+        const available = customGears.filter((g) => g.slot === key);
+        const equippedGear = customGears.find((g) => g.id === equipped[key]);
 
         return (
-          <Card key={key} className="p-3 space-y-2 border-[#2b2a33]">
+          <Card key={key} className="p-3 space-y-3 border-[#2b2a33]">
             <p className="text-xs text-muted-foreground">{label}</p>
 
             {/* Slot image placeholder */}
@@ -25,7 +26,7 @@ export default function GearEquippedTab() {
             <select
               value={equipped[key] || ""}
               onChange={(e) =>
-                setEquipped(prev => ({
+                setEquipped((prev) => ({
                   ...prev,
                   [key]: e.target.value || undefined,
                 }))
@@ -33,12 +34,15 @@ export default function GearEquippedTab() {
               className="w-full rounded border bg-background px-2 py-1 text-sm"
             >
               <option value="">Empty</option>
-              {available.map(g => (
+              {available.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
                 </option>
               ))}
             </select>
+
+            {/* ✅ Gear detail */}
+            {equippedGear && <GearDetailCard gear={equippedGear} />}
           </Card>
         );
       })}
