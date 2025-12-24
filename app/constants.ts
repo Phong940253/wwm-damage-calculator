@@ -153,7 +153,7 @@ export const INITIAL_STATS: InputStats = {
 
 export const INITIAL_ELEMENT_STATS: ElementStats = {
   selected: "bellstrike",
-  MainElementMultiplier: { current: 420, increase: 0 },
+  MainElementMultiplier: { current: 653, increase: 0 },
 
   /* ---------- Bellstrike ---------- */
   bellstrikeMin: {

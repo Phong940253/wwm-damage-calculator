@@ -40,6 +40,10 @@ export function useDamage(
 
     const finalCtx = buildDamageContext(stats, elementStats, gearBonus);
     const final = calculateDamage(finalCtx);
+    console.log(
+      baseCtx.get("MAXAttributeAttackOfYOURType"),
+      finalCtx.get("MAXAttributeAttackOfYOURType")
+    );
 
     const pct = (b: number, f: number) => (b === 0 ? 0 : ((f - b) / b) * 100);
 

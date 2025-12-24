@@ -36,7 +36,8 @@ export function buildDamageContext(
   // Element stat + increase
   const ele = (k: ElementStatKey) =>
     Number(elementStats[k]?.current || 0) +
-    Number(elementStats[k]?.increase || 0);
+    Number(elementStats[k]?.increase || 0) +
+    (gearBonus[k] || 0);
 
   /* ============================
      Derived stats (increase-aware)

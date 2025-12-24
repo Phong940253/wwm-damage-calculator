@@ -73,8 +73,9 @@ export type GearSlot =
  * Single attribute on gear
  * stat must be one of InputStats keys
  */
+// app/types.ts
 export interface GearAttribute {
-  stat: keyof InputStats;
+  stat: keyof InputStats | ElementStatKey; // ✅ allow element stats
   value: number;
 }
 

@@ -16,7 +16,7 @@ export const useElementStats = (initial: ElementStats) => {
 
       // init MainElementMultiplier if not present
       if (saved.MainElementMultiplier === undefined) {
-        saved.MainElementMultiplier = 420;
+        saved.MainElementMultiplier = 653;
       }
 
       setElementStats((prev) => {
