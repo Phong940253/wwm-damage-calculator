@@ -15,7 +15,7 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { Moon, Sun, Swords } from "lucide-react";
 import { useEffect } from "react";
-
+import ImportExportTab from "./ui/import-export/ImportExportTab";
 
 export default function DMGOptimizer() {
   const {
@@ -92,7 +92,6 @@ export default function DMGOptimizer() {
   };
 
   return (
-
     <div className="min-h-screen p-6 bg-gradient-to-br from-background via-background/95 to-muted/40">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* ---------- HEADER ---------- */}
@@ -127,6 +126,7 @@ export default function DMGOptimizer() {
               <TabsTrigger value="equipped">Gear Equipped</TabsTrigger>
               <TabsTrigger value="custom">Gear Customize</TabsTrigger>
               <TabsTrigger value="compare">Gear Compare</TabsTrigger>
+              <TabsTrigger value="import-export">Import / Export</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stats">
@@ -134,7 +134,7 @@ export default function DMGOptimizer() {
                 stats={stats}
                 elementStats={elementStats}
                 gearBonus={gearBonus}
-                statImpact={statImpact}   // ✅ ADD
+                statImpact={statImpact} // ✅ ADD
                 onStatChange={onStatChange}
                 onElementChange={onElementChange}
               />
@@ -151,6 +151,10 @@ export default function DMGOptimizer() {
             <TabsContent value="compare">
               <GearCompareTab stats={stats} elementStats={elementStats} />
             </TabsContent>
+
+            <TabsContent value="import-export">
+              <ImportExportTab />
+            </TabsContent>
           </Tabs>
 
           {/* RIGHT */}
@@ -160,12 +164,11 @@ export default function DMGOptimizer() {
             onApplyIncrease={applyIncreaseToCurrent}
             onSaveCurrent={saveCurrentStats}
             showFormula={showFormula}
-            toggleFormula={() => setShowFormula(v => !v)}
+            toggleFormula={() => setShowFormula((v) => !v)}
             formulaSlot={<FormulaPanel />}
           />
         </div>
       </div>
     </div>
-
   );
 }
