@@ -1,101 +1,69 @@
-// app/domain/gear/gearOptimize.ts
-
 import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
 import { aggregateEquippedGearBonus } from "./gearAggregate";
 import { buildDamageContext } from "../damage/damageContext";
 import { calculateDamage } from "../damage/damageCalculator";
 
-/* ============================================================
-   RESULT TYPES
-============================================================ */
+/* =======================
+   Types
+======================= */
 
-/**
- * Một kết quả optimize duy nhất
- */
 export interface OptimizeResult {
-  /** key duy nhất đại diện cho combo gear */
   key: string;
-
-  /** damage trung bình (normal damage) */
   damage: number;
-
-  /** % tăng so với base damage */
   percentGain: number;
-
-  /** gear được chọn cho mỗi slot */
   selection: Partial<Record<GearSlot, CustomGear>>;
 }
 
-/**
- * Kết quả cuối của optimizer
- */
 export interface OptimizeComputation {
-  baseDamage: number; // damage khi KHÔNG có gear
-  totalCombos: number; // tổng số combo đã duyệt
+  baseDamage: number; // ✅ base = damage với gear đang equip
+  totalCombos: number;
   results: OptimizeResult[];
 }
 
-/* ============================================================
-   SAFETY LIMITS
-============================================================ */
+export const MAX_RESULTS_CAP = 10_000;
+export const MAX_COMBINATIONS = 1_000_000_000;
 
-export const MAX_RESULTS_CAP = 10_000; // giới hạn số kết quả trả về
-export const MAX_COMBINATIONS = 1_000_000_000; // tránh nổ máy
+/* =======================
+   MAIN OPTIMIZER
+======================= */
 
-/* ============================================================
-   MAIN OPTIMIZER FUNCTION
-============================================================ */
-
-/**
- * Tính toán các combination gear tốt nhất
- *
- * ❗ QUY TẮC CỐT LÕI:
- * - Base damage = KHÔNG có gear
- * - DFS bắt đầu với bonus rỗng {}
- * - Mỗi slot chỉ có 1 gear
- */
 export function computeOptimizeResults(
   stats: InputStats,
   elementStats: ElementStats,
   customGears: CustomGear[],
-  equipped: Partial<Record<GearSlot, string | undefined>>, // (không dùng để cộng)
+  equipped: Partial<Record<GearSlot, string | undefined>>,
   desiredDisplay: number
 ): OptimizeComputation {
   /* ============================================================
-     1️⃣ BASE DAMAGE (NO GEAR)
-     ------------------------------------------------------------
-     Đây là damage "chuẩn gốc" để tính % gain
-     ❌ KHÔNG được dùng gear equipped ở đây
+     1️⃣ BASE DAMAGE = WITH EQUIPPED GEAR
   ============================================================ */
 
-  const emptyEquipped: Partial<Record<GearSlot, string>> = {};
-
-  // bonus = {} vì emptyEquipped
-  const baseBonus = aggregateEquippedGearBonus(customGears, emptyEquipped);
-
+  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
   const baseCtx = buildDamageContext(stats, elementStats, baseBonus);
   const baseDamage = calculateDamage(baseCtx).normal;
 
   /* ============================================================
-     2️⃣ BUILD SLOT OPTIONS
+     2️⃣ PREPARE SLOT OPTIONS
      ------------------------------------------------------------
-     Mỗi slot có danh sách gear hợp lệ
-     Nếu slot không có gear nào → cho phép null (empty slot)
+     Mỗi slot sẽ:
+     - biết gear đang equip (origin)
+     - biết các gear có thể thử
   ============================================================ */
 
   const slotOptions = GEAR_SLOTS.map(({ key }) => {
     const items = customGears.filter((g) => g.slot === key);
 
+    // gear đang equip ở slot này (nếu có)
+    const equippedGear =
+      equipped[key] && customGears.find((g) => g.id === equipped[key]);
+
     return {
       slot: key,
-      items: items.length > 0 ? items : [null],
+      items: items.length ? items : [null],
+      equippedGear,
     };
   });
-
-  /* ============================================================
-     3️⃣ ESTIMATE COMBINATION COUNT (SAFETY)
-  ============================================================ */
 
   const estimated = slotOptions.reduce(
     (acc, { items }) => acc * items.length,
@@ -109,45 +77,40 @@ export function computeOptimizeResults(
   const limit = Math.min(Math.max(desiredDisplay, 1), MAX_RESULTS_CAP);
 
   /* ============================================================
-     4️⃣ DFS STATE
-     ------------------------------------------------------------
-     bonus: stat bonus hiện tại của combo đang duyệt
-     selection: gear được chọn cho từng slot
+     3️⃣ DFS STATE
   ============================================================ */
 
   const results: OptimizeResult[] = [];
   let total = 0;
 
-  // lưu selection hiện tại (mutable trong DFS)
   const selection: Partial<Record<GearSlot, CustomGear>> = {};
 
-  // ❗ CỰC KỲ QUAN TRỌNG
-  // bonus KHỞI ĐẦU LÀ RỖNG → KHÔNG DUPLICATE GEAR
-  const bonus: Record<string, number> = {};
+  // ❗ bonus KHỞI ĐẦU = baseBonus (gear đang equip)
+  const bonus: Record<string, number> = { ...baseBonus };
 
   /**
-   * Apply hoặc rollback stat của 1 gear
-   * dir = +1 → apply
-   * dir = -1 → rollback
+   * Apply / rollback stat của 1 gear
    */
   const applyGear = (gear: CustomGear, dir: 1 | -1) => {
     [...gear.mains, ...gear.subs, gear.addition]
       .filter(Boolean)
-      .forEach((attr) => {
-        bonus[attr!.stat] = (bonus[attr!.stat] || 0) + dir * attr!.value;
+      .forEach((a) => {
+        bonus[a!.stat] = (bonus[a!.stat] || 0) + dir * a!.value;
       });
   };
 
   /* ============================================================
-     5️⃣ DFS (DEPTH-FIRST SEARCH)
+     4️⃣ DFS
+     ------------------------------------------------------------
+     - Remove gear cũ
+     - Apply gear mới
+     - Rollback đúng thứ tự
   ============================================================ */
 
-  const dfs = (index: number) => {
-    // ✅ Đã chọn xong gear cho tất cả slot
-    if (index === slotOptions.length) {
+  const dfs = (i: number) => {
+    if (i === slotOptions.length) {
       total++;
 
-      // build damage context từ bonus hiện tại
       const ctx = buildDamageContext(stats, elementStats, bonus);
       const dmg = calculateDamage(ctx).normal;
 
@@ -155,51 +118,50 @@ export function computeOptimizeResults(
         key: GEAR_SLOTS.map(({ key }) => selection[key]?.id ?? "none").join(
           "|"
         ),
-
         damage: dmg,
-
         percentGain:
           baseDamage === 0 ? 0 : ((dmg - baseDamage) / baseDamage) * 100,
-
-        // clone để tránh mutation
         selection: { ...selection },
       });
 
       return;
     }
 
-    const { slot, items } = slotOptions[index];
+    const { slot, items, equippedGear } = slotOptions[i];
 
-    // thử từng gear trong slot
     for (const gear of items) {
+      // 1️⃣ remove gear đang equip ở slot này (nếu có)
+      if (equippedGear) {
+        applyGear(equippedGear, -1);
+      }
+
       if (gear) {
-        // chọn gear cho slot
+        // 2️⃣ apply gear mới
         selection[slot] = gear;
-
-        // cộng stat
         applyGear(gear, +1);
-
-        // đi tiếp slot sau
-        dfs(index + 1);
-
-        // rollback stat
-        applyGear(gear, -1);
-
-        // bỏ chọn
-        delete selection[slot];
       } else {
-        // slot trống
         delete selection[slot];
-        dfs(index + 1);
+      }
+
+      dfs(i + 1);
+
+      // 3️⃣ rollback gear mới
+      if (gear) {
+        applyGear(gear, -1);
+        delete selection[slot];
+      }
+
+      // 4️⃣ restore gear cũ
+      if (equippedGear) {
+        applyGear(equippedGear, +1);
       }
     }
   };
 
-  // bắt đầu DFS
   dfs(0);
 
   /* ============================================================
-     6️⃣ SORT + LIMIT RESULT
+     5️⃣ SORT + LIMIT
   ============================================================ */
 
   results.sort((a, b) =>
