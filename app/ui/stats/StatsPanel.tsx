@@ -168,7 +168,7 @@ export default function StatsPanel({
                           {impact !== 0 && (
                             <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                               {impact > 0 ? "+" : ""}
-                              {impact.toFixed(2)}%
+                              {impact.toFixed(3)}%
                             </Badge>
                           )}
                         </div>
