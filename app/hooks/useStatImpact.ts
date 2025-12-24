@@ -1,7 +1,10 @@
+// app/hooks/useStatImpact.ts
 import { useMemo } from "react";
 import { InputStats, ElementStats } from "@/app/types";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
+
+type ElementStatKey = Exclude<keyof ElementStats, "selected">;
 
 export function useStatImpact(
   stats: InputStats,
@@ -11,7 +14,10 @@ export function useStatImpact(
   return useMemo(() => {
     const impacts: Record<string, number> = {};
 
-    /* ---------- base damage ---------- */
+    /* =======================
+       BASE STATS (normalized)
+    ======================= */
+
     const baseStats: InputStats = Object.fromEntries(
       Object.entries(stats).map(([k, v]) => [
         k,
@@ -19,29 +25,58 @@ export function useStatImpact(
       ])
     );
 
-    const baseCtx = buildDamageContext(baseStats, elementStats, gearBonus);
-    const base = calculateDamage(baseCtx);
+    const baseElements: Record<ElementStatKey, number> = Object.fromEntries(
+      Object.keys(elementStats)
+        .filter((k) => k !== "selected")
+        .map((k) => [k, Number(elementStats[k as ElementStatKey].current || 0)])
+    ) as Record<ElementStatKey, number>;
 
+    const buildCtx = (s: InputStats, e: Record<ElementStatKey, number>) =>
+      buildDamageContext(
+        s,
+        {
+          selected: elementStats.selected,
+          ...Object.fromEntries(
+            Object.entries(e).map(([k, v]) => [k, { current: v, increase: 0 }])
+          ),
+        } as ElementStats,
+        gearBonus
+      );
+
+    const base = calculateDamage(buildCtx(baseStats, baseElements));
     const baseValue = base.normal || 0;
     if (baseValue === 0) return impacts;
 
-    /* ---------- per-stat simulation ---------- */
-    for (const key of Object.keys(stats)) {
-      const inc = Number(stats[key as keyof InputStats].increase || 0);
+    /* =======================
+       1️⃣ INPUT STATS
+    ======================= */
+    for (const key of Object.keys(stats) as (keyof InputStats)[]) {
+      const inc = Number(stats[key].increase || 0);
       if (inc === 0) continue;
 
-      const testStats: InputStats = structuredClone(baseStats);
-      testStats[key as keyof InputStats].current =
-        Number(testStats[key as keyof InputStats].current) + inc;
+      const testStats = structuredClone(baseStats);
+      testStats[key].current = Number(testStats[key].current) + inc;
 
-      const ctx = buildDamageContext(testStats, elementStats, gearBonus);
-      const dmg = calculateDamage(ctx);
-
+      const dmg = calculateDamage(buildCtx(testStats, baseElements));
       const diff = ((dmg.normal - baseValue) / baseValue) * 100;
 
-      if (Math.abs(diff) > 0.01) {
-        impacts[key] = diff;
-      }
+      if (Math.abs(diff) > 0.01) impacts[key] = diff;
+    }
+
+    /* =======================
+       2️⃣ ELEMENT STATS ✅
+    ======================= */
+    for (const key of Object.keys(baseElements) as ElementStatKey[]) {
+      const inc = Number(elementStats[key].increase || 0);
+      if (inc === 0) continue;
+
+      const testElements = { ...baseElements };
+      testElements[key] = testElements[key] + inc;
+
+      const dmg = calculateDamage(buildCtx(baseStats, testElements));
+      const diff = ((dmg.normal - baseValue) / baseValue) * 100;
+
+      if (Math.abs(diff) > 0.01) impacts[key] = diff;
     }
 
     return impacts;

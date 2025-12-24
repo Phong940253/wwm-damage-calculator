@@ -1,3 +1,4 @@
+// app/hooks/useDamage.ts
 import { useMemo } from "react";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
@@ -11,7 +12,8 @@ export function useDamage(
   gearBonus: Record<string, number>
 ): DamageResult {
   return useMemo(() => {
-    /* ---------- BASE (no increase) ---------- */
+    /* ---------- BASE (NO increase) ---------- */
+
     const baseStats: InputStats = Object.fromEntries(
       Object.entries(stats).map(([k, v]) => [
         k,
@@ -19,10 +21,23 @@ export function useDamage(
       ])
     );
 
-    const baseCtx = buildDamageContext(baseStats, elementStats, gearBonus);
+    const baseElementStats: ElementStats = {
+      ...elementStats,
+      ...Object.fromEntries(
+        Object.entries(elementStats)
+          .filter(([k]) => k !== "selected")
+          .map(([k, v]) => [
+            k,
+            { current: Number(v.current || 0), increase: 0 },
+          ])
+      ),
+    };
+
+    const baseCtx = buildDamageContext(baseStats, baseElementStats, gearBonus);
     const base = calculateDamage(baseCtx);
 
-    /* ---------- FINAL (with increase) ---------- */
+    /* ---------- FINAL (WITH increase) ---------- */
+
     const finalCtx = buildDamageContext(stats, elementStats, gearBonus);
     const final = calculateDamage(finalCtx);
 
