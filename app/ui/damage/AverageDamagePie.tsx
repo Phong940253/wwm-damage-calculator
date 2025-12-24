@@ -7,6 +7,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   TooltipProps,
+  PieLabelRenderProps,
 } from "recharts";
 
 const COLORS = {
@@ -43,8 +44,18 @@ export default function AverageDamagePie({ data }: { data: Breakdown }) {
     innerRadius,
     outerRadius,
     percent,
-  }: any) => {
-    if (percent < 0.03) return null; // hide < 3%
+  }: PieLabelRenderProps) => {
+    if (
+      percent === undefined ||
+      percent < 0.03 ||
+      cx === undefined ||
+      cy === undefined ||
+      midAngle === undefined ||
+      innerRadius === undefined ||
+      outerRadius === undefined
+    ) {
+      return null;
+    }
 
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.65;
