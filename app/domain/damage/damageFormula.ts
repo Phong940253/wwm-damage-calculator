@@ -108,7 +108,7 @@ export const calcExpectedNormal = (
 
   // ✅ Precision
   const precision =
-    As * maxDamage + Cs * maxDamage * (1 + CD) + (1 - As - Cs) * base;
+    As * maxDamage + Cs * base * (1 + CD) + (1 - As - Cs) * base;
 
   return (1 - P) * noPrecision + P * precision;
 };
@@ -151,7 +151,7 @@ export const calcExpectedNormalBreakdown = (
   return {
     abrasion: (1 - P) * (1 - As) * minDamage,
     affinity: ((1 - P) * As + P * As) * maxDamage,
-    critical: P * Cs * maxDamage * (1 + CD),
+    critical: P * Cs * base * (1 + CD),
     normal: P * (1 - As - Cs) * base,
   };
 };
