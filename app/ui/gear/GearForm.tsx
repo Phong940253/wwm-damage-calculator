@@ -30,6 +30,9 @@ interface GearFormProps {
 /* Flatten stat options */
 const STAT_OPTIONS: GearStatKey[] = Object.values(STAT_GROUPS).flat();
 
+/* Armor slots that should NOT have main attributes */
+const ARMOR_SLOTS: GearSlot[] = ["head", "chest", "hand", "leg"];
+
 
 /* =======================
    Component
@@ -114,6 +117,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         }
       }
 
+    } catch (error) {
+      console.error("OCR failed:", error);
+      alert("OCR failed. Please try again or enter manually.");
     } finally {
       setOcrLoading(false);
     }
@@ -134,37 +140,55 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   /* -------------------- submit -------------------- */
   const submit = () => {
-    if (!name || mains.length === 0) return;
-
-    const id = initialGear?.id ?? crypto.randomUUID();
-
-    const gear: CustomGear = {
-      id,
-      name,
-      slot,
-      mains,
-      subs,
-      addition: addition ?? undefined,
-    };
-
-    setCustomGears(g =>
-      initialGear
-        ? g.map(x => (x.id === id ? gear : x))
-        : [...g, gear]
-    );
-
-    if (initialGear) {
-      setEquipped(prev => {
-        const next = { ...prev };
-        if (prev[initialGear.slot] === id) {
-          delete next[initialGear.slot];
-          next[slot] = id;
-        }
-        return next;
-      });
+    // Validate name
+    if (!name.trim()) {
+      alert("Please enter a gear name");
+      return;
     }
 
-    onSuccess?.();
+    // Check if current slot is armor
+    const isArmor = ARMOR_SLOTS.includes(slot);
+
+    // Validate mains for non-armor slots
+    if (!isArmor && mains.length === 0) {
+      alert("Please add at least one main attribute");
+      return;
+    }
+
+    try {
+      const id = initialGear?.id ?? crypto.randomUUID();
+
+      const gear: CustomGear = {
+        id,
+        name,
+        slot,
+        mains: isArmor ? [] : mains, // Empty mains for armor
+        subs,
+        addition: addition ?? undefined,
+      };
+
+      setCustomGears(g =>
+        initialGear
+          ? g.map(x => (x.id === id ? gear : x))
+          : [...g, gear]
+      );
+
+      if (initialGear) {
+        setEquipped(prev => {
+          const next = { ...prev };
+          if (prev[initialGear.slot] === id) {
+            delete next[initialGear.slot];
+            next[slot] = id;
+          }
+          return next;
+        });
+      }
+
+      onSuccess?.();
+    } catch (error) {
+      console.error("Failed to save gear:", error);
+      alert("Failed to save gear. Please try again.");
+    }
   };
 
   /* -------------------- helpers -------------------- */
@@ -210,55 +234,57 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         </div>
       </div>
 
-      {/* 🔥 Main attributes */}
-      <div className="border rounded p-3 space-y-2">
-        <div className="flex justify-between items-center">
-          <p className="text-sm font-medium">Main Attributes</p>
-          <Button size="sm" variant="secondary" onClick={addMain}>
-            + Add
-          </Button>
-        </div>
-
-        {mains.map((m, i) => (
-          <div key={i} className="flex gap-2">
-            <select
-              className="flex-1 border rounded px-2 py-1"
-              value={m.stat}
-              onChange={e => {
-                const v = [...mains];
-                v[i].stat = e.target.value as GearStatKey;
-                setMains(v);
-              }}
-            >
-              {STAT_OPTIONS.map(s => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-
-            <Input
-              type="number"
-              value={m.value}
-              onChange={e => {
-                const v = [...mains];
-                v[i].value = Number(e.target.value);
-                setMains(v);
-              }}
-            />
-
-            {mains.length > 1 && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => removeMain(i)}
-              >
-                ✕
-              </Button>
-            )}
+      {/* 🔥 Main attributes - Hidden for armor slots */}
+      {!ARMOR_SLOTS.includes(slot) && (
+        <div className="border rounded p-3 space-y-2">
+          <div className="flex justify-between items-center">
+            <p className="text-sm font-medium">Main Attributes</p>
+            <Button size="sm" variant="secondary" onClick={addMain}>
+              + Add
+            </Button>
           </div>
-        ))}
-      </div>
+
+          {mains.map((m, i) => (
+            <div key={i} className="flex gap-2">
+              <select
+                className="flex-1 border rounded px-2 py-1"
+                value={m.stat}
+                onChange={e => {
+                  const v = [...mains];
+                  v[i].stat = e.target.value as GearStatKey;
+                  setMains(v);
+                }}
+              >
+                {STAT_OPTIONS.map(s => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+
+              <Input
+                type="number"
+                value={m.value}
+                onChange={e => {
+                  const v = [...mains];
+                  v[i].value = Number(e.target.value);
+                  setMains(v);
+                }}
+              />
+
+              {mains.length > 1 && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeMain(i)}
+                >
+                  ✕
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Sub attributes */}
       <div className="border rounded p-3 space-y-2">
