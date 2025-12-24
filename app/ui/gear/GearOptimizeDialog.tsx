@@ -79,7 +79,13 @@ export default function GearOptimizeDialog({
                   <Card key={r.key} className="p-4 space-y-2">
                     <div className="flex justify-between">
                       <span>#{i + 1}</span>
-                      <span className="text-emerald-500">
+                      <span
+                        className={
+                          r.percentGain < 0
+                            ? "text-red-500"
+                            : "text-emerald-500"
+                        }
+                      >
                         {r.percentGain >= 0 ? "+" : ""}
                         {r.percentGain.toFixed(2)}%
                       </span>
