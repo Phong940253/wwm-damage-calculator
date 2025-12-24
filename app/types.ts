@@ -15,6 +15,7 @@ export interface InputStats {
 
 export interface ElementStats {
   selected: ElementKey;
+  MainElementMultiplier: Stat;
   bellstrikeMin: Stat;
   bellstrikeMax: Stat;
   bellstrikePenetration: Stat;
@@ -51,7 +52,8 @@ export type ElementStatKey =
   | "bamboocutMin"
   | "bamboocutMax"
   | "bamboocutPenetration"
-  | "bamboocutDMGBonus";
+  | "bamboocutDMGBonus"
+  | "MainElementMultiplier";
 
 /* =======================
    Gear domain

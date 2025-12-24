@@ -110,6 +110,7 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   Penetration: "Penetration",
   DMGBonus: "DMG Bonus",
   DamageBoost: "Damage Boost",
+  MainElementMultiplier: "Main Element Multiplier",
 };
 
 /* =========================
@@ -152,6 +153,7 @@ export const INITIAL_STATS: InputStats = {
 
 export const INITIAL_ELEMENT_STATS: ElementStats = {
   selected: "bellstrike",
+  MainElementMultiplier: { current: 420, increase: 0 },
 
   /* ---------- Bellstrike ---------- */
   bellstrikeMin: {

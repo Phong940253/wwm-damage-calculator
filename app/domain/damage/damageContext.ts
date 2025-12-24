@@ -71,6 +71,8 @@ export function buildDamageContext(
     if (k === "AttributeAttackDMGBonusOfYOURType")
       return ele(elementKey(elementStats.selected, "DMGBonus"));
 
+    if (k === "MainElementMultiplier") return ele("MainElementMultiplier");
+
     /* ---------- OTHER Elements ---------- */
 
     if (k === "MINAttributeAttackOfOtherType") {
