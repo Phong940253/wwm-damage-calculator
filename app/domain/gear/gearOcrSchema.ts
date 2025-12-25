@@ -33,8 +33,8 @@ ALLOWED SLOTS
 ====================
 weapon_1
 weapon_2
-ring
-talisman
+disc
+pendant
 head
 chest
 hand
