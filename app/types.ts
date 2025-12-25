@@ -62,8 +62,8 @@ export type ElementStatKey =
 export type GearSlot =
   | "weapon_1"
   | "weapon_2"
-  | "ring"
-  | "talisman"
+  | "disc" // was ring
+  | "pendant" // was talisman
   | "head"
   | "chest"
   | "hand"
