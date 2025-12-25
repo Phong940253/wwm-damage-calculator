@@ -2,31 +2,54 @@
 import { useEffect, useState } from "react";
 import { CustomGear, GearSlot } from "../types";
 
+/* =======================
+   Slot migration helpers
+======================= */
+
+type LegacyGearSlot = GearSlot | "ring" | "talisman";
+
+function migrateGearSlot(slot: LegacyGearSlot): GearSlot {
+  if (slot === "ring") return "disc";
+  if (slot === "talisman") return "pendant";
+  return slot;
+}
+
+function migrateEquipped(
+  raw: Partial<Record<string, string>>
+): Partial<Record<GearSlot, string>> {
+  const result: Partial<Record<GearSlot, string>> = {};
+
+  Object.entries(raw).forEach(([key, value]) => {
+    const slot = migrateGearSlot(key as LegacyGearSlot);
+    if (value) {
+      result[slot] = value;
+    }
+  });
+
+  return result;
+}
+
+/* =======================
+   Hook
+======================= */
+
 export const useGear = () => {
-  // Initialize with empty values to match SSR
   const [customGears, setCustomGears] = useState<CustomGear[]>([]);
   const [equipped, setEquipped] = useState<Partial<Record<GearSlot, string>>>(
     {}
   );
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage after mount (client-side only)
+  // Load from localStorage (client only)
   useEffect(() => {
     const savedGears = localStorage.getItem("wwm_custom_gear");
     const savedEquipped = localStorage.getItem("wwm_equipped");
 
     if (savedGears) {
-      const migrateGearSlot = (
-        slot: GearSlot | "ring" | "talisman"
-      ): GearSlot => {
-        if (slot === "ring") return "disc";
-        if (slot === "talisman") return "pendant";
-        return slot;
-      };
+      const parsed = JSON.parse(savedGears) as CustomGear[];
 
-      // when loading gears
       setCustomGears(
-        JSON.parse(savedGears).map((g: CustomGear) => ({
+        parsed.map((g) => ({
           ...g,
           slot: migrateGearSlot(g.slot),
         }))
@@ -34,25 +57,17 @@ export const useGear = () => {
     }
 
     if (savedEquipped) {
-      const parsed: Partial<Record<string, string>> = JSON.parse(savedEquipped);
+      const parsed = JSON.parse(savedEquipped) as Partial<
+        Record<string, string>
+      >;
 
-      // 🔄 migrate old slot keys
-      const migrated: Partial<Record<GearSlot, string>> = {
-        ...parsed,
-        disc: parsed.ring,
-        pendant: parsed.talisman,
-      };
-
-      delete (migrated as any).ring;
-      delete (migrated as any).talisman;
-
-      setEquipped(migrated);
+      setEquipped(migrateEquipped(parsed));
     }
 
     setIsLoaded(true);
   }, []);
 
-  // Persist to localStorage after initial load
+  // Persist after initial load
   useEffect(() => {
     if (!isLoaded) return;
 

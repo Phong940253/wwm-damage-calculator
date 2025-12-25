@@ -22,7 +22,13 @@ import { useGearOptimize } from "../../hooks/useGearOptimize";
 
 function toggleSet<T>(set: Set<T>, value: T): Set<T> {
   const next = new Set(set);
-  next.has(value) ? next.delete(value) : next.add(value);
+
+  if (next.has(value)) {
+    next.delete(value);
+  } else {
+    next.add(value);
+  }
+
   return next;
 }
 
@@ -120,20 +126,29 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
   const displayGears = useMemo(() => {
     let list = [...customGears];
 
+    /* ---- Slot filter ---- */
     if (slotFilter.size > 0) {
       list = list.filter((g) => slotFilter.has(g.slot));
     }
 
+    /* ---- Stat filter ---- */
     if (statFilter.size > 0) {
       list = list.filter((g) =>
         Array.from(statFilter).some((stat) => getStatTotal(g, stat) > 0)
       );
     }
 
+    /* ---- Sort ---- */
     if (sortStat !== "none") {
       list.sort((a, b) => {
         const va = getStatTotal(a, sortStat);
         const vb = getStatTotal(b, sortStat);
+
+        if (va === vb) {
+          // stable fallback: name
+          return a.name.localeCompare(b.name);
+        }
+
         return sortDir === "asc" ? va - vb : vb - va;
       });
     }
@@ -266,6 +281,75 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
             Clear Filter
           </Button>
         )}
+
+        {/* SORT */}
+        <div className="relative group inline-block">
+          <Button variant={sortStat !== "none" ? "default" : "outline"}>
+            Sort
+            {sortStat !== "none" && ` (${sortStat})`}
+          </Button>
+
+          {/* Hover buffer */}
+          <div className="absolute left-0 top-full h-3 w-full" />
+
+          <div
+            className="
+      absolute z-50 top-full left-0 mt-2 w-56
+      rounded-lg border bg-card shadow-lg
+      p-2 space-y-2
+      hidden group-hover:block
+    "
+          >
+            {/* Sort stat */}
+            <select
+              className="w-full px-2 py-1 rounded border bg-background text-sm"
+              value={sortStat}
+              onChange={(e) => setSortStat(e.target.value)}
+            >
+              <option value="none">No sorting</option>
+              {statOptions.map((stat) => (
+                <option key={stat} value={stat}>
+                  {stat}
+                </option>
+              ))}
+            </select>
+
+            {/* Direction */}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={sortDir === "desc" ? "default" : "outline"}
+                onClick={() => setSortDir("desc")}
+                className="flex-1"
+              >
+                ↓ Desc
+              </Button>
+              <Button
+                size="sm"
+                variant={sortDir === "asc" ? "default" : "outline"}
+                onClick={() => setSortDir("asc")}
+                className="flex-1"
+              >
+                ↑ Asc
+              </Button>
+            </div>
+
+            {/* Reset */}
+            {sortStat !== "none" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setSortStat("none");
+                  setSortDir("desc");
+                }}
+              >
+                Clear Sort
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* =======================
