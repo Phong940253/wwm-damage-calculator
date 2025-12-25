@@ -15,24 +15,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useGearOptimize } from "../../hooks/useGearOptimize";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 /* =======================
    Helpers
 ======================= */
 
+function toggleSet<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set);
+  next.has(value) ? next.delete(value) : next.add(value);
+  return next;
+}
+
 function getStatTotal(gear: CustomGear, stat: string): number {
   let total = 0;
+  const eq = (v?: string | number) => String(v) === stat;
 
-  const eq = (a?: string | number) => String(a) === stat;
-
-  if (eq(gear.main?.stat)) {
-    total += gear.main!.value;
+  if (gear.main && eq(gear.main.stat)) {
+    total += gear.main.value;
   }
 
   gear.mains?.forEach((m) => {
@@ -71,21 +70,22 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
   const [optOpen, setOptOpen] = useState(false);
   const [maxDisplay, setMaxDisplay] = useState(200);
 
-  /* ===== Filter / Sort state ===== */
+  /* =======================
+     Filter / Sort state
+  ======================= */
 
   const [slotFilter, setSlotFilter] = useState<Set<GearSlot>>(new Set());
   const [statFilter, setStatFilter] = useState<Set<string>>(new Set());
+
+  const [pinSlot, setPinSlot] = useState(false);
+  const [pinStat, setPinStat] = useState(false);
+
+  const [statSearch, setStatSearch] = useState("");
 
   const [sortStat, setSortStat] = useState<string>("none");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const opt = useGearOptimize(stats, elementStats, customGears, equipped);
-
-  function toggleSet<T>(set: Set<T>, value: T): Set<T> {
-    const next = new Set(set);
-    next.has(value) ? next.delete(value) : next.add(value);
-    return next;
-  }
 
   useEffect(() => {
     if (optOpen) opt.run(maxDisplay);
@@ -118,6 +118,13 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
 
     return Array.from(set).sort();
   }, [customGears]);
+
+  const filteredStatOptions = useMemo(() => {
+    if (!statSearch) return statOptions;
+    return statOptions.filter((s) =>
+      s.toLowerCase().includes(statSearch.toLowerCase())
+    );
+  }, [statOptions, statSearch]);
 
   /* =======================
      Filter + Sort gears
@@ -171,20 +178,27 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
       </div>
 
       {/* =======================
-          Filters
+          FILTER BAR
       ======================= */}
       <div className="flex flex-wrap gap-2">
         {/* SLOT FILTER */}
         <div className="relative group">
-          <Button variant="outline">Slot Filter</Button>
+          <Button
+            variant={slotFilter.size > 0 ? "default" : "outline"}
+            onClick={() => setPinSlot((p) => !p)}
+          >
+            Slot
+            {slotFilter.size > 0 && ` (${slotFilter.size})`}
+            {pinSlot && " 📌"}
+          </Button>
 
           <div
-            className="
-        absolute z-50 mt-2 w-48
-        rounded-lg border bg-card shadow-lg
-        p-2 space-y-1
-        hidden group-hover:block
-      "
+            className={`
+              absolute z-50 mt-2 w-48
+              rounded-lg border bg-card shadow-lg
+              p-2 space-y-1
+              ${pinSlot ? "block" : "hidden group-hover:block"}
+            `}
           >
             {GEAR_SLOTS.map((s) => (
               <label
@@ -206,41 +220,58 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
 
         {/* STAT FILTER */}
         <div className="relative group">
-          <Button variant="outline">Stat Filter</Button>
+          <Button
+            variant={statFilter.size > 0 ? "default" : "outline"}
+            onClick={() => setPinStat((p) => !p)}
+          >
+            Stat
+            {statFilter.size > 0 && ` (${statFilter.size})`}
+            {pinStat && " 📌"}
+          </Button>
 
           <div
-            className="
-        absolute z-50 mt-2 w-56 max-h-64 overflow-auto
-        rounded-lg border bg-card shadow-lg
-        p-2 space-y-1
-        hidden group-hover:block
-      "
+            className={`
+              absolute z-50 mt-2 w-56 max-h-72 overflow-auto
+              rounded-lg border bg-card shadow-lg
+              p-2
+              ${pinStat ? "block" : "hidden group-hover:block"}
+            `}
           >
-            {statOptions.map((stat) => (
-              <label
-                key={stat}
-                className="flex items-center gap-2 text-sm cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={statFilter.has(stat)}
-                  onChange={() =>
-                    setStatFilter((prev) => toggleSet(prev, stat))
-                  }
-                />
-                {stat}
-              </label>
-            ))}
+            <input
+              className="w-full mb-2 px-2 py-1 rounded border bg-background text-xs"
+              placeholder="Search stat..."
+              value={statSearch}
+              onChange={(e) => setStatSearch(e.target.value)}
+            />
+
+            <div className="space-y-1">
+              {filteredStatOptions.map((stat) => (
+                <label
+                  key={stat}
+                  className="flex items-center gap-2 text-sm cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={statFilter.has(stat)}
+                    onChange={() =>
+                      setStatFilter((prev) => toggleSet(prev, stat))
+                    }
+                  />
+                  {stat}
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* CLEAR */}
+        {/* CLEAR FILTER */}
         {(slotFilter.size > 0 || statFilter.size > 0) && (
           <Button
             variant="ghost"
             onClick={() => {
               setSlotFilter(new Set());
               setStatFilter(new Set());
+              setStatSearch("");
             }}
           >
             Clear Filter
@@ -249,7 +280,7 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
       </div>
 
       {/* =======================
-          Gear list
+          GEAR LIST
       ======================= */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayGears.map((g) => (
@@ -268,14 +299,14 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
       </div>
 
       {/* =======================
-          Dialogs
+          DIALOGS
       ======================= */}
-
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Gear" : "Add New Gear"}</DialogTitle>
           </DialogHeader>
+
           <GearForm initialGear={editing} onSuccess={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
