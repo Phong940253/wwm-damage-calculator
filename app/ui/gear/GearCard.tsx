@@ -1,7 +1,6 @@
-// app/gear/GearCard.tsx
 "use client";
 
-import { CustomGear } from "../../types";
+import { CustomGear, InputStats } from "../../types";
 import { useGear } from "../../providers/GearContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { STAT_LABELS } from "@/app/constants";
+import { StatType } from "@/app/domain/gear/types";
+import { STAT_BG } from "@/app/domain/gear/constants";
 
 interface Props {
   gear: CustomGear;
@@ -18,20 +20,23 @@ interface Props {
   onDelete: () => void;
 }
 
+/* =======================
+   Component
+======================= */
+
 export default function GearCard({ gear, onEdit, onDelete }: Props) {
   const { equipped, setEquipped } = useGear();
-
   const isEquipped = equipped[gear.slot] === gear.id;
 
   const equip = () => {
-    setEquipped(prev => ({
+    setEquipped((prev) => ({
       ...prev,
       [gear.slot]: gear.id,
     }));
   };
 
   const unequip = () => {
-    setEquipped(prev => {
+    setEquipped((prev) => {
       const next = { ...prev };
       delete next[gear.slot];
       return next;
@@ -42,7 +47,7 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
   const mains = gear.mains;
 
   return (
-    <Card className="p-4 space-y-3 relative">
+    <Card className="p-4 space-y-3 relative border border-white/10 bg-card/70">
       {/* Equipped badge */}
       {isEquipped ? (
         <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
@@ -57,7 +62,7 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <p className="font-semibold">{gear.name}</p>
+          <p className="font-semibold truncate">{gear.name}</p>
           <p className="text-xs text-muted-foreground">{gear.slot}</p>
         </div>
 
@@ -70,19 +75,12 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
 
           <DropdownMenuContent align="end">
             {isEquipped ? (
-              <DropdownMenuItem onClick={unequip}>
-                Unequip
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={unequip}>Unequip</DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={equip}>
-                Equip
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={equip}>Equip</DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-red-400"
-              onClick={onDelete}
-            >
+            <DropdownMenuItem className="text-red-400" onClick={onDelete}>
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -91,12 +89,10 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
 
       {/* 🔥 Main stats */}
       {mains.length > 0 && (
-        <div className="border border-yellow-500/30 bg-yellow-500/5 p-2 rounded-lg space-y-1">
+        <div className="space-y-1">
           <p className="text-xs text-muted-foreground">Main</p>
           {mains.map((m, i) => (
-            <p key={i} className="text-sm font-medium">
-              • {m.stat} +{m.value}
-            </p>
+            <StatLine key={i} stat={m.stat} value={m.value} type="main" />
           ))}
         </div>
       )}
@@ -106,19 +102,56 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">Sub</p>
           {gear.subs.map((s, i) => (
-            <p key={i} className="text-xs">
-              • {s.stat} +{s.value}
-            </p>
+            <StatLine key={i} stat={s.stat} value={s.value} type="sub" />
           ))}
         </div>
       )}
 
-      {/* Addition */}
+      {/* Bonus */}
       {gear.addition && (
-        <div className="text-xs text-amber-400">
-          + {gear.addition.stat} {gear.addition.value}
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">Bonus</p>
+          <StatLine
+            stat={gear.addition.stat}
+            value={gear.addition.value}
+            type="bonus"
+          />
         </div>
       )}
     </Card>
+  );
+}
+
+/* =======================
+   Stat Line
+======================= */
+
+function StatLine({
+  stat,
+  value,
+  type,
+}: {
+  stat: keyof InputStats;
+  value: number;
+  type: StatType;
+}) {
+  const key = String(stat);
+
+  return (
+    <div
+      className={`
+        flex items-center justify-between
+        px-2 py-1.5
+        rounded-md
+        border
+        text-xs
+        ${STAT_BG[type]}
+      `}
+    >
+      <span className="text-muted-foreground truncate">
+        {STAT_LABELS[key] ?? key}
+      </span>
+      <span className="font-medium whitespace-nowrap">+{value}</span>
+    </div>
   );
 }
