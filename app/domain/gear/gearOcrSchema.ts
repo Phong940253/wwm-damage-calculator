@@ -162,7 +162,7 @@ Rates (SUB ONLY):
 Defense:
 - HP (MAINS ONLY)
 - PhysicalDefense (MAINS ONLY)
-- PhysicalDMGReduction (ADDITION ONLY)
+- PhysicalResistance (ADDITION ONLY)
 - PhysicalPenetration (ADDITION ONLY)
 
 Element (SUB ONLY):
