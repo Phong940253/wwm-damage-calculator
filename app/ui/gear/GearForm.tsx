@@ -162,7 +162,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         id,
         name,
         slot,
-        mains: isArmor ? [] : mains, // Empty mains for armor
+        mains,
         subs,
         addition: addition ?? undefined,
       };
@@ -234,57 +234,56 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         </div>
       </div>
 
-      {/* 🔥 Main attributes - Hidden for armor slots */}
-      {!ARMOR_SLOTS.includes(slot) && (
-        <div className="border rounded p-3 space-y-2">
-          <div className="flex justify-between items-center">
-            <p className="text-sm font-medium">Main Attributes</p>
-            <Button size="sm" variant="secondary" onClick={addMain}>
-              + Add
-            </Button>
-          </div>
+      {/* 🔥 Main attributes */}
 
-          {mains.map((m, i) => (
-            <div key={i} className="flex gap-2">
-              <select
-                className="flex-1 border rounded px-2 py-1"
-                value={m.stat}
-                onChange={e => {
-                  const v = [...mains];
-                  v[i].stat = e.target.value as GearStatKey;
-                  setMains(v);
-                }}
-              >
-                {STAT_OPTIONS.map(s => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-
-              <Input
-                type="number"
-                value={m.value}
-                onChange={e => {
-                  const v = [...mains];
-                  v[i].value = Number(e.target.value);
-                  setMains(v);
-                }}
-              />
-
-              {mains.length > 1 && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => removeMain(i)}
-                >
-                  ✕
-                </Button>
-              )}
-            </div>
-          ))}
+      <div className="border rounded p-3 space-y-2">
+        <div className="flex justify-between items-center">
+          <p className="text-sm font-medium">Main Attributes</p>
+          <Button size="sm" variant="secondary" onClick={addMain}>
+            + Add
+          </Button>
         </div>
-      )}
+
+        {mains.map((m, i) => (
+          <div key={i} className="flex gap-2">
+            <select
+              className="flex-1 border rounded px-2 py-1"
+              value={m.stat}
+              onChange={e => {
+                const v = [...mains];
+                v[i].stat = e.target.value as GearStatKey;
+                setMains(v);
+              }}
+            >
+              {STAT_OPTIONS.map(s => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <Input
+              type="number"
+              value={m.value}
+              onChange={e => {
+                const v = [...mains];
+                v[i].value = Number(e.target.value);
+                setMains(v);
+              }}
+            />
+
+            {mains.length > 1 && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => removeMain(i)}
+              >
+                ✕
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* Sub attributes */}
       <div className="border rounded p-3 space-y-2">
