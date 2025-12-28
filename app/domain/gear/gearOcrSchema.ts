@@ -69,15 +69,17 @@ Rules:
 MAIN STAT RULES (STRICT)
 ====================
 
-1. Global main stats (ALL SLOTS):
-   - MinPhysicalAttack
-   - MaxPhysicalAttack
-
-2. Ring-only additional main stats:
+1. weapon_1, weapon_2 main stats (ALL SLOTS):
+  - MinPhysicalAttack
+  - MaxPhysicalAttack
+2. disc main stats:
+  - MinPhysicalAttack
+3. pendant main stats:
+  - MaxPhysicalAttack
+4. head, chest, hand, leg main stats:
    - PhysicalDefense
    - HP
-
-3. Any other stat MUST NOT be placed in "mains"
+5. Any other stat MUST NOT be placed in "mains"
 
 ====================
 PHYSICAL ATTACK (SPECIAL CASE)
@@ -119,7 +121,6 @@ Rules:
 - ONLY ONE stat
 - MUST be element penetration
 - MUST appear ONLY in "addition"
-- If none exists → addition = null
 
 Examples:
 - "Bellstrike Penetration 3.1"
@@ -156,13 +157,13 @@ Rates (SUB ONLY):
 - CriticalDMGBonus
 - AffinityRate
 - AffinityDMGBonus
-- DamageBoost
+- DamageBoost (SUB OR ADDITION)
 
 Defense:
-- HP
-- PhysicalDefense
-- PhysicalResistance
-- PhysicalDMGReduction
+- HP (MAINS ONLY)
+- PhysicalDefense (MAINS ONLY)
+- PhysicalDMGReduction (ADDITION ONLY)
+- PhysicalPenetration (ADDITION ONLY)
 
 Element (SUB ONLY):
 - bellstrikeMin / Max / DMGBonus
