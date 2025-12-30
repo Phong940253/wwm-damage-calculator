@@ -355,7 +355,7 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
       {/* =======================
           GEAR LIST
       ======================= */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {displayGears.map((g) => (
           <GearCard
             key={g.id}
