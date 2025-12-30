@@ -32,8 +32,6 @@ export default function DamagePanel({
   return (
     <Card
       className="
-        sticky top-6
-        max-h-[calc(100vh-3rem)]
         flex flex-col
         bg-gradient-to-b from-card/95 to-card/60
         border border-yellow-500/30

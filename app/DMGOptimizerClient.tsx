@@ -1,184 +1,49 @@
 "use client";
 
-import StatsPanel from "./ui/stats/StatsPanel";
-import DamagePanel from "./ui/damage/DamagePanel";
-import FormulaPanel from "./ui/formula/FormulaPanel";
-import { useDMGOptimizer } from "./hooks/useDMGOptimizer";
-import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "./constants";
-import { useState } from "react";
-import { ElementStats, TabKey } from "./types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import GearEquippedTab from "./ui/gear/GearEquippedTab";
-import GearCustomizeTab from "./ui/gear/GearCustomizeTab";
-import GearCompareTab from "./ui/gear/GearCompareTab";
-import { useTheme } from "next-themes";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Swords } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Sun, Swords } from "lucide-react";
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import ImportExportTab from "./ui/import-export/ImportExportTab";
+import { useSearchParams, useRouter } from "next/navigation";
+import MainTabLayout from "./ui/layout/MainTabLayout";
+import GearTabLayout from "./ui/layout/GearTabLayout";
 
-export function DMGOptimizer() {
-  const {
-    stats,
-    setStats,
-    elementStats,
-    setElementStats,
-    gearBonus,
-    damage,
-    statImpact,
-    warnings,
-    onStatChange,
-    onElementChange,
-  } = useDMGOptimizer(INITIAL_STATS, INITIAL_ELEMENT_STATS);
-
-  const [showFormula, setShowFormula] = useState(false);
-
-  const { theme, setTheme } = useTheme();
-
-  const [mounted, setMounted] = useState(false);
-
+export default function DMGOptimizerClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const tab = (searchParams.get("tab") as TabKey) ?? "stats";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const applyIncreaseToCurrent = () => {
-    setStats((prev) => {
-      const next = { ...prev };
-      Object.keys(next).forEach((k) => {
-        next[k] = {
-          current: Number(next[k].current || 0) + Number(next[k].increase || 0),
-          increase: 0,
-        };
-      });
-      return next;
-    });
-
-    setElementStats((prev) => {
-      const next = { ...prev };
-      for (const key in next) {
-        if (key === "selected") continue;
-        const s = next[key as keyof Omit<ElementStats, "selected">];
-        next[key as keyof Omit<ElementStats, "selected">] = {
-          current: Number(s.current || 0) + Number(s.increase || 0),
-          increase: 0,
-        };
-      }
-      return next;
-    });
-  };
-
-  const saveCurrentStats = () => {
-    if (!confirm("Save current stats? (Increase will not be saved)")) return;
-
-    const statsData: Record<string, number> = {};
-    Object.keys(stats).forEach((k) => {
-      statsData[k] = Number(stats[k].current || 0);
-    });
-
-    localStorage.setItem("wwm_dmg_current_stats", JSON.stringify(statsData));
-
-    const elementData: Record<string, number | string> = {
-      selected: elementStats.selected,
-    };
-
-    for (const key in elementStats) {
-      if (key === "selected") continue;
-      elementData[key] = Number(
-        elementStats[key as keyof Omit<ElementStats, "selected">].current || 0
-      );
-    }
-
-    localStorage.setItem("wwm_element_stats", JSON.stringify(elementData));
-  };
+  const rootTab = searchParams.get("root") ?? "main";
 
   return (
-    <div className="min-h-screen p-6 bg-gradient-to-br from-background via-background/95 to-muted/40">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* ---------- HEADER ---------- */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Swords className="text-emerald-500" />
-            <h1 className="text-2xl font-bold">
-              Where Winds Meet – DMG Optimizer
-            </h1>
-            <Badge className="border border-emerald-500/40 text-emerald-500">
-              Realtime
-            </Badge>
-          </div>
-
-          {mounted && (
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-xl border px-3 py-2 flex items-center gap-2"
-            >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-              {theme === "dark" ? "Light" : "Dark"}
-            </button>
-          )}
+        {/* HEADER */}
+        <div className="flex items-center gap-3">
+          <Swords className="text-emerald-500" />
+          <h1 className="text-2xl font-bold">
+            Where Winds Meet – DMG Optimizer
+          </h1>
+          <Badge>Realtime</Badge>
         </div>
 
-        {/* ---------- CONTENT ---------- */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-          {/* LEFT */}
-          <Tabs
-            value={tab}
-            onValueChange={(value) => {
-              router.replace(`?tab=${value}`, { scroll: false });
-            }}
-          >
-            <TabsList>
-              <TabsTrigger value="stats">All Stats</TabsTrigger>
-              <TabsTrigger value="equipped">Gear Equipped</TabsTrigger>
-              <TabsTrigger value="custom">Gear Customize</TabsTrigger>
-              <TabsTrigger value="compare">Gear Compare</TabsTrigger>
-              <TabsTrigger value="import-export">Import / Export</TabsTrigger>
-            </TabsList>
+        {/* ROOT TABS */}
+        <Tabs
+          value={rootTab}
+          onValueChange={(v) =>
+            router.replace(`?root=${v}`, { scroll: false })
+          }
+        >
+          <TabsList>
+            <TabsTrigger value="main">Main</TabsTrigger>
+            <TabsTrigger value="gear">Gear</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="stats">
-              <StatsPanel
-                stats={stats}
-                elementStats={elementStats}
-                gearBonus={gearBonus}
-                statImpact={statImpact}
-                onStatChange={onStatChange}
-                onElementChange={onElementChange}
-              />
-            </TabsContent>
+          <TabsContent value="main">
+            <MainTabLayout />
+          </TabsContent>
 
-            <TabsContent value="equipped">
-              <GearEquippedTab />
-            </TabsContent>
-
-            <TabsContent value="custom">
-              <GearCustomizeTab stats={stats} elementStats={elementStats} />
-            </TabsContent>
-
-            <TabsContent value="compare">
-              <GearCompareTab stats={stats} elementStats={elementStats} />
-            </TabsContent>
-
-            <TabsContent value="import-export">
-              <ImportExportTab />
-            </TabsContent>
-          </Tabs>
-
-          {/* RIGHT */}
-          <DamagePanel
-            result={damage}
-            warnings={warnings}
-            onApplyIncrease={applyIncreaseToCurrent}
-            onSaveCurrent={saveCurrentStats}
-            showFormula={showFormula}
-            toggleFormula={() => setShowFormula((v) => !v)}
-            formulaSlot={<FormulaPanel />}
-          />
-        </div>
+          <TabsContent value="gear">
+            <GearTabLayout />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
