@@ -116,7 +116,11 @@ export default function GearOptimizeDialog({
                                 {g.name}
                               </span>
                             </HoverCardTrigger>
-                            <HoverCardContent side="right" align="start">
+                            <HoverCardContent
+                              side="right"
+                              align="start"
+                              className="p-0 w-auto"
+                            >
                               <GearHoverDetail gear={g} />
                             </HoverCardContent>
                           </HoverCard>

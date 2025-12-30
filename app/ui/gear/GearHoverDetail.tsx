@@ -12,7 +12,7 @@ export default function GearHoverDetail({ gear }: Props) {
   const allStats = [...gear.mains, ...gear.subs, gear.addition].filter(Boolean);
 
   return (
-    <Card className="p-3 w-64 space-y-2 text-xs">
+    <div className="p-3 w-64 space-y-2 text-xs">
       <div className="font-semibold text-sm">{gear.name}</div>
 
       <div className="flex flex-wrap gap-1">
@@ -31,6 +31,6 @@ export default function GearHoverDetail({ gear }: Props) {
           </div>
         ))}
       </div>
-    </Card>
+    </div>
   );
 }
