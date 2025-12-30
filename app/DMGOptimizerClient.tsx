@@ -2,15 +2,10 @@
 
 import { Swords } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useSearchParams, useRouter } from "next/navigation";
 import { StatusBar } from "./ui/layout/StatusBar";
 import { MainContent } from "./ui/layout/MainContent";
 
 export default function DMGOptimizerClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const rootTab = searchParams.get("root") ?? "main";
-
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
