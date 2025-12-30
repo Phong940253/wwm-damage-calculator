@@ -96,6 +96,8 @@ export interface CustomGear {
 
   /** optional */
   addition?: GearAttribute;
+
+  rarity?: string;
 }
 
 export type TabKey =

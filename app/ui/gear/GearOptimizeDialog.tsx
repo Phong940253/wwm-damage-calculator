@@ -13,6 +13,14 @@ import {
 import { GEAR_SLOTS } from "@/app/constants";
 import { OptimizeResult } from "../../domain/gear/gearOptimize";
 
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+
+import GearHoverDetail from "./GearHoverDetail";
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -96,12 +104,26 @@ export default function GearOptimizeDialog({
                     {GEAR_SLOTS.map(({ key, label }) => {
                       const g = r.selection[key];
                       return g ? (
-                        <div key={key} className="text-xs flex justify-between">
+                        <div
+                          key={key}
+                          className="text-xs flex justify-between items-center"
+                        >
                           <span>{label}</span>
-                          <span>{g.name}</span>
+
+                          <HoverCard openDelay={150}>
+                            <HoverCardTrigger asChild>
+                              <span className="cursor-help underline decoration-dotted">
+                                {g.name}
+                              </span>
+                            </HoverCardTrigger>
+                            <HoverCardContent side="right" align="start">
+                              <GearHoverDetail gear={g} />
+                            </HoverCardContent>
+                          </HoverCard>
                         </div>
                       ) : null;
                     })}
+
                     <Button size="sm" onClick={() => onApply(r.selection)}>
                       Equip
                     </Button>
