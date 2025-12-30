@@ -6,7 +6,7 @@ import FormulaPanel from "./ui/formula/FormulaPanel";
 import { useDMGOptimizer } from "./hooks/useDMGOptimizer";
 import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "./constants";
 import { useState } from "react";
-import { ElementStats } from "./types";
+import { ElementStats, TabKey } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GearEquippedTab from "./ui/gear/GearEquippedTab";
 import GearCustomizeTab from "./ui/gear/GearCustomizeTab";
@@ -15,6 +15,7 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { Moon, Sun, Swords } from "lucide-react";
 import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import ImportExportTab from "./ui/import-export/ImportExportTab";
 
 export default function DMGOptimizer() {
@@ -36,6 +37,11 @@ export default function DMGOptimizer() {
   const { theme, setTheme } = useTheme();
 
   const [mounted, setMounted] = useState(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const tab = (searchParams.get("tab") as TabKey) ?? "stats";
 
   useEffect(() => {
     setMounted(true);
@@ -120,7 +126,12 @@ export default function DMGOptimizer() {
         {/* ---------- CONTENT ---------- */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
           {/* LEFT */}
-          <Tabs defaultValue="stats">
+          <Tabs
+            value={tab}
+            onValueChange={(value) => {
+              router.replace(`?tab=${value}`, { scroll: false });
+            }}
+          >
             <TabsList>
               <TabsTrigger value="stats">All Stats</TabsTrigger>
               <TabsTrigger value="equipped">Gear Equipped</TabsTrigger>
@@ -134,7 +145,7 @@ export default function DMGOptimizer() {
                 stats={stats}
                 elementStats={elementStats}
                 gearBonus={gearBonus}
-                statImpact={statImpact} // ✅ ADD
+                statImpact={statImpact}
                 onStatChange={onStatChange}
                 onElementChange={onElementChange}
               />

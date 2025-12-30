@@ -97,3 +97,10 @@ export interface CustomGear {
   /** optional */
   addition?: GearAttribute;
 }
+
+export type TabKey =
+  | "stats"
+  | "equipped"
+  | "custom"
+  | "compare"
+  | "import-export";
