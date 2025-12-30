@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useSearchParams } from "next/navigation";
 import StatsPanel from "../stats/StatsPanel";
 import ImportExportTab from "../import-export/ImportExportTab";
 import DamagePanel from "../damage/DamagePanel";
@@ -11,6 +11,9 @@ import { useState } from "react";
 import { ElementStats } from "@/app/types";
 
 export default function MainTabLayout() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") ?? "stats";
+
   const {
     stats,
     setStats,
@@ -26,6 +29,7 @@ export default function MainTabLayout() {
 
   const [showFormula, setShowFormula] = useState(false);
 
+  /* ---------- ACTIONS (GIỮ NGUYÊN) ---------- */
   const applyIncreaseToCurrent = () => {
     setStats((prev) => {
       const next = { ...prev };
@@ -72,27 +76,18 @@ export default function MainTabLayout() {
     >
       {/* LEFT PANEL */}
       <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
-        <Tabs defaultValue="stats">
-          <TabsList>
-            <TabsTrigger value="stats">All Stats</TabsTrigger>
-            <TabsTrigger value="import">Import / Export</TabsTrigger>
-          </TabsList>
+        {tab === "stats" && (
+          <StatsPanel
+            stats={stats}
+            elementStats={elementStats}
+            gearBonus={gearBonus}
+            statImpact={statImpact}
+            onStatChange={onStatChange}
+            onElementChange={onElementChange}
+          />
+        )}
 
-          <TabsContent value="stats">
-            <StatsPanel
-              stats={stats}
-              elementStats={elementStats}
-              gearBonus={gearBonus}
-              statImpact={statImpact}
-              onStatChange={onStatChange}
-              onElementChange={onElementChange}
-            />
-          </TabsContent>
-
-          <TabsContent value="import">
-            <ImportExportTab />
-          </TabsContent>
-        </Tabs>
+        {tab === "import" && <ImportExportTab />}
       </div>
 
       {/* RIGHT PANEL */}

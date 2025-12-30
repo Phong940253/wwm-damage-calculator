@@ -1,11 +1,10 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Swords } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useSearchParams, useRouter } from "next/navigation";
-import MainTabLayout from "./ui/layout/MainTabLayout";
-import GearTabLayout from "./ui/layout/GearTabLayout";
+import { StatusBar } from "./ui/layout/StatusBar";
+import { MainContent } from "./ui/layout/MainContent";
 
 export default function DMGOptimizerClient() {
   const router = useRouter();
@@ -24,26 +23,11 @@ export default function DMGOptimizerClient() {
           <Badge>Realtime</Badge>
         </div>
 
-        {/* ROOT TABS */}
-        <Tabs
-          value={rootTab}
-          onValueChange={(v) =>
-            router.replace(`?root=${v}`, { scroll: false })
-          }
-        >
-          <TabsList>
-            <TabsTrigger value="main">Main</TabsTrigger>
-            <TabsTrigger value="gear">Gear</TabsTrigger>
-          </TabsList>
+        {/* STATUS BAR */}
+        <StatusBar />
 
-          <TabsContent value="main">
-            <MainTabLayout />
-          </TabsContent>
-
-          <TabsContent value="gear">
-            <GearTabLayout />
-          </TabsContent>
-        </Tabs>
+        {/* CONTENT */}
+        <MainContent />
       </div>
     </div>
   );
