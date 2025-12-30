@@ -15,9 +15,15 @@ export function StatusBar() {
   };
 
   return (
-    <div className="flex items-center gap-6 border-b pb-3">
+    <div
+      className="
+        grid grid-cols-[1fr_auto_1fr]
+        items-center
+        border-b pb-3
+      "
+    >
       {/* LEFT — ROOT */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 justify-start">
         <TabButton
           active={root === "main"}
           onClick={() => set("main", "stats")}
@@ -32,8 +38,8 @@ export function StatusBar() {
         </TabButton>
       </div>
 
-      {/* CENTER — SUB */}
-      <div className="flex gap-1">
+      {/* CENTER — SUB (ABSOLUTE CENTER) */}
+      <div className="flex justify-center gap-1">
         {root === "main" && (
           <>
             <TabButton
@@ -74,6 +80,9 @@ export function StatusBar() {
           </>
         )}
       </div>
+
+      {/* RIGHT — EMPTY BUT BALANCING */}
+      <div />
     </div>
   );
 }
