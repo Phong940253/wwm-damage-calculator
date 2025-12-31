@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider"; // Adjust path if needed
 import "katex/dist/katex.min.css";
 import { GearProvider } from "./providers/GearContext";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +41,8 @@ export const metadata: Metadata = {
     "WWM theorycraft",
     "MMO damage calculator",
     "RPG damage formula",
+    "WWM",
+    "DMG optimizer",
   ],
 
   authors: [{ name: "Where Winds Meet Community" }],
@@ -92,7 +96,6 @@ export const metadata: Metadata = {
   category: "Game Tools",
 };
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -114,6 +117,8 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </GearProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
