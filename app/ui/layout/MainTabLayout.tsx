@@ -30,7 +30,7 @@ export default function MainTabLayout() {
   const [showFormula, setShowFormula] = useState(false);
 
   /* ---------- ACTIONS (GIỮ NGUYÊN) ---------- */
-  const applyIncreaseToCurrent = () => {
+  const onApplyIncrease = () => {
     setStats((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((k) => {
@@ -56,7 +56,7 @@ export default function MainTabLayout() {
     });
   };
 
-  const saveCurrentStats = () => {
+  const onSaveCurrent = () => {
     localStorage.setItem(
       "wwm_dmg_current_stats",
       JSON.stringify(
@@ -84,6 +84,8 @@ export default function MainTabLayout() {
             statImpact={statImpact}
             onStatChange={onStatChange}
             onElementChange={onElementChange}
+            onApplyIncrease={onApplyIncrease}
+            onSaveCurrent={onSaveCurrent}
           />
         )}
 
@@ -95,8 +97,6 @@ export default function MainTabLayout() {
         <DamagePanel
           result={damage}
           warnings={warnings}
-          onApplyIncrease={applyIncreaseToCurrent}
-          onSaveCurrent={saveCurrentStats}
           showFormula={showFormula}
           toggleFormula={() => setShowFormula((v) => !v)}
           formulaSlot={<FormulaPanel />}

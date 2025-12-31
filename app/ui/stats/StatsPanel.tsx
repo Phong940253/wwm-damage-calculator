@@ -31,6 +31,8 @@ interface Props {
     field: "current" | "increase" | "selected",
     value: string
   ) => void;
+  onApplyIncrease: () => void;
+  onSaveCurrent: () => void;
 }
 
 const getDerivedFromAttributes = (
@@ -60,14 +62,13 @@ export default function StatsPanel({
   stats,
   elementStats,
   gearBonus,
-  statImpact = {}, // ✅ default object
+  statImpact = {},
   onStatChange,
   onElementChange,
+  onApplyIncrease,
+  onSaveCurrent
 }: Props) {
-  const getStatValue = (
-    key: string,
-    field: "current" | "increase"
-  ) => {
+  const getStatValue = (key: string, field: "current" | "increase") => {
     return isElementKey(key)
       ? elementStats[key]?.[field]
       : stats[key as StatKey]?.[field];
@@ -88,7 +89,6 @@ export default function StatsPanel({
     }
   };
 
-
   return (
     <Card
       className="
@@ -106,7 +106,9 @@ export default function StatsPanel({
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Main Element</label>
+            <label className="text-xs text-muted-foreground">
+              Main Element
+            </label>
             <select
               className="w-full border rounded px-2 py-2 bg-background"
               value={elementStats.selected}
@@ -199,28 +201,23 @@ export default function StatsPanel({
                       />
                       {/* ---------- Breakdown ---------- */}
                       <div className="flex text-xs text-muted-foreground gap-2">
-                        {
-                          base !== 0 && (
-                            <Badge className="bg-gray-500/15 text-gray-400 border border-gray-500/30">
-                              Base {base.toFixed(2)}
-                            </Badge>
-                          )
-                        }
+                        {base !== 0 && (
+                          <Badge className="bg-gray-500/15 text-gray-400 border border-gray-500/30">
+                            Base {base.toFixed(2)}
+                          </Badge>
+                        )}
                         {gear !== 0 && (
                           <Badge className="bg-blue-500/15 text-blue-400 border border-blue-500/30">
                             Gear {gear > 0 ? "+" : ""}
                             {gear.toFixed(2)}
                           </Badge>
                         )}
-                        {
-                          derivedValue !== 0 && (
-                            <Badge className="bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                              Attr +{derivedValue.toFixed(2)}
-                            </Badge>
-                          )
-                        }
+                        {derivedValue !== 0 && (
+                          <Badge className="bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                            Attr +{derivedValue.toFixed(2)}
+                          </Badge>
+                        )}
                       </div>
-
 
                       {/* ---------- Increase ---------- */}
                       <div className="flex items-center gap-2">
@@ -229,7 +226,11 @@ export default function StatsPanel({
                         </span>
                         <Input
                           type="number"
-                          value={getStatValue(k, "increase") === 0 ? "" : getStatValue(k, "increase")}
+                          value={
+                            getStatValue(k, "increase") === 0
+                              ? ""
+                              : getStatValue(k, "increase")
+                          }
                           onChange={(e) =>
                             handleStatChange(k, "increase", e.target.value)
                           }
@@ -249,6 +250,32 @@ export default function StatsPanel({
             </div>
           </section>
         ))}
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={onApplyIncrease}
+            className="
+              rounded-xl px-3 py-2 text-sm font-medium
+              bg-emerald-500/15 text-emerald-400
+              border border-emerald-500/30
+              hover:bg-emerald-500/25
+            "
+          >
+            Apply Increase → Current
+          </button>
+
+          <button
+            onClick={onSaveCurrent}
+            className="
+              rounded-xl px-3 py-2 text-sm font-medium
+              bg-amber-500/15 text-amber-400
+              border border-amber-500/30
+              hover:bg-amber-500/25
+            "
+          >
+            Save Current
+          </button>
+        </div>
       </CardContent>
     </Card>
   );

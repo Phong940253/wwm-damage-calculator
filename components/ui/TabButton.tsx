@@ -1,23 +1,28 @@
-import { cn } from "@/lib/utils";
-
 export function TabButton({
   active,
   children,
+  title,
   onClick,
 }: {
   active: boolean;
   children: React.ReactNode;
+  title?: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={cn(
-        "px-3 py-1.5 rounded-md text-sm font-medium transition",
-        active
-          ? "bg-background border shadow-sm"
-          : "text-muted-foreground hover:text-foreground"
-      )}
+      title={title}
+      className={`
+        flex items-center justify-center
+        w-9 h-9 rounded-md
+        transition
+        ${
+          active
+            ? "bg-background border shadow-sm text-foreground"
+            : "text-muted-foreground hover:text-foreground"
+        }
+      `}
     >
       {children}
     </button>

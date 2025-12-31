@@ -97,8 +97,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
@@ -106,4 +104,33 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ===== Modern Thin Scrollbar ===== */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(113, 113, 122, 0.45) transparent;
+}
+
+/* Chromium / WebKit */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(113, 113, 122, 0.45);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(113, 113, 122, 0.7);
 }

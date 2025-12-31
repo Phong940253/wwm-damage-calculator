@@ -2,6 +2,15 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { TabButton } from "@/components/ui/TabButton";
+import {
+  LayoutDashboard,
+  Shield,
+  BarChart3,
+  ArrowLeftRight,
+  SlidersHorizontal,
+  PackageCheck,
+  GitCompare,
+} from "lucide-react";
 
 export function StatusBar() {
   const router = useRouter();
@@ -27,32 +36,38 @@ export function StatusBar() {
         <TabButton
           active={root === "main"}
           onClick={() => set("main", "stats")}
+          title="Main"
         >
-          Main
+          <LayoutDashboard size={18} />
         </TabButton>
+
         <TabButton
           active={root === "gear"}
           onClick={() => set("gear", "custom")}
+          title="Gear"
         >
-          Gear
+          <Shield size={18} />
         </TabButton>
       </div>
 
-      {/* CENTER — SUB (ABSOLUTE CENTER) */}
+      {/* CENTER — SUB */}
       <div className="flex justify-center gap-1">
         {root === "main" && (
           <>
             <TabButton
               active={tab === "stats"}
               onClick={() => set("main", "stats")}
+              title="Stats"
             >
-              Stats
+              <BarChart3 size={18} />
             </TabButton>
+
             <TabButton
               active={tab === "import"}
               onClick={() => set("main", "import")}
+              title="Import / Export"
             >
-              Import / Export
+              <ArrowLeftRight size={18} />
             </TabButton>
           </>
         )}
@@ -62,26 +77,31 @@ export function StatusBar() {
             <TabButton
               active={tab === "custom"}
               onClick={() => set("gear", "custom")}
+              title="Customize Gear"
             >
-              Customize
+              <SlidersHorizontal size={18} />
             </TabButton>
+
             <TabButton
               active={tab === "equipped"}
               onClick={() => set("gear", "equipped")}
+              title="Equipped Gear"
             >
-              Equipped
+              <PackageCheck size={18} />
             </TabButton>
+
             <TabButton
               active={tab === "compare"}
               onClick={() => set("gear", "compare")}
+              title="Compare Gear"
             >
-              Compare
+              <GitCompare size={18} />
             </TabButton>
           </>
         )}
       </div>
 
-      {/* RIGHT — EMPTY BUT BALANCING */}
+      {/* RIGHT — balancing */}
       <div />
     </div>
   );
