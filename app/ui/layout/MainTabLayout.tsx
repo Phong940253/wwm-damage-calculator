@@ -9,6 +9,7 @@ import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { useState } from "react";
 import { ElementStats } from "@/app/types";
+import { buildDamageContext } from "@/app/domain/damage/damageContext";
 
 export default function MainTabLayout() {
   const searchParams = useSearchParams();
@@ -28,6 +29,8 @@ export default function MainTabLayout() {
   } = useDMGOptimizer(INITIAL_STATS, INITIAL_ELEMENT_STATS);
 
   const [showFormula, setShowFormula] = useState(false);
+
+  const ctx = buildDamageContext(stats, elementStats, gearBonus);
 
   /* ---------- ACTIONS (GIỮ NGUYÊN) ---------- */
   const onApplyIncrease = () => {
@@ -95,6 +98,7 @@ export default function MainTabLayout() {
       {/* RIGHT PANEL */}
       <div className="overflow-y-auto pl-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
         <DamagePanel
+          ctx={ctx}
           result={damage}
           warnings={warnings}
           showFormula={showFormula}

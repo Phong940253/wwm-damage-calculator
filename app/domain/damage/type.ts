@@ -22,3 +22,14 @@ export interface AverageDamageBreakdown {
   affinity: number;
   critical: number;
 }
+
+export interface FinalStatRow {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}
+
+export interface FinalStatSection {
+  title: string;
+  rows: FinalStatRow[];
+}

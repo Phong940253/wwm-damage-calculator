@@ -9,8 +9,12 @@ import { Zap, ArrowUpRight } from "lucide-react";
 import DamageLine from "./DamageLine";
 import { DamageResult } from "../../domain/damage/type";
 import AverageDamagePie from "./AverageDamagePie";
+import { DamageContext } from "@/app/domain/damage/damageContext";
+import FinalStatPanel from "./FinalStatPanel";
+import { buildFinalStatSections } from "@/app/domain/damage/buildFinalStatSections";
 
 interface Props {
+  ctx: DamageContext;
   result: DamageResult;
 
   showFormula: boolean;
@@ -20,12 +24,14 @@ interface Props {
 }
 
 export default function DamagePanel({
+  ctx,
   result,
   showFormula,
   toggleFormula,
   formulaSlot,
   warnings = [],
 }: Props) {
+  const finalStats = buildFinalStatSections(ctx);
   return (
     <Card
       className="
@@ -34,13 +40,6 @@ export default function DamagePanel({
         border-none
       "
     >
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="text-yellow-500" />
-          Damage Output
-        </CardTitle>
-      </CardHeader>
-
       <CardContent
         className="
           flex-1 overflow-y-auto space-y-6 pr-2
@@ -48,6 +47,14 @@ export default function DamagePanel({
         "
       >
         <div className="flex flex-col">
+          <div className="text-lg pb-4 font-bold">Stats</div>
+
+          <FinalStatPanel sections={finalStats} />
+
+          <div className="flex flex-row gap-x-2 text-lg py-4 font-bold">
+            <Zap className="text-yellow-500" /> Damage output
+          </div>
+
           <div className="flex flex-col align-center justify-center flex-1">
             <DamageLine
               label="Abrasion Damage"
