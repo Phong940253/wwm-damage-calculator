@@ -173,6 +173,10 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
           >
             + Add Gear
           </Button>
+          {/* Button delete all */}
+          <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setCustomGears([])}>
+            Delete All
+          </Button>
         </div>
       </div>
 
