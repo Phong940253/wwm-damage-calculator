@@ -43,7 +43,7 @@ export default function DamagePanel({
     s => s.martialArtId.includes(elementStats?.selected || "")
   );
 
-  const skillDamages = useSkillDamage(ctx, result, skills);
+  const skillDamages = useSkillDamage(ctx, skills);
 
   return (
     <Card
@@ -77,8 +77,6 @@ export default function DamagePanel({
               />
             ) : null
           )}
-
-          This avoids
 
           <div className="flex flex-col align-center justify-center flex-1">
             <DamageLine

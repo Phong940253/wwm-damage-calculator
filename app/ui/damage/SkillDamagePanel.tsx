@@ -1,4 +1,5 @@
-// app/ui/damage/SkillDamagePanel.tsx
+"use client";
+
 import { Skill } from "@/app/domain/skill/types";
 import DamageLine from "./DamageLine";
 import { SkillDamageResult } from "@/app/domain/damage/type";
@@ -9,53 +10,70 @@ interface Props {
 }
 
 export function SkillDamagePanel({ skill, result }: Props) {
+    const total = result.total;
+
     return (
         <div
             className="
-        space-y-3 rounded-xl
-        border border-white/10
-        bg-white/5 p-3
+        space-y-3 p-3
       "
         >
-            {/* Skill name */}
+            {/* ================= Skill name ================= */}
             <div className="font-semibold text-sm">{skill.name}</div>
 
-            {/* Total damage (Expected / Average) */}
-            <DamageLine
-                label="Total Skill Damage (Avg)"
-                value={Math.round(result.total.normal.value)}
-                percent={0}
-                color="violet"
-            />
-
-            {/* Optional: crit / affinity peak */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* ================= Damage table (responsive) ================= */}
+            <div
+                className="
+          grid grid-cols-2 gap-2 text-xs
+          lg:grid-cols-4
+        "
+            >
                 <DamageLine
-                    label="Crit (Max)"
-                    value={Math.round(result.total.critical.value)}
+                    label="Abrasion"
+                    value={Math.round(total.min.value)}
+                    percent={0}
+                    color="silver"
+                />
+                <DamageLine
+                    label="Average"
+                    value={Math.round(total.normal.value)}
+                    percent={0}
+                    color="emerald"
+                />
+                <DamageLine
+                    label="Critical"
+                    value={Math.round(total.critical.value)}
                     percent={0}
                     color="gold"
                 />
                 <DamageLine
-                    label="Affinity (Max)"
-                    value={Math.round(result.total.affinity.value)}
+                    label="Affinity"
+                    value={Math.round(total.affinity.value)}
                     percent={0}
                     color="amber"
                 />
             </div>
 
-            {/* Per-hit breakdown */}
+            {/* ================= Per-hit breakdown ================= */}
             <div className="text-xs text-muted-foreground">
-                Hits:
-                <div className="flex flex-wrap gap-1 mt-1">
+                Hits (Avg):
+                <div
+                    className="
+            flex flex-wrap gap-1 mt-1
+            max-h-16 overflow-y-auto
+          "
+                >
                     {result.perHit.map((hit, i) => (
                         <span
                             key={i}
                             className="
-                rounded-md bg-black/30 px-2 py-0.5
-                text-[11px]
+                rounded-md bg-black/30
+                px-2 py-0.5 text-[11px]
               "
-                            title={`Avg: ${Math.round(hit.normal.value)}`}
+                            title={`Abrasion: ${Math.round(hit.min.value)}
+Average: ${Math.round(hit.normal.value)}
+Critical: ${Math.round(hit.critical.value)}
+Affinity: ${Math.round(hit.affinity.value)}`}
                         >
                             {Math.round(hit.normal.value)}
                         </span>
@@ -63,7 +81,7 @@ export function SkillDamagePanel({ skill, result }: Props) {
                 </div>
             </div>
 
-            {/* Notes (optional) */}
+            {/* ================= Notes ================= */}
             {skill.notes && (
                 <div className="text-[11px] italic text-muted-foreground">
                     {skill.notes}

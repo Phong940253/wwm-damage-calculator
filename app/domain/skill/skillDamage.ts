@@ -1,24 +1,36 @@
+// app/domain/skill/skillDamage.ts
+import { calculateDamage } from "../damage/damageCalculator";
 import { DamageContext } from "../damage/damageContext";
-import { DamageResult, SkillDamageResult } from "../damage/type";
-import { scaleDamage } from "./scaleDamage";
 import { Skill } from "./types";
+import { createSkillContext } from "./skillContext";
+import { DamageResult, SkillDamageResult } from "../damage/type";
+import { calcExpectedNormalBreakdown } from "../damage/damageFormula";
 
 export function calculateSkillDamage(
   ctx: DamageContext,
-  base: DamageResult,
   skill: Skill
 ): SkillDamageResult {
-  const physMul = ctx.get("PhysicalAttackMultiplier") / 100;
-  const elemMul = ctx.get("MainElementMultiplier") / 100;
-
   const perHit: DamageResult[] = [];
 
   for (const hit of skill.hits) {
-    const hitScale =
-      physMul * hit.physicalMultiplier + elemMul * hit.elementMultiplier;
-
     for (let i = 0; i < hit.hits; i++) {
-      perHit.push(scaleDamage(base, hitScale));
+      const hitCtx = createSkillContext(ctx, {
+        physicalMultiplier: hit.physicalMultiplier,
+        elementMultiplier: hit.elementMultiplier,
+      });
+
+      const breakdown = calcExpectedNormalBreakdown(
+        hitCtx.get,
+        hitCtx.get("Affinity")
+      );
+
+      perHit.push({
+        min: { value: calculateDamage(hitCtx).min, percent: 0 },
+        normal: { value: calculateDamage(hitCtx).normal, percent: 0 },
+        critical: { value: calculateDamage(hitCtx).critical, percent: 0 },
+        affinity: { value: calculateDamage(hitCtx).affinity, percent: 0 },
+        averageBreakdown: breakdown,
+      });
     }
   }
 
@@ -27,7 +39,7 @@ export function calculateSkillDamage(
     normal: { value: 0, percent: 0 },
     critical: { value: 0, percent: 0 },
     affinity: { value: 0, percent: 0 },
-    averageBreakdown: base.averageBreakdown,
+    averageBreakdown: perHit[0]?.averageBreakdown,
   };
 
   for (const h of perHit) {
