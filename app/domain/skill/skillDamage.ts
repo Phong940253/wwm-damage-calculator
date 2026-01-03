@@ -1,7 +1,7 @@
 import { DamageContext } from "../damage/damageContext";
-import { DamageResult } from "../damage/type";
+import { DamageResult, SkillDamageResult } from "../damage/type";
 import { scaleDamage } from "./scaleDamage";
-import { Skill, SkillDamageResult } from "./types";
+import { Skill } from "./types";
 
 export function calculateSkillDamage(
   ctx: DamageContext,

@@ -1,6 +1,7 @@
 // app/ui/damage/SkillDamagePanel.tsx
-import { Skill, SkillDamageResult } from "@/app/domain/skill/types";
+import { Skill } from "@/app/domain/skill/types";
 import DamageLine from "./DamageLine";
+import { SkillDamageResult } from "@/app/domain/damage/type";
 
 interface Props {
     skill: Skill;

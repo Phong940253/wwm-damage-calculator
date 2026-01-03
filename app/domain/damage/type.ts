@@ -33,3 +33,8 @@ export interface FinalStatSection {
   title: string;
   rows: FinalStatRow[];
 }
+
+export interface SkillDamageResult {
+  total: DamageResult;
+  perHit: DamageResult[];
+}
