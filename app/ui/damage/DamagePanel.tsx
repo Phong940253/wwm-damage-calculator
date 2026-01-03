@@ -12,6 +12,10 @@ import AverageDamagePie from "./AverageDamagePie";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import FinalStatPanel from "./FinalStatPanel";
 import { buildFinalStatSections } from "@/app/domain/damage/buildFinalStatSections";
+import { useSkillDamage } from "@/app/hooks/useSkillDamage";
+import { SKILLS } from "@/app/domain/skill/skills";
+import { ElementStats } from "@/app/types";
+import { SkillDamagePanel } from "./SkillDamagePanel";
 
 interface Props {
   ctx: DamageContext;
@@ -21,6 +25,7 @@ interface Props {
   toggleFormula: () => void;
   formulaSlot?: React.ReactNode;
   warnings?: string[];
+  elementStats?: ElementStats
 }
 
 export default function DamagePanel({
@@ -29,9 +34,20 @@ export default function DamagePanel({
   showFormula,
   toggleFormula,
   formulaSlot,
+  elementStats,
   warnings = [],
 }: Props) {
   const finalStats = buildFinalStatSections(ctx);
+
+  const skills = SKILLS.filter(
+    s => s.martialArtId.includes(elementStats?.selected || "")
+  );
+
+  const skillDamages = skills.map(skill => ({
+    skill,
+    result: useSkillDamage(ctx, result, skill),
+  }));
+
   return (
     <Card
       className="
@@ -54,6 +70,18 @@ export default function DamagePanel({
           <div className="flex flex-row gap-x-2 text-lg py-4 font-bold">
             <Zap className="text-yellow-500" /> Damage output
           </div>
+
+          {skillDamages.map(({ skill, result }) =>
+            result ? (
+              <SkillDamagePanel
+                key={skill.id}
+                skill={skill}
+                result={result}
+              />
+            ) : null
+          )}
+
+          This avoids
 
           <div className="flex flex-col align-center justify-center flex-1">
             <DamageLine

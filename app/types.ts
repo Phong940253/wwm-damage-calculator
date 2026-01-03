@@ -100,7 +100,6 @@ export interface CustomGear {
   rarity?: string;
 }
 
-// types.ts
 export type RootTabKey = "main" | "gear";
 export type MainTabKey = "stats" | "import-export";
 export type GearTabKey = "equipped" | "custom" | "compare";

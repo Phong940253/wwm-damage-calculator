@@ -104,6 +104,7 @@ export default function MainTabLayout() {
           showFormula={showFormula}
           toggleFormula={() => setShowFormula((v) => !v)}
           formulaSlot={<FormulaPanel />}
+          elementStats={elementStats}
         />
       </div>
     </div>

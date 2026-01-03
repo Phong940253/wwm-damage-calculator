@@ -68,7 +68,7 @@ export const GEAR_SLOTS: {
 }[] = [
   { key: "weapon_1", label: "Weapon I", icon: "weapon" },
   { key: "weapon_2", label: "Weapon II", icon: "weapon" },
-  { key: "disc", label: "Disc", icon: "disc" },         // ✅ changed
+  { key: "disc", label: "Disc", icon: "disc" }, // ✅ changed
   { key: "pendant", label: "Pendant", icon: "pendant" }, // ✅ changed
   { key: "head", label: "Head", icon: "head" }, // paint
   { key: "chest", label: "Chest", icon: "chest" },
