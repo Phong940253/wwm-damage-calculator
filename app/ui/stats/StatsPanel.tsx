@@ -200,7 +200,7 @@ export default function StatsPanel({
                         className="bg-background/60 border-[#363b3d]"
                       />
                       {/* ---------- Breakdown ---------- */}
-                      <div className="flex text-xs text-muted-foreground gap-2">
+                      <div className="flex text-xs text-muted-foreground gap-2 lg:flex-row flex-col">
                         {base !== 0 && (
                           <Badge className="bg-gray-500/15 text-gray-400 border border-gray-500/30">
                             Base {base.toFixed(2)}
