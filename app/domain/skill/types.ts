@@ -33,6 +33,6 @@ export interface MartialArt {
 }
 
 export interface SkillDamageResult {
-  total: number;
+  total: DamageResult;
   perHit: DamageResult[];
 }

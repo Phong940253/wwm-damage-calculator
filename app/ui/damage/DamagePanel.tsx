@@ -43,10 +43,7 @@ export default function DamagePanel({
     s => s.martialArtId.includes(elementStats?.selected || "")
   );
 
-  const skillDamages = skills.map(skill => ({
-    skill,
-    result: useSkillDamage(ctx, result, skill),
-  }));
+  const skillDamages = useSkillDamage(ctx, result, skills);
 
   return (
     <Card
