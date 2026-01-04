@@ -33,10 +33,19 @@ export const useElementStats = (initial: ElementStats) => {
             continue;
           }
 
-          if (saved[key] !== undefined) {
-            next[key as keyof Omit<ElementStats, "selected">] = {
-              ...prev[key as keyof Omit<ElementStats, "selected">],
-              current: saved[key],
+          const value = prev[key as keyof ElementStats];
+          const savedValue = saved[key];
+
+          // Only spread object-like stats with current/increase
+          if (
+            savedValue !== undefined &&
+            typeof value === "object" &&
+            value !== null &&
+            "current" in value
+          ) {
+            (next as Record<string, unknown>)[key] = {
+              ...(value as { current: number | ""; increase: number | "" }),
+              current: savedValue,
             };
           }
         }

@@ -48,12 +48,15 @@ export default function MainTabLayout() {
     setElementStats((prev) => {
       const next = { ...prev };
       for (const key in next) {
-        if (key === "selected") continue;
-        const s = next[key as keyof Omit<ElementStats, "selected">];
-        next[key as keyof Omit<ElementStats, "selected">] = {
-          current: Number(s.current || 0) + Number(s.increase || 0),
-          increase: 0,
-        };
+        if (key === "selected" || key === "martialArtsId") continue;
+        const s = next[key as keyof ElementStats];
+        if (typeof s === "object" && s !== null && "current" in s && "increase" in s) {
+          (next as Record<string, unknown>)[key] = {
+            current: Number((s as { current: number | "" }).current || 0) +
+              Number((s as { increase: number | "" }).increase || 0),
+            increase: 0,
+          };
+        }
       }
       return next;
     });

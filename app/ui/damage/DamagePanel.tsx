@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Zap, ArrowUpRight } from "lucide-react";
-import DamageLine from "./DamageLine";
 import { DamageResult } from "../../domain/damage/type";
 import AverageDamagePie from "./AverageDamagePie";
 import { DamageContext } from "@/app/domain/damage/damageContext";
