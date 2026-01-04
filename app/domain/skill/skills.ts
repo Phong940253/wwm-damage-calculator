@@ -177,7 +177,10 @@ export const SKILLS: Skill[] = [
     name: "Legion Breaker",
     martialArtId: "bellstrike_splendor",
     category: "skill",
-    hits: [{ physicalMultiplier: 1, elementMultiplier: 1, hits: 1 }],
+    hits: [
+      { physicalMultiplier: 1, elementMultiplier: 1, hits: 1 },
+      { physicalMultiplier: 2, elementMultiplier: 1, hits: 2 },
+    ],
     notes: "Placeholder multipliers",
   },
   {

@@ -22,6 +22,21 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
         )
         .join("\n");
 
+    const hitTooltipByType = {
+        min: result.perHit
+            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.min.value)}`)
+            .join("\n"),
+        normal: result.perHit
+            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.normal.value)}`)
+            .join("\n"),
+        critical: result.perHit
+            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.critical.value)}`)
+            .join("\n"),
+        affinity: result.perHit
+            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.affinity.value)}`)
+            .join("\n"),
+    };
+
     return (
         <div
             className="
@@ -63,30 +78,38 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                     <span className="text-sm font-semibold leading-tight">{skill.name}</span>
                 </div>
 
-                <DamageLine
-                    label=""
-                    value={Math.round(total.min.value)}
-                    percent={0}
-                    color="silver"
-                />
-                <DamageLine
-                    label=""
-                    value={Math.round(total.normal.value)}
-                    percent={0}
-                    color="emerald"
-                />
-                <DamageLine
-                    label=""
-                    value={Math.round(total.critical.value)}
-                    percent={0}
-                    color="gold"
-                />
-                <DamageLine
-                    label=""
-                    value={Math.round(total.affinity.value)}
-                    percent={0}
-                    color="amber"
-                />
+                <div title={hitTooltipByType.min}>
+                    <DamageLine
+                        label=""
+                        value={Math.round(total.min.value)}
+                        percent={0}
+                        color="silver"
+                    />
+                </div>
+                <div title={hitTooltipByType.normal}>
+                    <DamageLine
+                        label=""
+                        value={Math.round(total.normal.value)}
+                        percent={0}
+                        color="emerald"
+                    />
+                </div>
+                <div title={hitTooltipByType.critical}>
+                    <DamageLine
+                        label=""
+                        value={Math.round(total.critical.value)}
+                        percent={0}
+                        color="gold"
+                    />
+                </div>
+                <div title={hitTooltipByType.affinity}>
+                    <DamageLine
+                        label=""
+                        value={Math.round(total.affinity.value)}
+                        percent={0}
+                        color="amber"
+                    />
+                </div>
             </div>
 
             {/* ================= Notes ================= */}
