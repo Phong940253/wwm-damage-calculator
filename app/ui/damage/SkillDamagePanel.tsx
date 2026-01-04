@@ -12,29 +12,25 @@ interface Props {
 
 export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
     const total = result.total;
-    const hitsTooltip = result.perHit
-        .map((hit, i) =>
-            `Hit ${i + 1}: Abrasion ${Math.round(hit.min.value)} | Avg ${Math.round(
-                hit.normal.value
-            )} | Crit ${Math.round(hit.critical.value)} | Aff ${Math.round(
-                hit.affinity.value
-            )}`
-        )
-        .join("\n");
+    const formatList = (values: number[]) => values.map(Math.round).join(" + ");
+
+    const perHitMin = result.perHit.map((hit) => hit.min.value);
+    const perHitNormal = result.perHit.map((hit) => hit.normal.value);
+    const perHitCritical = result.perHit.map((hit) => hit.critical.value);
+    const perHitAffinity = result.perHit.map((hit) => hit.affinity.value);
+
+    const hitsTooltip = [
+        `Abrasion: ${formatList(perHitMin)}`,
+        `Average: ${formatList(perHitNormal)}`,
+        `Critical: ${formatList(perHitCritical)}`,
+        `Affinity: ${formatList(perHitAffinity)}`,
+    ].join("\n");
 
     const hitTooltipByType = {
-        min: result.perHit
-            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.min.value)}`)
-            .join("\n"),
-        normal: result.perHit
-            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.normal.value)}`)
-            .join("\n"),
-        critical: result.perHit
-            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.critical.value)}`)
-            .join("\n"),
-        affinity: result.perHit
-            .map((hit, i) => `Hit ${i + 1}: ${Math.round(hit.affinity.value)}`)
-            .join("\n"),
+        min: formatList(perHitMin),
+        normal: formatList(perHitNormal),
+        critical: formatList(perHitCritical),
+        affinity: formatList(perHitAffinity),
     };
 
     return (
