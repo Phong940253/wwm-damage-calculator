@@ -13,11 +13,7 @@ export const useElementStats = (initial: ElementStats) => {
 
     try {
       const saved = JSON.parse(raw);
-
-      // init MainElementMultiplier if not present
-      if (saved.MainElementMultiplier === undefined) {
-        saved.MainElementMultiplier = 653;
-      }
+      saved.MainElementMultiplier = 100;
 
       setElementStats((prev) => {
         const next = { ...prev };

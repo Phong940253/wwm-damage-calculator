@@ -117,7 +117,7 @@ export const INITIAL_STATS: InputStats = {
 
   MinPhysicalAttack: { current: 500, increase: 0 },
   MaxPhysicalAttack: { current: 1000, increase: 0 },
-  PhysicalAttackMultiplier: { current: 326.29, increase: 0 },
+  PhysicalAttackMultiplier: { current: 100, increase: 0 },
   FlatDamage: { current: 378, increase: 0 },
 
   PrecisionRate: { current: 85, increase: 0 },
@@ -149,7 +149,7 @@ export const INITIAL_STATS: InputStats = {
 export const INITIAL_ELEMENT_STATS: ElementStats = {
   selected: "bellstrike",
   martialArtsId: "bellstrike_splendor",
-  MainElementMultiplier: { current: 653, increase: 0 },
+  MainElementMultiplier: { current: 100, increase: 0 },
 
   /* ---------- Bellstrike ---------- */
   bellstrikeMin: {

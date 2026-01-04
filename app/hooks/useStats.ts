@@ -12,7 +12,9 @@ export const useStats = (initial: InputStats) => {
     if (!raw) return;
     try {
       const saved = JSON.parse(raw);
-      setStats(prev =>
+      saved.PhysicalAttackMultiplier = 100;
+
+      setStats((prev) =>
         Object.fromEntries(
           Object.entries(prev).map(([k, v]) => [
             k,
