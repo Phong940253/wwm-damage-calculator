@@ -63,6 +63,8 @@ export default function MainTabLayout() {
   };
 
   const onSaveCurrent = () => {
+    if (!confirm("Save current stats?")) return;
+
     localStorage.setItem(
       "wwm_dmg_current_stats",
       JSON.stringify(
@@ -71,6 +73,7 @@ export default function MainTabLayout() {
         )
       )
     );
+    alert("Stats saved!");
   };
 
   return (
