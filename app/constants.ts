@@ -32,14 +32,9 @@ const ELEMENT_STAT_KEYS = ELEMENT_TYPES.flatMap(({ key }) => [
 ======================= */
 
 export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
-  Core: [
-    "MinPhysicalAttack",
-    "MaxPhysicalAttack",
-    "PhysicalAttackMultiplier",
-    "FlatDamage",
-  ],
+  Core: ["MinPhysicalAttack", "MaxPhysicalAttack"],
   Attributes: ["Body", "Power", "Defense", "Agility", "Momentum"],
-  Element: ["MainElementMultiplier", ...ELEMENT_STAT_KEYS],
+  Element: [...ELEMENT_STAT_KEYS],
   Rates: [
     "PrecisionRate",
     "CriticalRate",
