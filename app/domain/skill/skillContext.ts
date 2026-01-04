@@ -19,12 +19,12 @@ export function createSkillContext(
         return baseCtx.get(key) + totalFlatDamage;
       }
 
-      // Physical ATK multiplied
+      // Physical ATK multiplied by skill multiplier and PhysicalAttackMultiplier (default 100)
       if (key === "MinPhysicalAttack" || key === "MaxPhysicalAttack") {
         return baseCtx.get(key) * opts.physicalMultiplier;
       }
 
-      // YOUR element only multiplied
+      // YOUR element only multiplied by skill multiplier and MainElementMultiplier (default 100)
       if (
         key === "MINAttributeAttackOfYOURType" ||
         key === "MAXAttributeAttackOfYOURType"
