@@ -8,6 +8,7 @@ export interface Stat {
 }
 
 import { ElementKey } from "./constants";
+import { MartialArtId } from "./domain/skill/types";
 
 export interface InputStats {
   [key: string]: Stat;
@@ -15,6 +16,7 @@ export interface InputStats {
 
 export interface ElementStats {
   selected: ElementKey;
+  martialArtsId: MartialArtId;
   MainElementMultiplier: Stat;
   bellstrikeMin: Stat;
   bellstrikeMax: Stat;

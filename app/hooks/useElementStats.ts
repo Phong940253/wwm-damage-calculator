@@ -28,6 +28,11 @@ export const useElementStats = (initial: ElementStats) => {
             continue;
           }
 
+          if (key === "martialArtsId") {
+            next.martialArtsId = saved.martialArtsId ?? prev.martialArtsId;
+            continue;
+          }
+
           if (saved[key] !== undefined) {
             next[key as keyof Omit<ElementStats, "selected">] = {
               ...prev[key as keyof Omit<ElementStats, "selected">],

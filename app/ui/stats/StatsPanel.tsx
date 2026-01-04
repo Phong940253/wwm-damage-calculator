@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { STAT_GROUPS, ELEMENT_TYPES } from "../../constants";
+import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
 import { getStatLabel } from "@/app/utils/statLabel";
 
@@ -14,7 +15,7 @@ import { getStatLabel } from "@/app/utils/statLabel";
 ======================= */
 
 type StatKey = Extract<keyof InputStats, string>;
-type ElementStatKey = Exclude<keyof ElementStats, "selected">;
+type ElementStatKey = Exclude<keyof ElementStats, "selected" | "martialArtsId">;
 
 interface Props {
   stats: InputStats;
@@ -75,7 +76,7 @@ export default function StatsPanel({
   };
 
   const isElementKey = (key: string): key is ElementStatKey =>
-    key in elementStats && key !== "selected";
+    key in elementStats && key !== "selected" && key !== "martialArtsId";
 
   const handleStatChange = (
     key: string,
@@ -107,18 +108,27 @@ export default function StatsPanel({
           </div>
           <div>
             <label className="text-xs text-muted-foreground">
-              Main Element
+              Martial Art
             </label>
             <select
               className="w-full border rounded px-2 py-2 bg-background"
-              value={elementStats.selected}
-              onChange={(e) =>
-                onElementChange("selected", "selected", e.target.value)
-              }
+              value={elementStats.martialArtsId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                const art = LIST_MARTIAL_ARTS.find((m) => m.id === nextId);
+                console.log("Selected martial art:", art);
+
+                onElementChange("martialArtsId", "selected", nextId);
+
+                // Keep main element in sync with chosen martial art
+                if (art) {
+                  onElementChange("selected", "selected", art.element);
+                }
+              }}
             >
-              {ELEMENT_TYPES.map((el) => (
-                <option key={el.key} value={el.key}>
-                  {el.label}
+              {LIST_MARTIAL_ARTS.map((art) => (
+                <option key={art.id} value={art.id}>
+                  {art.name}
                 </option>
               ))}
             </select>

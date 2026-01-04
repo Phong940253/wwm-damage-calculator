@@ -4,7 +4,7 @@ import { InputStats, ElementStats } from "@/app/types";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 
-type ElementStatKey = Exclude<keyof ElementStats, "selected">;
+type ElementStatKey = Exclude<keyof ElementStats, "selected" | "martialArtsId">;
 
 export function useStatImpact(
   stats: InputStats,
@@ -27,7 +27,7 @@ export function useStatImpact(
 
     const baseElements: Record<ElementStatKey, number> = Object.fromEntries(
       Object.keys(elementStats)
-        .filter((k) => k !== "selected")
+        .filter((k) => k !== "selected" && k !== "martialArtsId")
         .map((k) => [k, Number(elementStats[k as ElementStatKey].current || 0)])
     ) as Record<ElementStatKey, number>;
 

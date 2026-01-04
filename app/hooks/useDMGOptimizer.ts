@@ -49,6 +49,14 @@ export function useDMGOptimizer(
         };
       }
 
+      // ✅ handle martial art selection (string field)
+      if (key === "martialArtsId") {
+        return {
+          ...prev,
+          martialArtsId: value as ElementStats["martialArtsId"],
+        };
+      }
+
       // ✅ handle element stat
       return {
         ...prev,
