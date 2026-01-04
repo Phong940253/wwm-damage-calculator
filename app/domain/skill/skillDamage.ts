@@ -17,6 +17,8 @@ export function calculateSkillDamage(
       const hitCtx = createSkillContext(ctx, {
         physicalMultiplier: hit.physicalMultiplier,
         elementMultiplier: hit.elementMultiplier,
+        flatPhysical: hit.flatPhysical,
+        flatAttribute: hit.flatAttribute,
       });
 
       const breakdown = calcExpectedNormalBreakdown(

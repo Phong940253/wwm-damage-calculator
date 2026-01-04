@@ -4,6 +4,8 @@ import { DamageResult } from "../damage/type";
 export interface SkillHit {
   physicalMultiplier: number; // e.g. 1.2 = 120%
   elementMultiplier: number; // e.g. 0.8 = 80%
+  flatPhysical?: number; // flat physical damage per hit
+  flatAttribute?: number; // flat attribute damage per hit
   hits: number;
 }
 
