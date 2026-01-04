@@ -188,7 +188,7 @@ export const SKILLS: Skill[] = [
     name: "Qiankun's Lock",
     martialArtId: "bellstrike_splendor",
     category: "skill",
-    hits: [{ physicalMultiplier: 1, elementMultiplier: 1, hits: 1 }],
+    hits: [{ physicalMultiplier: 3.66, elementMultiplier: 4.8, hits: 1 }],
     notes: "Placeholder multipliers",
   },
   {
