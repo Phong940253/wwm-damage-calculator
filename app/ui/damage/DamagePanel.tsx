@@ -71,12 +71,13 @@ export default function DamagePanel({
             <Zap className="text-yellow-500" /> Damage output
           </div>
 
-          {skillDamages.map(({ skill, result }) =>
+          {skillDamages.map(({ skill, result }, idx) =>
             result ? (
               <SkillDamagePanel
                 key={skill.id}
                 skill={skill}
                 result={result}
+                showHeader={idx === 0}
               />
             ) : null
           )}
