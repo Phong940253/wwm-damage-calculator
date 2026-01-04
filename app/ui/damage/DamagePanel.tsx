@@ -82,39 +82,10 @@ export default function DamagePanel({
             ) : null
           )}
 
-          <div className="flex flex-col align-center justify-center flex-1">
-            <DamageLine
-              label="Abrasion Damage"
-              value={result.min.value}
-              percent={result.min.percent}
-              color="silver"
-            />
 
-            <DamageLine
-              label="Average (Expected)"
-              value={result.normal.value}
-              percent={result.normal.percent}
-              color="emerald"
-            />
-
-            <DamageLine
-              label="Critical (Max Proc)"
-              value={result.critical.value}
-              percent={result.critical.percent}
-              color="gold"
-            />
-
-            <DamageLine
-              label="Affinity (Max Proc)"
-              value={result.affinity.value}
-              percent={result.affinity.percent}
-              color="amber"
-            />
-          </div>
-          <Separator className="bg-gradient-to-r from-transparent via-border to-transparent m-4" />
           {result.averageBreakdown && (
-            <div className="flex flex-1 flex-col">
-              <div className="text-sm font-medium mb-2 text-muted-foreground text-center">
+            <div className="flex flex-1 flex-col mt-6">
+              <div className="text-lg font-bold mb-2 text-muted-foreground align-center text-white">
                 Average Damage Composition
               </div>
               <AverageDamagePie data={result.averageBreakdown} />

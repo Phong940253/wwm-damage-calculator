@@ -36,7 +36,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
     return (
         <div
             className="
-        space-y-3 p-3
+        space-y-3
       "
         >
             {showHeader && (
