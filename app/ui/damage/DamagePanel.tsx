@@ -38,10 +38,13 @@ export default function DamagePanel({
   warnings = [],
 }: Props) {
   const finalStats = buildFinalStatSections(ctx);
-
-  const skills = SKILLS.filter(
-    s => s.martialArtId.includes(elementStats?.selected || "")
-  );
+  const selectedMartialArtId = elementStats?.martialArtsId;
+  const skills = SKILLS.filter((skill) => {
+    if (selectedMartialArtId) return skill.martialArtId === selectedMartialArtId;
+    if (elementStats?.selected)
+      return skill.martialArtId.includes(elementStats.selected);
+    return true;
+  });
 
   const skillDamages = useSkillDamage(ctx, skills);
 
