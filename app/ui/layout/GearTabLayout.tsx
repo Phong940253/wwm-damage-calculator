@@ -6,6 +6,7 @@ import GearEquippedTab from "../gear/GearEquippedTab";
 import GearCompareTab from "../gear/GearCompareTab";
 import { GearProvider } from "@/app/providers/GearContext";
 import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
+import { useRotation } from "@/app/hooks/useRotation";
 import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "@/app/constants";
 
 export default function GearTabLayout() {
@@ -18,6 +19,8 @@ export default function GearTabLayout() {
     INITIAL_ELEMENT_STATS
   );
 
+  const { selectedRotation } = useRotation();
+
   return (
     <GearProvider>
       <div
@@ -28,7 +31,7 @@ export default function GearTabLayout() {
         "
       >
         {tab === "custom" && (
-          <GearCustomizeTab stats={stats} elementStats={elementStats} />
+          <GearCustomizeTab stats={stats} elementStats={elementStats} rotation={selectedRotation} />
         )}
 
         {tab === "equipped" && <GearEquippedTab />}

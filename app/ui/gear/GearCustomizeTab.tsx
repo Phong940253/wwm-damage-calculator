@@ -6,6 +6,7 @@ import { useGear } from "../../providers/GearContext";
 import GearCard from "./GearCard";
 import GearForm from "./GearForm";
 import GearOptimizeDialog from "./GearOptimizeDialog";
+import GearOptimizeProgressDialog from "./GearOptimizeProgressDialog";
 import { CustomGear, InputStats, ElementStats, GearSlot } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
 import {
@@ -53,13 +54,14 @@ function getStatTotal(gear: CustomGear, stat: string): number {
 interface Props {
   stats: InputStats;
   elementStats: ElementStats;
+  rotation?: any; // Rotation type - avoid circular import
 }
 
 /* =======================
    Component
 ======================= */
 
-export default function GearCustomizeTab({ stats, elementStats }: Props) {
+export default function GearCustomizeTab({ stats, elementStats, rotation }: Props) {
   const { customGears, setCustomGears, equipped, setEquipped } = useGear();
 
   const [open, setOpen] = useState(false);
@@ -80,10 +82,13 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
   const [sortStat, setSortStat] = useState("none");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const opt = useGearOptimize(stats, elementStats, customGears, equipped);
+  const opt = useGearOptimize(stats, elementStats, customGears, equipped, rotation);
 
   useEffect(() => {
-    if (optOpen) opt.run(maxDisplay);
+    if (optOpen) {
+      opt.run(maxDisplay);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [optOpen]);
 
   const apply = (sel: Partial<Record<GearSlot, CustomGear>>) => {
@@ -386,6 +391,8 @@ export default function GearCustomizeTab({ stats, elementStats }: Props) {
           <GearForm initialGear={editing} onSuccess={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      <GearOptimizeProgressDialog open={opt.loading} progress={opt.progress} />
 
       <GearOptimizeDialog
         open={optOpen}

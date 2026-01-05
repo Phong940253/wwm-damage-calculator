@@ -1,7 +1,14 @@
 import { useCallback, useState } from "react";
-import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
+import {
+  CustomGear,
+  GearSlot,
+  InputStats,
+  ElementStats,
+  Rotation,
+} from "@/app/types";
 import {
   computeOptimizeResults,
+  computeOptimizeResultsAsync,
   OptimizeResult,
 } from "@/app/domain/gear/gearOptimize";
 
@@ -9,26 +16,31 @@ export function useGearOptimize(
   stats: InputStats,
   elementStats: ElementStats,
   customGears: CustomGear[],
-  equipped: Partial<Record<GearSlot, string | undefined>>
+  equipped: Partial<Record<GearSlot, string | undefined>>,
+  rotation?: Rotation
 ) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<OptimizeResult[]>([]);
   const [baseDamage, setBaseDamage] = useState(0);
   const [combos, setCombos] = useState(0);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
 
   const run = useCallback(
-    (maxDisplay: number) => {
+    async (maxDisplay: number) => {
       setLoading(true);
       setError(null);
+      setProgress({ current: 0, total: 0 });
 
       try {
-        const r = computeOptimizeResults(
+        const r = await computeOptimizeResultsAsync(
           stats,
           elementStats,
           customGears,
           equipped,
-          maxDisplay
+          maxDisplay,
+          rotation,
+          (current, total) => setProgress({ current, total })
         );
         setResults(r.results);
         setBaseDamage(r.baseDamage);
@@ -42,8 +54,8 @@ export function useGearOptimize(
         setLoading(false);
       }
     },
-    [stats, elementStats, customGears, equipped]
+    [stats, elementStats, customGears, equipped, rotation]
   );
 
-  return { run, loading, error, results, baseDamage, combos };
+  return { run, loading, error, results, baseDamage, combos, progress };
 }

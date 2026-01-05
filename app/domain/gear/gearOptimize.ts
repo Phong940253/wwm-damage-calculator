@@ -1,8 +1,16 @@
-import { CustomGear, GearSlot, InputStats, ElementStats } from "@/app/types";
+import {
+  CustomGear,
+  GearSlot,
+  InputStats,
+  ElementStats,
+  Rotation,
+} from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
 import { aggregateEquippedGearBonus } from "./gearAggregate";
 import { buildDamageContext } from "../damage/damageContext";
 import { calculateDamage } from "../damage/damageCalculator";
+import { SKILLS } from "../skill/skills";
+import { calculateSkillDamage } from "../skill/skillDamage";
 
 /* =======================
    Types
@@ -25,15 +33,43 @@ export const MAX_RESULTS_CAP = 10_000;
 export const MAX_COMBINATIONS = 1_000_000_000;
 
 /* =======================
-   MAIN OPTIMIZER
+   ASYNC OPTIMIZER (non-blocking)
 ======================= */
+
+export async function computeOptimizeResultsAsync(
+  stats: InputStats,
+  elementStats: ElementStats,
+  customGears: CustomGear[],
+  equipped: Partial<Record<GearSlot, string | undefined>>,
+  desiredDisplay: number,
+  rotation?: Rotation,
+  onProgress?: (current: number, total: number) => void
+): Promise<OptimizeComputation> {
+  return new Promise((resolve) => {
+    // Yield to browser before starting
+    setTimeout(() => {
+      const result = computeOptimizeResults(
+        stats,
+        elementStats,
+        customGears,
+        equipped,
+        desiredDisplay,
+        rotation,
+        onProgress
+      );
+      resolve(result);
+    }, 0);
+  });
+}
 
 export function computeOptimizeResults(
   stats: InputStats,
   elementStats: ElementStats,
   customGears: CustomGear[],
   equipped: Partial<Record<GearSlot, string | undefined>>,
-  desiredDisplay: number
+  desiredDisplay: number,
+  rotation?: Rotation,
+  onProgress?: (current: number, total: number) => void
 ): OptimizeComputation {
   /* ============================================================
      1️⃣ BASE DAMAGE = WITH EQUIPPED GEAR
@@ -41,7 +77,21 @@ export function computeOptimizeResults(
 
   const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
   const baseCtx = buildDamageContext(stats, elementStats, baseBonus);
-  const baseDamage = calculateDamage(baseCtx).normal;
+
+  /* Calculate base damage - rotation-aware */
+  let baseDamage: number;
+  if (rotation && rotation.skills.length > 0) {
+    let rotationTotal = 0;
+    for (const rotSkill of rotation.skills) {
+      const skill = SKILLS.find((s) => s.id === rotSkill.id);
+      if (!skill) continue;
+      const skillDamage = calculateSkillDamage(baseCtx, skill);
+      rotationTotal += skillDamage.total.normal.value * rotSkill.count;
+    }
+    baseDamage = rotationTotal;
+  } else {
+    baseDamage = calculateDamage(baseCtx).normal;
+  }
 
   /* ============================================================
      2️⃣ PREPARE SLOT OPTIONS
@@ -111,8 +161,30 @@ export function computeOptimizeResults(
     if (i === slotOptions.length) {
       total++;
 
+      // Report progress mỗi 100 combos
+      if (onProgress && total % 100 === 0) {
+        onProgress(
+          total,
+          slotOptions.reduce((acc, { items }) => acc * items.length, 1)
+        );
+      }
+
       const ctx = buildDamageContext(stats, elementStats, bonus);
-      const dmg = calculateDamage(ctx).normal;
+
+      /* Calculate damage - rotation-aware */
+      let dmg: number;
+      if (rotation && rotation.skills.length > 0) {
+        let rotationTotal = 0;
+        for (const rotSkill of rotation.skills) {
+          const skill = SKILLS.find((s) => s.id === rotSkill.id);
+          if (!skill) continue;
+          const skillDamage = calculateSkillDamage(ctx, skill);
+          rotationTotal += skillDamage.total.normal.value * rotSkill.count;
+        }
+        dmg = rotationTotal;
+      } else {
+        dmg = calculateDamage(ctx).normal;
+      }
 
       results.push({
         key: GEAR_SLOTS.map(({ key }) => selection[key]?.id ?? "none").join(
