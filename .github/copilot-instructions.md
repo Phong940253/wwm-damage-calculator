@@ -18,17 +18,20 @@ Core business logic organized by bounded contexts:
   - `gearAggregate.ts` - Aggregates equipped gear into flat stat bonuses
   - `gearOptimize.ts` - Brute-force optimizer testing gear combinations (cap: 1B combinations)
 - **`skill/`**: Skill database and scaling calculations
-  - `skills.ts` - 500+ skill definitions with multipliers
-  - `skillDamage.ts` - Applies skill multipliers to base damage
+  - `skills.ts` - 500+ skill definitions with multipliers and hit patterns
+  - `skillDamage.ts` - Applies skill multipliers to base damage per hit
+  - `skillContext.ts` - Creates context wrapper that applies skill multipliers to DamageContext
 - **`stats/`**: Stat derivation and conversions
-  - `derivedStats.ts` - Computes secondary stats from primary attributes
+  - `derivedStats.ts` - Computes secondary stats from primary attributes (uses `computeDerivedStats()` helper)
 
 ### Presentation Layer (`app/ui/`)
 
 Components organized by feature:
 
-- **`layout/`**: Root-level structure with tab routing via URL params (`?root=main&tab=stats`)
-- **`stats/`**, **`damage/`**, **`gear/`**, **`formula/`**: Feature-specific panels
+- **`layout/`**: Root-level tab routing via URL params (`?root=main&tab=stats` or `?root=gear&tab=equipped`)
+  - `MainTabLayout.tsx` - Orchestrates main tabs (stats, import-export, rotation, damage, formula)
+  - `GearTabLayout.tsx` - Gear management tabs (equipped, custom, compare)
+- **`stats/`**, **`damage/`**, **`gear/`**, **`formula/`**, **`rotation/`**: Feature-specific panels
 - Uses **shadcn/ui** components from `components/ui/` (New York style, `cn()` utility)
 
 ### Data Flow Pattern
@@ -75,6 +78,14 @@ export const calcMinimumDamage = (g: (k: string) => number) => {
 - **Conditional rendering** based on `useSearchParams()` for tab navigation
 - **Badge/Card/Input** from shadcn/ui - never create custom basic UI primitives
 
+### Rotation & Skill System
+
+- **Rotation domain**: `Rotation { id, name, skills[], martialArtId?, createdAt, updatedAt }`
+- **Skills have multi-hit patterns**: Each skill.hit defines `physicalMultiplier`, `elementMultiplier`, `flatPhysical`, `flatAttribute`, and `hits` count
+- **Skill context wrapping**: `createSkillContext()` transforms base DamageContext by applying per-hit multipliers
+- **Rotation persistence**: Stored in `wwm_rotations` localStorage key
+- **Hook**: `useRotation()` handles CRUD operations and state management for rotations
+
 ## Development Workflows
 
 ### Build & Dev
@@ -83,28 +94,32 @@ export const calcMinimumDamage = (g: (k: string) => number) => {
 pnpm dev          # Turbopack dev server (port 3000)
 pnpm build        # Production build
 pnpm lint         # ESLint check
+pnpm start        # Production server
 ```
 
 ### Adding New Features
 
 1. **New stat**: Add to `STAT_GROUPS` in `constants.ts` + update `InputStats` type
-2. **New gear slot**: Update `GearSlot` type + add migration in `useGear.ts`
-3. **New skill**: Add to `SKILLS` array in `skills.ts` with multipliers
-4. **New formula**: Implement pure function in `damageFormula.ts`, use in `damageCalculator.ts`
+2. **New gear slot**: Update `GearSlot` type + add migration in `useGear.ts` (handle legacy names)
+3. **New skill**: Add to `SKILLS` array in `domain/skill/skills.ts` with hit patterns (physicalMultiplier, elementMultiplier, etc.)
+4. **New formula**: Implement pure function in `damageFormula.ts` using `g()` getter, use in `damageCalculator.ts`
+5. **New rotation feature**: Use `useRotation()` hook which exposes full CRUD + modify operations
 
 ### Testing Damage Changes
 
 1. Edit formula in `damageFormula.ts`
 2. Hot reload updates `DamagePanel` automatically
 3. Check "Formula" tab to verify math display (uses KaTeX for rendering)
+4. Test rotation damage via `calculateSkillDamage()` to verify skill multiplier application
 
 ## Key Files Reference
 
 - **Entry point**: `app/page.tsx` → `DMGOptimizerClient.tsx`
 - **Main orchestration**: `hooks/useDMGOptimizer.ts` (combines stats + damage + gear)
 - **Stat definitions**: `app/constants.ts` (STAT_GROUPS, ELEMENT_DEFAULTS)
-- **Type contracts**: `app/types.ts` (Stat, CustomGear, InputStats, ElementStats)
+- **Type contracts**: `app/types.ts` (Stat, CustomGear, InputStats, ElementStats, Rotation)
 - **Utility functions**: `lib/utils.ts` (cn), `app/utils/` (clamp, statLabel, importExport)
+- **Hook ecosystem**: `hooks/useStats`, `useGear`, `useDamage`, `useRotation`, `useSkillDamage` - each manages isolated state slice
 
 ## Integration Points
 
