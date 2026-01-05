@@ -102,6 +102,24 @@ export interface CustomGear {
   rarity?: string;
 }
 
+/* =======================
+   Rotation domain
+======================= */
+
+export interface RotationSkill {
+  id: string; // skill ID
+  order: number;
+}
+
+export interface Rotation {
+  id: string;
+  name: string;
+  martialArtId?: string; // optional - if set, only skills from this martial art or neutral skills are allowed
+  skills: RotationSkill[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 export type RootTabKey = "main" | "gear";
-export type MainTabKey = "stats" | "import-export";
+export type MainTabKey = "stats" | "import-export" | "rotation";
 export type GearTabKey = "equipped" | "custom" | "compare";

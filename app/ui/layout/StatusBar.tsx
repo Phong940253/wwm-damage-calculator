@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   PackageCheck,
   GitCompare,
+  Zap,
 } from "lucide-react";
 
 export function StatusBar() {
@@ -60,6 +61,14 @@ export function StatusBar() {
               title="Stats"
             >
               <BarChart3 size={18} />
+            </TabButton>
+
+            <TabButton
+              active={tab === "rotation"}
+              onClick={() => set("main", "rotation")}
+              title="Rotation"
+            >
+              <Zap size={18} />
             </TabButton>
 
             <TabButton

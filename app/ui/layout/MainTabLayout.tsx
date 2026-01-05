@@ -3,9 +3,11 @@
 import { useSearchParams } from "next/navigation";
 import StatsPanel from "../stats/StatsPanel";
 import ImportExportTab from "../import-export/ImportExportTab";
+import RotationPanel from "../rotation/RotationPanel";
 import DamagePanel from "../damage/DamagePanel";
 import FormulaPanel from "../formula/FormulaPanel";
 import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
+import { useRotation } from "@/app/hooks/useRotation";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { useState } from "react";
 import { ElementStats } from "@/app/types";
@@ -27,6 +29,19 @@ export default function MainTabLayout() {
     onStatChange,
     onElementChange,
   } = useDMGOptimizer(INITIAL_STATS, INITIAL_ELEMENT_STATS);
+
+  const {
+    rotations,
+    selectedRotationId,
+    selectedRotation,
+    setSelectedRotationId,
+    createRotation,
+    deleteRotation,
+    renameRotation,
+    addSkillToRotation,
+    removeSkillFromRotation,
+    moveSkill,
+  } = useRotation();
 
   const [showFormula, setShowFormula] = useState(false);
 
@@ -99,6 +114,21 @@ export default function MainTabLayout() {
         )}
 
         {tab === "import" && <ImportExportTab />}
+
+        {tab === "rotation" && (
+          <RotationPanel
+            rotations={rotations}
+            selectedRotationId={selectedRotationId}
+            elementStats={elementStats}
+            onSelectRotation={setSelectedRotationId}
+            onCreateRotation={createRotation}
+            onDeleteRotation={deleteRotation}
+            onRenameRotation={renameRotation}
+            onAddSkill={addSkillToRotation}
+            onRemoveSkill={removeSkillFromRotation}
+            onMoveSkill={moveSkill}
+          />
+        )}
       </div>
 
       {/* RIGHT PANEL */}
