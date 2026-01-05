@@ -27,6 +27,7 @@ interface RotationPanelProps {
   onAddSkill: (rotationId: string, skillId: string) => void;
   onRemoveSkill: (rotationId: string, skillId: string) => void;
   onMoveSkill: (rotationId: string, fromIndex: number, toIndex: number) => void;
+  onUpdateSkillCount: (rotationId: string, skillId: string, count: number) => void;
 }
 
 export default function RotationPanel({
@@ -40,6 +41,7 @@ export default function RotationPanel({
   onAddSkill,
   onRemoveSkill,
   onMoveSkill,
+  onUpdateSkillCount,
 }: RotationPanelProps) {
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
   const [newRotationName, setNewRotationName] = useState("");
@@ -258,7 +260,26 @@ export default function RotationPanel({
                       </div>
                     </div>
 
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-zinc-400 whitespace-nowrap">
+                          x
+                        </span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={rotSkill.count}
+                          onChange={(e) =>
+                            onUpdateSkillCount(
+                              selectedRotation.id,
+                              rotSkill.id,
+                              parseInt(e.target.value) || 1
+                            )
+                          }
+                          className="w-10 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                        />
+                      </div>
+
                       <Button
                         variant="ghost"
                         size="sm"

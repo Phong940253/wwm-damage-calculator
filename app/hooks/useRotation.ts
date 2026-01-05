@@ -99,6 +99,7 @@ export const useRotation = () => {
         const newSkill: RotationSkill = {
           id: skillId,
           order: r.skills.length,
+          count: 1, // mặc định 1 lần sử dụng
         };
         return {
           ...r,
@@ -153,6 +154,22 @@ export const useRotation = () => {
     );
   };
 
+  const updateSkillCount = (rotationId: string, skillId: string, count: number) => {
+    setRotations((prev) =>
+      prev.map((r) => {
+        if (r.id !== rotationId) return r;
+
+        return {
+          ...r,
+          skills: r.skills.map((s) =>
+            s.id === skillId ? { ...s, count: Math.max(1, count) } : s
+          ),
+          updatedAt: Date.now(),
+        };
+      })
+    );
+  };
+
   return {
     rotations,
     selectedRotationId,
@@ -164,5 +181,6 @@ export const useRotation = () => {
     addSkillToRotation,
     removeSkillFromRotation,
     moveSkill,
+    updateSkillCount,
   };
 };

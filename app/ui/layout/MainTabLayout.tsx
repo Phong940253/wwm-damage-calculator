@@ -41,6 +41,7 @@ export default function MainTabLayout() {
     addSkillToRotation,
     removeSkillFromRotation,
     moveSkill,
+    updateSkillCount,
   } = useRotation();
 
   const [showFormula, setShowFormula] = useState(false);
@@ -127,6 +128,7 @@ export default function MainTabLayout() {
             onAddSkill={addSkillToRotation}
             onRemoveSkill={removeSkillFromRotation}
             onMoveSkill={moveSkill}
+            onUpdateSkillCount={updateSkillCount}
           />
         )}
       </div>
