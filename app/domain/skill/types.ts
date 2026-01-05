@@ -14,8 +14,8 @@ export interface Skill {
   name: string;
   martialArtId: string;
 
-  /** normal / skill / ult */
-  category: "basic" | "skill" | "ultimate";
+  /** martial-art-skill / special-skill / dual-weapon-skill / basic / ultimate */
+  category: "martial-art-skill" | "special-skill" | "dual-weapon-skill" | "basic" | "ultimate";
 
   hits: SkillHit[];
 

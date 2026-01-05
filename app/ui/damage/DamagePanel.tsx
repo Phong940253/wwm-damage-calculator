@@ -52,10 +52,12 @@ export default function DamagePanel({
       Boolean(entry.result)
   );
 
-  const categoryOrder: Skill["category"][] = ["basic", "skill", "ultimate"];
+  const categoryOrder: Skill["category"][] = ["martial-art-skill", "special-skill", "dual-weapon-skill", "basic", "ultimate"];
   const categoryLabels: Record<Skill["category"], string> = {
+    "martial-art-skill": "Martial Art Skill",
+    "special-skill": "Special Skill",
+    "dual-weapon-skill": "Dual-Weapon Skill",
     basic: "Basic",
-    skill: "Skill",
     ultimate: "Ultimate",
   };
 
