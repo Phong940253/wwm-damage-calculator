@@ -35,14 +35,8 @@ export default function RotationDamagePie({
       const skillDamage = calculateSkillDamage(ctx, skill);
       if (!skillDamage) return null;
 
-      // Average damage = (min + normal + critical + affinity) / 4 nhân với count
-      const avgDamage =
-        ((skillDamage.total.min.value +
-          skillDamage.total.normal.value +
-          skillDamage.total.critical.value +
-          skillDamage.total.affinity.value) /
-          4) *
-        rotSkill.count;
+      // Average damage = normal damage nhân với count
+      const avgDamage = skillDamage.total.normal.value * rotSkill.count;
 
       return {
         name: `${skill.name} x${rotSkill.count}`,
