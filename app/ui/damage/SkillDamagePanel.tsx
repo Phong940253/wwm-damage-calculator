@@ -57,7 +57,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
             {/* ================= Damage table (responsive) ================= */}
             <div
                 className={`
-                    grid grid-cols-2 gap-2 text-xs
+                    grid grid-cols-2 gap-2 text-xs items-center
                     md:grid-cols-3
                     ${columnTemplateClass}
                     ${isEven ? 'bg-zinc-800/30' : ''}
@@ -74,7 +74,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
                     <span className="text-sm font-semibold leading-tight text-muted-foreground">{skill.name}</span>
                 </div>
 
-                <div className="justify-self-end" title={hitTooltipByType.min}>
+                <div className="justify-self-end flex items-center" title={hitTooltipByType.min}>
                     <DamageLine
                         label=""
                         value={Math.round(total.min.value)}
@@ -82,7 +82,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
                         color="silver"
                     />
                 </div>
-                <div className="justify-self-end" title={hitTooltipByType.normal}>
+                <div className="justify-self-end flex items-center" title={hitTooltipByType.normal}>
                     <DamageLine
                         label=""
                         value={Math.round(total.normal.value)}
@@ -90,7 +90,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
                         color="emerald"
                     />
                 </div>
-                <div className="justify-self-end" title={hitTooltipByType.critical}>
+                <div className="justify-self-end flex items-center" title={hitTooltipByType.critical}>
                     <DamageLine
                         label=""
                         value={Math.round(total.critical.value)}
@@ -98,7 +98,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
                         color="gold"
                     />
                 </div>
-                <div className="justify-self-end" title={hitTooltipByType.affinity}>
+                <div className="justify-self-end flex items-center" title={hitTooltipByType.affinity}>
                     <DamageLine
                         label=""
                         value={Math.round(total.affinity.value)}

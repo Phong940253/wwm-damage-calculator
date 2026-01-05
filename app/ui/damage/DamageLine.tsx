@@ -28,7 +28,7 @@ export default function DamageLine({ label, value, percent, color }: Props) {
   };
 
   return (
-    <div className="space-y-1 text-center">
+    <div className="gap-y-1 text-center">
       <p className="text-sm text-muted-foreground">{label}</p>
 
       <div className="flex items-center justify-center">
