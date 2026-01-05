@@ -37,7 +37,7 @@ export default function GearTabLayout() {
         {tab === "equipped" && <GearEquippedTab />}
 
         {tab === "compare" && (
-          <GearCompareTab stats={stats} elementStats={elementStats} />
+          <GearCompareTab stats={stats} elementStats={elementStats} rotation={selectedRotation} />
         )}
       </div>
     </GearProvider>

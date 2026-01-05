@@ -9,10 +9,13 @@ import { ArrowLeftRight, TrendingUp, TrendingDown } from "lucide-react";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
+import { SKILLS } from "@/app/domain/skill/skills";
+import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 
 interface GearCompareTabProps {
   stats: InputStats;
   elementStats: ElementStats;
+  rotation?: any; // Rotation type - avoid circular import
 }
 
 // helper
@@ -30,6 +33,7 @@ function buildEquippedWithOverride(
 export default function GearCompareTab({
   stats,
   elementStats,
+  rotation,
 }: GearCompareTabProps) {
   const { customGears, equipped } = useGear();
 
@@ -102,53 +106,53 @@ export default function GearCompareTab({
         <div className="space-y-4">
           {(selectedGearA.mains.length > 0 ||
             selectedGearB.mains.length > 0) && (
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-muted/50 px-4 py-2">
-                <h3 className="font-medium">Main Attributes</h3>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-muted/50 px-4 py-2">
+                  <h3 className="font-medium">Main Attributes</h3>
+                </div>
+                <table className="w-full">
+                  <thead className="bg-muted/30">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-sm">Stat</th>
+                      <th className="px-4 py-2 text-right text-sm text-emerald-500">
+                        Gear A
+                      </th>
+                      <th className="px-4 py-2 text-right text-sm text-blue-500">
+                        Gear B
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {Array.from(
+                      new Set([
+                        ...selectedGearA.mains.map((m) => m.stat),
+                        ...selectedGearB.mains.map((m) => m.stat),
+                      ])
+                    ).map((stat) => {
+                      const valueA = selectedGearA.mains.find(
+                        (m) => m.stat === stat
+                      )?.value;
+                      const valueB = selectedGearB.mains.find(
+                        (m) => m.stat === stat
+                      )?.value;
+                      return (
+                        <tr key={stat}>
+                          <td className="px-4 py-2 text-sm font-medium">
+                            {stat}
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {valueA !== undefined ? valueA : "-"}
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {valueB !== undefined ? valueB : "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <table className="w-full">
-                <thead className="bg-muted/30">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-sm">Stat</th>
-                    <th className="px-4 py-2 text-right text-sm text-emerald-500">
-                      Gear A
-                    </th>
-                    <th className="px-4 py-2 text-right text-sm text-blue-500">
-                      Gear B
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {Array.from(
-                    new Set([
-                      ...selectedGearA.mains.map((m) => m.stat),
-                      ...selectedGearB.mains.map((m) => m.stat),
-                    ])
-                  ).map((stat) => {
-                    const valueA = selectedGearA.mains.find(
-                      (m) => m.stat === stat
-                    )?.value;
-                    const valueB = selectedGearB.mains.find(
-                      (m) => m.stat === stat
-                    )?.value;
-                    return (
-                      <tr key={stat}>
-                        <td className="px-4 py-2 text-sm font-medium">
-                          {stat}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm">
-                          {valueA !== undefined ? valueA : "-"}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm">
-                          {valueB !== undefined ? valueB : "-"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+            )}
 
           {(selectedGearA.subs.length > 0 || selectedGearB.subs.length > 0) && (
             <div className="border rounded-lg overflow-hidden">
@@ -243,14 +247,59 @@ export default function GearCompareTab({
                     equippedB
                   );
 
-                  // Calculate damage
-                  const damageA = calculateDamage(
-                    buildDamageContext(stats, elementStats, bonusA)
-                  );
+                  // Build contexts
+                  const ctxA = buildDamageContext(stats, elementStats, bonusA);
+                  const ctxB = buildDamageContext(stats, elementStats, bonusB);
 
-                  const damageB = calculateDamage(
-                    buildDamageContext(stats, elementStats, bonusB)
-                  );
+                  // Calculate damage - rotation-aware
+                  let damageA: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };
+                  let damageB: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };
+
+                  if (rotation && rotation.skills.length > 0) {
+                    // Rotation-based damage
+                    let totalMinA = 0,
+                      totalNormalA = 0,
+                      totalAffinityA = 0;
+                    let totalMinB = 0,
+                      totalNormalB = 0,
+                      totalAffinityB = 0;
+
+                    for (const rotSkill of rotation.skills) {
+                      const skill = SKILLS.find((s) => s.id === rotSkill.id);
+                      if (!skill) continue;
+
+                      const skillDmgA = calculateSkillDamage(ctxA, skill);
+                      totalMinA +=
+                        skillDmgA.total.min.value * rotSkill.count;
+                      totalNormalA +=
+                        skillDmgA.total.normal.value * rotSkill.count;
+                      totalAffinityA +=
+                        skillDmgA.total.affinity.value * rotSkill.count;
+
+                      const skillDmgB = calculateSkillDamage(ctxB, skill);
+                      totalMinB +=
+                        skillDmgB.total.min.value * rotSkill.count;
+                      totalNormalB +=
+                        skillDmgB.total.normal.value * rotSkill.count;
+                      totalAffinityB +=
+                        skillDmgB.total.affinity.value * rotSkill.count;
+                    }
+
+                    damageA = {
+                      min: totalMinA,
+                      normal: totalNormalA,
+                      affinity: totalAffinityA,
+                    };
+                    damageB = {
+                      min: totalMinB,
+                      normal: totalNormalB,
+                      affinity: totalAffinityB,
+                    };
+                  } else {
+                    // Single-hit damage
+                    damageA = calculateDamage(ctxA);
+                    damageB = calculateDamage(ctxB);
+                  }
 
                   const rows = [
                     {
@@ -289,13 +338,12 @@ export default function GearCompareTab({
                           {row.valueB.toLocaleString()}
                         </td>
                         <td
-                          className={`px-4 py-2 text-right text-sm font-medium ${
-                            isPositive
+                          className={`px-4 py-2 text-right text-sm font-medium ${isPositive
                               ? "text-green-500"
                               : isNegative
-                              ? "text-red-500"
-                              : ""
-                          }`}
+                                ? "text-red-500"
+                                : ""
+                            }`}
                         >
                           <div className="flex items-center justify-end gap-1">
                             {isPositive && <TrendingUp className="w-4 h-4" />}
@@ -305,13 +353,12 @@ export default function GearCompareTab({
                           </div>
                         </td>
                         <td
-                          className={`px-4 py-2 text-right text-sm font-medium ${
-                            isPositive
+                          className={`px-4 py-2 text-right text-sm font-medium ${isPositive
                               ? "text-green-500"
                               : isNegative
-                              ? "text-red-500"
-                              : ""
-                          }`}
+                                ? "text-red-500"
+                                : ""
+                            }`}
                         >
                           {percent > 0 ? "+" : ""}
                           {percent.toFixed(2)}%

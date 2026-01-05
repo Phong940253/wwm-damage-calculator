@@ -17,15 +17,15 @@ export default function GearOptimizeProgressDialog({ open, progress }: Props) {
     progress.total > 0 ? Math.min((progress.current / progress.total) * 100, 100) : 0;
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={() => { }}>
       <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>Tính toán tối ưu hóa gear</DialogTitle>
+          <DialogTitle>Calculating Gear Optimization</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground text-center">
-            Đang kiểm tra {progress.current.toLocaleString()} / {progress.total.toLocaleString()} kết hợp gear
+            Checking {progress.current.toLocaleString()} / {progress.total.toLocaleString()} gear combinations
           </p>
 
           {/* Progress bar */}
@@ -39,7 +39,7 @@ export default function GearOptimizeProgressDialog({ open, progress }: Props) {
           <p className="text-sm font-semibold text-center">{Math.round(percent)}%</p>
 
           <p className="text-xs text-muted-foreground text-center">
-            Vui lòng chờ...
+            Please wait...
           </p>
         </div>
       </DialogContent>
