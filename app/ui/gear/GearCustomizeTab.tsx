@@ -7,7 +7,7 @@ import GearCard from "./GearCard";
 import GearForm from "./GearForm";
 import GearOptimizeDialog from "./GearOptimizeDialog";
 import GearOptimizeProgressDialog from "./GearOptimizeProgressDialog";
-import { CustomGear, InputStats, ElementStats, GearSlot } from "@/app/types";
+import { CustomGear, InputStats, ElementStats, GearSlot, Rotation } from "@/app/types";
 import { GEAR_SLOTS } from "@/app/constants";
 import {
   Dialog,
@@ -54,7 +54,7 @@ function getStatTotal(gear: CustomGear, stat: string): number {
 interface Props {
   stats: InputStats;
   elementStats: ElementStats;
-  rotation?: any; // Rotation type - avoid circular import
+  rotation?: Rotation;
 }
 
 /* =======================

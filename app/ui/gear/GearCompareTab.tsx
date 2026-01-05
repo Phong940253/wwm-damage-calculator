@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useGear } from "../../providers/GearContext";
-import { InputStats, ElementStats } from "../../types";
+import { InputStats, ElementStats, Rotation } from "../../types";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight, TrendingUp, TrendingDown } from "lucide-react";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
@@ -15,7 +15,7 @@ import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 interface GearCompareTabProps {
   stats: InputStats;
   elementStats: ElementStats;
-  rotation?: any; // Rotation type - avoid circular import
+  rotation?: Rotation;
 }
 
 // helper
@@ -339,10 +339,10 @@ export default function GearCompareTab({
                         </td>
                         <td
                           className={`px-4 py-2 text-right text-sm font-medium ${isPositive
-                              ? "text-green-500"
-                              : isNegative
-                                ? "text-red-500"
-                                : ""
+                            ? "text-green-500"
+                            : isNegative
+                              ? "text-red-500"
+                              : ""
                             }`}
                         >
                           <div className="flex items-center justify-end gap-1">
@@ -354,10 +354,10 @@ export default function GearCompareTab({
                         </td>
                         <td
                           className={`px-4 py-2 text-right text-sm font-medium ${isPositive
-                              ? "text-green-500"
-                              : isNegative
-                                ? "text-red-500"
-                                : ""
+                            ? "text-green-500"
+                            : isNegative
+                              ? "text-red-500"
+                              : ""
                             }`}
                         >
                           {percent > 0 ? "+" : ""}
