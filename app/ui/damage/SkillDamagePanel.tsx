@@ -49,7 +49,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                         ${columnTemplateClass}
                     `}
                 >
-                    <div className="col-span-2 md:col-span-1 lg:col-span-1 text-left">Skill</div>
+                    <div className="col-span-2 md:col-span-1 lg:col-span-1"></div>
                     <div className="text-right">Abrasion</div>
                     <div className="text-right">Average</div>
                     <div className="text-right">Critical</div>

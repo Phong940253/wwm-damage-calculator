@@ -15,6 +15,7 @@ import { useSkillDamage } from "@/app/hooks/useSkillDamage";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { ElementStats } from "@/app/types";
 import { SkillDamagePanel } from "./SkillDamagePanel";
+import { Skill } from "@/app/domain/skill/types";
 
 interface Props {
   ctx: DamageContext;
@@ -46,6 +47,24 @@ export default function DamagePanel({
   });
 
   const skillDamages = useSkillDamage(ctx, skills);
+  const completedSkillDamages = skillDamages.filter(
+    (entry): entry is { skill: Skill; result: NonNullable<typeof entry.result> } =>
+      Boolean(entry.result)
+  );
+
+  const categoryOrder: Skill["category"][] = ["basic", "skill", "ultimate"];
+  const categoryLabels: Record<Skill["category"], string> = {
+    basic: "Basic",
+    skill: "Skill",
+    ultimate: "Ultimate",
+  };
+
+  const groupedSkillDamages = categoryOrder
+    .map((category) => ({
+      category,
+      skills: completedSkillDamages.filter(({ skill }) => skill.category === category),
+    }))
+    .filter((group) => group.skills.length > 0);
 
   return (
     <Card
@@ -70,16 +89,22 @@ export default function DamagePanel({
             <Zap className="text-yellow-500" /> Damage output
           </div>
 
-          {skillDamages.map(({ skill, result }, idx) =>
-            result ? (
-              <SkillDamagePanel
-                key={skill.id}
-                skill={skill}
-                result={result}
-                showHeader={idx === 0}
-              />
-            ) : null
-          )}
+          {groupedSkillDamages.map((group) => (
+            <div key={group.category} className="space-y-2">
+              <div className="text-lg py-6 px-2 font-semibold text-muted-foreground tracking-wide capitalize">
+                {categoryLabels[group.category]}
+              </div>
+
+              {group.skills.map(({ skill, result }, idx) => (
+                <SkillDamagePanel
+                  key={skill.id}
+                  skill={skill}
+                  result={result}
+                  showHeader={idx === 0}
+                />
+              ))}
+            </div>
+          ))}
 
 
           {result.averageBreakdown && (
