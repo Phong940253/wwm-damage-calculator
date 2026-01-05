@@ -32,7 +32,7 @@ export default function DamageLine({ label, value, percent, color }: Props) {
       <p className="text-sm text-muted-foreground">{label}</p>
 
       <div className="flex items-center justify-center">
-        <p className={`relative text-3xl font-bold p-2 ${colorClasses[color]}`}>
+        <p className={`relative text-sm font-bold p-2 ${colorClasses[color]}`}>
           <span className={`absolute inset-0 blur-xl ${glowClasses[color]}`} />
           <span className="relative">{value.toLocaleString()}</span>
         </p>

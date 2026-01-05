@@ -14,6 +14,8 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
     const total = result.total;
     const formatList = (values: number[]) => values.map(Math.round).join(" + ");
 
+    const columnTemplateClass = "lg:grid-cols-[minmax(0,_1fr)_repeat(4,_96px)]";
+
     const perHitMin = result.perHit.map((hit) => hit.min.value);
     const perHitNormal = result.perHit.map((hit) => hit.normal.value);
     const perHitCritical = result.perHit.map((hit) => hit.critical.value);
@@ -41,40 +43,40 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
         >
             {showHeader && (
                 <div
-                    className="
+                    className={`
                         grid grid-cols-2 gap-2 text-[11px] text-muted-foreground
                         md:grid-cols-3
-                        lg:grid-cols-5
-                    "
+                        ${columnTemplateClass}
+                    `}
                 >
-                    <div className="col-span-2 md:col-span-1 text-left">Skill</div>
-                    <div className="text-center">Abrasion</div>
-                    <div className="text-center">Average</div>
-                    <div className="text-center">Critical</div>
-                    <div className="text-center">Affinity</div>
+                    <div className="col-span-2 md:col-span-1 lg:col-span-1 text-left">Skill</div>
+                    <div className="text-right">Abrasion</div>
+                    <div className="text-right">Average</div>
+                    <div className="text-right">Critical</div>
+                    <div className="text-right">Affinity</div>
                 </div>
             )}
 
             {/* ================= Damage table (responsive) ================= */}
             <div
-                className="
+                className={`
                     grid grid-cols-2 gap-2 text-xs
                     md:grid-cols-3
-                    lg:grid-cols-5
-        "
+                    ${columnTemplateClass}
+        `}
             >
                 <div
                     className="
                         rounded-md
                         px-2 py-2 flex flex-col gap-1 justify-center
-                        col-span-2 md:col-span-1
+                        col-span-2 md:col-span-1 lg:col-span-1
                     "
                     title={hitsTooltip}
                 >
                     <span className="text-sm font-semibold leading-tight">{skill.name}</span>
                 </div>
 
-                <div title={hitTooltipByType.min}>
+                <div className="justify-self-end" title={hitTooltipByType.min}>
                     <DamageLine
                         label=""
                         value={Math.round(total.min.value)}
@@ -82,7 +84,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                         color="silver"
                     />
                 </div>
-                <div title={hitTooltipByType.normal}>
+                <div className="justify-self-end" title={hitTooltipByType.normal}>
                     <DamageLine
                         label=""
                         value={Math.round(total.normal.value)}
@@ -90,7 +92,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                         color="emerald"
                     />
                 </div>
-                <div title={hitTooltipByType.critical}>
+                <div className="justify-self-end" title={hitTooltipByType.critical}>
                     <DamageLine
                         label=""
                         value={Math.round(total.critical.value)}
@@ -98,7 +100,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                         color="gold"
                     />
                 </div>
-                <div title={hitTooltipByType.affinity}>
+                <div className="justify-self-end" title={hitTooltipByType.affinity}>
                     <DamageLine
                         label=""
                         value={Math.round(total.affinity.value)}
