@@ -101,6 +101,7 @@ export default function DamagePanel({
                   skill={skill}
                   result={result}
                   showHeader={idx === 0}
+                  isEven={idx % 2 === 1}
                 />
               ))}
             </div>

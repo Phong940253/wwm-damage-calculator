@@ -8,9 +8,10 @@ interface Props {
     skill: Skill;
     result: SkillDamageResult;
     showHeader?: boolean;
+    isEven?: boolean;
 }
 
-export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
+export function SkillDamagePanel({ skill, result, showHeader = false, isEven = false }: Props) {
     const total = result.total;
     const formatList = (values: number[]) => values.map(Math.round).join(" + ");
 
@@ -59,6 +60,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                     grid grid-cols-2 gap-2 text-xs
                     md:grid-cols-3
                     ${columnTemplateClass}
+                    ${isEven ? 'bg-zinc-800/30' : ''}
         `}
             >
                 <div
