@@ -48,6 +48,7 @@ export default function RotationDamagePie({
     .filter((item) => item !== null);
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
+  console.log("RotationDamagePie chartData:", chartData);
 
   if (chartData.length === 0 || total === 0) {
     return (

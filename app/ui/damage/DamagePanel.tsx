@@ -54,6 +54,7 @@ export default function DamagePanel({
     (entry): entry is { skill: Skill; result: NonNullable<typeof entry.result> } =>
       Boolean(entry.result)
   );
+  console.log("result", result);
 
   const categoryOrder: Skill["category"][] = ["martial-art-skill", "special-skill", "dual-weapon-skill", "basic", "ultimate"];
   const categoryLabels: Record<Skill["category"], string> = {

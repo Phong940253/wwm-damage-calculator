@@ -6,6 +6,7 @@ import { aggregateEquippedGearBonus } from "../domain/gear/gearAggregate";
 import { InputStats, ElementStats } from "../types";
 import { useStatImpact } from "./useStatImpact";
 import { ElementKey } from "../constants";
+import { useRotation } from "./useRotation";
 
 type ElementField = "current" | "increase";
 
@@ -18,8 +19,9 @@ export function useDMGOptimizer(
 
   const { customGears, equipped } = useGear();
   const gearBonus = aggregateEquippedGearBonus(customGears, equipped);
+  const rotation = useRotation().selectedRotation;
 
-  const damage = useDamage(stats, elementStats, gearBonus);
+  const damage = useDamage(stats, elementStats, gearBonus, rotation);
   const statImpact = useStatImpact(stats, elementStats, gearBonus);
 
   /* ---------- handlers ---------- */

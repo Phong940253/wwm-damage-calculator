@@ -2,14 +2,17 @@
 import { useMemo } from "react";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
-import { InputStats, ElementStats } from "@/app/types";
+import { InputStats, ElementStats, Rotation } from "@/app/types";
 import { DamageResult } from "../domain/damage/type";
 import { calcExpectedNormalBreakdown } from "../domain/damage/damageFormula";
+import { SKILLS } from "@/app/domain/skill/skills";
+import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 
 export function useDamage(
   stats: InputStats,
   elementStats: ElementStats,
-  gearBonus: Record<string, number>
+  gearBonus: Record<string, number>,
+  rotation?: Rotation
 ): DamageResult {
   return useMemo(() => {
     /* ---------- BASE (NO increase) ---------- */
@@ -34,36 +37,129 @@ export function useDamage(
     };
 
     const baseCtx = buildDamageContext(baseStats, baseElementStats, gearBonus);
-    const base = calculateDamage(baseCtx);
-
-    /* ---------- FINAL (WITH increase) ---------- */
-
     const finalCtx = buildDamageContext(stats, elementStats, gearBonus);
-    const final = calculateDamage(finalCtx);
-    console.log(
-      baseCtx.get("MAXAttributeAttackOfYOURType"),
-      finalCtx.get("MAXAttributeAttackOfYOURType")
-    );
+
+    /* ---------- Calculate damage based on rotation or default ---------- */
+    let baseValues: {
+      min: number;
+      normal: number;
+      critical: number;
+      affinity: number;
+    };
+    let finalValues: {
+      min: number;
+      normal: number;
+      critical: number;
+      affinity: number;
+    };
+    let breakdown: ReturnType<typeof calcExpectedNormalBreakdown> | undefined;
+
+    if (rotation && rotation.skills.length > 0) {
+      // Calculate rotation-based damage
+      let baseMinTotal = 0;
+      let baseNormalTotal = 0;
+      let baseCriticalTotal = 0;
+      let baseAffinityTotal = 0;
+
+      let finalMinTotal = 0;
+      let finalNormalTotal = 0;
+      let finalCriticalTotal = 0;
+      let finalAffinityTotal = 0;
+
+      // Accumulate skill breakdowns weighted by damage contribution
+      let weightedBreakdownNormal = 0;
+      let weightedBreakdownAbrasion = 0;
+      let weightedBreakdownAffinity = 0;
+      let weightedBreakdownCritical = 0;
+
+      for (const rotSkill of rotation.skills) {
+        const skill = SKILLS.find((s) => s.id === rotSkill.id);
+        if (!skill) continue;
+
+        // Base damage for this skill (without increases)
+        const baseSkillDamage = calculateSkillDamage(baseCtx, skill);
+        baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
+        baseNormalTotal += baseSkillDamage.total.normal.value * rotSkill.count;
+        baseCriticalTotal +=
+          baseSkillDamage.total.critical.value * rotSkill.count;
+        baseAffinityTotal +=
+          baseSkillDamage.total.affinity.value * rotSkill.count;
+
+        console.log(`Skill: ${skill.name}, Base Damage:`, baseSkillDamage);
+
+        // Final damage for this skill (with increases)
+        const finalSkillDamage = calculateSkillDamage(finalCtx, skill);
+        const skillNormalDamage =
+          finalSkillDamage.total.normal.value * rotSkill.count;
+        finalMinTotal += finalSkillDamage.total.min.value * rotSkill.count;
+        finalNormalTotal += skillNormalDamage;
+        finalCriticalTotal +=
+          finalSkillDamage.total.critical.value * rotSkill.count;
+        finalAffinityTotal +=
+          finalSkillDamage.total.affinity.value * rotSkill.count;
+
+        // Get breakdown for this skill from calculated skill damage
+        const skillBreakdown = finalSkillDamage.total.averageBreakdown;
+        if (!skillBreakdown) continue;
+
+        // Weight breakdown by this skill's normal damage contribution
+        weightedBreakdownNormal += skillBreakdown.normal;
+        weightedBreakdownAbrasion += skillBreakdown.abrasion;
+        weightedBreakdownAffinity += skillBreakdown.affinity;
+        weightedBreakdownCritical += skillBreakdown.critical;
+      }
+
+      baseValues = {
+        min: baseMinTotal,
+        normal: baseNormalTotal,
+        critical: baseCriticalTotal,
+        affinity: baseAffinityTotal,
+      };
+
+      finalValues = {
+        min: finalMinTotal,
+        normal: finalNormalTotal,
+        critical: finalCriticalTotal,
+        affinity: finalAffinityTotal,
+      };
+
+      // For rotation, calculate weighted average breakdown
+      breakdown = {
+        normal: weightedBreakdownNormal,
+        abrasion: weightedBreakdownAbrasion,
+        affinity: weightedBreakdownAffinity,
+        critical: weightedBreakdownCritical,
+      };
+    } else {
+      // Fallback to default damage calculation
+      const base = calculateDamage(baseCtx);
+      const final = calculateDamage(finalCtx);
+
+      baseValues = base;
+      finalValues = final;
+      breakdown = calcExpectedNormalBreakdown(finalCtx.get, final.affinity);
+    }
 
     const pct = (b: number, f: number) => (b === 0 ? 0 : ((f - b) / b) * 100);
 
-    const breakdown = calcExpectedNormalBreakdown(finalCtx.get, final.affinity);
-
     return {
-      min: { value: final.min, percent: pct(base.min, final.min) },
+      min: {
+        value: finalValues.min,
+        percent: pct(baseValues.min, finalValues.min),
+      },
       normal: {
-        value: Math.round(final.normal * 10) / 10,
-        percent: pct(base.normal, final.normal),
+        value: Math.round(finalValues.normal * 10) / 10,
+        percent: pct(baseValues.normal, finalValues.normal),
       },
       critical: {
-        value: Math.round(final.critical * 10) / 10,
-        percent: pct(base.critical, final.critical),
+        value: Math.round(finalValues.critical * 10) / 10,
+        percent: pct(baseValues.critical, finalValues.critical),
       },
       affinity: {
-        value: Math.round(final.affinity * 10) / 10,
-        percent: pct(base.affinity, final.affinity),
+        value: Math.round(finalValues.affinity * 10) / 10,
+        percent: pct(baseValues.affinity, finalValues.affinity),
       },
       averageBreakdown: breakdown,
     };
-  }, [stats, elementStats, gearBonus]);
+  }, [stats, elementStats, gearBonus, rotation]);
 }

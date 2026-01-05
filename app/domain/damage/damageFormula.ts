@@ -148,6 +148,23 @@ export const calcExpectedNormalBreakdown = (
   const As = A * scale;
   const Cs = C * scale;
 
+  // console.log("calcExpectedNormalBreakdown:");
+  // console.log("Breakdown Params:", {
+  //   P,
+  //   As,
+  //   Cs,
+  //   CD,
+  //   base,
+  //   minDamage,
+  //   maxDamage,
+  //   minPhysicalAttack: g("MinPhysicalAttack"),
+  //   maxPhysicalAttack: g("MaxPhysicalAttack"),
+  //   normalDamage: calcExpectedNormal(g, affinityDamage),
+  //   test:
+  //     (1 - P) * (As * maxDamage + (1 - As) * minDamage) +
+  //     P * (As * maxDamage + Cs * base * (1 + CD) + (1 - As - Cs) * base),
+  // });
+
   return {
     abrasion: (1 - P) * (1 - As) * minDamage,
     affinity: ((1 - P) * As + P * As) * maxDamage,

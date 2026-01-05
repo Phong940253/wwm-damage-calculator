@@ -4,7 +4,10 @@ import { DamageContext } from "../damage/damageContext";
 import { Skill } from "./types";
 import { createSkillContext } from "./skillContext";
 import { DamageResult, SkillDamageResult } from "../damage/type";
-import { calcExpectedNormalBreakdown } from "../damage/damageFormula";
+import {
+  calcAffinityDamage,
+  calcExpectedNormalBreakdown,
+} from "../damage/damageFormula";
 
 export function calculateSkillDamage(
   ctx: DamageContext,
@@ -21,16 +24,18 @@ export function calculateSkillDamage(
         flatAttribute: hit.flatAttribute,
       });
 
+      const damage = calculateDamage(hitCtx);
+
       const breakdown = calcExpectedNormalBreakdown(
         hitCtx.get,
-        hitCtx.get("Affinity")
+        damage.affinity
       );
 
       perHit.push({
-        min: { value: calculateDamage(hitCtx).min, percent: 0 },
-        normal: { value: calculateDamage(hitCtx).normal, percent: 0 },
-        critical: { value: calculateDamage(hitCtx).critical, percent: 0 },
-        affinity: { value: calculateDamage(hitCtx).affinity, percent: 0 },
+        min: { value: damage.min, percent: 0 },
+        normal: { value: damage.normal, percent: 0 },
+        critical: { value: damage.critical, percent: 0 },
+        affinity: { value: damage.affinity, percent: 0 },
         averageBreakdown: breakdown,
       });
     }
@@ -41,7 +46,7 @@ export function calculateSkillDamage(
     normal: { value: 0, percent: 0 },
     critical: { value: 0, percent: 0 },
     affinity: { value: 0, percent: 0 },
-    averageBreakdown: perHit[0]?.averageBreakdown,
+    averageBreakdown: { abrasion: 0, affinity: 0, critical: 0, normal: 0 },
   };
 
   for (const h of perHit) {
@@ -49,6 +54,12 @@ export function calculateSkillDamage(
     total.normal.value += h.normal.value;
     total.critical.value += h.critical.value;
     total.affinity.value += h.affinity.value;
+    if (total.averageBreakdown) {
+      total.averageBreakdown.abrasion += h.averageBreakdown?.abrasion || 0;
+      total.averageBreakdown.affinity += h.averageBreakdown?.affinity || 0;
+      total.averageBreakdown.critical += h.averageBreakdown?.critical || 0;
+      total.averageBreakdown.normal += h.averageBreakdown?.normal || 0;
+    }
   }
 
   return { total, perHit };
