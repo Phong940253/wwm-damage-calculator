@@ -87,13 +87,13 @@ export default function DamagePanel({
 
           <FinalStatPanel sections={finalStats} />
 
-          <div className="flex flex-row gap-x-2 text-lg py-4 font-bold">
+          <div className="flex flex-row gap-x-2 text-lg pt-4 font-bold">
             <Zap className="text-yellow-500" /> Damage output
           </div>
 
           {groupedSkillDamages.map((group) => (
             <div key={group.category}>
-              <div className="text-lg py-6 px-2 font-semibold text-muted-foreground tracking-wide capitalize text-white">
+              <div className="text-lg pt-6 px-2 font-semibold text-muted-foreground tracking-wide capitalize text-white">
                 {categoryLabels[group.category]}
               </div>
 
