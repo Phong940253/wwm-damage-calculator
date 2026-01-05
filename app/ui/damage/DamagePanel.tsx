@@ -90,8 +90,8 @@ export default function DamagePanel({
           </div>
 
           {groupedSkillDamages.map((group) => (
-            <div key={group.category} className="space-y-2">
-              <div className="text-lg py-6 px-2 font-semibold text-muted-foreground tracking-wide capitalize">
+            <div key={group.category}>
+              <div className="text-lg py-6 px-2 font-semibold text-muted-foreground tracking-wide capitalize text-white">
                 {categoryLabels[group.category]}
               </div>
 

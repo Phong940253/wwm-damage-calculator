@@ -36,11 +36,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
     };
 
     return (
-        <div
-            className="
-        space-y-3
-      "
-        >
+        <>
             {showHeader && (
                 <div
                     className={`
@@ -73,7 +69,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                     "
                     title={hitsTooltip}
                 >
-                    <span className="text-sm font-semibold leading-tight">{skill.name}</span>
+                    <span className="text-sm font-semibold leading-tight text-muted-foreground">{skill.name}</span>
                 </div>
 
                 <div className="justify-self-end" title={hitTooltipByType.min}>
@@ -116,6 +112,6 @@ export function SkillDamagePanel({ skill, result, showHeader = false }: Props) {
                     {skill.notes}
                 </div>
             )}
-        </div>
+        </>
     );
 }
