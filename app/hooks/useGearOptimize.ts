@@ -7,7 +7,6 @@ import {
   Rotation,
 } from "@/app/types";
 import {
-  computeOptimizeResults,
   computeOptimizeResultsAsync,
   OptimizeResult,
 } from "@/app/domain/gear/gearOptimize";

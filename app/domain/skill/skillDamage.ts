@@ -4,10 +4,7 @@ import { DamageContext } from "../damage/damageContext";
 import { Skill } from "./types";
 import { createSkillContext } from "./skillContext";
 import { DamageResult, SkillDamageResult } from "../damage/type";
-import {
-  calcAffinityDamage,
-  calcExpectedNormalBreakdown,
-} from "../damage/damageFormula";
+import { calcExpectedNormalBreakdown } from "../damage/damageFormula";
 
 export function calculateSkillDamage(
   ctx: DamageContext,

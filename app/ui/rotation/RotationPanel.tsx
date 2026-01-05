@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Rotation, RotationSkill, ElementStats } from "@/app/types";
+import { Rotation, ElementStats } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
 import { Button } from "@/components/ui/button";
@@ -193,7 +193,7 @@ export default function RotationPanel({
 
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold">
-              Skills in "{selectedRotation.name}"
+              Skills in &quot;{selectedRotation.name}&quot;
             </h3>
             <Button
               onClick={() => setShowSkillPicker(!showSkillPicker)}

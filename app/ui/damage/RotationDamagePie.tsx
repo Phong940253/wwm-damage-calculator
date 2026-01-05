@@ -10,7 +10,7 @@ import {
   PieLabelRenderProps,
   Legend,
 } from "recharts";
-import { Rotation, RotationSkill } from "@/app/types";
+import { Rotation } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
