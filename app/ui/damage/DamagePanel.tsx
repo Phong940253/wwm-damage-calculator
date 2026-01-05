@@ -8,12 +8,13 @@ import { Separator } from "@/components/ui/separator";
 import { Zap, ArrowUpRight } from "lucide-react";
 import { DamageResult } from "../../domain/damage/type";
 import AverageDamagePie from "./AverageDamagePie";
+import RotationDamagePie from "./RotationDamagePie";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import FinalStatPanel from "./FinalStatPanel";
 import { buildFinalStatSections } from "@/app/domain/damage/buildFinalStatSections";
 import { useSkillDamage } from "@/app/hooks/useSkillDamage";
 import { SKILLS } from "@/app/domain/skill/skills";
-import { ElementStats } from "@/app/types";
+import { ElementStats, Rotation } from "@/app/types";
 import { SkillDamagePanel } from "./SkillDamagePanel";
 import { Skill } from "@/app/domain/skill/types";
 
@@ -25,7 +26,8 @@ interface Props {
   toggleFormula: () => void;
   formulaSlot?: React.ReactNode;
   warnings?: string[];
-  elementStats?: ElementStats
+  elementStats?: ElementStats;
+  rotation?: Rotation;
 }
 
 export default function DamagePanel({
@@ -35,6 +37,7 @@ export default function DamagePanel({
   toggleFormula,
   formulaSlot,
   elementStats,
+  rotation,
   warnings = [],
 }: Props) {
   const finalStats = buildFinalStatSections(ctx);
@@ -116,6 +119,15 @@ export default function DamagePanel({
                 Average Damage Composition
               </div>
               <AverageDamagePie data={result.averageBreakdown} />
+            </div>
+          )}
+
+          {rotation && rotation.skills.length > 0 && (
+            <div className="flex flex-1 flex-col mt-6">
+              <div className="text-lg font-bold mb-2 text-muted-foreground align-center text-white">
+                Rotation Damage Breakdown
+              </div>
+              <RotationDamagePie rotation={rotation} ctx={ctx} />
             </div>
           )}
         </div>

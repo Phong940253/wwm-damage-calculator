@@ -143,6 +143,7 @@ export default function MainTabLayout() {
           toggleFormula={() => setShowFormula((v) => !v)}
           formulaSlot={<FormulaPanel />}
           elementStats={elementStats}
+          rotation={selectedRotation}
         />
       </div>
     </div>
