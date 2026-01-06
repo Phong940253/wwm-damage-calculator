@@ -1,6 +1,6 @@
 // app/ui/StatsPanel.tsx
 "use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +69,12 @@ export default function StatsPanel({
   onApplyIncrease,
   onSaveCurrent
 }: Props) {
+  // Track local input values for instant UI feedback
+  const [localValues, setLocalValues] = useState<Record<string, string>>({});
+  
+  // Debounce timers
+  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
+
   const getStatValue = (key: string, field: "current" | "increase") => {
     return isElementKey(key)
       ? elementStats[key]?.[field]
@@ -95,6 +101,52 @@ export default function StatsPanel({
       onStatChange(key as StatKey, field, value);
     }
   };
+
+  // Debounced handler for total input changes
+  const createDebouncedHandler = useCallback(
+    (key: string, field: "current" | "increase", isTotal: boolean) => {
+      return (value: string) => {
+        const inputKey = `${key}-${field}`;
+        
+        // Clear previous timer
+        if (debounceTimers.current[inputKey]) {
+          clearTimeout(debounceTimers.current[inputKey]);
+        }
+
+        // Store local value for instant UI feedback
+        setLocalValues((prev) => ({ ...prev, [inputKey]: value }));
+
+        // Set new debounced timer
+        debounceTimers.current[inputKey] = setTimeout(() => {
+          if (isTotal) {
+            // For total input: Base = Total - Gear - Derived
+            const gear = gearBonus[key] || 0;
+            const derivedValue = derived[key as keyof typeof derived] || 0;
+            
+            if (value === "") {
+              handleStatChange(key, field, "");
+            } else {
+              const nextBase =
+                Math.round((Number(value) - gear - derivedValue) * 100000) /
+                100000;
+              handleStatChange(key, field, String(nextBase));
+            }
+          } else {
+            // For increase input: update directly
+            handleStatChange(key, field, value);
+          }
+          
+          // Clean up local value after update
+          setLocalValues((prev) => {
+            const next = { ...prev };
+            delete next[inputKey];
+            return next;
+          });
+        }, 300); // 300ms debounce delay
+      };
+    },
+    [gearBonus, derived, handleStatChange]
+  );
 
   return (
     <Card
@@ -193,22 +245,46 @@ export default function StatsPanel({
                       {/* ---------- TOTAL INPUT (Editable) ---------- */}
                       <Input
                         type="number"
-                        value={total === 0 ? "" : total}
+                        value={
+                          localValues[`${k}-current`] !== undefined
+                            ? localValues[`${k}-current`]
+                            : total === 0
+                            ? ""
+                            : total
+                        }
                         onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "") {
-                            handleStatChange(k, "current", "");
-                            return;
-                          }
-
-                          // Base = Total - Gear (with floating point rounding to 5 decimals)
-                          const nextBase =
-                            Math.round((Number(v) - gear - derivedValue) * 100000) /
-                            100000;
-                          handleStatChange(k, "current", String(nextBase));
+                          createDebouncedHandler(k, "current", true)(
+                            e.target.value
+                          );
                         }}
                         onBlur={() => {
-                          if (getStatValue(k, "current") === "") {
+                          // Clear debounce timer and force update
+                          const inputKey = `${k}-current`;
+                          if (debounceTimers.current[inputKey]) {
+                            clearTimeout(debounceTimers.current[inputKey]);
+                          }
+                          
+                          const currentValue = localValues[inputKey];
+                          if (currentValue !== undefined) {
+                            // Apply the pending change immediately
+                            const gear = gearBonus[k] || 0;
+                            const derivedValue = derived[k as keyof typeof derived] || 0;
+                            
+                            if (currentValue === "") {
+                              handleStatChange(k, "current", "");
+                            } else {
+                              const nextBase =
+                                Math.round((Number(currentValue) - gear - derivedValue) * 100000) /
+                                100000;
+                              handleStatChange(k, "current", String(nextBase));
+                            }
+                            
+                            setLocalValues((prev) => {
+                              const next = { ...prev };
+                              delete next[inputKey];
+                              return next;
+                            });
+                          } else if (getStatValue(k, "current") === "") {
                             handleStatChange(k, "current", "0");
                           }
                         }}
@@ -243,15 +319,33 @@ export default function StatsPanel({
                         <Input
                           type="number"
                           value={
-                            getStatValue(k, "increase") === 0
+                            localValues[`${k}-increase`] !== undefined
+                              ? localValues[`${k}-increase`]
+                              : getStatValue(k, "increase") === 0
                               ? ""
                               : getStatValue(k, "increase")
                           }
-                          onChange={(e) =>
-                            handleStatChange(k, "increase", e.target.value)
-                          }
+                          onChange={(e) => {
+                            createDebouncedHandler(k, "increase", false)(
+                              e.target.value
+                            );
+                          }}
                           onBlur={() => {
-                            if (getStatValue(k, "increase") === "") {
+                            // Clear debounce timer and force update
+                            const inputKey = `${k}-increase`;
+                            if (debounceTimers.current[inputKey]) {
+                              clearTimeout(debounceTimers.current[inputKey]);
+                            }
+                            
+                            const currentValue = localValues[inputKey];
+                            if (currentValue !== undefined) {
+                              handleStatChange(k, "increase", currentValue);
+                              setLocalValues((prev) => {
+                                const next = { ...prev };
+                                delete next[inputKey];
+                                return next;
+                              });
+                            } else if (getStatValue(k, "increase") === "") {
                               handleStatChange(k, "increase", "0");
                             }
                           }}
