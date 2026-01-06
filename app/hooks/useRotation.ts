@@ -1,6 +1,7 @@
 // app/hooks/useRotation.ts
 import { useEffect, useState } from "react";
 import { Rotation, RotationSkill } from "../types";
+import { DEFAULT_ROTATIONS } from "@/app/domain/rotation/defaultRotations";
 
 const STORAGE_KEY = "wwm_rotations";
 
@@ -15,38 +16,27 @@ export const useRotation = () => {
   // Load từ localStorage
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      // Khởi tạo rotation trống
-      const initialRotation: Rotation = {
-        id: generateId(),
-        name: "Default",
-        skills: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      setRotations([initialRotation]);
-      setSelectedRotationId(initialRotation.id);
-      return;
+    let savedRotations: Rotation[] = [];
+    
+    if (raw) {
+      try {
+        savedRotations = JSON.parse(raw) as Rotation[];
+      } catch {
+        // Fallback to default only
+        setRotations(DEFAULT_ROTATIONS);
+        setSelectedRotationId(DEFAULT_ROTATIONS[0].id);
+        return;
+      }
     }
 
-    try {
-      const parsed = JSON.parse(raw) as Rotation[];
-      setRotations(parsed);
-      if (parsed.length > 0) {
-        setSelectedRotationId(parsed[0].id);
-      }
-    } catch {
-      // Fallback
-      const initialRotation: Rotation = {
-        id: generateId(),
-        name: "Default",
-        skills: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      setRotations([initialRotation]);
-      setSelectedRotationId(initialRotation.id);
-    }
+    // Merge default rotations with saved rotations
+    // Keep saved rotations that aren't already in defaults
+    const defaultIds = new Set(DEFAULT_ROTATIONS.map((r) => r.id));
+    const uniqueSaved = savedRotations.filter((r) => !defaultIds.has(r.id));
+    const mergedRotations = [...DEFAULT_ROTATIONS, ...uniqueSaved];
+
+    setRotations(mergedRotations);
+    setSelectedRotationId(DEFAULT_ROTATIONS[0].id);
   }, []);
 
   // Persist vào localStorage mỗi khi rotations thay đổi

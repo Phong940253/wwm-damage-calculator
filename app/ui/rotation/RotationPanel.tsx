@@ -134,6 +134,8 @@ export default function RotationPanel({
     return true;
   });
 
+  console.log(rotations, selectedRotationId);
+
   return (
     <div className="space-y-6">
       {/* Create New Rotation */}
