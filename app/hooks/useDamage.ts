@@ -102,11 +102,11 @@ export function useDamage(
         const skillBreakdown = finalSkillDamage.total.averageBreakdown;
         if (!skillBreakdown) continue;
 
-        // Weight breakdown by this skill's normal damage contribution
-        weightedBreakdownNormal += skillBreakdown.normal;
-        weightedBreakdownAbrasion += skillBreakdown.abrasion;
-        weightedBreakdownAffinity += skillBreakdown.affinity;
-        weightedBreakdownCritical += skillBreakdown.critical;
+        // Weight breakdown by this skill's count (flat damage, not percent)
+        weightedBreakdownNormal += skillBreakdown.normal * rotSkill.count;
+        weightedBreakdownAbrasion += skillBreakdown.abrasion * rotSkill.count;
+        weightedBreakdownAffinity += skillBreakdown.affinity * rotSkill.count;
+        weightedBreakdownCritical += skillBreakdown.critical * rotSkill.count;
       }
 
       baseValues = {
