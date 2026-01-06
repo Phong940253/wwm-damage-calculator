@@ -6,6 +6,7 @@ import { ELEMENT_TYPES, STAT_LABELS } from "../constants";
  */
 export function getStatLabel(key: string, elementStats?: ElementStats): string {
   // 1️⃣ Explicit override
+
   if (STAT_LABELS[key]) {
     return STAT_LABELS[key];
   }

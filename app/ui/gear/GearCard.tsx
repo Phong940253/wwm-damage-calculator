@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { STAT_LABELS } from "@/app/constants";
+import { getStatLabel } from "@/app/utils/statLabel";
 import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
 
@@ -149,7 +149,7 @@ function StatLine({
       `}
     >
       <span className="text-muted-foreground truncate">
-        {STAT_LABELS[key] ?? key}
+        {getStatLabel(key)}
       </span>
       <span className="font-medium whitespace-nowrap">+{value}</span>
     </div>

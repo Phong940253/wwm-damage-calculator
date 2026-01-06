@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import { useGear } from "../../providers/GearContext";
 import { CustomGear, GearSlot, InputStats } from "../../types";
-import { GEAR_SLOTS, STAT_GROUPS, STAT_LABELS } from "../../constants";
+import { GEAR_SLOTS, STAT_GROUPS } from "../../constants";
+import { getStatLabel } from "@/app/utils/statLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { callGeminiVision } from "@/lib/gemini";
@@ -257,7 +258,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             >
               {STAT_OPTIONS.map(s => (
                 <option key={s} value={s}>
-                  {STAT_LABELS[s] || s}
+                  {getStatLabel(String(s))}
                 </option>
               ))}
             </select>
@@ -307,7 +308,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             >
               {STAT_OPTIONS.map(st => (
                 <option key={st} value={st}>
-                  {STAT_LABELS[st] || st}
+                  {getStatLabel(String(st))}
                 </option>
               ))}
             </select>
@@ -344,7 +345,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             >
               {STAT_OPTIONS.map(s => (
                 <option key={s} value={s}>
-                  {STAT_LABELS[s] || s}
+                  {getStatLabel(String(s))}
                 </option>
               ))}
             </select>

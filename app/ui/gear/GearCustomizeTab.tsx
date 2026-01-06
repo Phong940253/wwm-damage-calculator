@@ -8,7 +8,8 @@ import GearForm from "./GearForm";
 import GearOptimizeDialog from "./GearOptimizeDialog";
 import GearOptimizeProgressDialog from "./GearOptimizeProgressDialog";
 import { CustomGear, InputStats, ElementStats, GearSlot, Rotation } from "@/app/types";
-import { GEAR_SLOTS, STAT_LABELS } from "@/app/constants";
+import { GEAR_SLOTS } from "@/app/constants";
+import { getStatLabel } from "@/app/utils/statLabel";
 import {
   Dialog,
   DialogContent,
@@ -270,7 +271,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                       setStatFilter((prev) => toggleSet(prev, stat))
                     }
                   />
-                  {STAT_LABELS[stat as keyof typeof STAT_LABELS] || stat}
+                  {getStatLabel(stat, elementStats)}
                 </label>
               ))}
             </div>
@@ -318,7 +319,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
               <option value="none">No sorting</option>
               {statOptions.map((stat) => (
                 <option key={stat} value={stat}>
-                  {STAT_LABELS[stat as keyof typeof STAT_LABELS] || stat}
+                  {getStatLabel(stat, elementStats)}
                 </option>
               ))}
             </select>
