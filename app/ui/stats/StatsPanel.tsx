@@ -1,6 +1,6 @@
 // app/ui/StatsPanel.tsx
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +78,12 @@ export default function StatsPanel({
   const isElementKey = (key: string): key is ElementStatKey =>
     key in elementStats && key !== "selected" && key !== "martialArtsId";
 
+  // Memoize derived stats to prevent recalculation on every keystroke
+  const derived = useMemo(
+    () => getDerivedFromAttributes(stats, gearBonus),
+    [stats, gearBonus]
+  );
+
   const handleStatChange = (
     key: string,
     field: "current" | "increase",
@@ -152,8 +158,6 @@ export default function StatsPanel({
                 if (!stat) return null;
 
                 const impact = statImpact[k] ?? 0;
-
-                const derived = getDerivedFromAttributes(stats, gearBonus);
 
                 const gear = gearBonus[k] || 0;
                 const derivedValue = derived[k as keyof typeof derived] || 0;
