@@ -7,7 +7,7 @@ import { MainContent } from "./ui/layout/MainContent";
 
 export default function DMGOptimizerClient() {
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6" suppressHydrationWarning>
       <div className="space-y-6">
         {/* HEADER */}
         <div className="flex items-center gap-3">
