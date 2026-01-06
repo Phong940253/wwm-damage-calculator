@@ -1,6 +1,8 @@
 import { ElementKey } from "@/app/constants";
 import { DamageResult } from "../damage/type";
 
+export type WeaponType = "Umbrella" | "Fan" | "Sword" | "Spear" | "Mo Blade" | "Rope Dart" | "Dual Blades";
+
 export interface SkillHit {
   physicalMultiplier: number; // e.g. 1.2 = 120%
   elementMultiplier: number; // e.g. 0.8 = 80%
@@ -12,7 +14,8 @@ export interface SkillHit {
 export interface Skill {
   id: string;
   name: string;
-  martialArtId: string;
+  martialArtId?: string;
+  weaponType?: WeaponType;
 
   /** martial-art-skill / special-skill / dual-weapon-skill / basic / ultimate */
   category: "martial-art-skill" | "special-skill" | "dual-weapon-skill" | "basic" | "ultimate";
