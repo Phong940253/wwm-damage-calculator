@@ -85,7 +85,7 @@ export function useDamage(
         baseAffinityTotal +=
           baseSkillDamage.total.affinity.value * rotSkill.count;
 
-        console.log(`Skill: ${skill.name}, Base Damage:`, baseSkillDamage);
+        // console.log(`Skill: ${skill.name}, Base Damage:`, baseSkillDamage);
 
         // Final damage for this skill (with increases)
         const finalSkillDamage = calculateSkillDamage(finalCtx, skill);

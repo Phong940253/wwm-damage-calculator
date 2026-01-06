@@ -64,7 +64,7 @@ export default function RotationDamagePie({
   const chartData = Array.from(skillDamageMap.values());
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
-  console.log("RotationDamagePie chartData:", chartData);
+  // console.log("RotationDamagePie chartData:", chartData);
 
   if (chartData.length === 0 || total === 0) {
     return (
