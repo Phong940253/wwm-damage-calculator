@@ -11,6 +11,14 @@ export interface SkillHit {
   hits: number;
 }
 
+export type CategorySkill =
+  | "martial-art-skill"
+  | "special-skill"
+  | "dual-weapon-skill"
+  | "basic"
+  | "ultimate"
+  | "mystic-skill";
+
 export interface Skill {
   id: string;
   name: string;
@@ -18,7 +26,7 @@ export interface Skill {
   weaponType?: WeaponType;
 
   /** martial-art-skill / special-skill / dual-weapon-skill / basic / ultimate */
-  category: "martial-art-skill" | "special-skill" | "dual-weapon-skill" | "basic" | "ultimate";
+  category: CategorySkill;
 
   hits: SkillHit[];
 

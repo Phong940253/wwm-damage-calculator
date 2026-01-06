@@ -210,7 +210,7 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Spear",
     category: "martial-art-skill",
-    hits: [{ physicalMultiplier: 3.66, elementMultiplier: 4.8, hits: 1 }],
+    hits: [{ physicalMultiplier: 1, elementMultiplier: 1, hits: 1 }],
     notes: "Placeholder multipliers",
   },
   {
@@ -601,7 +601,7 @@ export const SKILLS: Skill[] = [
   {
     id: "mystic_soaring_spin",
     name: "Soaring Spin",
-    category: "special-skill",
+    category: "mystic-skill",
     hits: [{ physicalMultiplier: 3.5, elementMultiplier: 0, hits: 1 }],
     notes: "Universal mystic skill; placeholder multipliers",
   }

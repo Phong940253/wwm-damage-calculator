@@ -45,7 +45,7 @@ export default function DamagePanel({
   const skills = SKILLS.filter((skill) => {
     if (selectedMartialArtId) return skill.martialArtId === selectedMartialArtId;
     if (elementStats?.selected)
-      return skill.martialArtId.includes(elementStats.selected);
+      return skill.martialArtId?.includes(elementStats.selected) ?? false;
     return true;
   });
 
@@ -55,13 +55,23 @@ export default function DamagePanel({
       Boolean(entry.result)
   );
 
-  const categoryOrder: Skill["category"][] = ["martial-art-skill", "special-skill", "dual-weapon-skill", "basic", "ultimate"];
+  // get from CategorySkill type
+  const categoryOrder: Skill["category"][] = [
+    "martial-art-skill",
+    "special-skill",
+    "dual-weapon-skill",
+    "basic",
+    "ultimate",
+    "mystic-skill",
+  ];
+  
   const categoryLabels: Record<Skill["category"], string> = {
     "martial-art-skill": "Martial Art Skill",
     "special-skill": "Special Skill",
     "dual-weapon-skill": "Dual-Weapon Skill",
     basic: "Basic",
     ultimate: "Ultimate",
+    "mystic-skill": "Mystic Skill",
   };
 
   const groupedSkillDamages = categoryOrder
