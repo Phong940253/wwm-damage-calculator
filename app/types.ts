@@ -107,6 +107,7 @@ export interface CustomGear {
 ======================= */
 
 export interface RotationSkill {
+  entryId: string; // unique identifier for this rotation skill entry
   id: string; // skill ID
   order: number;
   count: number; // số lần sử dụng skill này

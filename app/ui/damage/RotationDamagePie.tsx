@@ -26,26 +26,42 @@ export default function RotationDamagePie({
   rotation,
   ctx,
 }: RotationDamagePieProps) {
-  // Tính toán damage cho mỗi skill trong rotation
-  const chartData = rotation.skills
-    .map((rotSkill) => {
-      const skill = SKILLS.find((s) => s.id === rotSkill.id);
-      if (!skill) return null;
+  // Tính toán damage cho mỗi skill trong rotation, merge duplicates
+  const skillDamageMap = new Map<
+    string,
+    { name: string; value: number; skillId: string; count: number }
+  >();
 
-      const skillDamage = calculateSkillDamage(ctx, skill);
-      if (!skillDamage) return null;
+  rotation.skills.forEach((rotSkill) => {
+    const skill = SKILLS.find((s) => s.id === rotSkill.id);
+    if (!skill) return;
 
-      // Average damage = normal damage nhân với count
-      const avgDamage = skillDamage.total.normal.value * rotSkill.count;
+    const skillDamage = calculateSkillDamage(ctx, skill);
+    if (!skillDamage) return;
 
-      return {
+    // Average damage = normal damage nhân với count
+    const avgDamage = skillDamage.total.normal.value * rotSkill.count;
+
+    // Merge by skillId
+    const existing = skillDamageMap.get(skill.id);
+    if (existing) {
+      skillDamageMap.set(skill.id, {
+        ...existing,
+        value: existing.value + avgDamage,
+        count: existing.count + rotSkill.count,
+        name: `${skill.name} x${existing.count + rotSkill.count}`,
+      });
+    } else {
+      skillDamageMap.set(skill.id, {
         name: `${skill.name} x${rotSkill.count}`,
         value: avgDamage,
         skillId: skill.id,
         count: rotSkill.count,
-      };
-    })
-    .filter((item) => item !== null);
+      });
+    }
+  });
+
+  const chartData = Array.from(skillDamageMap.values());
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
   console.log("RotationDamagePie chartData:", chartData);

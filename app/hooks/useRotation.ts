@@ -93,10 +93,8 @@ export const useRotation = () => {
       prev.map((r) => {
         if (r.id !== rotationId) return r;
 
-        // Check if skill already exists
-        if (r.skills.some((s) => s.id === skillId)) return r;
-
         const newSkill: RotationSkill = {
+          entryId: generateId(),
           id: skillId,
           order: r.skills.length,
           count: 1, // mặc định 1 lần sử dụng
@@ -110,12 +108,12 @@ export const useRotation = () => {
     );
   };
 
-  const removeSkillFromRotation = (rotationId: string, skillId: string) => {
+  const removeSkillFromRotation = (rotationId: string, entryId: string) => {
     setRotations((prev) =>
       prev.map((r) => {
         if (r.id !== rotationId) return r;
 
-        const filtered = r.skills.filter((s) => s.id !== skillId);
+        const filtered = r.skills.filter((s) => s.entryId !== entryId);
         // Reorder skills
         const reordered = filtered.map((s, idx) => ({
           ...s,
@@ -154,7 +152,7 @@ export const useRotation = () => {
     );
   };
 
-  const updateSkillCount = (rotationId: string, skillId: string, count: number) => {
+  const updateSkillCount = (rotationId: string, entryId: string, count: number) => {
     setRotations((prev) =>
       prev.map((r) => {
         if (r.id !== rotationId) return r;
@@ -162,7 +160,7 @@ export const useRotation = () => {
         return {
           ...r,
           skills: r.skills.map((s) =>
-            s.id === skillId ? { ...s, count: Math.max(1, count) } : s
+            s.entryId === entryId ? { ...s, count: Math.max(1, count) } : s
           ),
           updatedAt: Date.now(),
         };

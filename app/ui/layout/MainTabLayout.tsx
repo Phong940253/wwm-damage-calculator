@@ -18,19 +18,6 @@ export default function MainTabLayout() {
   const tab = searchParams.get("tab") ?? "stats";
 
   const {
-    stats,
-    setStats,
-    elementStats,
-    setElementStats,
-    gearBonus,
-    damage,
-    statImpact,
-    warnings,
-    onStatChange,
-    onElementChange,
-  } = useDMGOptimizer(INITIAL_STATS, INITIAL_ELEMENT_STATS);
-
-  const {
     rotations,
     selectedRotationId,
     selectedRotation,
@@ -43,6 +30,19 @@ export default function MainTabLayout() {
     moveSkill,
     updateSkillCount,
   } = useRotation();
+
+  const {
+    stats,
+    setStats,
+    elementStats,
+    setElementStats,
+    gearBonus,
+    damage,
+    statImpact,
+    warnings,
+    onStatChange,
+    onElementChange,
+  } = useDMGOptimizer(INITIAL_STATS, INITIAL_ELEMENT_STATS, selectedRotation);
 
   const [showFormula, setShowFormula] = useState(false);
 

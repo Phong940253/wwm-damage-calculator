@@ -25,9 +25,9 @@ interface RotationPanelProps {
   onDeleteRotation: (id: string) => void;
   onRenameRotation: (id: string, name: string) => void;
   onAddSkill: (rotationId: string, skillId: string) => void;
-  onRemoveSkill: (rotationId: string, skillId: string) => void;
+  onRemoveSkill: (rotationId: string, entryId: string) => void;
   onMoveSkill: (rotationId: string, fromIndex: number, toIndex: number) => void;
-  onUpdateSkillCount: (rotationId: string, skillId: string, count: number) => void;
+  onUpdateSkillCount: (rotationId: string, entryId: string, count: number) => void;
 }
 
 export default function RotationPanel({
@@ -71,9 +71,6 @@ export default function RotationPanel({
   // Filter skills: only show skills that match current martial art (or have no martial art)
   const currentMartialArtId = elementStats.martialArtsId;
   const availableSkills = SKILLS.filter((skill) => {
-    // Already added to this rotation
-    if (selectedRotation?.skills.some((rs) => rs.id === skill.id)) return false;
-
     // Filter by current martial art from StatsPanel
     if (currentMartialArtId) {
       // Only show skills from selected martial art OR skills with no martial art
@@ -247,7 +244,7 @@ export default function RotationPanel({
 
                 return (
                   <div
-                    key={rotSkill.id}
+                    key={rotSkill.entryId}
                     className="flex items-center justify-between p-2 bg-zinc-800 rounded border border-zinc-700 group"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -272,7 +269,7 @@ export default function RotationPanel({
                           onChange={(e) =>
                             onUpdateSkillCount(
                               selectedRotation.id,
-                              rotSkill.id,
+                              rotSkill.entryId,
                               parseInt(e.target.value) || 1
                             )
                           }
@@ -310,7 +307,7 @@ export default function RotationPanel({
                         size="sm"
                         className="h-6 w-6 p-0 text-xs text-red-400 hover:text-red-300"
                         onClick={() =>
-                          onRemoveSkill(selectedRotation.id, rotSkill.id)
+                          onRemoveSkill(selectedRotation.id, rotSkill.entryId)
                         }
                         title="Remove"
                       >

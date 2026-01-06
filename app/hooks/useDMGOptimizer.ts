@@ -3,23 +3,22 @@ import { useElementStats } from "./useElementStats";
 import { useGear } from "../providers/GearContext";
 import { useDamage } from "./useDamage";
 import { aggregateEquippedGearBonus } from "../domain/gear/gearAggregate";
-import { InputStats, ElementStats } from "../types";
+import { InputStats, ElementStats, Rotation } from "../types";
 import { useStatImpact } from "./useStatImpact";
 import { ElementKey } from "../constants";
-import { useRotation } from "./useRotation";
 
 type ElementField = "current" | "increase";
 
 export function useDMGOptimizer(
   initialStats: InputStats,
-  initialElements: ElementStats
+  initialElements: ElementStats,
+  rotation?: Rotation
 ) {
   const { stats, setStats } = useStats(initialStats);
   const { elementStats, setElementStats } = useElementStats(initialElements);
 
   const { customGears, equipped } = useGear();
   const gearBonus = aggregateEquippedGearBonus(customGears, equipped);
-  const rotation = useRotation().selectedRotation;
 
   const damage = useDamage(stats, elementStats, gearBonus, rotation);
   const statImpact = useStatImpact(stats, elementStats, gearBonus);
