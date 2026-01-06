@@ -1,112 +1,179 @@
 import { clamp01 } from "@/app/utils/clamp";
 
 /* =========================
+   Shared calculation helpers
+========================= */
+
+// Cache for frequently accessed values to reduce getter calls
+type DamageCache = Record<string, number>;
+
+const buildDamageCache = (g: (k: string) => number): DamageCache => ({
+  minPhysAtk: g("MinPhysicalAttack"),
+  maxPhysAtk: g("MaxPhysicalAttack"),
+  physPenetration: g("PhysicalPenetration"),
+  physDmgBonus: g("PhysicalDMGBonus"),
+  minOtherAttr: g("MINAttributeAttackOfOtherType"),
+  maxOtherAttr: g("MAXAttributeAttackOfOtherType"),
+  physAtkMult: g("PhysicalAttackMultiplier"),
+  flatDmg: g("FlatDamage"),
+  minYourAttr: g("MINAttributeAttackOfYOURType"),
+  maxYourAttr: g("MAXAttributeAttackOfYOURType"),
+  elementMult: g("MainElementMultiplier"),
+  attrPenetration: g("AttributeAttackPenetrationOfYOURType"),
+  attrDmgBonus: g("AttributeAttackDMGBonusOfYOURType"),
+  critDmgBonus: g("CriticalDMGBonus"),
+  affinityDmgBonus: g("AffinityDMGBonus"),
+  dmgBoost: g("DamageBoost"),
+});
+
+/* =========================
    Minimum Damage
 ========================= */
 export const calcMinimumDamage = (g: (k: string) => number) => {
+  const cache = buildDamageCache(g);
+  
   const dmg =
-    ((g("MinPhysicalAttack") *
-      (1 + g("PhysicalPenetration") / 200) *
-      (1 + g("PhysicalDMGBonus")) +
-      g("MINAttributeAttackOfOtherType")) *
-      (g("PhysicalAttackMultiplier") / 100) +
-      g("FlatDamage") +
-      g("MINAttributeAttackOfYOURType") *
-        (g("MainElementMultiplier") / 100) *
+    ((cache.minPhysAtk *
+      (1 + cache.physPenetration / 200) *
+      (1 + cache.physDmgBonus / 100) +
+      cache.minOtherAttr) *
+      (cache.physAtkMult / 100) +
+      cache.flatDmg +
+      cache.minYourAttr *
+        (cache.elementMult / 100) *
         (1 +
-          g("AttributeAttackPenetrationOfYOURType") / 200 +
-          g("AttributeAttackDMGBonusOfYOURType") / 100)) *
+          cache.attrPenetration / 200 +
+          cache.attrDmgBonus / 100)) *
     1.02 *
-    (1 + g("DamageBoost") / 100);
+    (1 + cache.dmgBoost / 100);
 
   return Math.round(dmg * 10) / 10;
 };
 
 /* =========================
-     Critical (Max) Damage
-  ========================= */
-export const calcCriticalDamage = (g: (k: string) => number) =>
-  ((g("MaxPhysicalAttack") *
-    (1 + g("PhysicalPenetration") / 200) *
-    (1 + g("PhysicalDMGBonus")) +
-    Math.max(
-      g("MINAttributeAttackOfOtherType"),
-      g("MAXAttributeAttackOfOtherType")
-    )) *
-    (g("PhysicalAttackMultiplier") / 100) +
-    g("FlatDamage") +
-    g("MAXAttributeAttackOfYOURType") *
-      (g("MainElementMultiplier") / 100) *
-      (1 +
-        g("AttributeAttackPenetrationOfYOURType") / 200 +
-        g("AttributeAttackDMGBonusOfYOURType") / 100)) *
-  (1 + g("CriticalDMGBonus") / 100) *
-  (1 + g("DamageBoost") / 100);
+   Critical (Max) Damage
+========================= */
+export const calcCriticalDamage = (g: (k: string) => number) => {
+  const cache = buildDamageCache(g);
+  
+  return (
+    (cache.maxPhysAtk *
+      (1 + cache.physPenetration / 200) *
+      (1 + cache.physDmgBonus / 100) +
+      Math.max(cache.minOtherAttr, cache.maxOtherAttr)) *
+      (cache.physAtkMult / 100) +
+      cache.flatDmg +
+      cache.maxYourAttr *
+        (cache.elementMult / 100) *
+        (1 +
+          cache.attrPenetration / 200 +
+          cache.attrDmgBonus / 100)) *
+    (1 + cache.critDmgBonus / 100) *
+    (1 + cache.dmgBoost / 100);
+  
+};
+
 
 /* =========================
-     Affinity (Max) Damage
-  ========================= */
-export const calcAffinityDamage = (g: (k: string) => number) =>
-  ((g("MaxPhysicalAttack") *
-    (1 + g("PhysicalPenetration") / 200) *
-    (1 + g("PhysicalDMGBonus")) +
-    Math.max(
-      g("MINAttributeAttackOfOtherType"),
-      g("MAXAttributeAttackOfOtherType")
-    )) *
-    (g("PhysicalAttackMultiplier") / 100) +
-    g("FlatDamage") +
-    g("MAXAttributeAttackOfYOURType") *
-      (g("MainElementMultiplier") / 100) *
-      (1 +
-        g("AttributeAttackPenetrationOfYOURType") / 200 +
-        g("AttributeAttackDMGBonusOfYOURType") / 100)) *
-  (1 + g("AffinityDMGBonus") / 100) *
-  (1 + g("DamageBoost") / 100);
+   Affinity (Max) Damage
+========================= */
+export const calcAffinityDamage = (g: (k: string) => number) => {
+  const cache = buildDamageCache(g);
+  
+  return (
+    (cache.maxPhysAtk *
+      (1 + cache.physPenetration / 200) *
+      (1 + cache.physDmgBonus / 100) +
+      Math.max(cache.minOtherAttr, cache.maxOtherAttr)) *
+      (cache.physAtkMult / 100) +
+      cache.flatDmg +
+      cache.maxYourAttr *
+        (cache.elementMult / 100) *
+        (1 +
+          cache.attrPenetration / 200 +
+          cache.attrDmgBonus / 100)) *
+    (1 + cache.affinityDmgBonus / 100) *
+    (1 + cache.dmgBoost / 100);
+};
 
 /* =========================
-     Expected Average Damage
-  ========================= */
+   Expected Average Damage
+========================= */
+
+// Helper to calculate base damage components (shared by breakdown and expected)
+const calcBaseDamageComponents = (g: (k: string) => number) => {
+  const cache = buildDamageCache(g);
+  const dmgBoost = 1 + cache.dmgBoost / 100;
+  const physModifier = 1 + cache.physPenetration / 200;
+  const physBonus = 1 + cache.physDmgBonus / 100;
+  const elementModifier = 1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100;
+
+  const avgPhysAtk = (cache.minPhysAtk + cache.maxPhysAtk) / 2;
+  const avgOtherAttr =
+    cache.minOtherAttr >= cache.maxOtherAttr
+      ? cache.minOtherAttr
+      : (cache.minOtherAttr + cache.maxOtherAttr) / 2;
+  const avgYourAttr = (cache.minYourAttr + cache.maxYourAttr) / 2;
+
+  return {
+    base:
+      ((avgPhysAtk * physModifier * physBonus + avgOtherAttr) *
+        (cache.physAtkMult / 100) +
+        cache.flatDmg +
+        avgYourAttr * (cache.elementMult / 100) * elementModifier) *
+      dmgBoost,
+    cache,
+  };
+};
+
 export const calcExpectedNormal = (
   g: (k: string) => number,
   affinityDamage: number
 ) => {
+  const cache = buildDamageCache(g);
+  const dmgBoost = 1 + cache.dmgBoost / 100;
+  const physModifier = 1 + cache.physPenetration / 200;
+  const physBonus = 1 + cache.physDmgBonus / 100;
+  const elementModifier = 1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100;
+
+  // Average physical attack
+  const avgPhysAtk = (cache.minPhysAtk + cache.maxPhysAtk) / 2;
+  
+  // Average attribute attack from other types
+  const avgOtherAttr =
+    cache.minOtherAttr >= cache.maxOtherAttr
+      ? cache.minOtherAttr
+      : (cache.minOtherAttr + cache.maxOtherAttr) / 2;
+
+  // Average attribute attack of your type
+  const avgYourAttr = (cache.minYourAttr + cache.maxYourAttr) / 2;
+
+  // Base damage calculation (optimized)
   const base =
-    ((((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
-      (1 + g("PhysicalPenetration") / 200) *
-      (1 + g("PhysicalDMGBonus")) +
-      (g("MINAttributeAttackOfOtherType") >= g("MAXAttributeAttackOfOtherType")
-        ? g("MINAttributeAttackOfOtherType") * 2
-        : g("MINAttributeAttackOfOtherType") +
-          g("MAXAttributeAttackOfOtherType"))) /
-      2) *
-      (g("PhysicalAttackMultiplier") / 100) +
-      g("FlatDamage") +
-      ((g("MINAttributeAttackOfYOURType") + g("MAXAttributeAttackOfYOURType")) /
-        2) *
-        (g("MainElementMultiplier") / 100) *
-        (1 +
-          g("AttributeAttackPenetrationOfYOURType") / 200 +
-          g("AttributeAttackDMGBonusOfYOURType") / 100)) *
-    (1 + g("DamageBoost") / 100);
+    ((avgPhysAtk * physModifier * physBonus + avgOtherAttr) *
+      (cache.physAtkMult / 100) +
+      cache.flatDmg +
+      avgYourAttr * (cache.elementMult / 100) * elementModifier) *
+    dmgBoost;
 
   const minDamage = calcMinimumDamage(g);
   const maxDamage = affinityDamage;
 
+  // Probability calculations with clamping
   const P = clamp01(g("PrecisionRate") / 100);
   const A = clamp01(g("AffinityRate") / 100);
   const C = clamp01(g("CriticalRate") / 100);
   const CD = g("CriticalDMGBonus") / 100;
 
-  // Ensure probabilities are valid
+  // Normalize probabilities if sum exceeds 1
   const scale = A + C > 1 ? 1 / (A + C) : 1;
   const As = A * scale;
   const Cs = C * scale;
 
-  // ❌ Not Precision
+  // Without precision: affinity uses max damage, others use min
   const noPrecision = As * maxDamage + (1 - As) * minDamage;
 
-  // ✅ Precision
+  // With precision: affinity uses max, critical gets bonus, normal uses base
   const precision =
     As * maxDamage + Cs * base * (1 + CD) + (1 - As - Cs) * base;
 
@@ -120,55 +187,28 @@ export const calcExpectedNormalBreakdown = (
   const minDamage = calcMinimumDamage(g);
   const maxDamage = affinityDamage;
 
-  const base =
-    ((((g("MinPhysicalAttack") + g("MaxPhysicalAttack")) *
-      (1 + g("PhysicalPenetration") / 200) *
-      (1 + g("PhysicalDMGBonus")) +
-      (g("MINAttributeAttackOfOtherType") >= g("MAXAttributeAttackOfOtherType")
-        ? g("MINAttributeAttackOfOtherType") * 2
-        : g("MINAttributeAttackOfOtherType") +
-          g("MAXAttributeAttackOfOtherType"))) /
-      2) *
-      (g("PhysicalAttackMultiplier") / 100) +
-      g("FlatDamage") +
-      ((g("MINAttributeAttackOfYOURType") + g("MAXAttributeAttackOfYOURType")) /
-        2) *
-        (g("MainElementMultiplier") / 100) *
-        (1 +
-          g("AttributeAttackPenetrationOfYOURType") / 200 +
-          g("AttributeAttackDMGBonusOfYOURType") / 100)) *
-    (1 + g("DamageBoost") / 100);
+  const { base } = calcBaseDamageComponents(g);
 
-  const P = Math.min(1, Math.max(0, g("PrecisionRate") / 100));
-  const A = Math.min(1, Math.max(0, g("AffinityRate") / 100));
-  const C = Math.min(1, Math.max(0, g("CriticalRate") / 100));
+  const P = clamp01(g("PrecisionRate") / 100);
+  const A = clamp01(g("AffinityRate") / 100);
+  const C = clamp01(g("CriticalRate") / 100);
   const CD = g("CriticalDMGBonus") / 100;
 
+  // Normalize probabilities if sum exceeds 1
   const scale = A + C > 1 ? 1 / (A + C) : 1;
   const As = A * scale;
   const Cs = C * scale;
 
-  // console.log("calcExpectedNormalBreakdown:");
-  // console.log("Breakdown Params:", {
-  //   P,
-  //   As,
-  //   Cs,
-  //   CD,
-  //   base,
-  //   minDamage,
-  //   maxDamage,
-  //   minPhysicalAttack: g("MinPhysicalAttack"),
-  //   maxPhysicalAttack: g("MaxPhysicalAttack"),
-  //   normalDamage: calcExpectedNormal(g, affinityDamage),
-  //   test:
-  //     (1 - P) * (As * maxDamage + (1 - As) * minDamage) +
-  //     P * (As * maxDamage + Cs * base * (1 + CD) + (1 - As - Cs) * base),
-  // });
+  // Calculate each damage type contribution
+  const abrasionDmg = (1 - P) * (1 - As) * minDamage;
+  const affinityDmg = ((1 - P) * As + P * As) * maxDamage;
+  const criticalDmg = P * Cs * base * (1 + CD);
+  const normalDmg = P * (1 - As - Cs) * base;
 
   return {
-    abrasion: (1 - P) * (1 - As) * minDamage,
-    affinity: ((1 - P) * As + P * As) * maxDamage,
-    critical: P * Cs * base * (1 + CD),
-    normal: P * (1 - As - Cs) * base,
+    abrasion: abrasionDmg,
+    affinity: affinityDmg,
+    critical: criticalDmg,
+    normal: normalDmg,
   };
 };

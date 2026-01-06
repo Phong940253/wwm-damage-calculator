@@ -54,6 +54,25 @@ export function buildDamageContext(
   const derived = computeDerivedStats(derivedInput, {});
 
   /* ============================
+     Cache for OTHER elements
+  ============================ */
+  
+  // Pre-calculate other elements min/max to avoid filtering on every call
+  const otherElementsFilter = ELEMENT_TYPES.filter(
+    (e) => e.key !== elementStats.selected
+  );
+
+  const cachedOtherMinAttr = otherElementsFilter.reduce(
+    (sum, e) => sum + ele(elementKey(e.key, "Min")),
+    0
+  );
+
+  const cachedOtherMaxAttr = otherElementsFilter.reduce(
+    (sum, e) => sum + ele(elementKey(e.key, "Max")),
+    0
+  );
+
+  /* ============================
      Context getter
   ============================ */
 
@@ -74,18 +93,14 @@ export function buildDamageContext(
 
     if (k === "MainElementMultiplier") return ele("MainElementMultiplier");
 
-    /* ---------- OTHER Elements ---------- */
+    /* ---------- OTHER Elements (cached) ---------- */
 
     if (k === "MINAttributeAttackOfOtherType") {
-      return ELEMENT_TYPES.filter(
-        (e) => e.key !== elementStats.selected
-      ).reduce((sum, e) => sum + ele(elementKey(e.key, "Min")), 0);
+      return cachedOtherMinAttr;
     }
 
     if (k === "MAXAttributeAttackOfOtherType") {
-      return ELEMENT_TYPES.filter(
-        (e) => e.key !== elementStats.selected
-      ).reduce((sum, e) => sum + ele(elementKey(e.key, "Max")), 0);
+      return cachedOtherMaxAttr;
     }
 
     /* ---------- Derived ---------- */

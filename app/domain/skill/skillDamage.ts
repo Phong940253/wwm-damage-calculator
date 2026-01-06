@@ -12,32 +12,38 @@ export function calculateSkillDamage(
 ): SkillDamageResult {
   const perHit: DamageResult[] = [];
 
+  // Pre-calculate affinity damage outside the loop to avoid recalculation
+  const baseDamage = calculateDamage(ctx);
+  const baseAffinity = baseDamage.affinity;
+
+  // Process each hit type and multiply by hit count
   for (const hit of skill.hits) {
+    const hitCtx = createSkillContext(ctx, {
+      physicalMultiplier: hit.physicalMultiplier,
+      elementMultiplier: hit.elementMultiplier,
+      flatPhysical: hit.flatPhysical,
+      flatAttribute: hit.flatAttribute,
+    });
+
+    const damage = calculateDamage(hitCtx);
+    const breakdown = calcExpectedNormalBreakdown(hitCtx.get, damage.affinity);
+
+    // Create damage object once and reuse for multiple hits
+    const hitDamage: DamageResult = {
+      min: { value: damage.min, percent: 0 },
+      normal: { value: damage.normal, percent: 0 },
+      critical: { value: damage.critical, percent: 0 },
+      affinity: { value: damage.affinity, percent: 0 },
+      averageBreakdown: breakdown,
+    };
+
+    // Add hit count times instead of creating separate objects
     for (let i = 0; i < hit.hits; i++) {
-      const hitCtx = createSkillContext(ctx, {
-        physicalMultiplier: hit.physicalMultiplier,
-        elementMultiplier: hit.elementMultiplier,
-        flatPhysical: hit.flatPhysical,
-        flatAttribute: hit.flatAttribute,
-      });
-
-      const damage = calculateDamage(hitCtx);
-
-      const breakdown = calcExpectedNormalBreakdown(
-        hitCtx.get,
-        damage.affinity
-      );
-
-      perHit.push({
-        min: { value: damage.min, percent: 0 },
-        normal: { value: damage.normal, percent: 0 },
-        critical: { value: damage.critical, percent: 0 },
-        affinity: { value: damage.affinity, percent: 0 },
-        averageBreakdown: breakdown,
-      });
+      perHit.push(hitDamage);
     }
   }
 
+  // Accumulate damage efficiently
   const total: DamageResult = {
     min: { value: 0, percent: 0 },
     normal: { value: 0, percent: 0 },
@@ -46,16 +52,17 @@ export function calculateSkillDamage(
     averageBreakdown: { abrasion: 0, affinity: 0, critical: 0, normal: 0 },
   };
 
+  // Single pass accumulation
   for (const h of perHit) {
     total.min.value += h.min.value;
     total.normal.value += h.normal.value;
     total.critical.value += h.critical.value;
     total.affinity.value += h.affinity.value;
-    if (total.averageBreakdown) {
-      total.averageBreakdown.abrasion += h.averageBreakdown?.abrasion || 0;
-      total.averageBreakdown.affinity += h.averageBreakdown?.affinity || 0;
-      total.averageBreakdown.critical += h.averageBreakdown?.critical || 0;
-      total.averageBreakdown.normal += h.averageBreakdown?.normal || 0;
+    if (total.averageBreakdown && h.averageBreakdown) {
+      total.averageBreakdown.abrasion += h.averageBreakdown.abrasion;
+      total.averageBreakdown.affinity += h.averageBreakdown.affinity;
+      total.averageBreakdown.critical += h.averageBreakdown.critical;
+      total.averageBreakdown.normal += h.averageBreakdown.normal;
     }
   }
 

@@ -10,29 +10,44 @@ export function createSkillContext(
     flatAttribute?: number;
   }
 ): DamageContext {
+  // Pre-calculate combined flat damage outside getter to avoid recalculation
   const totalFlatDamage = (opts.flatPhysical || 0) + (opts.flatAttribute || 0);
 
-  return {
-    get(key: string) {
-      // Flat damage = flatPhysical + flatAttribute
-      if (key === "FlatDamage") {
-        return baseCtx.get(key) + totalFlatDamage;
-      }
+  // Cache for frequently accessed values
+  const cache = new Map<string, number>();
 
-      // Physical ATK multiplied by skill multiplier and PhysicalAttackMultiplier (default 100)
-      if (key === "MinPhysicalAttack" || key === "MaxPhysicalAttack") {
-        return baseCtx.get(key) * opts.physicalMultiplier;
-      }
+  const get = (key: string): number => {
+    // Check cache first
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
 
-      // YOUR element only multiplied by skill multiplier and MainElementMultiplier (default 100)
-      if (
-        key === "MINAttributeAttackOfYOURType" ||
-        key === "MAXAttributeAttackOfYOURType"
-      ) {
-        return baseCtx.get(key) * opts.elementMultiplier;
-      }
+    let value: number;
 
-      return baseCtx.get(key);
-    },
+    // Flat damage: add to base flat damage
+    if (key === "FlatDamage") {
+      value = baseCtx.get(key) + totalFlatDamage;
+    }
+    // Physical ATK multiplied by skill multiplier
+    else if (key === "MinPhysicalAttack" || key === "MaxPhysicalAttack") {
+      value = baseCtx.get(key) * opts.physicalMultiplier;
+    }
+    // YOUR element only multiplied by skill multiplier
+    else if (
+      key === "MINAttributeAttackOfYOURType" ||
+      key === "MAXAttributeAttackOfYOURType"
+    ) {
+      value = baseCtx.get(key) * opts.elementMultiplier;
+    }
+    // Other attributes pass through unchanged
+    else {
+      value = baseCtx.get(key);
+    }
+
+    // Cache the value
+    cache.set(key, value);
+    return value;
   };
+
+  return { get };
 }
