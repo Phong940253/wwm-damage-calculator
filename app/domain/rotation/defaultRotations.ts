@@ -3,7 +3,7 @@ import { Rotation } from "@/app/types";
 export const DEFAULT_ROTATIONS: Rotation[] = [
   {
     id: "wiahcsqysyn",
-    name: "Nameless DPS Rotation",
+    name: "Nameless Sword DPS Rotation",
     martialArtId: "bellstrike_splendor",
     skills: [
       {
