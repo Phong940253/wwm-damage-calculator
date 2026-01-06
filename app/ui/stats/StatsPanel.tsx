@@ -73,14 +73,11 @@ export default function StatsPanel({
   // Debounce timers
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
-  const getStatValue = (key: string, field: "current" | "increase") => {
-    return isElementKey(key)
-      ? elementStats[key]?.[field]
-      : stats[key as StatKey]?.[field];
-  };
-
-  const isElementKey = (key: string): key is ElementStatKey =>
-    key in elementStats && key !== "selected" && key !== "martialArtsId";
+  const isElementKey = useCallback(
+    (key: string): key is ElementStatKey =>
+      key in elementStats && key !== "selected" && key !== "martialArtsId",
+    [elementStats]
+  );
 
   // Memoize derived stats to prevent recalculation on every keystroke
   const derived = useMemo(
@@ -88,17 +85,29 @@ export default function StatsPanel({
     [stats, gearBonus]
   );
 
-  const handleStatChange = (
-    key: string,
-    field: "current" | "increase",
-    value: string
-  ) => {
-    if (isElementKey(key)) {
-      onElementChange(key, field, value);
-    } else {
-      onStatChange(key as StatKey, field, value);
-    }
-  };
+  const handleStatChange = useCallback(
+    (
+      key: string,
+      field: "current" | "increase",
+      value: string
+    ) => {
+      if (isElementKey(key)) {
+        onElementChange(key, field, value);
+      } else {
+        onStatChange(key as StatKey, field, value);
+      }
+    },
+    [onElementChange, onStatChange, isElementKey]
+  );
+
+  const getStatValue = useCallback(
+    (key: string, field: "current" | "increase") => {
+      return isElementKey(key)
+        ? elementStats[key]?.[field]
+        : stats[key as StatKey]?.[field];
+    },
+    [elementStats, stats, isElementKey]
+  );
 
   // Helper to apply change for total input (Base = Total - Gear - Derived)
   const applyTotalChange = useCallback(

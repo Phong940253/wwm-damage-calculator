@@ -12,10 +12,6 @@ export function calculateSkillDamage(
 ): SkillDamageResult {
   const perHit: DamageResult[] = [];
 
-  // Pre-calculate affinity damage outside the loop to avoid recalculation
-  const baseDamage = calculateDamage(ctx);
-  const baseAffinity = baseDamage.affinity;
-
   // Process each hit type and multiply by hit count
   for (const hit of skill.hits) {
     const hitCtx = createSkillContext(ctx, {
