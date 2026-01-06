@@ -49,6 +49,9 @@ export default function RotationPanel({
   const [renamingValue, setRenamingValue] = useState("");
   const [showSkillPicker, setShowSkillPicker] = useState(false);
   const [searchSkill, setSearchSkill] = useState("");
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dropPosition, setDropPosition] = useState<"before" | "after" | null>(null);
 
   const handleCreateRotation = () => {
     if (!newRotationName.trim()) return;
@@ -66,6 +69,52 @@ export default function RotationPanel({
       onRenameRotation(renamingId, renamingValue);
     }
     setRenamingId(null);
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (index: number, e: React.DragEvent) => {
+    e.preventDefault();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const position = e.clientY < midpoint ? "before" : "after";
+    
+    setDragOverIndex(index);
+    setDropPosition(position);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+    setDropPosition(null);
+  };
+
+  const handleDrop = (index: number) => {
+    if (draggedIndex !== null && draggedIndex !== index && selectedRotation) {
+      // Calculate insertion index based on drop position
+      let insertIndex = index;
+      if (dropPosition === "after" && draggedIndex < index) {
+        insertIndex = index;
+      } else if (dropPosition === "before" && draggedIndex > index) {
+        insertIndex = index;
+      } else if (dropPosition === "after" && draggedIndex > index) {
+        insertIndex = index + 1;
+      } else if (dropPosition === "before" && draggedIndex < index) {
+        insertIndex = index;
+      }
+      
+      onMoveSkill(selectedRotation.id, draggedIndex, insertIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDropPosition(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setDropPosition(null);
   };
 
   // Filter skills: only show skills that match current martial art (or have no martial art)
@@ -245,11 +294,30 @@ export default function RotationPanel({
                 return (
                   <div
                     key={rotSkill.entryId}
-                    className="flex items-center justify-between p-2 bg-zinc-800 rounded border border-zinc-700 group"
+                    draggable
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={(e) => handleDragOver(idx, e)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={handleDragEnd}
+                    className={cn(
+                      "relative flex items-center justify-between p-2 bg-zinc-800 rounded border group cursor-move transition-colors",
+                      draggedIndex === idx ? "opacity-50 border-yellow-500" : "border-zinc-700",
+                      dragOverIndex === idx && draggedIndex !== idx ? "border-yellow-400 bg-yellow-500/10" : ""
+                    )}
                   >
+                    {/* Drop position indicator */}
+                    {dragOverIndex === idx && draggedIndex !== idx && (
+                      <div
+                        className={cn(
+                          "absolute left-0 right-0 h-0.5 bg-yellow-400 z-10",
+                          dropPosition === "before" ? "top-0" : "bottom-0"
+                        )}
+                      />
+                    )}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Badge variant="outline" className="text-xs flex-shrink-0">
-                        {idx + 1}
+                      <Badge variant="outline" className="text-xs flex-shrink-0 cursor-grab active:cursor-grabbing">
+                        ⋮⋮
                       </Badge>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium truncate">{skill.name}</p>
