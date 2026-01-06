@@ -219,7 +219,15 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Spear",
     category: "dual-weapon-skill",
-    hits: [{ physicalMultiplier: 1.1576, elementMultiplier: 1.7364, flatPhysical: 164, flatAttribute: 96, hits: 1 }],
+    hits: [
+      {
+        physicalMultiplier: 1.1576,
+        elementMultiplier: 1.7364,
+        flatPhysical: 164,
+        flatAttribute: 96,
+        hits: 1,
+      },
+    ],
     notes: "Placeholder multipliers",
   },
   {
@@ -257,7 +265,15 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "martial-art-skill",
-    hits: [{ physicalMultiplier: 1.0248, elementMultiplier: 1.5371, hits: 1, flatPhysical:144, flatAttribute:85 }],
+    hits: [
+      {
+        physicalMultiplier: 1.0248,
+        elementMultiplier: 1.5371,
+        hits: 1,
+        flatPhysical: 144,
+        flatAttribute: 85,
+      },
+    ],
     notes: "Placeholder multipliers",
   },
   {
@@ -266,7 +282,15 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "martial-art-skill",
-    hits: [{ physicalMultiplier: 1.5371, elementMultiplier: 2.3057, hits: 1, flatPhysical:216, flatAttribute:127 }],
+    hits: [
+      {
+        physicalMultiplier: 1.5371,
+        elementMultiplier: 2.3057,
+        hits: 1,
+        flatPhysical: 216,
+        flatAttribute: 127,
+      },
+    ],
     notes: "Placeholder multipliers",
   },
   {
@@ -275,7 +299,15 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "martial-art-skill",
-    hits: [{ physicalMultiplier: 2.5691, elementMultiplier: 3.8428, hits: 1, flatPhysical:360, flatAttribute:212 }],
+    hits: [
+      {
+        physicalMultiplier: 2.5691,
+        elementMultiplier: 3.8428,
+        hits: 1,
+        flatPhysical: 360,
+        flatAttribute: 212,
+      },
+    ],
     notes: "Placeholder multipliers",
   },
   {
@@ -284,7 +316,15 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "dual-weapon-skill",
-    hits: [{ physicalMultiplier: 1.1576, elementMultiplier: 1.7364, flatPhysical: 164, flatAttribute: 96, hits: 1 }],
+    hits: [
+      {
+        physicalMultiplier: 1.1576,
+        elementMultiplier: 1.7364,
+        flatPhysical: 164,
+        flatAttribute: 96,
+        hits: 1,
+      },
+    ],
     notes: "Placeholder multipliers",
   },
   {
@@ -302,7 +342,15 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "ultimate",
-    hits: [{ physicalMultiplier: 1.5075, elementMultiplier: 2.2613, hits: 1, flatAttribute:125, flatPhysical:213 }],
+    hits: [
+      {
+        physicalMultiplier: 1.5075,
+        elementMultiplier: 2.2613,
+        hits: 1,
+        flatAttribute: 125,
+        flatPhysical: 213,
+      },
+    ],
     notes: "Placeholder multipliers",
   },
   {
@@ -311,7 +359,15 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "ultimate",
-    hits: [{ physicalMultiplier: 3.2636, elementMultiplier: 4.8953, hits: 3, flatAttribute:271, flatPhysical:460 }],
+    hits: [
+      {
+        physicalMultiplier: 3.2636,
+        elementMultiplier: 4.8953,
+        hits: 3,
+        flatAttribute: 271,
+        flatPhysical: 460,
+      },
+    ],
     notes: "Placeholder multipliers",
   },
 
@@ -602,7 +658,20 @@ export const SKILLS: Skill[] = [
     id: "mystic_soaring_spin",
     name: "Soaring Spin",
     category: "mystic-skill",
-    hits: [{ physicalMultiplier: 3.5, elementMultiplier: 0, hits: 1 }],
+    hits: [
+      {
+        physicalMultiplier: 3.0128,
+        elementMultiplier: 1,
+        hits: 1,
+        flatPhysical: 286,
+      },
+      {
+        physicalMultiplier: 3.682,
+        elementMultiplier: 1,
+        hits: 1,
+        flatPhysical: 350,
+      },
+    ],
     notes: "Universal mystic skill; placeholder multipliers",
-  }
+  },
 ];
