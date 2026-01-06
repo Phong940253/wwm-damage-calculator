@@ -2,13 +2,11 @@
 "use client";
 import React, { useMemo, useRef, useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { STAT_GROUPS } from "../../constants";
 import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
-import { getStatLabel } from "@/app/utils/statLabel";
+import StatCard from "./StatCard";
 
 /* =======================
    Types
@@ -102,7 +100,56 @@ export default function StatsPanel({
     }
   };
 
-  // Debounced handler for total input changes
+  // Helper to apply change for total input (Base = Total - Gear - Derived)
+  const applyTotalChange = useCallback(
+    (key: string, value: string) => {
+      if (value === "") {
+        handleStatChange(key, "current", "");
+      } else {
+        const gear = gearBonus[key] || 0;
+        const derivedValue = derived[key as keyof typeof derived] || 0;
+        const nextBase =
+          Math.round((Number(value) - gear - derivedValue) * 100000) / 100000;
+        handleStatChange(key, "current", String(nextBase));
+      }
+    },
+    [gearBonus, derived, handleStatChange]
+  );
+
+  // Helper for blur logic
+  const handleInputBlur = useCallback(
+    (key: string, field: "current" | "increase", isTotal: boolean) => {
+      const inputKey = `${key}-${field}`;
+      
+      // Clear pending debounce timer
+      if (debounceTimers.current[inputKey]) {
+        clearTimeout(debounceTimers.current[inputKey]);
+      }
+
+      const currentValue = localValues[inputKey];
+      if (currentValue !== undefined) {
+        // Apply pending change immediately
+        if (isTotal) {
+          applyTotalChange(key, currentValue);
+        } else {
+          handleStatChange(key, field, currentValue);
+        }
+        
+        // Clean up local value
+        setLocalValues((prev) => {
+          const next = { ...prev };
+          delete next[inputKey];
+          return next;
+        });
+      } else if (getStatValue(key, field) === "") {
+        // Default to 0 if empty
+        handleStatChange(key, field, "0");
+      }
+    },
+    [localValues, applyTotalChange, handleStatChange, getStatValue]
+  );
+
+  // Debounced handler for input changes
   const createDebouncedHandler = useCallback(
     (key: string, field: "current" | "increase", isTotal: boolean) => {
       return (value: string) => {
@@ -116,23 +163,11 @@ export default function StatsPanel({
         // Store local value for instant UI feedback
         setLocalValues((prev) => ({ ...prev, [inputKey]: value }));
 
-        // Set new debounced timer
+        // Set new debounced timer (300ms)
         debounceTimers.current[inputKey] = setTimeout(() => {
           if (isTotal) {
-            // For total input: Base = Total - Gear - Derived
-            const gear = gearBonus[key] || 0;
-            const derivedValue = derived[key as keyof typeof derived] || 0;
-            
-            if (value === "") {
-              handleStatChange(key, field, "");
-            } else {
-              const nextBase =
-                Math.round((Number(value) - gear - derivedValue) * 100000) /
-                100000;
-              handleStatChange(key, field, String(nextBase));
-            }
+            applyTotalChange(key, value);
           } else {
-            // For increase input: update directly
             handleStatChange(key, field, value);
           }
           
@@ -142,10 +177,10 @@ export default function StatsPanel({
             delete next[inputKey];
             return next;
           });
-        }, 300); // 300ms debounce delay
+        }, 300);
       };
     },
-    [gearBonus, derived, handleStatChange]
+    [applyTotalChange, handleStatChange]
   );
 
   return (
@@ -210,151 +245,32 @@ export default function StatsPanel({
                 if (!stat) return null;
 
                 const impact = statImpact[k] ?? 0;
-
                 const gear = gearBonus[k] || 0;
                 const derivedValue = derived[k as keyof typeof derived] || 0;
                 const base = Number(stat.current || 0);
                 const total = Math.round((base + gear + derivedValue) * 100000) / 100000;
 
                 return (
-                  <Card
+                  <StatCard
                     key={k}
-                    className="
-                      bg-card/60 border border-[#2b2a33]
-                      hover:bg-card/80 hover:border-emerald-500/40
-                      transition-all
-                    "
-                  >
-                    <CardContent className="pt-4 space-y-3">
-                      {/* ---------- Title & Badges ---------- */}
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          {getStatLabel(k, elementStats)}
-                        </span>
-
-                        <div className="flex gap-2">
-                          {impact !== 0 && (
-                            <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                              {impact > 0 ? "+" : ""}
-                              {impact.toFixed(3)}%
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* ---------- TOTAL INPUT (Editable) ---------- */}
-                      <Input
-                        type="number"
-                        value={
-                          localValues[`${k}-current`] !== undefined
-                            ? localValues[`${k}-current`]
-                            : total === 0
-                            ? ""
-                            : total
-                        }
-                        onChange={(e) => {
-                          createDebouncedHandler(k, "current", true)(
-                            e.target.value
-                          );
-                        }}
-                        onBlur={() => {
-                          // Clear debounce timer and force update
-                          const inputKey = `${k}-current`;
-                          if (debounceTimers.current[inputKey]) {
-                            clearTimeout(debounceTimers.current[inputKey]);
-                          }
-                          
-                          const currentValue = localValues[inputKey];
-                          if (currentValue !== undefined) {
-                            // Apply the pending change immediately
-                            const gear = gearBonus[k] || 0;
-                            const derivedValue = derived[k as keyof typeof derived] || 0;
-                            
-                            if (currentValue === "") {
-                              handleStatChange(k, "current", "");
-                            } else {
-                              const nextBase =
-                                Math.round((Number(currentValue) - gear - derivedValue) * 100000) /
-                                100000;
-                              handleStatChange(k, "current", String(nextBase));
-                            }
-                            
-                            setLocalValues((prev) => {
-                              const next = { ...prev };
-                              delete next[inputKey];
-                              return next;
-                            });
-                          } else if (getStatValue(k, "current") === "") {
-                            handleStatChange(k, "current", "0");
-                          }
-                        }}
-                        onWheel={(e) => e.currentTarget.blur()}
-                        className="bg-background/60 border-[#363b3d]"
-                      />
-                      {/* ---------- Breakdown ---------- */}
-                      <div className="flex text-xs text-muted-foreground gap-2 lg:flex-row flex-col">
-                        {base !== 0 && (
-                          <Badge className="bg-gray-500/15 text-gray-400 border border-gray-500/30">
-                            Base {base.toFixed(2)}
-                          </Badge>
-                        )}
-                        {gear !== 0 && (
-                          <Badge className="bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                            Gear {gear > 0 ? "+" : ""}
-                            {gear.toFixed(2)}
-                          </Badge>
-                        )}
-                        {derivedValue !== 0 && (
-                          <Badge className="bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                            Attr +{derivedValue.toFixed(2)}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* ---------- Increase ---------- */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          Increase
-                        </span>
-                        <Input
-                          type="number"
-                          value={
-                            localValues[`${k}-increase`] !== undefined
-                              ? localValues[`${k}-increase`]
-                              : getStatValue(k, "increase") === 0
-                              ? ""
-                              : getStatValue(k, "increase")
-                          }
-                          onChange={(e) => {
-                            createDebouncedHandler(k, "increase", false)(
-                              e.target.value
-                            );
-                          }}
-                          onBlur={() => {
-                            // Clear debounce timer and force update
-                            const inputKey = `${k}-increase`;
-                            if (debounceTimers.current[inputKey]) {
-                              clearTimeout(debounceTimers.current[inputKey]);
-                            }
-                            
-                            const currentValue = localValues[inputKey];
-                            if (currentValue !== undefined) {
-                              handleStatChange(k, "increase", currentValue);
-                              setLocalValues((prev) => {
-                                const next = { ...prev };
-                                delete next[inputKey];
-                                return next;
-                              });
-                            } else if (getStatValue(k, "increase") === "") {
-                              handleStatChange(k, "increase", "0");
-                            }
-                          }}
-                          onWheel={(e) => e.currentTarget.blur()}
-                          className="bg-background/60 border-[#363b3d]"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                    statKey={k}
+                    elementStats={elementStats}
+                    impact={impact}
+                    gear={gear}
+                    derivedValue={derivedValue}
+                    base={base}
+                    total={total}
+                    localValue={localValues[`${k}-current`]}
+                    localIncreaseValue={localValues[`${k}-increase`]}
+                    onTotalChange={(value) => {
+                      createDebouncedHandler(k, "current", true)(value);
+                    }}
+                    onTotalBlur={() => handleInputBlur(k, "current", true)}
+                    onIncreaseChange={(value) => {
+                      createDebouncedHandler(k, "increase", false)(value);
+                    }}
+                    onIncreaseBlur={() => handleInputBlur(k, "increase", false)}
+                  />
                 );
               })}
             </div>
