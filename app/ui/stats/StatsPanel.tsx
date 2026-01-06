@@ -158,7 +158,7 @@ export default function StatsPanel({
                 const gear = gearBonus[k] || 0;
                 const derivedValue = derived[k as keyof typeof derived] || 0;
                 const base = Number(stat.current || 0);
-                const total = base + gear + derivedValue;
+                const total = Math.round((base + gear + derivedValue) * 100000) / 100000;
 
                 return (
                   <Card
@@ -197,8 +197,10 @@ export default function StatsPanel({
                             return;
                           }
 
-                          // Base = Total - Gear
-                          const nextBase = Number(v) - gear - derivedValue;
+                          // Base = Total - Gear (with floating point rounding to 5 decimals)
+                          const nextBase =
+                            Math.round((Number(v) - gear - derivedValue) * 100000) /
+                            100000;
                           handleStatChange(k, "current", String(nextBase));
                         }}
                         onBlur={() => {
