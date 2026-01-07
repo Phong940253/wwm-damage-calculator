@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { GEAR_SLOTS } from "@/app/constants";
 import { OptimizeResult } from "../../domain/gear/gearOptimize";
+import { CustomGear, GearSlot } from "@/app/types";
 
 import {
   HoverCard,
@@ -33,6 +34,8 @@ interface Props {
   setMaxDisplay: (v: number) => void;
   onRecalculate: () => void;
   onApply: (s: OptimizeResult["selection"]) => void;
+  equipped?: Partial<Record<string, string>>;
+  customGears?: CustomGear[];
 }
 
 export default function GearOptimizeDialog({
@@ -47,6 +50,8 @@ export default function GearOptimizeDialog({
   setMaxDisplay,
   onRecalculate,
   onApply,
+  equipped = {},
+  customGears = [],
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,7 +108,15 @@ export default function GearOptimizeDialog({
                     </div>
                     {GEAR_SLOTS.map(({ key, label }) => {
                       const g = r.selection[key];
-                      return g ? (
+                      const currentEquipped = equipped[key];
+                      const isNew = g && g.id !== currentEquipped;
+
+                      // Find the old gear by ID
+                      const oldGear = currentEquipped
+                        ? customGears.find((gear) => gear.id === currentEquipped)
+                        : null;
+
+                      return isNew ? (
                         <div
                           key={key}
                           className="text-xs flex justify-between items-center"
@@ -121,7 +134,7 @@ export default function GearOptimizeDialog({
                               align="start"
                               className="p-0 w-auto"
                             >
-                              <GearHoverDetail gear={g} />
+                              <GearHoverDetail gear={g} oldGear={oldGear} />
                             </HoverCardContent>
                           </HoverCard>
                         </div>

@@ -407,6 +407,8 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         setMaxDisplay={setMaxDisplay}
         onRecalculate={() => opt.run(maxDisplay)}
         onApply={apply}
+        equipped={equipped}
+        customGears={customGears}
       />
     </div>
   );
