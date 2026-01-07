@@ -38,7 +38,7 @@ export default function GearCombinedStats({ bonus }: Props) {
             <span className="text-muted-foreground">
               {STAT_LABELS[stat] ?? stat}
             </span>
-            <span className="font-medium text-green-400">+{value}</span>
+            <span className="font-medium text-green-400">+{value.toFixed(1)}</span>
           </div>
         ))}
       </div>
