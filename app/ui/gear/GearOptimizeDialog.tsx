@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { GEAR_SLOTS } from "@/app/constants";
 import { OptimizeResult } from "../../domain/gear/gearOptimize";
-import { CustomGear, GearSlot } from "@/app/types";
+import { CustomGear } from "@/app/types";
 
 import {
   HoverCard,
@@ -146,7 +146,7 @@ export default function GearOptimizeDialog({
                               {r.percentGain >= 0 ? "+" : ""}
                               {r.percentGain.toFixed(2)}%
                             </td>
-                            {GEAR_SLOTS.map(({ key, label }) => {
+                            {GEAR_SLOTS.map(({ key }) => {
                               const g = r.selection[key];
                               const currentEquipped = equipped[key];
                               const isNew = g && g.id !== currentEquipped;
