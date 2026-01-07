@@ -109,9 +109,8 @@ export default function GearOptimizeDialog({
                           {r.damage.toFixed(1)}
                         </td>
                         <td
-                          className={`text-right p-2 font-medium ${
-                            r.percentGain < 0 ? "text-red-500" : "text-emerald-500"
-                          }`}
+                          className={`text-right p-2 font-medium ${r.percentGain < 0 ? "text-red-500" : "text-emerald-500"
+                            }`}
                         >
                           {r.percentGain >= 0 ? "+" : ""}
                           {r.percentGain.toFixed(2)}%
