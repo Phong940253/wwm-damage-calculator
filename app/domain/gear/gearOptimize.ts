@@ -45,32 +45,6 @@ export async function computeOptimizeResultsAsync(
   rotation?: Rotation,
   onProgress?: (current: number, total: number) => void
 ): Promise<OptimizeComputation> {
-  return new Promise((resolve) => {
-    // Yield to browser before starting
-    setTimeout(() => {
-      const result = computeOptimizeResults(
-        stats,
-        elementStats,
-        customGears,
-        equipped,
-        desiredDisplay,
-        rotation,
-        onProgress
-      );
-      resolve(result);
-    }, 0);
-  });
-}
-
-export function computeOptimizeResults(
-  stats: InputStats,
-  elementStats: ElementStats,
-  customGears: CustomGear[],
-  equipped: Partial<Record<GearSlot, string | undefined>>,
-  desiredDisplay: number,
-  rotation?: Rotation,
-  onProgress?: (current: number, total: number) => void
-): OptimizeComputation {
   /* ============================================================
      1️⃣ BASE DAMAGE = WITH EQUIPPED GEAR
   ============================================================ */
@@ -95,16 +69,10 @@ export function computeOptimizeResults(
 
   /* ============================================================
      2️⃣ PREPARE SLOT OPTIONS
-     ------------------------------------------------------------
-     Mỗi slot sẽ:
-     - biết gear đang equip (origin)
-     - biết các gear có thể thử
   ============================================================ */
 
   const slotOptions = GEAR_SLOTS.map(({ key }) => {
     const items = customGears.filter((g) => g.slot === key);
-
-    // gear đang equip ở slot này (nếu có)
     const equippedGear =
       equipped[key] && customGears.find((g) => g.id === equipped[key]);
 
@@ -125,22 +93,22 @@ export function computeOptimizeResults(
   }
 
   const limit = Math.min(Math.max(desiredDisplay, 1), MAX_RESULTS_CAP);
+  const totalCombos = estimated;
 
   /* ============================================================
-     3️⃣ DFS STATE
+     3️⃣ ASYNC DFS STATE
   ============================================================ */
 
   const results: OptimizeResult[] = [];
   let total = 0;
 
   const selection: Partial<Record<GearSlot, CustomGear>> = {};
-
-  // ❗ bonus KHỞI ĐẦU = baseBonus (gear đang equip)
   const bonus: Record<string, number> = { ...baseBonus };
 
-  /**
-   * Apply / rollback stat của 1 gear
-   */
+  // Time-based progress tracking
+  let lastProgressTime = Date.now();
+  const PROGRESS_INTERVAL_MS = 100; // Update every 100ms
+
   const applyGear = (gear: CustomGear, dir: 1 | -1) => {
     [...gear.mains, ...gear.subs, gear.addition]
       .filter(Boolean)
@@ -149,29 +117,22 @@ export function computeOptimizeResults(
       });
   };
 
-  /* ============================================================
-     4️⃣ DFS
-     ------------------------------------------------------------
-     - Remove gear cũ
-     - Apply gear mới
-     - Rollback đúng thứ tự
-  ============================================================ */
-
-  const dfs = (i: number) => {
+  /* Async DFS with time-based progress updates */
+  const dfs = async (i: number) => {
     if (i === slotOptions.length) {
       total++;
 
-      // Report progress mỗi 100 combos
-      if (onProgress && total % 100 === 0) {
-        onProgress(
-          total,
-          slotOptions.reduce((acc, { items }) => acc * items.length, 1)
-        );
+      // Report progress based on elapsed time (every 100ms)
+      const now = Date.now();
+      if (onProgress && now - lastProgressTime >= PROGRESS_INTERVAL_MS) {
+        onProgress(total, totalCombos);
+        lastProgressTime = now;
+        // Yield to browser to update UI
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
       const ctx = buildDamageContext(stats, elementStats, bonus);
 
-      /* Calculate damage - rotation-aware */
       let dmg: number;
       if (rotation && rotation.skills.length > 0) {
         let rotationTotal = 0;
@@ -202,38 +163,41 @@ export function computeOptimizeResults(
     const { slot, items, equippedGear } = slotOptions[i];
 
     for (const gear of items) {
-      // 1️⃣ remove gear đang equip ở slot này (nếu có)
+      // Remove old gear
       if (equippedGear) {
         applyGear(equippedGear, -1);
       }
 
       if (gear) {
-        // 2️⃣ apply gear mới
         selection[slot] = gear;
         applyGear(gear, +1);
       } else {
         delete selection[slot];
       }
 
-      dfs(i + 1);
+      await dfs(i + 1);
 
-      // 3️⃣ rollback gear mới
+      // Rollback
       if (gear) {
         applyGear(gear, -1);
         delete selection[slot];
       }
 
-      // 4️⃣ restore gear cũ
       if (equippedGear) {
         applyGear(equippedGear, +1);
       }
     }
   };
 
-  dfs(0);
+  await dfs(0);
+
+  /* Report final progress */
+  if (onProgress) {
+    onProgress(totalCombos, totalCombos);
+  }
 
   /* ============================================================
-     5️⃣ SORT + LIMIT
+     4️⃣ SORT + LIMIT
   ============================================================ */
 
   results.sort((a, b) =>

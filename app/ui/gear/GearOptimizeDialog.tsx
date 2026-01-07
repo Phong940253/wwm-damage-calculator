@@ -54,7 +54,7 @@ export default function GearOptimizeDialog({
 }: Props) {
   return (
     <Dialog open={open && !loading} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl md:max-h-[85vh]">
+      <DialogContent className="max-w-7xl md:max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="text-lg">Optimize Gear Results</DialogTitle>
         </DialogHeader>
@@ -137,10 +137,10 @@ export default function GearOptimizeDialog({
                             </td>
                             <td
                               className={`text-right p-3 font-semibold ${r.percentGain < 0
-                                  ? "text-red-600"
-                                  : r.percentGain > 0
-                                    ? "text-emerald-600"
-                                    : "text-muted-foreground"
+                                ? "text-red-600"
+                                : r.percentGain > 0
+                                  ? "text-emerald-600"
+                                  : "text-muted-foreground"
                                 }`}
                             >
                               {r.percentGain >= 0 ? "+" : ""}
