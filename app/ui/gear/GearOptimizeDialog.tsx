@@ -2,7 +2,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -87,65 +86,80 @@ export default function GearOptimizeDialog({
                 </Button>
               </label>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                {results.map((r, i) => (
-                  <Card key={r.key} className="p-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span>#{i + 1}</span>
-                      <span
-                        className={
-                          r.percentGain < 0
-                            ? "text-red-500"
-                            : "text-emerald-500"
-                        }
-                      >
-                        {r.percentGain >= 0 ? "+" : ""}
-                        {r.percentGain.toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {r.damage.toFixed(1)}
-                    </div>
-                    {GEAR_SLOTS.map(({ key, label }) => {
-                      const g = r.selection[key];
-                      const currentEquipped = equipped[key];
-                      const isNew = g && g.id !== currentEquipped;
-
-                      // Find the old gear by ID
-                      const oldGear = currentEquipped
-                        ? customGears.find((gear) => gear.id === currentEquipped)
-                        : null;
-
-                      return isNew ? (
-                        <div
-                          key={key}
-                          className="text-xs flex justify-between items-center"
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">#</th>
+                      <th className="text-right p-2">Damage</th>
+                      <th className="text-right p-2">Gain</th>
+                      {GEAR_SLOTS.map(({ label }) => (
+                        <th key={label} className="text-left p-2">
+                          {label}
+                        </th>
+                      ))}
+                      <th className="text-center p-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r, i) => (
+                      <tr key={r.key} className="border-b hover:bg-muted/50">
+                        <td className="p-2">{i + 1}</td>
+                        <td className="text-right p-2 font-bold">
+                          {r.damage.toFixed(1)}
+                        </td>
+                        <td
+                          className={`text-right p-2 font-medium ${
+                            r.percentGain < 0 ? "text-red-500" : "text-emerald-500"
+                          }`}
                         >
-                          <span>{label}</span>
+                          {r.percentGain >= 0 ? "+" : ""}
+                          {r.percentGain.toFixed(2)}%
+                        </td>
+                        {GEAR_SLOTS.map(({ key, label }) => {
+                          const g = r.selection[key];
+                          const currentEquipped = equipped[key];
+                          const isNew = g && g.id !== currentEquipped;
 
-                          <HoverCard openDelay={150}>
-                            <HoverCardTrigger asChild>
-                              <span className="cursor-help underline decoration-dotted">
-                                {g.name}
-                              </span>
-                            </HoverCardTrigger>
-                            <HoverCardContent
-                              side="right"
-                              align="start"
-                              className="p-0 w-auto"
-                            >
-                              <GearHoverDetail gear={g} oldGear={oldGear} />
-                            </HoverCardContent>
-                          </HoverCard>
-                        </div>
-                      ) : null;
-                    })}
+                          // Find the old gear by ID
+                          const oldGear = currentEquipped
+                            ? customGears.find((gear) => gear.id === currentEquipped)
+                            : null;
 
-                    <Button size="sm" onClick={() => onApply(r.selection)}>
-                      Equip
-                    </Button>
-                  </Card>
-                ))}
+                          return (
+                            <td key={key} className="p-2">
+                              {isNew && g ? (
+                                <HoverCard openDelay={150}>
+                                  <HoverCardTrigger asChild>
+                                    <span className="cursor-help underline decoration-dotted text-emerald-600">
+                                      {g.name}
+                                    </span>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent
+                                    side="right"
+                                    align="start"
+                                    className="p-0 w-auto"
+                                  >
+                                    <GearHoverDetail gear={g} oldGear={oldGear} />
+                                  </HoverCardContent>
+                                </HoverCard>
+                              ) : null}
+                            </td>
+                          );
+                        })}
+                        <td className="p-2 text-center">
+                          <Button
+                            size="sm"
+                            onClick={() => onApply(r.selection)}
+                            variant="outline"
+                          >
+                            Equip
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </>
           )}
