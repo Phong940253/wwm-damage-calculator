@@ -110,13 +110,14 @@ pnpm start        # Production server
 
 ## Key Files Reference
 
-- **Entry point**: `app/page.tsx` → `DMGOptimizerClient.tsx`
+- **Entry point**: `app/page.tsx` → `DMGOptimizerClient.tsx` → `MainContent.tsx` (router)
 - **Main orchestration**: `hooks/useDMGOptimizer.ts` (combines stats + damage + gear)
-- **Stat definitions**: `app/constants.ts` (STAT_GROUPS, ELEMENT_DEFAULTS, STAT_LABELS)
-- **Type contracts**: `app/types.ts` (Stat, ElementStats, InputStats, GearSlot)
+- **Stat definitions**: `app/constants.ts` (STAT_GROUPS, ELEMENT_DEFAULTS, STAT_LABELS, INITIAL_STATS)
+- **Type contracts**: `app/types.ts` (Stat, ElementStats, InputStats, GearSlot, Rotation)
 - **Skill types**: `app/domain/skill/types.ts` (Skill, SkillHit, MartialArtId)
 - **Utility functions**: `lib/utils.ts` (cn), `app/utils/` (clamp, statLabel, importExport)
-- **Hook ecosystem**: `hooks/useStats`, `useGear`, `useDamage`, `useDMGOptimizer`, `useRotation`, `useSkillDamage` - each manages isolated state slice
+- **Hook ecosystem**: `hooks/useStats`, `useGear`, `useDamage`, `useDMGOptimizer`, `useRotation`, `useSkillDamage`, `useGearOptimize` - each manages isolated state slice
+- **Stat display**: `domain/damage/buildFinalStatSections.ts` generates structured stat UI with sections (Combat, Attributes, Special) - used by `FinalStatPanel.tsx`
 
 ## Integration Points
 
@@ -133,6 +134,10 @@ pnpm start        # Production server
 4. **Derived stats**: Don't manually compute - use `computeDerivedStats()` which includes increase values
 5. **Optimization performance**: Gear optimizer caps at 10k results / 1B combinations - avoid exponential growth
 6. **Skill multi-hit damage**: Use `createSkillContext()` from `skillContext.ts` to transform base context with per-hit multipliers
+7. **DamageResult shape**: Result includes `min`, `normal`, `critical`, `affinity` as `{value: number, percent: number}` objects, plus optional `averageBreakdown` with breakpoints
+8. **URL routing**: Search params control UI layout via `MainContent.tsx` - use `root=main|gear` + `tab=stats|rotation|formula|etc`
+9. **OCR integration**: `callGeminiVision()` in `lib/gemini.ts` requires base64 encoding - see `GearForm.tsx` for full example
+10. **Rotation precision**: `Rotation` expects skill `order` to be sequential 0-N; use `moveSkill()` hook to maintain indices
 
 ## Naming Conventions
 
