@@ -6,10 +6,15 @@ const STORAGE_KEY = "wwm_element_stats";
 
 export const useElementStats = (initial: ElementStats) => {
   const [elementStats, setElementStats] = useState<ElementStats>(initial);
+  const [isHydrated, setIsHydrated] = useState(false);
 
+  // Load from localStorage on mount
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      setIsHydrated(true);
+      return;
+    }
 
     try {
       const saved = JSON.parse(raw);
@@ -49,7 +54,31 @@ export const useElementStats = (initial: ElementStats) => {
         return next;
       });
     } catch {}
+
+    setIsHydrated(true);
   }, []);
+
+  // Save to localStorage whenever elementStats changes (but skip initial load)
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const toSave: Record<string, unknown> = {};
+
+    for (const key in elementStats) {
+      const value = elementStats[key as keyof ElementStats];
+      if (key === "selected" || key === "martialArtsId") {
+        toSave[key] = value;
+      } else if (
+        typeof value === "object" &&
+        value !== null &&
+        "current" in value
+      ) {
+        toSave[key] = (value as { current: number | "" }).current;
+      }
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  }, [elementStats, isHydrated]);
 
   return { elementStats, setElementStats };
 };
