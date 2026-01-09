@@ -25,6 +25,9 @@ Core business logic organized by bounded contexts:
   - `derivedStats.ts` - Computes secondary stats from primary attributes (uses `computeDerivedStats()` helper)
 - **`rotation/`**: Multi-skill rotation management
   - `defaultRotations.ts` - Seed data for common rotation patterns
+- **`passiveSkillTypes.ts`**: Type definitions for PassiveSkill and InnerWay
+- **`passiveSkills.ts`**: Database of 15+ passive skills (gắn vào martial arts)
+- **`innerWays.ts`**: Database of 10+ inner ways (global hoặc martial art-specific)
 
 ### Presentation Layer (`app/ui/`)
 
@@ -61,6 +64,9 @@ Components organized by feature:
 - **Element types**: 4 elements (bellstrike, stonesplit, silkbind, bamboocut) with min/max/penetration/bonus stats
 - **GearSlot**: Legacy migration from `"ring"`/`"talisman"` → `"disc"`/`"pendant"` (see `useGear.ts`)
 - **Skill structure**: `Skill { id, name, category, hits[], canCrit?, canAffinity? }` where each hit has `physicalMultiplier`, `elementMultiplier`, `flatPhysical?`, `flatAttribute?`, `hits` count
+- **Passive Skills**: `PassiveSkill { id, name, description, martialArtId, modifiers[] }` - tied to specific martial art, modifiers can be "stat" (percentage) or "flat" (fixed value)
+- **Inner Ways**: `InnerWay { id, name, description, applicableToMartialArtId?, modifiers[] }` - can apply to all or specific martial art
+- **Rotation Modifiers**: Rotations track `activePassiveSkills[]` and `activeInnerWays[]` (both default enabled)
 
 ### Damage Formula Pattern
 
@@ -80,7 +86,8 @@ export const calcMinimumDamage = (g: (k: string) => number) => {
 - **"use client"** directive required for all interactive components (Next.js 15 App Router)
 - **Absolute imports** with `@/` alias (`@/app/`, `@/components/`, `@/lib/`)
 - **Conditional rendering** based on `useSearchParams()` for tab navigation
-- **Badge/Card/Input** from shadcn/ui - never create custom basic UI primitives
+- **Badge/Card/Input/Checkbox** from shadcn/ui - never create custom basic UI primitives
+- **Passive/Inner Way UI**: Use Checkbox for toggles, show descriptions + notes, filter by martial art applicability
 
 ## Development Workflows
 
@@ -100,6 +107,8 @@ pnpm start        # Production server
 3. **New skill**: Add to `SKILLS` array in `domain/skill/skills.ts` with hit patterns (physicalMultiplier, elementMultiplier, etc.)
 4. **New formula**: Implement pure function in `damageFormula.ts` using `g()` getter, use in `damageCalculator.ts`
 5. **New rotation feature**: Use `useRotation()` hook which exposes full CRUD + modify operations
+6. **New passive skill**: Add to `PASSIVE_SKILLS` in `domain/skill/passiveSkills.ts` with martial art and modifiers
+7. **New inner way**: Add to `INNER_WAYS` in `domain/skill/innerWays.ts` (set `applicableToMartialArtId` if martial art specific)
 
 ### Testing Damage Changes
 
@@ -118,6 +127,7 @@ pnpm start        # Production server
 - **Utility functions**: `lib/utils.ts` (cn), `app/utils/` (clamp, statLabel, importExport)
 - **Hook ecosystem**: `hooks/useStats`, `useGear`, `useDamage`, `useDMGOptimizer`, `useRotation`, `useSkillDamage`, `useGearOptimize` - each manages isolated state slice
 - **Stat display**: `domain/damage/buildFinalStatSections.ts` generates structured stat UI with sections (Combat, Attributes, Special) - used by `FinalStatPanel.tsx`
+- **Passive/Inner Way hooks**: `hooks/usePassiveModifiers.ts` (applies modifiers), `hooks/useDamageContextWithModifiers.ts` (integrates into damage calc)
 
 ## Integration Points
 
@@ -138,6 +148,8 @@ pnpm start        # Production server
 8. **URL routing**: Search params control UI layout via `MainContent.tsx` - use `root=main|gear` + `tab=stats|rotation|formula|etc`
 9. **OCR integration**: `callGeminiVision()` in `lib/gemini.ts` requires base64 encoding - see `GearForm.tsx` for full example
 10. **Rotation precision**: `Rotation` expects skill `order` to be sequential 0-N; use `moveSkill()` hook to maintain indices
+11. **Passive skill modifiers**: Applied via `usePassiveModifiers()` hook - supports "stat" (% of base) and "flat" (fixed value) types
+12. **Inner way applicability**: Check `applicableToMartialArtId` - if undefined, applies to all martial arts; otherwise filtered to specific martial art
 
 ## Naming Conventions
 

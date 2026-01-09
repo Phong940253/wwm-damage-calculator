@@ -118,6 +118,13 @@ export interface Rotation {
   name: string;
   martialArtId?: string; // optional - if set, only skills from this martial art or neutral skills are allowed
   skills: RotationSkill[];
+
+  /** Passive skills đang kích hoạt (id của PassiveSkill) */
+  activePassiveSkills: string[]; // default = all skills của martial art
+
+  /** Inner ways đang kích hoạt (id của InnerWay) */
+  activeInnerWays: string[]; // default enabled
+
   createdAt: number;
   updatedAt: number;
 }

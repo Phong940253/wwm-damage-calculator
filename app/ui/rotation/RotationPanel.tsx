@@ -4,10 +4,13 @@ import { useState } from "react";
 import { Rotation, ElementStats } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
+import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
+import { INNER_WAYS } from "@/app/domain/skill/innerWays";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -28,6 +31,8 @@ interface RotationPanelProps {
   onRemoveSkill: (rotationId: string, entryId: string) => void;
   onMoveSkill: (rotationId: string, fromIndex: number, toIndex: number) => void;
   onUpdateSkillCount: (rotationId: string, entryId: string, count: number) => void;
+  onTogglePassiveSkill: (rotationId: string, passiveId: string) => void;
+  onToggleInnerWay: (rotationId: string, innerId: string) => void;
 }
 
 export default function RotationPanel({
@@ -42,12 +47,16 @@ export default function RotationPanel({
   onRemoveSkill,
   onMoveSkill,
   onUpdateSkillCount,
+  onTogglePassiveSkill,
+  onToggleInnerWay,
 }: RotationPanelProps) {
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
   const [newRotationName, setNewRotationName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renamingValue, setRenamingValue] = useState("");
   const [showSkillPicker, setShowSkillPicker] = useState(false);
+  const [showPassiveSkills, setShowPassiveSkills] = useState(false);
+  const [showInnerWays, setShowInnerWays] = useState(false);
   const [searchSkill, setSearchSkill] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -80,7 +89,7 @@ export default function RotationPanel({
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const midpoint = rect.top + rect.height / 2;
     const position = e.clientY < midpoint ? "before" : "after";
-    
+
     setDragOverIndex(index);
     setDropPosition(position);
   };
@@ -103,7 +112,7 @@ export default function RotationPanel({
       } else if (dropPosition === "before" && draggedIndex < index) {
         insertIndex = index;
       }
-      
+
       onMoveSkill(selectedRotation.id, draggedIndex, insertIndex);
     }
     setDraggedIndex(null);
@@ -389,6 +398,143 @@ export default function RotationPanel({
               })}
             </div>
           )}
+
+          {/* ========== PASSIVE SKILLS ========== */}
+          <div className="mt-6 pt-4 border-t border-zinc-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Passive Skills</h3>
+              <Button
+                onClick={() => setShowPassiveSkills(!showPassiveSkills)}
+                size="sm"
+                className="text-xs"
+              >
+                {showPassiveSkills ? "Hide" : "Show"}
+              </Button>
+            </div>
+
+            {showPassiveSkills && (
+              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
+                {PASSIVE_SKILLS.filter(
+                  (ps) => ps.martialArtId === selectedRotation.martialArtId
+                ).length === 0 ? (
+                  <p className="text-xs text-zinc-500 italic">
+                    No passive skills for this martial art
+                  </p>
+                ) : (
+                  PASSIVE_SKILLS.filter(
+                    (ps) => ps.martialArtId === selectedRotation.martialArtId
+                  ).map((passive) => (
+                    <div
+                      key={passive.id}
+                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                    >
+                      <Checkbox
+                        checked={selectedRotation.activePassiveSkills.includes(
+                          passive.id
+                        )}
+                        onCheckedChange={() =>
+                          onTogglePassiveSkill(selectedRotation.id, passive.id)
+                        }
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-100">
+                          {passive.name}
+                        </p>
+                        <p className="text-xs text-zinc-400 leading-tight">
+                          {passive.description}
+                        </p>
+                        {passive.notes && (
+                          <p className="text-xs text-zinc-500 italic mt-1">
+                            {passive.notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ========== INNER WAYS ========== */}
+          <div className="mt-4 pt-4 border-t border-zinc-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Inner Ways</h3>
+              <Button
+                onClick={() => setShowInnerWays(!showInnerWays)}
+                size="sm"
+                className="text-xs"
+              >
+                {showInnerWays ? "Hide" : "Show"}
+              </Button>
+            </div>
+
+            {showInnerWays && (
+              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
+                {INNER_WAYS.filter((iw) => {
+                  // Show if applicable to all or to current martial art
+                  return (
+                    !iw.applicableToMartialArtId ||
+                    iw.applicableToMartialArtId === selectedRotation.martialArtId
+                  );
+                }).length === 0 ? (
+                  <p className="text-xs text-zinc-500 italic">
+                    No inner ways available
+                  </p>
+                ) : (
+                  INNER_WAYS.filter((iw) => {
+                    return (
+                      !iw.applicableToMartialArtId ||
+                      iw.applicableToMartialArtId === selectedRotation.martialArtId
+                    );
+                  }).map((inner) => (
+                    <div
+                      key={inner.id}
+                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                    >
+                      <Checkbox
+                        checked={selectedRotation.activeInnerWays.includes(inner.id)}
+                        onCheckedChange={() =>
+                          onToggleInnerWay(selectedRotation.id, inner.id)
+                        }
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium text-zinc-100">
+                            {inner.name}
+                          </p>
+                          {inner.level && (
+                            <Badge variant="secondary" className="text-xs h-5">
+                              Lvl {inner.level}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-tight">
+                          {inner.description}
+                        </p>
+                        {inner.notes && (
+                          <p className="text-xs text-zinc-500 italic mt-1">
+                            {inner.notes}
+                          </p>
+                        )}
+                        {inner.applicableToMartialArtId && (
+                          <p className="text-xs text-blue-400 mt-1">
+                            ↳ {
+                              LIST_MARTIAL_ARTS.find(
+                                (m) => m.id === inner.applicableToMartialArtId
+                              )?.name
+                            }
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </Card>
       )}
     </div>

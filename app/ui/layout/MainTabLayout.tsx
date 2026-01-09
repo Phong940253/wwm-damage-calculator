@@ -8,6 +8,7 @@ import DamagePanel from "../damage/DamagePanel";
 import FormulaPanel from "../formula/FormulaPanel";
 import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
 import { useRotation } from "@/app/hooks/useRotation";
+import { useDamageContextWithModifiers } from "@/app/hooks/useDamageContextWithModifiers";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { useState } from "react";
 import { ElementStats } from "@/app/types";
@@ -29,6 +30,8 @@ export default function MainTabLayout() {
     removeSkillFromRotation,
     moveSkill,
     updateSkillCount,
+    togglePassiveSkill,
+    toggleInnerWay,
   } = useRotation();
 
   const {
@@ -46,7 +49,16 @@ export default function MainTabLayout() {
 
   const [showFormula, setShowFormula] = useState(false);
 
-  const ctx = buildDamageContext(stats, elementStats, gearBonus);
+  // Build context with passive skills + inner ways modifiers
+  const ctx = useDamageContextWithModifiers(
+    stats,
+    elementStats,
+    gearBonus,
+    selectedRotation
+  );
+
+  // Also keep base context for reference (if needed)
+  const baseCtx = buildDamageContext(stats, elementStats, gearBonus);
 
   /* ---------- ACTIONS (GIỮ NGUYÊN) ---------- */
   const onApplyIncrease = () => {
@@ -129,6 +141,8 @@ export default function MainTabLayout() {
             onRemoveSkill={removeSkillFromRotation}
             onMoveSkill={moveSkill}
             onUpdateSkillCount={updateSkillCount}
+            onTogglePassiveSkill={togglePassiveSkill}
+            onToggleInnerWay={toggleInnerWay}
           />
         )}
       </div>
