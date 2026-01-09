@@ -26,8 +26,8 @@ Core business logic organized by bounded contexts:
 - **`rotation/`**: Multi-skill rotation management
   - `defaultRotations.ts` - Seed data for common rotation patterns
 - **`passiveSkillTypes.ts`**: Type definitions for PassiveSkill and InnerWay
-- **`passiveSkills.ts`**: Database of 15+ passive skills (gắn vào martial arts)
-- **`innerWays.ts`**: Database of 10+ inner ways (global hoặc martial art-specific)
+- **`passiveSkills.ts`**: Database of 15+ passive skills (tied to martial arts)
+- **`innerWays.ts`**: Database of 10+ inner ways (global or martial art-specific)
 
 ### Presentation Layer (`app/ui/`)
 
@@ -55,6 +55,8 @@ Components organized by feature:
 - **localStorage persistence** with `wwm_*` prefix keys:
   - `wwm_dmg_current_stats`, `wwm_element_stats`, `wwm_custom_gear`, `wwm_equipped`, `wwm_rotations`
 - **GearProvider**: Context wrapper for gear state (see `providers/GearContext.tsx`)
+  - Must wrap components using `useGear()` hook
+  - Used in both `GearTabLayout` and can be nested without issues
 - **Custom hooks** pattern: `useStats`, `useGear`, `useDMGOptimizer`, `useRotation`, `useSkillDamage` handle isolated state slices with effects
 
 ### Type System
@@ -150,6 +152,14 @@ pnpm start        # Production server
 10. **Rotation precision**: `Rotation` expects skill `order` to be sequential 0-N; use `moveSkill()` hook to maintain indices
 11. **Passive skill modifiers**: Applied via `usePassiveModifiers()` hook - supports "stat" (% of base) and "flat" (fixed value) types
 12. **Inner way applicability**: Check `applicableToMartialArtId` - if undefined, applies to all martial arts; otherwise filtered to specific martial art
+
+## Performance Optimization Patterns
+
+When optimizing calculations (especially damage formulas and skill damage):
+
+- **Cache stat lookups**: Pre-calculate all required stat values upfront instead of calling `g()` repeatedly. See `buildDamageCache()` pattern in `damageFormula.ts` (reduces ~70% getter calls per formula)
+- **Deduplicate multi-hit calculations**: For skills with multiple hits of the same pattern, compute damage once and reuse. See `skillDamage.ts` (reduces 50-90% calculations depending on hit count)
+- **Pre-calculate constants outside loops**: Build multipliers before iterating through hits/combinations to avoid redundant math operations
 
 ## Naming Conventions
 

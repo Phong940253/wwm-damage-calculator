@@ -27,5 +27,12 @@ export function useDamageContextWithModifiers(
   };
 
   // Build base context (nó sẽ sử dụng combinedBonus)
-  return buildDamageContext(stats, elementStats, combinedBonus);
+
+  const ctx = buildDamageContext(stats, elementStats, combinedBonus);
+  console.log(
+    "[useDamageContextWithModifiers] Built context with combined bonuses:",
+    combinedBonus
+  );
+  console.log(ctx.get("MinPhysicalAttack"));
+  return ctx;
 }

@@ -27,17 +27,31 @@ export function buildDamageContext(
      Helpers
   ============================ */
 
-  // Base stat + increase + gear
-  const cur = (k: keyof InputStats) =>
-    Number(stats[k]?.current || 0) +
-    Number(stats[k]?.increase || 0) +
-    (gearBonus[k] || 0);
+  // Base stat + increase + gear + percentage modifiers
+  const cur = (k: keyof InputStats): number => {
+    const base =
+      Number(stats[k]?.current || 0) +
+      Number(stats[k]?.increase || 0) +
+      (gearBonus[k] || 0);
 
-  // Element stat + increase
-  const ele = (k: ElementStatKey) =>
-    Number(elementStats[k]?.current || 0) +
-    Number(elementStats[k]?.increase || 0) +
-    (gearBonus[k] || 0);
+    // Apply percentage modifier if exists
+    const percentKey = `${String(k)}:percentage`;
+    const percentModifier = gearBonus[percentKey] || 0;
+    return base * (1 + percentModifier);
+  };
+
+  // Element stat + increase + percentage modifiers
+  const ele = (k: ElementStatKey): number => {
+    const base =
+      Number(elementStats[k]?.current || 0) +
+      Number(elementStats[k]?.increase || 0) +
+      (gearBonus[k] || 0);
+
+    // Apply percentage modifier if exists
+    const percentKey = `${String(k)}:percentage`;
+    const percentModifier = gearBonus[percentKey] || 0;
+    return base * (1 + percentModifier);
+  };
 
   /* ============================
      Derived stats (increase-aware)
@@ -56,7 +70,7 @@ export function buildDamageContext(
   /* ============================
      Cache for OTHER elements
   ============================ */
-  
+
   // Pre-calculate other elements min/max to avoid filtering on every call
   const otherElementsFilter = ELEMENT_TYPES.filter(
     (e) => e.key !== elementStats.selected
