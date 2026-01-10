@@ -254,6 +254,185 @@ export default function RotationPanel({
             </p>
           </div>
 
+          {/* ========== PASSIVE SKILLS ========== */}
+          <div className="mb-4 pb-4 border-b border-zinc-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Passive Skills</h3>
+              <Button
+                onClick={() => setShowPassiveSkills(!showPassiveSkills)}
+                size="sm"
+                className="text-xs"
+              >
+                {showPassiveSkills ? "Hide" : "Show"}
+              </Button>
+            </div>
+
+            {showPassiveSkills && (
+              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
+                {PASSIVE_SKILLS.filter(
+                  (ps) =>
+                    !ps.martialArtId ||
+                    ps.martialArtId === selectedRotation.martialArtId
+                ).length === 0 ? (
+                  <p className="text-xs text-zinc-500 italic">
+                    No passive skills for this martial art
+                  </p>
+                ) : (
+                  PASSIVE_SKILLS.filter(
+                    (ps) =>
+                      !ps.martialArtId ||
+                      ps.martialArtId === selectedRotation.martialArtId
+                  ).map((passive) => (
+                    <div
+                      key={passive.id}
+                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                    >
+                      <Checkbox
+                        checked={selectedRotation.activePassiveSkills.includes(
+                          passive.id
+                        )}
+                        onCheckedChange={() =>
+                          onTogglePassiveSkill(selectedRotation.id, passive.id)
+                        }
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-100">
+                          {passive.name}
+                        </p>
+                        <p className="text-xs text-zinc-400 leading-tight">
+                          {passive.description}
+                        </p>
+
+                        {typeof passive.defaultUptimePercent === "number" && (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[11px] text-zinc-400">Uptime</p>
+                              <p className="text-[11px] text-zinc-200">
+                                {(
+                                  selectedRotation.passiveUptimes?.[passive.id] ??
+                                  passive.defaultUptimePercent ??
+                                  100
+                                ).toFixed(0)}
+                                %
+                              </p>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={
+                                selectedRotation.passiveUptimes?.[passive.id] ??
+                                passive.defaultUptimePercent ??
+                                100
+                              }
+                              disabled={
+                                !selectedRotation.activePassiveSkills.includes(
+                                  passive.id
+                                )
+                              }
+                              onChange={(e) =>
+                                onUpdatePassiveUptime(
+                                  selectedRotation.id,
+                                  passive.id,
+                                  Number(e.target.value)
+                                )
+                              }
+                              className="w-full accent-yellow-500 disabled:opacity-40"
+                            />
+                          </div>
+                        )}
+
+                        {passive.notes && (
+                          <p className="text-xs text-zinc-500 italic mt-1">
+                            {passive.notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ========== INNER WAYS ========== */}
+          <div className="mb-4 pb-4 border-b border-zinc-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Inner Ways</h3>
+              <Button
+                onClick={() => setShowInnerWays(!showInnerWays)}
+                size="sm"
+                className="text-xs"
+              >
+                {showInnerWays ? "Hide" : "Show"}
+              </Button>
+            </div>
+
+            {showInnerWays && (
+              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
+                {INNER_WAYS.filter((iw) => {
+                  // Show if applicable to all or to current martial art
+                  return (
+                    !iw.applicableToMartialArtId ||
+                    iw.applicableToMartialArtId === selectedRotation.martialArtId
+                  );
+                }).length === 0 ? (
+                  <p className="text-xs text-zinc-500 italic">
+                    No inner ways available
+                  </p>
+                ) : (
+                  INNER_WAYS.filter((iw) => {
+                    return (
+                      !iw.applicableToMartialArtId ||
+                      iw.applicableToMartialArtId === selectedRotation.martialArtId
+                    );
+                  }).map((inner) => (
+                    <div
+                      key={inner.id}
+                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                    >
+                      <Checkbox
+                        checked={selectedRotation.activeInnerWays.includes(inner.id)}
+                        onCheckedChange={() =>
+                          onToggleInnerWay(selectedRotation.id, inner.id)
+                        }
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium text-zinc-100">
+                            {inner.name}
+                          </p>
+                          {inner.level && (
+                            <Badge variant="secondary" className="text-xs h-5">
+                              Lvl {inner.level}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-tight">
+                          {inner.description}
+                        </p>
+                        {inner.notes && (
+                          <p className="text-xs text-zinc-500 italic mt-1">
+                            {inner.notes}
+                          </p>
+                        )}
+                        {inner.applicableToMartialArtId && (
+                          <p className="text-xs text-blue-400 mt-1">
+                            ↳ {LIST_MARTIAL_ARTS.find((m) => m.id === inner.applicableToMartialArtId)
+                              ?.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold">
               Skills in &quot;{selectedRotation.name}&quot;
@@ -404,188 +583,6 @@ export default function RotationPanel({
               })}
             </div>
           )}
-
-          {/* ========== PASSIVE SKILLS ========== */}
-          <div className="mt-6 pt-4 border-t border-zinc-700">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">Passive Skills</h3>
-              <Button
-                onClick={() => setShowPassiveSkills(!showPassiveSkills)}
-                size="sm"
-                className="text-xs"
-              >
-                {showPassiveSkills ? "Hide" : "Show"}
-              </Button>
-            </div>
-
-            {showPassiveSkills && (
-              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
-                {PASSIVE_SKILLS.filter(
-                  (ps) =>
-                    !ps.martialArtId ||
-                    ps.martialArtId === selectedRotation.martialArtId
-                ).length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">
-                    No passive skills for this martial art
-                  </p>
-                ) : (
-                  PASSIVE_SKILLS.filter(
-                    (ps) =>
-                      !ps.martialArtId ||
-                      ps.martialArtId === selectedRotation.martialArtId
-                  ).map((passive) => (
-                    <div
-                      key={passive.id}
-                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
-                    >
-                      <Checkbox
-                        checked={selectedRotation.activePassiveSkills.includes(
-                          passive.id
-                        )}
-                        onCheckedChange={() =>
-                          onTogglePassiveSkill(selectedRotation.id, passive.id)
-                        }
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-zinc-100">
-                          {passive.name}
-                        </p>
-                        <p className="text-xs text-zinc-400 leading-tight">
-                          {passive.description}
-                        </p>
-
-                        {typeof passive.defaultUptimePercent === "number" && (
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-[11px] text-zinc-400">Uptime</p>
-                              <p className="text-[11px] text-zinc-200">
-                                {(
-                                  selectedRotation.passiveUptimes?.[passive.id] ??
-                                  passive.defaultUptimePercent ??
-                                  100
-                                ).toFixed(0)}
-                                %
-                              </p>
-                            </div>
-                            <input
-                              type="range"
-                              min={0}
-                              max={100}
-                              step={1}
-                              value={
-                                selectedRotation.passiveUptimes?.[passive.id] ??
-                                passive.defaultUptimePercent ??
-                                100
-                              }
-                              disabled={
-                                !selectedRotation.activePassiveSkills.includes(
-                                  passive.id
-                                )
-                              }
-                              onChange={(e) =>
-                                onUpdatePassiveUptime(
-                                  selectedRotation.id,
-                                  passive.id,
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-full accent-yellow-500 disabled:opacity-40"
-                            />
-                          </div>
-                        )}
-
-                        {passive.notes && (
-                          <p className="text-xs text-zinc-500 italic mt-1">
-                            {passive.notes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ========== INNER WAYS ========== */}
-          <div className="mt-4 pt-4 border-t border-zinc-700">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">Inner Ways</h3>
-              <Button
-                onClick={() => setShowInnerWays(!showInnerWays)}
-                size="sm"
-                className="text-xs"
-              >
-                {showInnerWays ? "Hide" : "Show"}
-              </Button>
-            </div>
-
-            {showInnerWays && (
-              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
-                {INNER_WAYS.filter((iw) => {
-                  // Show if applicable to all or to current martial art
-                  return (
-                    !iw.applicableToMartialArtId ||
-                    iw.applicableToMartialArtId === selectedRotation.martialArtId
-                  );
-                }).length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">
-                    No inner ways available
-                  </p>
-                ) : (
-                  INNER_WAYS.filter((iw) => {
-                    return (
-                      !iw.applicableToMartialArtId ||
-                      iw.applicableToMartialArtId === selectedRotation.martialArtId
-                    );
-                  }).map((inner) => (
-                    <div
-                      key={inner.id}
-                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
-                    >
-                      <Checkbox
-                        checked={selectedRotation.activeInnerWays.includes(inner.id)}
-                        onCheckedChange={() =>
-                          onToggleInnerWay(selectedRotation.id, inner.id)
-                        }
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-medium text-zinc-100">
-                            {inner.name}
-                          </p>
-                          {inner.level && (
-                            <Badge variant="secondary" className="text-xs h-5">
-                              Lvl {inner.level}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-zinc-400 leading-tight">
-                          {inner.description}
-                        </p>
-                        {inner.notes && (
-                          <p className="text-xs text-zinc-500 italic mt-1">
-                            {inner.notes}
-                          </p>
-                        )}
-                        {inner.applicableToMartialArtId && (
-                          <p className="text-xs text-blue-400 mt-1">
-                            ↳ {
-                              LIST_MARTIAL_ARTS.find(
-                                (m) => m.id === inner.applicableToMartialArtId
-                              )?.name
-                            }
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
         </Card>
       )}
     </div>
