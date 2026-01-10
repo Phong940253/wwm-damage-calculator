@@ -8,50 +8,38 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
   /* ==================== BELLSTRIKE SPLENDOR ==================== */
   {
     id: "ps_bellstrike_splendor_1",
-    name: "Resonance Enhancement",
-    description: "Increases Critical Rate by 10%",
+    name: "Sword Qi Affinity Enhancement",
+    description:
+      "Increases Affinity DMG based on Max Physical Attack (up to 18% at 1500 Max Physical Attack)",
     martialArtId: "bellstrike_splendor",
     modifiers: [
       {
-        stat: "CriticalRate",
-        type: "flat",
-        value: 10,
+        stat: "AffinityDMGBonus",
+        type: "scale",
+        sourceStat: "MaxPhysicalAttack",
+        ratio: 18 / 1500,
+        max: 18,
       },
     ],
+    notes:
+      "Condition: sword energy attacks against targets with Qi below 40% (including Exhausted targets).",
   },
   {
     id: "ps_bellstrike_splendor_2",
-    name: "Strike Amplification",
-    description: "Increases Physical Attack by 15% of Momentum",
+    name: "Affinity DMG UP",
+    description:
+      "Increases Affinity DMG based on Affinity Rate (up to 18% at 30% Affinity Rate)",
     martialArtId: "bellstrike_splendor",
     modifiers: [
       {
-        stat: "MinPhysicalAttack",
+        stat: "AffinityDMGBonus",
         type: "scale",
-        sourceStat: "Momentum",
-        ratio: 0.15,
-      },
-      {
-        stat: "MaxPhysicalAttack",
-        type: "scale",
-        sourceStat: "Momentum",
-        ratio: 0.15,
+        sourceStat: "AffinityRate",
+        ratio: 18 / 30,
+        max: 18,
       },
     ],
-    notes: "Scales with Momentum stat",
-  },
-  {
-    id: "ps_bellstrike_splendor_3",
-    name: "Damage Penetration",
-    description: "Adds 5 to Physical Penetration",
-    martialArtId: "bellstrike_splendor",
-    modifiers: [
-      {
-        stat: "PhysicalPenetration",
-        type: "flat",
-        value: 5,
-      },
-    ],
+    notes: "Condition: when Endurance is below 60%.",
   },
 
   /* ==================== BELLSTRIKE UMBRA ==================== */

@@ -18,20 +18,40 @@ function normalizeRotation(
   rotation: Rotation,
   martialArtId?: string
 ): Rotation {
-  // Initialize activePassiveSkills with all skills từ martial art
+  const allPassiveIds = new Set(PASSIVE_SKILLS.map((p) => p.id));
+  const allInnerWayIds = new Set(INNER_WAYS.map((i) => i.id));
+
+  const defaultPassiveIdsForMA = martialArtId
+    ? PASSIVE_SKILLS.filter((p) => p.martialArtId === martialArtId).map(
+        (p) => p.id
+      )
+    : [];
+
+  // Initialize/sanitize activePassiveSkills
   if (!rotation.activePassiveSkills) {
-    if (martialArtId) {
-      rotation.activePassiveSkills = PASSIVE_SKILLS.filter(
-        (p) => p.martialArtId === martialArtId
-      ).map((p) => p.id);
-    } else {
-      rotation.activePassiveSkills = [];
+    rotation.activePassiveSkills = martialArtId ? defaultPassiveIdsForMA : [];
+  } else {
+    rotation.activePassiveSkills = rotation.activePassiveSkills.filter((id) =>
+      allPassiveIds.has(id)
+    );
+
+    // If rotation is tied to a martial art and all passives were removed, enable current defaults
+    if (martialArtId && rotation.activePassiveSkills.length === 0) {
+      rotation.activePassiveSkills = defaultPassiveIdsForMA;
     }
   }
 
-  // Initialize activeInnerWays - enable all by default
+  // Initialize/sanitize activeInnerWays - enable all by default
   if (!rotation.activeInnerWays) {
     rotation.activeInnerWays = INNER_WAYS.map((i) => i.id);
+  } else {
+    rotation.activeInnerWays = rotation.activeInnerWays.filter((id) =>
+      allInnerWayIds.has(id)
+    );
+
+    if (rotation.activeInnerWays.length === 0) {
+      rotation.activeInnerWays = INNER_WAYS.map((i) => i.id);
+    }
   }
 
   return rotation;

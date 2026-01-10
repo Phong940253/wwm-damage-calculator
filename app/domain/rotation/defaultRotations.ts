@@ -166,7 +166,6 @@ export const DEFAULT_ROTATIONS: Rotation[] = [
     activePassiveSkills: [
       "ps_bellstrike_splendor_1",
       "ps_bellstrike_splendor_2",
-      "ps_bellstrike_splendor_3",
     ],
     activeInnerWays: [
       "iw_universal_1",
