@@ -13,6 +13,7 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
       "Casting a Martial Art Skill increases Affinity DMG by 10% and Affinity Rate by 7.5% (conditional)",
     martialArtId: undefined,
     defaultEnabledForMartialArtIds: ["bellstrike_splendor"],
+    defaultUptimePercent: 100,
     modifiers: [
       {
         stat: "AffinityDMGBonus",
@@ -36,6 +37,7 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
     description:
       "Increases Affinity DMG based on Max Physical Attack (up to 18% at 1500 Max Physical Attack)",
     martialArtId: "bellstrike_splendor",
+    defaultUptimePercent: 60,
     modifiers: [
       {
         stat: "AffinityDMGBonus",

@@ -31,6 +31,7 @@ export default function MainTabLayout() {
     updateSkillCount,
     togglePassiveSkill,
     toggleInnerWay,
+    updatePassiveUptime,
   } = useRotation();
 
   const {
@@ -138,6 +139,7 @@ export default function MainTabLayout() {
             onMoveSkill={moveSkill}
             onUpdateSkillCount={updateSkillCount}
             onTogglePassiveSkill={togglePassiveSkill}
+            onUpdatePassiveUptime={updatePassiveUptime}
             onToggleInnerWay={toggleInnerWay}
           />
         )}

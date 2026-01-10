@@ -122,6 +122,9 @@ export interface Rotation {
   /** Passive skills đang kích hoạt (id của PassiveSkill) */
   activePassiveSkills: string[]; // default = all skills của martial art
 
+  /** Optional uptime % per passiveId (0..100). Used to average conditional passives. */
+  passiveUptimes?: Record<string, number>;
+
   /** Inner ways đang kích hoạt (id của InnerWay) */
   activeInnerWays: string[]; // default enabled
 

@@ -50,6 +50,9 @@ export interface PassiveSkill {
    */
   defaultEnabledForMartialArtIds?: MartialArtId[];
 
+  /** Optional: default uptime % (0..100) for conditional passives */
+  defaultUptimePercent?: number;
+
   /** một hoặc nhiều modifier */
   modifiers: PassiveModifier[];
 

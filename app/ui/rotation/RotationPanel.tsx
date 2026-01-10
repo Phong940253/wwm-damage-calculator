@@ -32,6 +32,11 @@ interface RotationPanelProps {
   onMoveSkill: (rotationId: string, fromIndex: number, toIndex: number) => void;
   onUpdateSkillCount: (rotationId: string, entryId: string, count: number) => void;
   onTogglePassiveSkill: (rotationId: string, passiveId: string) => void;
+  onUpdatePassiveUptime: (
+    rotationId: string,
+    passiveId: string,
+    uptimePercent: number
+  ) => void;
   onToggleInnerWay: (rotationId: string, innerId: string) => void;
 }
 
@@ -48,6 +53,7 @@ export default function RotationPanel({
   onMoveSkill,
   onUpdateSkillCount,
   onTogglePassiveSkill,
+  onUpdatePassiveUptime,
   onToggleInnerWay,
 }: RotationPanelProps) {
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
@@ -448,6 +454,48 @@ export default function RotationPanel({
                         <p className="text-xs text-zinc-400 leading-tight">
                           {passive.description}
                         </p>
+
+                        {(passive.id === "ps_bellstrike_splendor_1" ||
+                          passive.id === "ps_universal_jadeware") && (
+                            <div className="mt-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-[11px] text-zinc-400">Uptime</p>
+                                <p className="text-[11px] text-zinc-200">
+                                  {(
+                                    selectedRotation.passiveUptimes?.[passive.id] ??
+                                    passive.defaultUptimePercent ??
+                                    100
+                                  ).toFixed(1)}
+                                  %
+                                </p>
+                              </div>
+                              <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                step={0.1}
+                                value={
+                                  selectedRotation.passiveUptimes?.[passive.id] ??
+                                  passive.defaultUptimePercent ??
+                                  100
+                                }
+                                disabled={
+                                  !selectedRotation.activePassiveSkills.includes(
+                                    passive.id
+                                  )
+                                }
+                                onChange={(e) =>
+                                  onUpdatePassiveUptime(
+                                    selectedRotation.id,
+                                    passive.id,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-full accent-yellow-500 disabled:opacity-40"
+                              />
+                            </div>
+                          )}
+
                         {passive.notes && (
                           <p className="text-xs text-zinc-500 italic mt-1">
                             {passive.notes}

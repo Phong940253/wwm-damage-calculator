@@ -62,6 +62,31 @@ function normalizeRotation(
     }
   }
 
+  // Initialize/sanitize passiveUptimes (0..100)
+  const defaultUptimeFor = (passiveId: string) => {
+    const p = PASSIVE_SKILLS.find((x) => x.id === passiveId);
+    return typeof p?.defaultUptimePercent === "number"
+      ? p.defaultUptimePercent
+      : 100;
+  };
+
+  if (!rotation.passiveUptimes) rotation.passiveUptimes = {};
+
+  // Remove unknown keys
+  for (const key of Object.keys(rotation.passiveUptimes)) {
+    if (!allPassiveIds.has(key)) delete rotation.passiveUptimes[key];
+  }
+
+  // Ensure each active passive has an uptime
+  for (const passiveId of rotation.activePassiveSkills) {
+    const v = rotation.passiveUptimes[passiveId];
+    if (typeof v !== "number" || Number.isNaN(v)) {
+      rotation.passiveUptimes[passiveId] = defaultUptimeFor(passiveId);
+      continue;
+    }
+    rotation.passiveUptimes[passiveId] = Math.min(100, Math.max(0, v));
+  }
+
   return rotation;
 }
 
@@ -233,11 +258,43 @@ export const useRotation = () => {
         if (r.id !== rotationId) return r;
 
         const isActive = r.activePassiveSkills.includes(passiveId);
+        const nextUptimes = { ...(r.passiveUptimes || {}) };
+
+        if (!isActive) {
+          // When enabling, ensure there is an uptime value
+          const p = PASSIVE_SKILLS.find((x) => x.id === passiveId);
+          const def =
+            typeof p?.defaultUptimePercent === "number"
+              ? p.defaultUptimePercent
+              : 100;
+          if (typeof nextUptimes[passiveId] !== "number")
+            nextUptimes[passiveId] = def;
+        }
+
         return {
           ...r,
           activePassiveSkills: isActive
             ? r.activePassiveSkills.filter((p) => p !== passiveId)
             : [...r.activePassiveSkills, passiveId],
+          passiveUptimes: nextUptimes,
+          updatedAt: Date.now(),
+        };
+      })
+    );
+  };
+
+  const updatePassiveUptime = (
+    rotationId: string,
+    passiveId: string,
+    uptimePercent: number
+  ) => {
+    const v = Math.min(100, Math.max(0, uptimePercent));
+    setRotations((prev) =>
+      prev.map((r) => {
+        if (r.id !== rotationId) return r;
+        return {
+          ...r,
+          passiveUptimes: { ...(r.passiveUptimes || {}), [passiveId]: v },
           updatedAt: Date.now(),
         };
       })
@@ -275,5 +332,6 @@ export const useRotation = () => {
     updateSkillCount,
     togglePassiveSkill,
     toggleInnerWay,
+    updatePassiveUptime,
   };
 };

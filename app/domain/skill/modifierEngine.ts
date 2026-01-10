@@ -28,7 +28,9 @@ function readStatValue(
 ) {
   const k = String(key);
 
-  const inputStat = (stats as Record<string, { current?: number | ""; increase?: number | "" }>)[k];
+  const inputStat = (
+    stats as Record<string, { current?: number | ""; increase?: number | "" }>
+  )[k];
   if (inputStat && typeof inputStat === "object") {
     return (
       Number(inputStat.current || 0) +
@@ -37,10 +39,12 @@ function readStatValue(
     );
   }
 
-  const elementStat = (elementStats as unknown as Record<
-    string,
-    { current?: number | ""; increase?: number | "" }
-  >)[k];
+  const elementStat = (
+    elementStats as unknown as Record<
+      string,
+      { current?: number | ""; increase?: number | "" }
+    >
+  )[k];
   if (elementStat && typeof elementStat === "object") {
     return (
       Number(elementStat.current || 0) +
@@ -90,36 +94,110 @@ export function computeRotationBonuses(
   gearBonus: Record<string, number>,
   rotation?: Rotation
 ): Record<string, number> {
-  const modifiers = collectRotationModifiers(rotation, elementStats.martialArtsId);
-  if (modifiers.length === 0) return {};
+  if (!rotation) return {};
 
-  // 1) Apply all flat modifiers first
+  const uptimePctForPassive = (passiveId: string) => {
+    const explicit = rotation.passiveUptimes?.[passiveId];
+    if (typeof explicit === "number" && !Number.isNaN(explicit))
+      return explicit;
+
+    const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
+    if (passive && typeof passive.defaultUptimePercent === "number") {
+      return passive.defaultUptimePercent;
+    }
+
+    return 100;
+  };
+
+  const uptimeFactor = (passiveId: string) =>
+    clamp(uptimePctForPassive(passiveId), 0, 100) / 100;
+
+  // 1) Apply all flat modifiers first (weighted by uptime for passives)
   const flatBonus: Record<string, number> = {};
-  for (const modifier of modifiers) {
-    if (modifier.type !== "flat") continue;
-    const key = String(modifier.stat);
-    const next = (flatBonus[key] || 0) + modifier.value;
-    flatBonus[key] = clamp(next, modifier.min, modifier.max);
+
+  for (const passiveId of rotation.activePassiveSkills) {
+    const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
+    if (!passive) continue;
+    const f = uptimeFactor(passiveId);
+    if (f <= 0) continue;
+
+    for (const modifier of passive.modifiers) {
+      if (modifier.type !== "flat") continue;
+      const key = String(modifier.stat);
+      const add = clamp(modifier.value, modifier.min, modifier.max) * f;
+      flatBonus[key] = (flatBonus[key] || 0) + add;
+    }
+  }
+
+  for (const innerId of rotation.activeInnerWays) {
+    const inner = INNER_WAYS.find((i) => i.id === innerId);
+    if (!inner) continue;
+
+    if (inner.applicableToMartialArtId && elementStats.martialArtsId) {
+      if (inner.applicableToMartialArtId !== elementStats.martialArtsId)
+        continue;
+    }
+
+    for (const modifier of inner.modifiers) {
+      if (modifier.type !== "flat") continue;
+      const key = String(modifier.stat);
+      const add = clamp(modifier.value, modifier.min, modifier.max);
+      flatBonus[key] = (flatBonus[key] || 0) + add;
+    }
   }
 
   // 2) Compute scale modifiers from (base + gear + flat)
   const baseForScale = sumRecords(gearBonus, flatBonus);
   const scaleBonus: Record<string, number> = {};
 
-  for (const modifier of modifiers) {
-    if (modifier.type !== "scale") continue;
+  for (const passiveId of rotation.activePassiveSkills) {
+    const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
+    if (!passive) continue;
+    const f = uptimeFactor(passiveId);
+    if (f <= 0) continue;
 
-    const targetKey = String(modifier.stat);
-    const sourceValue = readStatValue(
-      stats,
-      elementStats,
-      baseForScale,
-      modifier.sourceStat
-    );
+    for (const modifier of passive.modifiers) {
+      if (modifier.type !== "scale") continue;
 
-    const addRaw = sourceValue * modifier.ratio;
-    const add = clamp(addRaw, modifier.min, modifier.max);
-    scaleBonus[targetKey] = (scaleBonus[targetKey] || 0) + add;
+      const targetKey = String(modifier.stat);
+      const sourceValue = readStatValue(
+        stats,
+        elementStats,
+        baseForScale,
+        modifier.sourceStat
+      );
+
+      const addRaw = sourceValue * modifier.ratio;
+      const addCapped = clamp(addRaw, modifier.min, modifier.max);
+      const add = addCapped * f;
+      scaleBonus[targetKey] = (scaleBonus[targetKey] || 0) + add;
+    }
+  }
+
+  for (const innerId of rotation.activeInnerWays) {
+    const inner = INNER_WAYS.find((i) => i.id === innerId);
+    if (!inner) continue;
+
+    if (inner.applicableToMartialArtId && elementStats.martialArtsId) {
+      if (inner.applicableToMartialArtId !== elementStats.martialArtsId)
+        continue;
+    }
+
+    for (const modifier of inner.modifiers) {
+      if (modifier.type !== "scale") continue;
+
+      const targetKey = String(modifier.stat);
+      const sourceValue = readStatValue(
+        stats,
+        elementStats,
+        baseForScale,
+        modifier.sourceStat
+      );
+
+      const addRaw = sourceValue * modifier.ratio;
+      const add = clamp(addRaw, modifier.min, modifier.max);
+      scaleBonus[targetKey] = (scaleBonus[targetKey] || 0) + add;
+    }
   }
 
   return sumRecords(flatBonus, scaleBonus);

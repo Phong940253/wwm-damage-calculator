@@ -168,6 +168,10 @@ export const DEFAULT_ROTATIONS: Rotation[] = [
       "ps_bellstrike_splendor_1",
       "ps_bellstrike_splendor_2",
     ],
+    passiveUptimes: {
+      ps_universal_jadeware: 100,
+      ps_bellstrike_splendor_1: 60,
+    },
     activeInnerWays: [
       "iw_universal_1",
       "iw_universal_2",
