@@ -42,7 +42,13 @@ export interface PassiveSkill {
   description: string;
 
   /** martial art mà passive này thuộc về */
-  martialArtId: MartialArtId;
+  martialArtId?: MartialArtId;
+
+  /**
+   * Optional: For universal passives (martialArtId undefined), decide which martial arts
+   * should have this passive enabled by default.
+   */
+  defaultEnabledForMartialArtIds?: MartialArtId[];
 
   /** một hoặc nhiều modifier */
   modifiers: PassiveModifier[];

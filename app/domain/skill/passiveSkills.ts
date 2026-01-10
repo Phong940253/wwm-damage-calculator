@@ -5,6 +5,30 @@ import { PassiveSkill } from "./passiveSkillTypes";
  * Bao gồm các skill từ game "Where Winds Meet"
  */
 export const PASSIVE_SKILLS: PassiveSkill[] = [
+  /* ==================== UNIVERSAL (All Martial Arts) ==================== */
+  {
+    id: "ps_universal_jadeware",
+    name: "Jadeware Effect",
+    description:
+      "Casting a Martial Art Skill increases Affinity DMG by 10% and Affinity Rate by 7.5% (conditional)",
+    martialArtId: undefined,
+    defaultEnabledForMartialArtIds: ["bellstrike_splendor"],
+    modifiers: [
+      {
+        stat: "AffinityDMGBonus",
+        type: "flat",
+        value: 10,
+      },
+      {
+        stat: "AffinityRate",
+        type: "flat",
+        value: 7.5,
+      },
+    ],
+    notes:
+      "Condition: targets with lower Qi% than you or below 40% Qi. Lasts 8s; triggers once every 12s.",
+  },
+
   /* ==================== BELLSTRIKE SPLENDOR ==================== */
   {
     id: "ps_bellstrike_splendor_1",

@@ -415,14 +415,18 @@ export default function RotationPanel({
             {showPassiveSkills && (
               <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
                 {PASSIVE_SKILLS.filter(
-                  (ps) => ps.martialArtId === selectedRotation.martialArtId
+                  (ps) =>
+                    !ps.martialArtId ||
+                    ps.martialArtId === selectedRotation.martialArtId
                 ).length === 0 ? (
                   <p className="text-xs text-zinc-500 italic">
                     No passive skills for this martial art
                   </p>
                 ) : (
                   PASSIVE_SKILLS.filter(
-                    (ps) => ps.martialArtId === selectedRotation.martialArtId
+                    (ps) =>
+                      !ps.martialArtId ||
+                      ps.martialArtId === selectedRotation.martialArtId
                   ).map((passive) => (
                     <div
                       key={passive.id}

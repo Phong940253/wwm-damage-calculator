@@ -4,6 +4,7 @@ import { Rotation, RotationSkill } from "../types";
 import { DEFAULT_ROTATIONS } from "@/app/domain/rotation/defaultRotations";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
+import { MartialArtId } from "@/app/domain/skill/types";
 
 const STORAGE_KEY = "wwm_rotations";
 
@@ -16,15 +17,22 @@ function generateId() {
  */
 function normalizeRotation(
   rotation: Rotation,
-  martialArtId?: string
+  martialArtId?: MartialArtId
 ): Rotation {
   const allPassiveIds = new Set(PASSIVE_SKILLS.map((p) => p.id));
   const allInnerWayIds = new Set(INNER_WAYS.map((i) => i.id));
 
   const defaultPassiveIdsForMA = martialArtId
-    ? PASSIVE_SKILLS.filter((p) => p.martialArtId === martialArtId).map(
-        (p) => p.id
-      )
+    ? PASSIVE_SKILLS.filter((p) => {
+        if (p.martialArtId === martialArtId) return true;
+        if (
+          !p.martialArtId &&
+          p.defaultEnabledForMartialArtIds?.includes(martialArtId)
+        ) {
+          return true;
+        }
+        return false;
+      }).map((p) => p.id)
     : [];
 
   // Initialize/sanitize activePassiveSkills
@@ -72,7 +80,7 @@ export const useRotation = () => {
       } catch {
         // Fallback to default only
         const normalized = DEFAULT_ROTATIONS.map((r) =>
-          normalizeRotation(r, r.martialArtId)
+          normalizeRotation(r, r.martialArtId as MartialArtId)
         );
         setRotations(normalized);
         setSelectedRotationId(normalized[0].id);
@@ -85,7 +93,7 @@ export const useRotation = () => {
     const defaultIds = new Set(DEFAULT_ROTATIONS.map((r) => r.id));
     const uniqueSaved = savedRotations.filter((r) => !defaultIds.has(r.id));
     const mergedRotations = [...DEFAULT_ROTATIONS, ...uniqueSaved].map((r) =>
-      normalizeRotation(r, r.martialArtId)
+      normalizeRotation(r, r.martialArtId as MartialArtId)
     );
 
     setRotations(mergedRotations);
