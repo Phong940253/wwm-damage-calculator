@@ -12,7 +12,6 @@ import { useDamageContextWithModifiers } from "@/app/hooks/useDamageContextWithM
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { useState } from "react";
 import { ElementStats } from "@/app/types";
-import { buildDamageContext } from "@/app/domain/damage/damageContext";
 
 export default function MainTabLayout() {
   const searchParams = useSearchParams();
@@ -56,9 +55,6 @@ export default function MainTabLayout() {
     gearBonus,
     selectedRotation
   );
-
-  // Also keep base context for reference (if needed)
-  const baseCtx = buildDamageContext(stats, elementStats, gearBonus);
 
   /* ---------- ACTIONS (GIỮ NGUYÊN) ---------- */
   const onApplyIncrease = () => {
