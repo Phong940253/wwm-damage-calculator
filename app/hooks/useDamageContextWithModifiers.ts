@@ -10,6 +10,8 @@ import {
 
 /**
  * Enhanced version of buildDamageContext that includes passive skills + inner ways
+ * TEMPORARILY DISABLED: Passive modifiers are not applied to avoid calculation errors
+ * UI components remain intact for future use
  */
 export function useDamageContextWithModifiers(
   stats: InputStats,
@@ -17,22 +19,14 @@ export function useDamageContextWithModifiers(
   gearBonus: Record<string, number>,
   rotation?: Rotation
 ): DamageContext {
-  // Lấy bonus từ passive skills + inner ways
-  const passiveModifiers = usePassiveModifiers(rotation);
+  // TODO: Re-enable passive modifiers once issues are resolved
+  // const passiveModifiers = usePassiveModifiers(rotation);
+  // const combinedBonus = {
+  //   ...gearBonus,
+  //   ...passiveModifiers,
+  // };
 
-  // Merge gearBonus + passiveModifiers
-  const combinedBonus = {
-    ...gearBonus,
-    ...passiveModifiers,
-  };
-
-  // Build base context (nó sẽ sử dụng combinedBonus)
-
-  const ctx = buildDamageContext(stats, elementStats, combinedBonus);
-  console.log(
-    "[useDamageContextWithModifiers] Built context with combined bonuses:",
-    combinedBonus
-  );
-  console.log(ctx.get("MinPhysicalAttack"));
+  // For now, use only gearBonus (no passive modifiers)
+  const ctx = buildDamageContext(stats, elementStats, gearBonus);
   return ctx;
 }
