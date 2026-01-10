@@ -65,9 +65,11 @@ function normalizeRotation(
   // Initialize/sanitize passiveUptimes (0..100)
   const defaultUptimeFor = (passiveId: string) => {
     const p = PASSIVE_SKILLS.find((x) => x.id === passiveId);
-    return typeof p?.defaultUptimePercent === "number"
-      ? p.defaultUptimePercent
-      : 100;
+    const raw =
+      typeof p?.defaultUptimePercent === "number"
+        ? p.defaultUptimePercent
+        : 100;
+    return Math.round(raw);
   };
 
   if (!rotation.passiveUptimes) rotation.passiveUptimes = {};
@@ -84,7 +86,9 @@ function normalizeRotation(
       rotation.passiveUptimes[passiveId] = defaultUptimeFor(passiveId);
       continue;
     }
-    rotation.passiveUptimes[passiveId] = Math.min(100, Math.max(0, v));
+    rotation.passiveUptimes[passiveId] = Math.round(
+      Math.min(100, Math.max(0, v))
+    );
   }
 
   return rotation;
@@ -265,7 +269,7 @@ export const useRotation = () => {
           const p = PASSIVE_SKILLS.find((x) => x.id === passiveId);
           const def =
             typeof p?.defaultUptimePercent === "number"
-              ? p.defaultUptimePercent
+              ? Math.round(p.defaultUptimePercent)
               : 100;
           if (typeof nextUptimes[passiveId] !== "number")
             nextUptimes[passiveId] = def;
@@ -288,7 +292,7 @@ export const useRotation = () => {
     passiveId: string,
     uptimePercent: number
   ) => {
-    const v = Math.min(100, Math.max(0, uptimePercent));
+    const v = Math.round(Math.min(100, Math.max(0, uptimePercent)));
     setRotations((prev) =>
       prev.map((r) => {
         if (r.id !== rotationId) return r;
