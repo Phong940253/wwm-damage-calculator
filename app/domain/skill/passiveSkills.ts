@@ -27,13 +27,15 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
     modifiers: [
       {
         stat: "MinPhysicalAttack",
-        type: "stat",
-        value: 0.15, // 15% của Momentum (được tính trong derivedStats)
+        type: "scale",
+        sourceStat: "Momentum",
+        ratio: 0.15,
       },
       {
         stat: "MaxPhysicalAttack",
-        type: "stat",
-        value: 0.15,
+        type: "scale",
+        sourceStat: "Momentum",
+        ratio: 0.15,
       },
     ],
     notes: "Scales with Momentum stat",
@@ -89,8 +91,9 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
     modifiers: [
       {
         stat: "PhysicalDefense",
-        type: "stat",
-        value: 0.12,
+        type: "scale",
+        sourceStat: "Agility",
+        ratio: 0.12,
       },
     ],
     notes: "Scales with Agility",
@@ -131,8 +134,9 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
     modifiers: [
       {
         stat: "HP",
-        type: "stat",
-        value: 2.5, // 25 HP per 10 Power = 0.25 per Power, nhưng display 2.5% thay vì %
+        type: "scale",
+        sourceStat: "Power",
+        ratio: 2.5,
       },
     ],
     notes: "Scales with Power stat",
@@ -147,8 +151,9 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
     modifiers: [
       {
         stat: "PhysicalDefense",
-        type: "stat",
-        value: 0.2,
+        type: "scale",
+        sourceStat: "PhysicalDefense",
+        ratio: 0.2,
       },
     ],
   },
@@ -160,13 +165,15 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
     modifiers: [
       {
         stat: "MinPhysicalAttack",
-        type: "stat",
-        value: 0.18,
+        type: "scale",
+        sourceStat: "MinPhysicalAttack",
+        ratio: 0.18,
       },
       {
         stat: "MaxPhysicalAttack",
-        type: "stat",
-        value: 0.18,
+        type: "scale",
+        sourceStat: "MaxPhysicalAttack",
+        ratio: 0.18,
       },
     ],
   },
@@ -193,13 +200,15 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
     modifiers: [
       {
         stat: "MinPhysicalAttack",
-        type: "stat",
-        value: 0.15,
+        type: "scale",
+        sourceStat: "Agility",
+        ratio: 0.15,
       },
       {
         stat: "MaxPhysicalAttack",
-        type: "stat",
-        value: 0.15,
+        type: "scale",
+        sourceStat: "Agility",
+        ratio: 0.15,
       },
     ],
     notes: "Scales with Agility",

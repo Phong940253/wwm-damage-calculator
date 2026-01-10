@@ -7,6 +7,10 @@ import { DamageResult } from "../domain/damage/type";
 import { calcExpectedNormalBreakdown } from "../domain/damage/damageFormula";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import {
+  computeRotationBonuses,
+  sumBonuses,
+} from "@/app/domain/skill/modifierEngine";
 
 export function useDamage(
   stats: InputStats,
@@ -36,8 +40,31 @@ export function useDamage(
       ),
     };
 
-    const baseCtx = buildDamageContext(baseStats, baseElementStats, gearBonus);
-    const finalCtx = buildDamageContext(stats, elementStats, gearBonus);
+    // Apply passive skills + inner ways (additive/scale) on top of gear bonus
+    const passiveBonusesBase = computeRotationBonuses(
+      baseStats,
+      baseElementStats,
+      gearBonus,
+      rotation
+    );
+    const passiveBonusesFinal = computeRotationBonuses(
+      stats,
+      elementStats,
+      gearBonus,
+      rotation
+    );
+
+    const baseCtxWithModifiers = buildDamageContext(
+      baseStats,
+      baseElementStats,
+      sumBonuses(gearBonus, passiveBonusesBase)
+    );
+
+    const finalCtxWithModifiers = buildDamageContext(
+      stats,
+      elementStats,
+      sumBonuses(gearBonus, passiveBonusesFinal)
+    );
 
     /* ---------- Calculate damage based on rotation or default ---------- */
     let baseValues: {
@@ -77,7 +104,10 @@ export function useDamage(
         if (!skill) continue;
 
         // Base damage for this skill (without increases)
-        const baseSkillDamage = calculateSkillDamage(baseCtx, skill);
+        const baseSkillDamage = calculateSkillDamage(
+          baseCtxWithModifiers,
+          skill
+        );
         baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
         baseNormalTotal += baseSkillDamage.total.normal.value * rotSkill.count;
         baseCriticalTotal +=
@@ -88,7 +118,10 @@ export function useDamage(
         // console.log(`Skill: ${skill.name}, Base Damage:`, baseSkillDamage);
 
         // Final damage for this skill (with increases)
-        const finalSkillDamage = calculateSkillDamage(finalCtx, skill);
+        const finalSkillDamage = calculateSkillDamage(
+          finalCtxWithModifiers,
+          skill
+        );
         const skillNormalDamage =
           finalSkillDamage.total.normal.value * rotSkill.count;
         finalMinTotal += finalSkillDamage.total.min.value * rotSkill.count;
@@ -132,12 +165,15 @@ export function useDamage(
       };
     } else {
       // Fallback to default damage calculation
-      const base = calculateDamage(baseCtx);
-      const final = calculateDamage(finalCtx);
+      const base = calculateDamage(baseCtxWithModifiers);
+      const final = calculateDamage(finalCtxWithModifiers);
 
       baseValues = base;
       finalValues = final;
-      breakdown = calcExpectedNormalBreakdown(finalCtx.get, final.affinity);
+      breakdown = calcExpectedNormalBreakdown(
+        finalCtxWithModifiers.get,
+        final.affinity
+      );
     }
 
     const pct = (b: number, f: number) => (b === 0 ? 0 : ((f - b) / b) * 100);

@@ -14,13 +14,15 @@ export const INNER_WAYS: InnerWay[] = [
     modifiers: [
       {
         stat: "MinPhysicalAttack",
-        type: "stat",
-        value: 0.08,
+        type: "scale",
+        sourceStat: "MinPhysicalAttack",
+        ratio: 0.08,
       },
       {
         stat: "MaxPhysicalAttack",
-        type: "stat",
-        value: 0.08,
+        type: "scale",
+        sourceStat: "MaxPhysicalAttack",
+        ratio: 0.08,
       },
     ],
     level: 1,
@@ -33,8 +35,9 @@ export const INNER_WAYS: InnerWay[] = [
     modifiers: [
       {
         stat: "PhysicalDefense",
-        type: "stat",
-        value: 0.1,
+        type: "scale",
+        sourceStat: "PhysicalDefense",
+        ratio: 0.1,
       },
     ],
     level: 1,
@@ -75,8 +78,9 @@ export const INNER_WAYS: InnerWay[] = [
     modifiers: [
       {
         stat: "HP",
-        type: "stat",
-        value: 0.1,
+        type: "scale",
+        sourceStat: "HP",
+        ratio: 0.1,
       },
     ],
     level: 1,
@@ -161,8 +165,9 @@ export const INNER_WAYS: InnerWay[] = [
       },
       {
         stat: "PhysicalDefense",
-        type: "stat",
-        value: 0.1,
+        type: "scale",
+        sourceStat: "PhysicalDefense",
+        ratio: 0.1,
       },
     ],
     level: 2,

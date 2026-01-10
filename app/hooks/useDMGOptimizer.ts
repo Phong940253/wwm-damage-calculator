@@ -21,7 +21,7 @@ export function useDMGOptimizer(
   const gearBonus = aggregateEquippedGearBonus(customGears, equipped);
 
   const damage = useDamage(stats, elementStats, gearBonus, rotation);
-  const statImpact = useStatImpact(stats, elementStats, gearBonus);
+  const statImpact = useStatImpact(stats, elementStats, gearBonus, rotation);
 
   /* ---------- handlers ---------- */
 

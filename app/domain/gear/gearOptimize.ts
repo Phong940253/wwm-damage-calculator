@@ -11,6 +11,7 @@ import { buildDamageContext } from "../damage/damageContext";
 import { calculateDamage } from "../damage/damageCalculator";
 import { SKILLS } from "../skill/skills";
 import { calculateSkillDamage } from "../skill/skillDamage";
+import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
 
 /* =======================
    Types
@@ -50,7 +51,17 @@ export async function computeOptimizeResultsAsync(
   ============================================================ */
 
   const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
-  const baseCtx = buildDamageContext(stats, elementStats, baseBonus);
+  const baseRotationBonuses = computeRotationBonuses(
+    stats,
+    elementStats,
+    baseBonus,
+    rotation
+  );
+  const baseCtx = buildDamageContext(
+    stats,
+    elementStats,
+    sumBonuses(baseBonus, baseRotationBonuses)
+  );
 
   /* Calculate base damage - rotation-aware */
   let baseDamage: number;
@@ -131,7 +142,17 @@ export async function computeOptimizeResultsAsync(
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
-      const ctx = buildDamageContext(stats, elementStats, bonus);
+      const rotationBonuses = computeRotationBonuses(
+        stats,
+        elementStats,
+        bonus,
+        rotation
+      );
+      const ctxWithModifiers = buildDamageContext(
+        stats,
+        elementStats,
+        sumBonuses(bonus, rotationBonuses)
+      );
 
       let dmg: number;
       if (rotation && rotation.skills.length > 0) {
@@ -139,12 +160,12 @@ export async function computeOptimizeResultsAsync(
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
-          const skillDamage = calculateSkillDamage(ctx, skill);
+          const skillDamage = calculateSkillDamage(ctxWithModifiers, skill);
           rotationTotal += skillDamage.total.normal.value * rotSkill.count;
         }
         dmg = rotationTotal;
       } else {
-        dmg = calculateDamage(ctx).normal;
+        dmg = calculateDamage(ctxWithModifiers).normal;
       }
 
       results.push({

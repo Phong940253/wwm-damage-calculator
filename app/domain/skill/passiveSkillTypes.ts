@@ -3,16 +3,35 @@ import { MartialArtId } from "./types";
 
 /**
  * Modifier type:
- * - "stat": scale theo final stat (% của stat)
- * - "flat": thêm giá trị cố định
+ * - "flat": cộng trực tiếp vào stat (vd +100 atk, +3% crit -> +3)
+ * - "scale": cộng theo công thức tuyến tính: add = source * ratio (có thể có giới hạn)
  */
-export type ModifierType = "stat" | "flat";
+export type ModifierType = "flat" | "scale";
 
-export interface PassiveModifier {
-  stat: keyof InputStats | ElementStatKey;
-  type: ModifierType;
-  value: number; // nếu type="stat" thì % (0.1 = 10%), nếu type="flat" thì số cố định
-}
+export type StatKey = keyof InputStats | ElementStatKey;
+
+export type PassiveModifier =
+  | {
+      stat: StatKey;
+      type: "flat";
+      value: number;
+      /** Giới hạn tối đa cho phần cộng thêm của modifier này */
+      max?: number;
+      /** Giới hạn tối thiểu cho phần cộng thêm của modifier này */
+      min?: number;
+    }
+  | {
+      stat: StatKey;
+      type: "scale";
+      /** stat nguồn dùng để tính toán */
+      sourceStat: StatKey;
+      /** add = source * ratio */
+      ratio: number;
+      /** Giới hạn tối đa cho phần cộng thêm của modifier này */
+      max?: number;
+      /** Giới hạn tối thiểu cho phần cộng thêm của modifier này */
+      min?: number;
+    };
 
 /**
  * Passive Skill - gắn vào Martial Art

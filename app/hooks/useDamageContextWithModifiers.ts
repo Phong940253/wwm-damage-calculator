@@ -3,10 +3,8 @@ import {
   buildDamageContext,
   DamageContext,
 } from "@/app/domain/damage/damageContext";
-import {
-  usePassiveModifiers,
-  applyPercentageModifier,
-} from "./usePassiveModifiers";
+import { usePassiveModifiers } from "./usePassiveModifiers";
+import { sumBonuses } from "@/app/domain/skill/modifierEngine";
 
 /**
  * Enhanced version of buildDamageContext that includes passive skills + inner ways
@@ -19,14 +17,13 @@ export function useDamageContextWithModifiers(
   gearBonus: Record<string, number>,
   rotation?: Rotation
 ): DamageContext {
-  // TODO: Re-enable passive modifiers once issues are resolved
-  // const passiveModifiers = usePassiveModifiers(rotation);
-  // const combinedBonus = {
-  //   ...gearBonus,
-  //   ...passiveModifiers,
-  // };
+  const passiveBonuses = usePassiveModifiers(
+    stats,
+    elementStats,
+    gearBonus,
+    rotation
+  );
 
-  // For now, use only gearBonus (no passive modifiers)
-  const ctx = buildDamageContext(stats, elementStats, gearBonus);
-  return ctx;
+  const combinedBonus = sumBonuses(gearBonus, passiveBonuses);
+  return buildDamageContext(stats, elementStats, combinedBonus);
 }

@@ -27,30 +27,22 @@ export function buildDamageContext(
      Helpers
   ============================ */
 
-  // Base stat + increase + gear + percentage modifiers
+  // Base stat + increase + gear (all additive)
   const cur = (k: keyof InputStats): number => {
-    const base =
+    return (
       Number(stats[k]?.current || 0) +
       Number(stats[k]?.increase || 0) +
-      (gearBonus[k] || 0);
-
-    // Apply percentage modifier if exists
-    const percentKey = `${String(k)}:percentage`;
-    const percentModifier = gearBonus[percentKey] || 0;
-    return base * (1 + percentModifier);
+      (gearBonus[k] || 0)
+    );
   };
 
-  // Element stat + increase + percentage modifiers
+  // Element stat + increase + gear (all additive)
   const ele = (k: ElementStatKey): number => {
-    const base =
+    return (
       Number(elementStats[k]?.current || 0) +
       Number(elementStats[k]?.increase || 0) +
-      (gearBonus[k] || 0);
-
-    // Apply percentage modifier if exists
-    const percentKey = `${String(k)}:percentage`;
-    const percentModifier = gearBonus[percentKey] || 0;
-    return base * (1 + percentModifier);
+      (gearBonus[k] || 0)
+    );
   };
 
   /* ============================

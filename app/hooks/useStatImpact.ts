@@ -1,15 +1,20 @@
 // app/hooks/useStatImpact.ts
 import { useMemo } from "react";
-import { InputStats, ElementStats } from "@/app/types";
+import { InputStats, ElementStats, Rotation } from "@/app/types";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
+import {
+  computeRotationBonuses,
+  sumBonuses,
+} from "@/app/domain/skill/modifierEngine";
 
 type ElementStatKey = Exclude<keyof ElementStats, "selected" | "martialArtsId">;
 
 export function useStatImpact(
   stats: InputStats,
   elementStats: ElementStats,
-  gearBonus: Record<string, number>
+  gearBonus: Record<string, number>,
+  rotation?: Rotation
 ) {
   return useMemo(() => {
     const impacts: Record<string, number> = {};
@@ -32,16 +37,23 @@ export function useStatImpact(
     ) as Record<ElementStatKey, number>;
 
     const buildCtx = (s: InputStats, e: Record<ElementStatKey, number>) =>
-      buildDamageContext(
-        s,
-        {
+      (() => {
+        const es = {
           selected: elementStats.selected,
+          martialArtsId: elementStats.martialArtsId,
           ...Object.fromEntries(
             Object.entries(e).map(([k, v]) => [k, { current: v, increase: 0 }])
           ),
-        } as ElementStats,
-        gearBonus
-      );
+        } as ElementStats;
+
+        const passiveBonuses = computeRotationBonuses(
+          s,
+          es,
+          gearBonus,
+          rotation
+        );
+        return buildDamageContext(s, es, sumBonuses(gearBonus, passiveBonuses));
+      })();
 
     const base = calculateDamage(buildCtx(baseStats, baseElements));
     const baseValue = base.normal || 0;
@@ -80,5 +92,5 @@ export function useStatImpact(
     }
 
     return impacts;
-  }, [stats, elementStats, gearBonus]);
+  }, [stats, elementStats, gearBonus, rotation]);
 }
