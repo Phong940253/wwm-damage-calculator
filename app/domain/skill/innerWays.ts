@@ -108,7 +108,13 @@ export const INNER_WAYS: InnerWay[] = [
     description:
       "On Charged Skill damage: conditional bonus damage (player/boss) up to 10%.",
     applicableToMartialArtId: undefined,
-    modifiers: [],
+    modifiers: [
+      {
+        stat: "ChargeSkillDamageBoost",
+        type: "flat",
+        value: 10,
+      }
+    ],
     level: 6,
     notes:
       "Tier 6: When dealing damage with a Charged Skill, if the target is a player, increases the damage by 1% for every 10 Endurance difference between you and the target, up to 10%; if the target is a boss, deals bonus damage based on the Endurance you have consumed: 1% bonus damage for every 10 Endurance consumed, up to 10%.",
