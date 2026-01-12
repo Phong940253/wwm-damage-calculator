@@ -45,6 +45,11 @@ export function createSkillContext(
       key === "MAXAttributeAttackOfYOURType"
     ) {
       value = baseCtx.get(key) * opts.elementMultiplier;
+    } else if (
+      key === "MINAttributeAttackOfOtherType" ||
+      key === "MAXAttributeAttackOfOtherType"
+    ) {
+      value = baseCtx.get(key) * opts.physicalMultiplier;
     }
     // Other attributes pass through unchanged
     else {
