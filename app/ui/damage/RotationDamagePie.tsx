@@ -29,12 +29,19 @@ export default function RotationDamagePie({
   // Tính toán damage cho mỗi skill trong rotation, merge duplicates
   const skillDamageMap = new Map<
     string,
-    { name: string; value: number; skillId: string; count: number }
+    { name: string; value: number; skillId: string; count: number; totalHits: number }
   >();
 
   rotation.skills.forEach((rotSkill) => {
     const skill = SKILLS.find((s) => s.id === rotSkill.id);
     if (!skill) return;
+
+    // Total hits for ONE usage/cast of the skill (sum of hit groups)
+    const hitsPerCast = (skill.hits ?? []).reduce(
+      (sum, h) => sum + (typeof h.hits === "number" ? h.hits : 1),
+      0
+    );
+    const totalHits = hitsPerCast * rotSkill.count;
 
     const skillDamage = calculateSkillDamage(ctx, skill);
     if (!skillDamage) return;
@@ -49,14 +56,16 @@ export default function RotationDamagePie({
         ...existing,
         value: existing.value + avgDamage,
         count: existing.count + rotSkill.count,
-        name: `${skill.name} x${existing.count + rotSkill.count}`,
+        totalHits: existing.totalHits + totalHits,
+        name: `${skill.name} x${existing.totalHits + totalHits}`,
       });
     } else {
       skillDamageMap.set(skill.id, {
-        name: `${skill.name} x${rotSkill.count}`,
+        name: `${skill.name} x${totalHits}`,
         value: avgDamage,
         skillId: skill.id,
         count: rotSkill.count,
+        totalHits,
       });
     }
   });
