@@ -24,7 +24,7 @@ interface RotationPanelProps {
   selectedRotationId: string;
   elementStats: ElementStats;
   onSelectRotation: (id: string) => void;
-  onCreateRotation: (name: string) => void;
+  onCreateRotation: (name: string, martialArtId?: ElementStats["martialArtsId"]) => void;
   onDeleteRotation: (id: string) => void;
   onRenameRotation: (id: string, name: string) => void;
   onAddSkill: (rotationId: string, skillId: string) => void;
@@ -70,7 +70,7 @@ export default function RotationPanel({
 
   const handleCreateRotation = () => {
     if (!newRotationName.trim()) return;
-    onCreateRotation(newRotationName);
+    onCreateRotation(newRotationName, elementStats.martialArtsId);
     setNewRotationName("");
   };
 

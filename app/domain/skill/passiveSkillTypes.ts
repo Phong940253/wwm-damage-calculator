@@ -74,6 +74,13 @@ export interface InnerWay {
    */
   applicableToMartialArtId?: MartialArtId;
 
+  /**
+   * Optional: For universal inner ways (applicableToMartialArtId undefined), decide
+   * which martial arts should have this inner way enabled by default.
+   * If omitted, it is enabled by default.
+   */
+  defaultEnabledForMartialArtIds?: MartialArtId[];
+
   /** modifier effects (thường là flat, hiếm khi scale) */
   modifiers: PassiveModifier[];
 

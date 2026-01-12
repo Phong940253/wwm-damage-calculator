@@ -91,6 +91,7 @@ export const INNER_WAYS: InnerWay[] = [
     description:
       "Charged skills deal +15% damage; increases Endurance cost by 10%.",
     applicableToMartialArtId: undefined,
+    defaultEnabledForMartialArtIds: ["bellstrike_splendor"],
     modifiers: [
       {
         stat: "ChargeSkillDamageBoost",
@@ -108,6 +109,7 @@ export const INNER_WAYS: InnerWay[] = [
     description:
       "On Charged Skill damage: conditional bonus damage (player/boss) up to 10%.",
     applicableToMartialArtId: undefined,
+    defaultEnabledForMartialArtIds: ["bellstrike_splendor"],
     modifiers: [
       {
         stat: "ChargeSkillDamageBoost",

@@ -22,6 +22,44 @@ function normalizeRotation(
   const allPassiveIds = new Set(PASSIVE_SKILLS.map((p) => p.id));
   const allInnerWayIds = new Set(INNER_WAYS.map((i) => i.id));
 
+  const isInnerWayAllowed = (innerId: string) => {
+    const iw = INNER_WAYS.find((x) => x.id === innerId);
+    if (!iw) return false;
+
+    // Martial-art specific inner way: only allowed for matching MA
+    if (iw.applicableToMartialArtId) {
+      return !!martialArtId && iw.applicableToMartialArtId === martialArtId;
+    }
+
+    // Universal inner way: allowed for all
+    return true;
+  };
+
+  const isInnerWayDefaultEnabled = (innerId: string) => {
+    const iw = INNER_WAYS.find((x) => x.id === innerId);
+    if (!iw) return false;
+
+    if (!isInnerWayAllowed(innerId)) return false;
+
+    // If it specifies a default-enabled list, only enable for those MAs
+    if (iw.defaultEnabledForMartialArtIds) {
+      return !!martialArtId && iw.defaultEnabledForMartialArtIds.includes(martialArtId);
+    }
+
+    // Otherwise enabled by default
+    return true;
+  };
+
+  const defaultInnerWayIds = INNER_WAYS.filter((iw) => {
+    if (iw.applicableToMartialArtId) {
+      return !!martialArtId && iw.applicableToMartialArtId === martialArtId;
+    }
+    if (iw.defaultEnabledForMartialArtIds) {
+      return !!martialArtId && iw.defaultEnabledForMartialArtIds.includes(martialArtId);
+    }
+    return true;
+  }).map((iw) => iw.id);
+
   const defaultPassiveIdsForMA = martialArtId
     ? PASSIVE_SKILLS.filter((p) => {
         if (p.martialArtId === martialArtId) return true;
@@ -51,14 +89,23 @@ function normalizeRotation(
 
   // Initialize/sanitize activeInnerWays - enable all by default
   if (!rotation.activeInnerWays) {
-    rotation.activeInnerWays = INNER_WAYS.map((i) => i.id);
+    rotation.activeInnerWays = defaultInnerWayIds;
   } else {
-    rotation.activeInnerWays = rotation.activeInnerWays.filter((id) =>
-      allInnerWayIds.has(id)
+    rotation.activeInnerWays = rotation.activeInnerWays.filter(
+      (id) => allInnerWayIds.has(id) && isInnerWayAllowed(id)
     );
 
     if (rotation.activeInnerWays.length === 0) {
-      rotation.activeInnerWays = INNER_WAYS.map((i) => i.id);
+      rotation.activeInnerWays = defaultInnerWayIds;
+    } else {
+      // Backward-compat: if new inner ways were added later, enable them by default
+      // ONLY if they are default-enabled for this martial art.
+      const enabled = new Set(rotation.activeInnerWays);
+      for (const id of defaultInnerWayIds) {
+        if (!enabled.has(id) && isInnerWayDefaultEnabled(id)) {
+          rotation.activeInnerWays.push(id);
+        }
+      }
     }
   }
 
@@ -138,19 +185,23 @@ export const useRotation = () => {
 
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
 
-  const createRotation = (name: string) => {
+  const createRotation = (name: string, martialArtId?: MartialArtId) => {
     const newRotation: Rotation = {
       id: generateId(),
       name,
+      martialArtId,
       skills: [],
       activePassiveSkills: [],
-      activeInnerWays: INNER_WAYS.map((i) => i.id), // Mặc định enable all inner ways
+      // Let normalizeRotation decide defaults (e.g. Battle Anthem only for bellstrike_splendor)
+      activeInnerWays: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
-    setRotations((prev) => [...prev, newRotation]);
-    setSelectedRotationId(newRotation.id);
-    return newRotation;
+
+    const normalized = normalizeRotation(newRotation, martialArtId);
+    setRotations((prev) => [...prev, normalized]);
+    setSelectedRotationId(normalized.id);
+    return normalized;
   };
 
   const deleteRotation = (id: string) => {
