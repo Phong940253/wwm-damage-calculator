@@ -21,6 +21,12 @@ export function useStatImpact(
   return useMemo(() => {
     const impacts: Record<string, number> = {};
 
+    const isDebugBamboocutMinEnabled = () => {
+      if (process.env.NEXT_PUBLIC_DEBUG_STAT_IMPACT === "1") return true;
+      if (typeof window === "undefined") return false;
+      return window.localStorage.getItem("wwm_debug_statImpact") === "1";
+    };
+
     const calcNormal = (ctx: ReturnType<typeof buildDamageContext>): number => {
       if (rotation && rotation.skills.length > 0) {
         let totalNormal = 0;
@@ -101,8 +107,52 @@ export function useStatImpact(
       const testElements = { ...baseElements };
       testElements[key] = testElements[key] + inc;
 
-      const normal = calcNormal(buildCtx(baseStats, testElements));
+      const baseCtx = buildCtx(baseStats, baseElements);
+      const testCtx = buildCtx(baseStats, testElements);
+
+      const normal = calcNormal(testCtx);
       const diff = ((normal - baseValue) / baseValue) * 100;
+
+      if (key === "bamboocutMin" && isDebugBamboocutMinEnabled()) {
+        // eslint-disable-next-line no-console
+        console.groupCollapsed(
+          `[StatImpact debug] bamboocutMin inc=${inc} selected=${elementStats.selected}`
+        );
+        // eslint-disable-next-line no-console
+        console.debug({
+          key,
+          inc,
+          baseElementCurrent: baseElements[key],
+          testElementCurrent: testElements[key],
+          baseValue,
+          testNormal: normal,
+          diffPercent: diff,
+          rotationSkills: rotation?.skills?.length ?? 0,
+        });
+        // eslint-disable-next-line no-console
+        console.debug("Context getters", {
+          MINAttributeAttackOfOtherType_base: baseCtx.get(
+            "MINAttributeAttackOfOtherType"
+          ),
+          MAXAttributeAttackOfOtherType_base: baseCtx.get(
+            "MAXAttributeAttackOfOtherType"
+          ),
+          MINAttributeAttackOfOtherType_test: testCtx.get(
+            "MINAttributeAttackOfOtherType"
+          ),
+          MAXAttributeAttackOfOtherType_test: testCtx.get(
+            "MAXAttributeAttackOfOtherType"
+          ),
+          MINAttributeAttackOfYOURType_base: baseCtx.get(
+            "MINAttributeAttackOfYOURType"
+          ),
+          MAXAttributeAttackOfYOURType_base: baseCtx.get(
+            "MAXAttributeAttackOfYOURType"
+          ),
+        });
+        // eslint-disable-next-line no-console
+        console.groupEnd();
+      }
 
       if (Math.abs(diff) > 0.01) impacts[key] = diff;
     }

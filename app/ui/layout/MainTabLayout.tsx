@@ -231,7 +231,7 @@ export default function MainTabLayout() {
               warnings={warnings}
               showFormula={showFormula}
               toggleFormula={() => setShowFormula((v) => !v)}
-              formulaSlot={<FormulaPanel />}
+              formulaSlot={<FormulaPanel ctx={ctx} result={damage} />}
               elementStats={elementStats}
               rotation={selectedRotation}
             />
@@ -284,7 +284,7 @@ export default function MainTabLayout() {
               warnings={warnings}
               showFormula={showFormula}
               toggleFormula={() => setShowFormula((v) => !v)}
-              formulaSlot={<FormulaPanel />}
+              formulaSlot={<FormulaPanel ctx={ctx} result={damage} />}
               elementStats={elementStats}
               rotation={selectedRotation}
             />
