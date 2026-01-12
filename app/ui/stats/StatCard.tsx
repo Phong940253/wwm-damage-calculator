@@ -15,6 +15,7 @@ interface StatCardProps {
   derivedValue: number;
   base: number;
   total: number;
+  increase: number | "";
   localValue: string | undefined;
   localIncreaseValue: string | undefined;
   onTotalChange: (value: string) => void;
@@ -31,6 +32,7 @@ export default function StatCard({
   derivedValue,
   base,
   total,
+  increase,
   localValue,
   localIncreaseValue,
   onTotalChange,
@@ -70,8 +72,8 @@ export default function StatCard({
             localValue !== undefined
               ? localValue
               : total === 0
-              ? ""
-              : total
+                ? ""
+                : total
           }
           onChange={(e) => onTotalChange(e.target.value)}
           onBlur={onTotalBlur}
@@ -104,7 +106,13 @@ export default function StatCard({
           <span className="text-xs text-muted-foreground">Increase</span>
           <Input
             type="number"
-            value={localIncreaseValue !== undefined ? localIncreaseValue : ""}
+            value={
+              localIncreaseValue !== undefined
+                ? localIncreaseValue
+                : increase === 0 || increase === ""
+                  ? ""
+                  : increase
+            }
             onChange={(e) => onIncreaseChange(e.target.value)}
             onBlur={onIncreaseBlur}
             onWheel={(e) => e.currentTarget.blur()}

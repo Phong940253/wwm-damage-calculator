@@ -69,7 +69,7 @@ export default function StatsPanel({
 }: Props) {
   // Track local input values for instant UI feedback
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
-  
+
   // Debounce timers
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
@@ -129,7 +129,7 @@ export default function StatsPanel({
   const handleInputBlur = useCallback(
     (key: string, field: "current" | "increase", isTotal: boolean) => {
       const inputKey = `${key}-${field}`;
-      
+
       // Clear pending debounce timer
       if (debounceTimers.current[inputKey]) {
         clearTimeout(debounceTimers.current[inputKey]);
@@ -143,7 +143,7 @@ export default function StatsPanel({
         } else {
           handleStatChange(key, field, currentValue);
         }
-        
+
         // Clean up local value
         setLocalValues((prev) => {
           const next = { ...prev };
@@ -163,7 +163,7 @@ export default function StatsPanel({
     (key: string, field: "current" | "increase", isTotal: boolean) => {
       return (value: string) => {
         const inputKey = `${key}-${field}`;
-        
+
         // Clear previous timer
         if (debounceTimers.current[inputKey]) {
           clearTimeout(debounceTimers.current[inputKey]);
@@ -179,7 +179,7 @@ export default function StatsPanel({
           } else {
             handleStatChange(key, field, value);
           }
-          
+
           // Clean up local value after update
           setLocalValues((prev) => {
             const next = { ...prev };
@@ -269,6 +269,7 @@ export default function StatsPanel({
                     derivedValue={derivedValue}
                     base={base}
                     total={total}
+                    increase={stat.increase}
                     localValue={localValues[`${k}-current`]}
                     localIncreaseValue={localValues[`${k}-increase`]}
                     onTotalChange={(value) => {
