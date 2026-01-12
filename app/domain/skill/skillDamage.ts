@@ -12,6 +12,8 @@ export function calculateSkillDamage(
 ): SkillDamageResult {
   const perHit: DamageResult[] = [];
 
+  const damageSkillType = skill.damageSkillType ?? "normal";
+
   // Process each hit type and multiply by hit count
   for (const hit of skill.hits) {
     const hitCtx = createSkillContext(ctx, {
@@ -19,6 +21,7 @@ export function calculateSkillDamage(
       elementMultiplier: hit.elementMultiplier,
       flatPhysical: hit.flatPhysical,
       flatAttribute: hit.flatAttribute,
+      damageSkillType,
     });
 
     const damage = calculateDamage(hitCtx);

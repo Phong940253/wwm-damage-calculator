@@ -8,10 +8,13 @@ export function createSkillContext(
     elementMultiplier: number;
     flatPhysical?: number;
     flatAttribute?: number;
+    damageSkillType?: "normal" | "charged";
   }
 ): DamageContext {
   // Pre-calculate combined flat damage outside getter to avoid recalculation
   const totalFlatDamage = (opts.flatPhysical || 0) + (opts.flatAttribute || 0);
+
+  const isChargedSkill = opts.damageSkillType === "charged";
 
   // Cache for frequently accessed values
   const cache = new Map<string, number>();
@@ -27,6 +30,10 @@ export function createSkillContext(
     // Flat damage: add to base flat damage
     if (key === "FlatDamage") {
       value = baseCtx.get(key) + totalFlatDamage;
+    }
+    // Charged skill: DamageBoost includes ChargeSkillDamageBoost
+    else if (key === "DamageBoost" && isChargedSkill) {
+      value = baseCtx.get(key) + baseCtx.get("ChargeSkillDamageBoost");
     }
     // Physical ATK multiplied by skill multiplier
     else if (key === "MinPhysicalAttack" || key === "MaxPhysicalAttack") {

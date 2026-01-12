@@ -342,6 +342,7 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "ultimate",
+    damageSkillType: "charged",
     hits: [
       {
         physicalMultiplier: 1.5075,
@@ -359,6 +360,7 @@ export const SKILLS: Skill[] = [
     martialArtId: "bellstrike_splendor",
     weaponType: "Sword",
     category: "ultimate",
+    damageSkillType: "charged",
     hits: [
       {
         physicalMultiplier: 3.2636,

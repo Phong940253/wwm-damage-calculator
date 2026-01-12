@@ -19,6 +19,8 @@ export type CategorySkill =
   | "ultimate"
   | "mystic-skill";
 
+export type DamageSkillType = "normal" | "charged";
+
 export interface Skill {
   id: string;
   name: string;
@@ -29,6 +31,13 @@ export interface Skill {
   category: CategorySkill;
 
   hits: SkillHit[];
+
+  /**
+   * Damage-type tag used by the calculator for conditional stats.
+   * - "charged": charged skill (uses ChargeSkillDamageBoost)
+   * - "normal": default
+   */
+  damageSkillType?: DamageSkillType;
 
   /** whether skill can crit / affinity */
   canCrit?: boolean;

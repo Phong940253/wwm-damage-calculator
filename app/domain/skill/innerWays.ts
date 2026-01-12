@@ -85,6 +85,34 @@ export const INNER_WAYS: InnerWay[] = [
     ],
     level: 1,
   },
+  {
+    id: "iw_universal_battle_anthem_t4",
+    name: "Battle Anthem (Tier 4)",
+    description:
+      "Charged skills deal +15% damage; increases Endurance cost by 10%.",
+    applicableToMartialArtId: undefined,
+    modifiers: [
+      {
+        stat: "ChargeSkillDamageBoost",
+        type: "flat",
+        value: 15,
+      },
+    ],
+    level: 4,
+    notes:
+      "Tier 4: Increases Charged Skills' damage against all enemies (including players with less than 60% Endurance) by 15% and increases their Endurance cost by 10%. (Endurance cost is not modeled in this calculator.)",
+  },
+  {
+    id: "iw_universal_battle_anthem_t6",
+    name: "Battle Anthem (Tier 6)",
+    description:
+      "On Charged Skill damage: conditional bonus damage (player/boss) up to 10%.",
+    applicableToMartialArtId: undefined,
+    modifiers: [],
+    level: 6,
+    notes:
+      "Tier 6: When dealing damage with a Charged Skill, if the target is a player, increases the damage by 1% for every 10 Endurance difference between you and the target, up to 10%; if the target is a boss, deals bonus damage based on the Endurance you have consumed: 1% bonus damage for every 10 Endurance consumed, up to 10%.",
+  },
 
   /* ==================== BELLSTRIKE SPECIFIC ==================== */
   {
