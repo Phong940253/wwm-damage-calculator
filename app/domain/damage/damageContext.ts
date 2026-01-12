@@ -73,10 +73,13 @@ export function buildDamageContext(
     0
   );
 
-  const cachedOtherMaxAttr = otherElementsFilter.reduce(
-    (sum, e) => sum + ele(elementKey(e.key, "Max")),
-    0
-  );
+  const cachedOtherMaxAttr = otherElementsFilter.reduce((sum, e) => {
+    const min = ele(elementKey(e.key, "Min"));
+    const max = ele(elementKey(e.key, "Max"));
+
+    // If user input makes Min > Max, treat Max as Min for calculations.
+    return sum + Math.max(max, min);
+  }, 0);
 
   /* ============================
      Context getter

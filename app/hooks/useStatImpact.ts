@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { InputStats, ElementStats, Rotation } from "@/app/types";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
+import { SKILLS } from "@/app/domain/skill/skills";
+import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import {
   computeRotationBonuses,
   sumBonuses,
@@ -18,6 +20,21 @@ export function useStatImpact(
 ) {
   return useMemo(() => {
     const impacts: Record<string, number> = {};
+
+    const calcNormal = (ctx: ReturnType<typeof buildDamageContext>): number => {
+      if (rotation && rotation.skills.length > 0) {
+        let totalNormal = 0;
+        for (const rotSkill of rotation.skills) {
+          const skill = SKILLS.find((s) => s.id === rotSkill.id);
+          if (!skill) continue;
+          const dmg = calculateSkillDamage(ctx, skill);
+          totalNormal += dmg.total.normal.value * rotSkill.count;
+        }
+        return totalNormal;
+      }
+
+      return calculateDamage(ctx).normal || 0;
+    };
 
     /* =======================
        BASE STATS (normalized)
@@ -55,8 +72,7 @@ export function useStatImpact(
         return buildDamageContext(s, es, sumBonuses(gearBonus, passiveBonuses));
       })();
 
-    const base = calculateDamage(buildCtx(baseStats, baseElements));
-    const baseValue = base.normal || 0;
+    const baseValue = calcNormal(buildCtx(baseStats, baseElements));
     if (baseValue === 0) return impacts;
 
     /* =======================
@@ -69,8 +85,8 @@ export function useStatImpact(
       const testStats = structuredClone(baseStats);
       testStats[key].current = Number(testStats[key].current) + inc;
 
-      const dmg = calculateDamage(buildCtx(testStats, baseElements));
-      const diff = ((dmg.normal - baseValue) / baseValue) * 100;
+      const normal = calcNormal(buildCtx(testStats, baseElements));
+      const diff = ((normal - baseValue) / baseValue) * 100;
 
       if (Math.abs(diff) > 0.01) impacts[key] = diff;
     }
@@ -85,8 +101,8 @@ export function useStatImpact(
       const testElements = { ...baseElements };
       testElements[key] = testElements[key] + inc;
 
-      const dmg = calculateDamage(buildCtx(baseStats, testElements));
-      const diff = ((dmg.normal - baseValue) / baseValue) * 100;
+      const normal = calcNormal(buildCtx(baseStats, testElements));
+      const diff = ((normal - baseValue) / baseValue) * 100;
 
       if (Math.abs(diff) > 0.01) impacts[key] = diff;
     }
