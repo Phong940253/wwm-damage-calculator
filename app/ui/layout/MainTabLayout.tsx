@@ -10,12 +10,55 @@ import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
 import { useRotation } from "@/app/hooks/useRotation";
 import { useDamageContextWithModifiers } from "@/app/hooks/useDamageContextWithModifiers";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ElementStats } from "@/app/types";
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 export default function MainTabLayout() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") ?? "stats";
+
+  // On sm + md: stack panels (two rows). On lg+: show two columns.
+  const [isStacked, setIsStacked] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setIsStacked(!mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  // Vertical resizer state (only used in stacked mode)
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [splitRatio, setSplitRatio] = useState(0.55);
+  const draggingRef = useRef(false);
+  const dragStartYRef = useRef(0);
+  const dragStartTopPxRef = useRef(0);
+
+  const HANDLE_HEIGHT = 10;
+  const MIN_PANE_PX = 180;
+
+  useEffect(() => {
+    if (!isStacked) return;
+    if (!containerRef.current) return;
+
+    const el = containerRef.current;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect?.height ?? 0;
+      setContainerHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isStacked]);
+
+  const topPaneHeightPx = useMemo(() => {
+    const available = Math.max(0, containerHeight - HANDLE_HEIGHT);
+    const maxTop = Math.max(MIN_PANE_PX, available - MIN_PANE_PX);
+    const raw = splitRatio * available;
+    return clamp(raw, MIN_PANE_PX, maxTop);
+  }, [containerHeight, splitRatio]);
 
   const {
     rotations,
@@ -102,62 +145,152 @@ export default function MainTabLayout() {
   };
 
   return (
-    <div
-      className="
-        grid grid-cols-1 md:grid-cols-2 gap-6
-        h-[calc(100vh-180px)]
-      "
-    >
-      {/* LEFT PANEL */}
-      <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
-        {tab === "stats" && (
-          <StatsPanel
-            stats={stats}
-            elementStats={elementStats}
-            gearBonus={gearBonus}
-            statImpact={statImpact}
-            onStatChange={onStatChange}
-            onElementChange={onElementChange}
-            onApplyIncrease={onApplyIncrease}
-            onSaveCurrent={onSaveCurrent}
+    <div className="h-[calc(100vh-180px)]">
+      {isStacked ? (
+        <div ref={containerRef} className="flex h-full flex-col">
+          {/* TOP (LEFT PANEL) */}
+          <div
+            className="overflow-y-auto px-2 scrollbar-thin scrollbar-thumb-zinc-600/40"
+            style={{ height: topPaneHeightPx }}
+          >
+            {tab === "stats" && (
+              <StatsPanel
+                stats={stats}
+                elementStats={elementStats}
+                gearBonus={gearBonus}
+                statImpact={statImpact}
+                onStatChange={onStatChange}
+                onElementChange={onElementChange}
+                onApplyIncrease={onApplyIncrease}
+                onSaveCurrent={onSaveCurrent}
+              />
+            )}
+
+            {tab === "import" && <ImportExportTab />}
+
+            {tab === "rotation" && (
+              <RotationPanel
+                rotations={rotations}
+                selectedRotationId={selectedRotationId}
+                elementStats={elementStats}
+                onSelectRotation={setSelectedRotationId}
+                onCreateRotation={createRotation}
+                onDeleteRotation={deleteRotation}
+                onRenameRotation={renameRotation}
+                onAddSkill={addSkillToRotation}
+                onRemoveSkill={removeSkillFromRotation}
+                onMoveSkill={moveSkill}
+                onUpdateSkillCount={updateSkillCount}
+                onTogglePassiveSkill={togglePassiveSkill}
+                onUpdatePassiveUptime={updatePassiveUptime}
+                onToggleInnerWay={toggleInnerWay}
+              />
+            )}
+          </div>
+
+          {/* RESIZER */}
+          <div
+            role="separator"
+            aria-orientation="horizontal"
+            className="h-[10px] cursor-row-resize bg-muted active:bg-muted/80"
+            onPointerDown={(e) => {
+              if (!containerRef.current) return;
+              const available = Math.max(0, containerHeight - HANDLE_HEIGHT);
+              const currentTopPx = clamp(
+                splitRatio * available,
+                MIN_PANE_PX,
+                Math.max(MIN_PANE_PX, available - MIN_PANE_PX)
+              );
+
+              draggingRef.current = true;
+              dragStartYRef.current = e.clientY;
+              dragStartTopPxRef.current = currentTopPx;
+              (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              if (!draggingRef.current) return;
+              const available = Math.max(0, containerHeight - HANDLE_HEIGHT);
+              const maxTop = Math.max(MIN_PANE_PX, available - MIN_PANE_PX);
+              const delta = e.clientY - dragStartYRef.current;
+              const nextTopPx = clamp(dragStartTopPxRef.current + delta, MIN_PANE_PX, maxTop);
+              setSplitRatio(available === 0 ? 0.55 : nextTopPx / available);
+            }}
+            onPointerUp={() => {
+              draggingRef.current = false;
+            }}
+            onPointerCancel={() => {
+              draggingRef.current = false;
+            }}
           />
-        )}
 
-        {tab === "import" && <ImportExportTab />}
+          {/* BOTTOM (RIGHT PANEL) */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
+            <DamagePanel
+              ctx={ctx}
+              result={damage}
+              warnings={warnings}
+              showFormula={showFormula}
+              toggleFormula={() => setShowFormula((v) => !v)}
+              formulaSlot={<FormulaPanel />}
+              elementStats={elementStats}
+              rotation={selectedRotation}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* LEFT PANEL */}
+          <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
+            {tab === "stats" && (
+              <StatsPanel
+                stats={stats}
+                elementStats={elementStats}
+                gearBonus={gearBonus}
+                statImpact={statImpact}
+                onStatChange={onStatChange}
+                onElementChange={onElementChange}
+                onApplyIncrease={onApplyIncrease}
+                onSaveCurrent={onSaveCurrent}
+              />
+            )}
 
-        {tab === "rotation" && (
-          <RotationPanel
-            rotations={rotations}
-            selectedRotationId={selectedRotationId}
-            elementStats={elementStats}
-            onSelectRotation={setSelectedRotationId}
-            onCreateRotation={createRotation}
-            onDeleteRotation={deleteRotation}
-            onRenameRotation={renameRotation}
-            onAddSkill={addSkillToRotation}
-            onRemoveSkill={removeSkillFromRotation}
-            onMoveSkill={moveSkill}
-            onUpdateSkillCount={updateSkillCount}
-            onTogglePassiveSkill={togglePassiveSkill}
-            onUpdatePassiveUptime={updatePassiveUptime}
-            onToggleInnerWay={toggleInnerWay}
-          />
-        )}
-      </div>
+            {tab === "import" && <ImportExportTab />}
 
-      {/* RIGHT PANEL */}
-      <div className="overflow-y-auto pl-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
-        <DamagePanel
-          ctx={ctx}
-          result={damage}
-          warnings={warnings}
-          showFormula={showFormula}
-          toggleFormula={() => setShowFormula((v) => !v)}
-          formulaSlot={<FormulaPanel />}
-          elementStats={elementStats}
-          rotation={selectedRotation}
-        />
-      </div>
+            {tab === "rotation" && (
+              <RotationPanel
+                rotations={rotations}
+                selectedRotationId={selectedRotationId}
+                elementStats={elementStats}
+                onSelectRotation={setSelectedRotationId}
+                onCreateRotation={createRotation}
+                onDeleteRotation={deleteRotation}
+                onRenameRotation={renameRotation}
+                onAddSkill={addSkillToRotation}
+                onRemoveSkill={removeSkillFromRotation}
+                onMoveSkill={moveSkill}
+                onUpdateSkillCount={updateSkillCount}
+                onTogglePassiveSkill={togglePassiveSkill}
+                onUpdatePassiveUptime={updatePassiveUptime}
+                onToggleInnerWay={toggleInnerWay}
+              />
+            )}
+          </div>
+
+          {/* RIGHT PANEL */}
+          <div className="overflow-y-auto pl-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
+            <DamagePanel
+              ctx={ctx}
+              result={damage}
+              warnings={warnings}
+              showFormula={showFormula}
+              toggleFormula={() => setShowFormula((v) => !v)}
+              formulaSlot={<FormulaPanel />}
+              elementStats={elementStats}
+              rotation={selectedRotation}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
