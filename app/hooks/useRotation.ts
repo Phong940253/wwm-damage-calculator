@@ -52,8 +52,8 @@ function normalizeRotation(
       return !!martialArtId && iw.applicableToMartialArtId === martialArtId;
     }
 
-    // Universal inner way: allowed for all
-    return true;
+    // Universal inner way: disable for all
+    return false;
   };
 
   const defaultInnerWayIds = INNER_WAYS.filter((iw) => {
