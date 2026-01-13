@@ -522,7 +522,9 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         results={opt.results}
         baseDamage={opt.baseDamage}
         combos={opt.combos}
+        stats={stats}
         elementStats={elementStats}
+        rotation={rotation}
         maxDisplay={maxDisplay}
         setMaxDisplay={setMaxDisplay}
         onRecalculate={() => opt.run(maxDisplay)}

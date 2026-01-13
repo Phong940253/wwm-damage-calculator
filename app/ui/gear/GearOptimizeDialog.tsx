@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { GEAR_SLOTS } from "@/app/constants";
 import { OptimizeResult } from "../../domain/gear/gearOptimize";
-import { CustomGear, ElementStats } from "@/app/types";
+import { CustomGear, ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
+import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 
 import {
   HoverCard,
@@ -33,12 +34,14 @@ interface Props {
   results: OptimizeResult[];
   baseDamage: number;
   combos: number;
+  stats: InputStats;
   elementStats: ElementStats;
+  rotation?: Rotation;
   maxDisplay: number;
   setMaxDisplay: (v: number) => void;
   onRecalculate: () => void;
   onApply: (s: OptimizeResult["selection"]) => void;
-  equipped?: Partial<Record<string, string>>;
+  equipped?: Partial<Record<GearSlot, string>>;
   customGears?: CustomGear[];
 }
 
@@ -50,7 +53,9 @@ export default function GearOptimizeDialog({
   results,
   baseDamage,
   combos,
+  stats,
   elementStats,
+  rotation,
   maxDisplay,
   setMaxDisplay,
   onRecalculate,
@@ -58,6 +63,11 @@ export default function GearOptimizeDialog({
   equipped = {},
   customGears = [],
 }: Props) {
+  const baseGearBonus = useMemo(
+    () => aggregateEquippedGearBonus(customGears, equipped),
+    [customGears, equipped]
+  );
+
   const [resultQuery, setResultQuery] = useState("");
   const [upgradesOnly, setUpgradesOnly] = useState(true);
   const [resultSort, setResultSort] = useState<"gain" | "damage">("gain");
@@ -304,6 +314,10 @@ export default function GearOptimizeDialog({
                                                 gear={g}
                                                 oldGear={oldGear}
                                                 elementStats={elementStats}
+                                                stats={stats}
+                                                rotation={rotation}
+                                                baseGearBonus={baseGearBonus}
+                                                baseDamage={baseDamage}
                                               />
                                             </HoverCardContent>
                                           </HoverCard>
