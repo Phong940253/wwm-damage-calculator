@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Rotation, ElementStats } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
-import { LIST_MARTIAL_ARTS, MartialArtId } from "@/app/domain/skill/types";
+import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
 import { Button } from "@/components/ui/button";
