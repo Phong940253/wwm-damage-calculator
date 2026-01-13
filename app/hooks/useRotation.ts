@@ -19,20 +19,25 @@ function normalizeRotation(
   rotation: Rotation,
   martialArtId?: MartialArtId
 ): Rotation {
+  const hadActivePassiveSkillsField = Array.isArray(
+    rotation.activePassiveSkills
+  );
+  const hadActiveInnerWaysField = Array.isArray(rotation.activeInnerWays);
+
   // Important: do not mutate the input object (e.g. DEFAULT_ROTATIONS entries).
   // We clone the shallow structure + key nested collections that we modify.
   const next: Rotation = {
     ...rotation,
     skills: (rotation.skills ?? []).map((s) => ({ ...s })),
-    activePassiveSkills: rotation.activePassiveSkills
+    activePassiveSkills: hadActivePassiveSkillsField
       ? [...rotation.activePassiveSkills]
-      : (rotation.activePassiveSkills as unknown as string[] | undefined),
-    activeInnerWays: rotation.activeInnerWays
+      : [],
+    activeInnerWays: hadActiveInnerWaysField
       ? [...rotation.activeInnerWays]
-      : (rotation.activeInnerWays as unknown as string[] | undefined),
+      : [],
     passiveUptimes: rotation.passiveUptimes
       ? { ...rotation.passiveUptimes }
-      : rotation.passiveUptimes,
+      : {},
   };
 
   const allPassiveIds = new Set(PASSIVE_SKILLS.map((p) => p.id));
@@ -48,24 +53,6 @@ function normalizeRotation(
     }
 
     // Universal inner way: allowed for all
-    return true;
-  };
-
-  const isInnerWayDefaultEnabled = (innerId: string) => {
-    const iw = INNER_WAYS.find((x) => x.id === innerId);
-    if (!iw) return false;
-
-    if (!isInnerWayAllowed(innerId)) return false;
-
-    // If it specifies a default-enabled list, only enable for those MAs
-    if (iw.defaultEnabledForMartialArtIds) {
-      return (
-        !!martialArtId &&
-        iw.defaultEnabledForMartialArtIds.includes(martialArtId)
-      );
-    }
-
-    // Otherwise enabled by default
     return true;
   };
 
@@ -96,7 +83,7 @@ function normalizeRotation(
     : [];
 
   // Initialize/sanitize activePassiveSkills
-  if (!next.activePassiveSkills) {
+  if (!hadActivePassiveSkillsField) {
     next.activePassiveSkills = martialArtId ? defaultPassiveIdsForMA : [];
   } else {
     next.activePassiveSkills = next.activePassiveSkills.filter((id) =>
@@ -110,7 +97,15 @@ function normalizeRotation(
   }
 
   // Initialize/sanitize activeInnerWays - enable all by default
-  const hadExplicitInnerWays = Array.isArray(rotation.activeInnerWays);
+  const looksLikeNewRotationWithPlaceholderEmptyList =
+    hadActiveInnerWaysField &&
+    rotation.activeInnerWays.length === 0 &&
+    typeof rotation.createdAt === "number" &&
+    typeof rotation.updatedAt === "number" &&
+    rotation.createdAt === rotation.updatedAt;
+
+  const hadExplicitInnerWays =
+    hadActiveInnerWaysField && !looksLikeNewRotationWithPlaceholderEmptyList;
   if (!hadExplicitInnerWays) {
     // Migration/default: if older saves didn't have this field, enable defaults.
     next.activeInnerWays = defaultInnerWayIds;
@@ -138,21 +133,21 @@ function normalizeRotation(
     return Math.round(raw);
   };
 
-  if (!next.passiveUptimes) next.passiveUptimes = {};
+  const passiveUptimes = (next.passiveUptimes ??= {});
 
   // Remove unknown keys
-  for (const key of Object.keys(next.passiveUptimes)) {
-    if (!allPassiveIds.has(key)) delete next.passiveUptimes[key];
+  for (const key of Object.keys(passiveUptimes)) {
+    if (!allPassiveIds.has(key)) delete passiveUptimes[key];
   }
 
   // Ensure each active passive has an uptime
   for (const passiveId of next.activePassiveSkills) {
-    const v = next.passiveUptimes[passiveId];
+    const v = passiveUptimes[passiveId];
     if (typeof v !== "number" || Number.isNaN(v)) {
-      next.passiveUptimes[passiveId] = defaultUptimeFor(passiveId);
+      passiveUptimes[passiveId] = defaultUptimeFor(passiveId);
       continue;
     }
-    next.passiveUptimes[passiveId] = Math.round(Math.min(100, Math.max(0, v)));
+    passiveUptimes[passiveId] = Math.round(Math.min(100, Math.max(0, v)));
   }
 
   return next;
