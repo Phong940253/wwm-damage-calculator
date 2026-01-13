@@ -19,6 +19,22 @@ function normalizeRotation(
   rotation: Rotation,
   martialArtId?: MartialArtId
 ): Rotation {
+  // Important: do not mutate the input object (e.g. DEFAULT_ROTATIONS entries).
+  // We clone the shallow structure + key nested collections that we modify.
+  const next: Rotation = {
+    ...rotation,
+    skills: (rotation.skills ?? []).map((s) => ({ ...s })),
+    activePassiveSkills: rotation.activePassiveSkills
+      ? [...rotation.activePassiveSkills]
+      : (rotation.activePassiveSkills as unknown as string[] | undefined),
+    activeInnerWays: rotation.activeInnerWays
+      ? [...rotation.activeInnerWays]
+      : (rotation.activeInnerWays as unknown as string[] | undefined),
+    passiveUptimes: rotation.passiveUptimes
+      ? { ...rotation.passiveUptimes }
+      : rotation.passiveUptimes,
+  };
+
   const allPassiveIds = new Set(PASSIVE_SKILLS.map((p) => p.id));
   const allInnerWayIds = new Set(INNER_WAYS.map((i) => i.id));
 
@@ -43,7 +59,10 @@ function normalizeRotation(
 
     // If it specifies a default-enabled list, only enable for those MAs
     if (iw.defaultEnabledForMartialArtIds) {
-      return !!martialArtId && iw.defaultEnabledForMartialArtIds.includes(martialArtId);
+      return (
+        !!martialArtId &&
+        iw.defaultEnabledForMartialArtIds.includes(martialArtId)
+      );
     }
 
     // Otherwise enabled by default
@@ -55,7 +74,10 @@ function normalizeRotation(
       return !!martialArtId && iw.applicableToMartialArtId === martialArtId;
     }
     if (iw.defaultEnabledForMartialArtIds) {
-      return !!martialArtId && iw.defaultEnabledForMartialArtIds.includes(martialArtId);
+      return (
+        !!martialArtId &&
+        iw.defaultEnabledForMartialArtIds.includes(martialArtId)
+      );
     }
     return true;
   }).map((iw) => iw.id);
@@ -74,38 +96,35 @@ function normalizeRotation(
     : [];
 
   // Initialize/sanitize activePassiveSkills
-  if (!rotation.activePassiveSkills) {
-    rotation.activePassiveSkills = martialArtId ? defaultPassiveIdsForMA : [];
+  if (!next.activePassiveSkills) {
+    next.activePassiveSkills = martialArtId ? defaultPassiveIdsForMA : [];
   } else {
-    rotation.activePassiveSkills = rotation.activePassiveSkills.filter((id) =>
+    next.activePassiveSkills = next.activePassiveSkills.filter((id) =>
       allPassiveIds.has(id)
     );
 
     // If rotation is tied to a martial art and all passives were removed, enable current defaults
-    if (martialArtId && rotation.activePassiveSkills.length === 0) {
-      rotation.activePassiveSkills = defaultPassiveIdsForMA;
+    if (martialArtId && next.activePassiveSkills.length === 0) {
+      next.activePassiveSkills = defaultPassiveIdsForMA;
     }
   }
 
   // Initialize/sanitize activeInnerWays - enable all by default
-  if (!rotation.activeInnerWays) {
-    rotation.activeInnerWays = defaultInnerWayIds;
+  const hadExplicitInnerWays = Array.isArray(rotation.activeInnerWays);
+  if (!hadExplicitInnerWays) {
+    // Migration/default: if older saves didn't have this field, enable defaults.
+    next.activeInnerWays = defaultInnerWayIds;
   } else {
-    rotation.activeInnerWays = rotation.activeInnerWays.filter(
+    const originalLength = rotation.activeInnerWays.length;
+
+    next.activeInnerWays = (next.activeInnerWays ?? []).filter(
       (id) => allInnerWayIds.has(id) && isInnerWayAllowed(id)
     );
 
-    if (rotation.activeInnerWays.length === 0) {
-      rotation.activeInnerWays = defaultInnerWayIds;
-    } else {
-      // Backward-compat: if new inner ways were added later, enable them by default
-      // ONLY if they are default-enabled for this martial art.
-      const enabled = new Set(rotation.activeInnerWays);
-      for (const id of defaultInnerWayIds) {
-        if (!enabled.has(id) && isInnerWayDefaultEnabled(id)) {
-          rotation.activeInnerWays.push(id);
-        }
-      }
+    // If the user explicitly saved an empty list, keep it empty.
+    // If it became empty due to invalid/removed ids, fall back to defaults.
+    if (next.activeInnerWays.length === 0 && originalLength > 0) {
+      next.activeInnerWays = defaultInnerWayIds;
     }
   }
 
@@ -119,26 +138,24 @@ function normalizeRotation(
     return Math.round(raw);
   };
 
-  if (!rotation.passiveUptimes) rotation.passiveUptimes = {};
+  if (!next.passiveUptimes) next.passiveUptimes = {};
 
   // Remove unknown keys
-  for (const key of Object.keys(rotation.passiveUptimes)) {
-    if (!allPassiveIds.has(key)) delete rotation.passiveUptimes[key];
+  for (const key of Object.keys(next.passiveUptimes)) {
+    if (!allPassiveIds.has(key)) delete next.passiveUptimes[key];
   }
 
   // Ensure each active passive has an uptime
-  for (const passiveId of rotation.activePassiveSkills) {
-    const v = rotation.passiveUptimes[passiveId];
+  for (const passiveId of next.activePassiveSkills) {
+    const v = next.passiveUptimes[passiveId];
     if (typeof v !== "number" || Number.isNaN(v)) {
-      rotation.passiveUptimes[passiveId] = defaultUptimeFor(passiveId);
+      next.passiveUptimes[passiveId] = defaultUptimeFor(passiveId);
       continue;
     }
-    rotation.passiveUptimes[passiveId] = Math.round(
-      Math.min(100, Math.max(0, v))
-    );
+    next.passiveUptimes[passiveId] = Math.round(Math.min(100, Math.max(0, v)));
   }
 
-  return rotation;
+  return next;
 }
 
 export const useRotation = () => {
@@ -164,11 +181,18 @@ export const useRotation = () => {
       }
     }
 
-    // Merge default rotations with saved rotations
-    // Keep saved rotations that aren't already in defaults
+    // Merge default rotations with saved rotations.
+    // IMPORTANT: if a saved rotation has the same id as a default rotation,
+    // we must prefer the saved version (otherwise edits to defaults reset on refresh).
     const defaultIds = new Set(DEFAULT_ROTATIONS.map((r) => r.id));
+    const savedById = new Map(savedRotations.map((r) => [r.id, r] as const));
+
+    const mergedDefaults = DEFAULT_ROTATIONS.map(
+      (def) => savedById.get(def.id) ?? def
+    );
     const uniqueSaved = savedRotations.filter((r) => !defaultIds.has(r.id));
-    const mergedRotations = [...DEFAULT_ROTATIONS, ...uniqueSaved].map((r) =>
+
+    const mergedRotations = [...mergedDefaults, ...uniqueSaved].map((r) =>
       normalizeRotation(r, r.martialArtId as MartialArtId)
     );
 
