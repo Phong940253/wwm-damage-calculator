@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Rotation, ElementStats } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
-import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
+import { LIST_MARTIAL_ARTS, MartialArtId } from "@/app/domain/skill/types";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ interface RotationPanelProps {
     uptimePercent: number
   ) => void;
   onToggleInnerWay: (rotationId: string, innerId: string) => void;
+  onUpdateMartialArt: (rotationId: string, martialArtId?: MartialArtId) => void;
 }
 
 export default function RotationPanel({
@@ -55,6 +56,7 @@ export default function RotationPanel({
   onTogglePassiveSkill,
   onUpdatePassiveUptime,
   onToggleInnerWay,
+  onUpdateMartialArt,
 }: RotationPanelProps) {
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
   const [newRotationName, setNewRotationName] = useState("");
@@ -132,12 +134,25 @@ export default function RotationPanel({
     setDropPosition(null);
   };
 
-  // Filter skills: only show skills that match current martial art (or have no martial art)
-  const currentMartialArtId = elementStats.martialArtsId;
+  const handleExportRotation = (rotation: Rotation) => {
+    const dataStr = JSON.stringify(rotation, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${rotation.name.replace(/\s+/g, "_")}_rotation.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Filter skills: only show skills that match rotation's martial art (or have no martial art)
+  const currentMartialArtId = selectedRotation?.martialArtId;
   const availableSkills = SKILLS.filter((skill) => {
-    // Filter by current martial art from StatsPanel
+    // Filter by rotation's martial art
     if (currentMartialArtId) {
-      // Only show skills from selected martial art OR skills with no martial art
+      // Only show skills from selected martial art OR universal skills (no martial art)
       const isSameMartialArt = skill.martialArtId === currentMartialArtId;
       const hasNoMartialArt = !skill.martialArtId || skill.martialArtId === "";
       if (!isSameMartialArt && !hasNoMartialArt) return false;
@@ -227,6 +242,12 @@ export default function RotationPanel({
                     Rename
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    onClick={() => handleExportRotation(rotation)}
+                    className="text-xs"
+                  >
+                    Export to JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={() => {
                       if (confirm(`Delete "${rotation.name}"?`)) {
                         onDeleteRotation(rotation.id);
@@ -247,11 +268,22 @@ export default function RotationPanel({
       {selectedRotation && (
         <Card className="p-4">
           <div className="mb-4 p-3 bg-zinc-800 rounded border border-zinc-700">
-            <p className="text-xs text-zinc-400 mb-2">Current Martial Art</p>
-            <p className="text-sm font-semibold">
-              {LIST_MARTIAL_ARTS.find((m) => m.id === currentMartialArtId)?.name ||
-                "None (All Skills)"}
-            </p>
+            <p className="text-xs text-zinc-400 mb-2">Martial Art</p>
+            <select
+              value={currentMartialArtId || ""}
+              onChange={(e) => {
+                const newId = e.target.value || undefined;
+                onUpdateMartialArt(selectedRotation.id, newId as MartialArtId | undefined);
+              }}
+              className="w-full bg-zinc-700 text-sm border border-zinc-600 rounded px-2 py-1.5 text-zinc-100"
+            >
+              <option value="">None (All Skills)</option>
+              {LIST_MARTIAL_ARTS.map((ma) => (
+                <option key={ma.id} value={ma.id}>
+                  {ma.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* ========== PASSIVE SKILLS ========== */}

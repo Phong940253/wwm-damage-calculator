@@ -253,4 +253,37 @@ export const PASSIVE_SKILLS: PassiveSkill[] = [
       },
     ],
   },
+  {
+    id: "ps_bamboocut_wind_4",
+    name: "Bamboocut Mastery",
+    description: "Deal damage based on Attribute Attack, while Bamboocut Attack deals 50% bonus damage",
+    martialArtId: "bamboocut_wind",
+    modifiers: [
+      {
+        stat: "bamboocutDMGBonus",
+        type: "flat",
+        value: 50,
+      },
+    ],
+  },
+  {
+    id: "ps_bamboocut_wind_5",
+    name: "Wrathful Power",
+    description: "Increases Critical Rate by 10% and Critical DMG Bonus by 20% during Flamelash state",
+    martialArtId: "bamboocut_wind",
+    defaultUptimePercent: 40,
+    modifiers: [
+      {
+        stat: "CriticalRate",
+        type: "flat",
+        value: 10,
+      },
+      {
+        stat: "CriticalDMGBonus",
+        type: "flat",
+        value: 20,
+      },
+    ],
+    notes: "Active during Flamelash burst skill",
+  },
 ];

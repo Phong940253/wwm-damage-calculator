@@ -75,6 +75,7 @@ export default function MainTabLayout() {
     togglePassiveSkill,
     toggleInnerWay,
     updatePassiveUptime,
+    updateMartialArt,
   } = useRotation();
 
   const {
@@ -184,6 +185,7 @@ export default function MainTabLayout() {
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}
+                onUpdateMartialArt={updateMartialArt}
               />
             )}
           </div>
@@ -272,6 +274,7 @@ export default function MainTabLayout() {
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}
+                onUpdateMartialArt={updateMartialArt}
               />
             )}
           </div>

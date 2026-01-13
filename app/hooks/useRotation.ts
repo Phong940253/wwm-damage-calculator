@@ -373,6 +373,21 @@ export const useRotation = () => {
     );
   };
 
+  const updateMartialArt = (rotationId: string, martialArtId?: MartialArtId) => {
+    setRotations((prev) =>
+      prev.map((r) => {
+        if (r.id !== rotationId) return r;
+        const updated = {
+          ...r,
+          martialArtId,
+          updatedAt: Date.now(),
+        };
+        // Normalize to update passive skills and inner ways based on new martial art
+        return normalizeRotation(updated, martialArtId);
+      })
+    );
+  };
+
   return {
     rotations,
     selectedRotationId,
@@ -388,5 +403,6 @@ export const useRotation = () => {
     togglePassiveSkill,
     toggleInnerWay,
     updatePassiveUptime,
+    updateMartialArt,
   };
 };
