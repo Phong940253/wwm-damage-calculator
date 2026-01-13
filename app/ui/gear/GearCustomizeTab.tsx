@@ -370,6 +370,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           <GearCard
             key={g.id}
             gear={g}
+            elementStats={elementStats}
             onEdit={() => {
               setEditing(g);
               setOpen(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { CustomGear, InputStats } from "../../types";
+import { CustomGear, ElementStats, InputStats } from "../../types";
 import { useGear } from "../../providers/GearContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,11 @@ import {
 import { getStatLabel } from "@/app/utils/statLabel";
 import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
+import { GEAR_SLOTS } from "@/app/constants";
 
 interface Props {
   gear: CustomGear;
+  elementStats?: ElementStats;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -24,9 +26,12 @@ interface Props {
    Component
 ======================= */
 
-export default function GearCard({ gear, onEdit, onDelete }: Props) {
+export default function GearCard({ gear, elementStats, onEdit, onDelete }: Props) {
   const { equipped, setEquipped } = useGear();
   const isEquipped = equipped[gear.slot] === gear.id;
+
+  const slotLabel =
+    GEAR_SLOTS.find((s) => s.key === gear.slot)?.label ?? String(gear.slot);
 
   const equip = () => {
     setEquipped((prev) => ({
@@ -44,31 +49,61 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
   };
 
   /** 🔁 backward compatibility */
-  const mains = gear.mains;
+  const mains = gear.mains?.length
+    ? gear.mains
+    : gear.main
+      ? [gear.main]
+      : [];
 
   return (
-    <Card className="p-4 space-y-3 relative border border-white/10 bg-card/70">
-      {/* Equipped badge */}
-      {isEquipped ? (
-        <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-          Equipped
-        </span>
-      ) : (
-        <span className="absolute top-2 right-2 text-xs hidden px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-          Equipped
-        </span>
-      )}
+    <Card
+      className={
+        "group relative overflow-hidden rounded-xl border border-white/10 bg-card/70 p-4 " +
+        "transition-shadow hover:shadow-lg hover:shadow-black/20"
+      }
+    >
+      {/* Accent */}
+      <div
+        className={
+          "pointer-events-none absolute inset-x-0 top-0 h-1 " +
+          (isEquipped
+            ? "bg-gradient-to-r from-emerald-500/70 via-emerald-400/30 to-transparent"
+            : "bg-gradient-to-r from-white/10 to-transparent")
+        }
+      />
 
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="font-semibold truncate">{gear.name}</p>
-          <p className="text-xs text-muted-foreground">{gear.slot}</p>
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="min-w-0 truncate text-sm font-semibold">{gear.name}</p>
+            {isEquipped && (
+              <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
+                Equipped
+              </span>
+            )}
+          </div>
+
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span className="rounded-md border border-white/10 bg-background/30 px-2 py-0.5 text-[11px] text-muted-foreground">
+              {slotLabel}
+            </span>
+            {gear.rarity && (
+              <span className="rounded-md border border-white/10 bg-background/30 px-2 py-0.5 text-[11px] text-muted-foreground">
+                {gear.rarity}
+              </span>
+            )}
+          </div>
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="-mr-2 -mt-1 h-9 w-9 text-muted-foreground hover:text-foreground"
+              aria-label="Gear actions"
+            >
               ⋮
             </Button>
           </DropdownMenuTrigger>
@@ -87,37 +122,60 @@ export default function GearCard({ gear, onEdit, onDelete }: Props) {
         </DropdownMenu>
       </div>
 
-      {/* 🔥 Main stats */}
-      {mains.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Main</p>
-          {mains.map((m, i) => (
-            <StatLine key={i} stat={m.stat} value={m.value} type="main" />
-          ))}
-        </div>
-      )}
+      {/* Stats */}
+      <div className="mt-4 space-y-3">
+        {mains.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">Main</p>
+              <p className="text-[11px] text-muted-foreground">{mains.length}</p>
+            </div>
+            <div className="space-y-1.5">
+              {mains.map((m, i) => (
+                <StatLine
+                  key={`${String(m.stat)}-${i}`}
+                  stat={m.stat}
+                  value={m.value}
+                  type="main"
+                  elementStats={elementStats}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* Sub stats */}
-      {gear.subs?.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Sub</p>
-          {gear.subs.map((s, i) => (
-            <StatLine key={i} stat={s.stat} value={s.value} type="sub" />
-          ))}
-        </div>
-      )}
+        {gear.subs?.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">Sub</p>
+              <p className="text-[11px] text-muted-foreground">{gear.subs.length}</p>
+            </div>
+            <div className="space-y-1.5">
+              {gear.subs.map((s, i) => (
+                <StatLine
+                  key={`${String(s.stat)}-${i}`}
+                  stat={s.stat}
+                  value={s.value}
+                  type="sub"
+                  elementStats={elementStats}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* Bonus */}
-      {gear.addition && (
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Bonus</p>
-          <StatLine
-            stat={gear.addition.stat}
-            value={gear.addition.value}
-            type="bonus"
-          />
-        </div>
-      )}
+        {gear.addition && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">Bonus</p>
+            <StatLine
+              stat={gear.addition.stat}
+              value={gear.addition.value}
+              type="bonus"
+              elementStats={elementStats}
+            />
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
@@ -130,10 +188,12 @@ function StatLine({
   stat,
   value,
   type,
+  elementStats,
 }: {
   stat: keyof InputStats;
   value: number;
   type: StatType;
+  elementStats?: ElementStats;
 }) {
   const key = String(stat);
 
@@ -141,17 +201,19 @@ function StatLine({
     <div
       className={`
         flex items-center justify-between
-        px-2 py-1.5
+        px-2.5 py-2
         rounded-md
         border
         text-xs
         ${STAT_BG[type]}
       `}
     >
-      <span className="text-muted-foreground truncate">
-        {getStatLabel(key)}
+      <span className="min-w-0 truncate text-muted-foreground">
+        {getStatLabel(key, elementStats)}
       </span>
-      <span className="font-medium whitespace-nowrap">+{value}</span>
+      <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">
+        +{value}
+      </span>
     </div>
   );
 }
