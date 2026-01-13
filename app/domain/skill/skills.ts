@@ -1,5 +1,5 @@
 import { Skill } from "./types";
 
-import skillsJson from "./skills.json";
+import skillsJson from "./data/skills.json";
 
 export const SKILLS = skillsJson as Skill[];
