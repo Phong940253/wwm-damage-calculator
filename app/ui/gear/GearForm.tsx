@@ -1,7 +1,7 @@
 // app/gear/GearForm.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { useGear } from "../../providers/GearContext";
 import { CustomGear, GearSlot, InputStats } from "../../types";
 import { GEAR_SLOTS, STAT_GROUPS } from "../../constants";
@@ -13,8 +13,7 @@ import { normalizeStatKey } from "@/lib/normalizeStat";
 import { fileToBase64 } from "@/lib/utils";
 import { GEAR_OCR_PROMPT } from "../../domain/gear/gearOcrSchema";
 import { GearOcrResult } from "../../domain/gear/gearOcrSchema";
-import { useRef } from "react";
-import { Loader2 } from "lucide-react";
+import { GripVertical, Loader2 } from "lucide-react";
 
 
 /* =======================
@@ -23,16 +22,64 @@ import { Loader2 } from "lucide-react";
 
 type GearStatKey = keyof InputStats;
 
+type GearStatRow = {
+  id: string;
+  stat: GearStatKey;
+  value: number;
+};
+
 interface GearFormProps {
   initialGear?: CustomGear | null;
   onSuccess?: () => void;
 }
 
-/* Flatten stat options */
-const STAT_OPTIONS: GearStatKey[] = Object.values(STAT_GROUPS).flat();
+const STAT_OPTION_GROUPS: { label: string; options: GearStatKey[] }[] = [
+  ...Object.entries(STAT_GROUPS).map(([label, options]) => ({
+    label,
+    options: options as GearStatKey[],
+  })),
+  {
+    label: "Special",
+    options: ["ChargeSkillDamageBoost"],
+  },
+];
+
+const renderStatOptions = () =>
+  STAT_OPTION_GROUPS.map(group => (
+    <optgroup key={group.label} label={group.label}>
+      {Array.from(new Set(group.options)).map(statKey => (
+        <option key={statKey} value={statKey}>
+          {getStatLabel(String(statKey))}
+        </option>
+      ))}
+    </optgroup>
+  ));
 
 /* Armor slots that should NOT have main attributes */
 const ARMOR_SLOTS: GearSlot[] = ["head", "chest", "hand", "leg"];
+
+type DragSource = "mains" | "subs" | "addition";
+
+type DraggedStat =
+  | { source: "mains" | "subs"; rowId: string }
+  | { source: "addition" };
+
+const readDraggedFromDataTransfer = (e: DragEvent): DraggedStat | null => {
+  const raw = e.dataTransfer.getData("application/wwm-gear-stat");
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as DraggedStat;
+    if (!parsed || typeof parsed !== "object" || !("source" in parsed)) return null;
+    if (parsed.source === "addition") return { source: "addition" };
+    if (parsed.source === "mains" || parsed.source === "subs") {
+      if (typeof (parsed as any).rowId !== "string") return null;
+      return { source: parsed.source, rowId: (parsed as any).rowId };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
 
 
 /* =======================
@@ -49,16 +96,159 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [mains, setMains] = useState<
-    { stat: GearStatKey; value: number }[]
-  >([{ stat: "MaxPhysicalAttack", value: 0 }]);
+    GearStatRow[]
+  >([{ id: crypto.randomUUID(), stat: "MaxPhysicalAttack", value: 0 }]);
 
   const [subs, setSubs] = useState<
-    { stat: GearStatKey; value: number }[]
+    GearStatRow[]
   >([]);
 
   const [addition, setAddition] = useState<
-    { stat: GearStatKey; value: number } | null
+    GearStatRow | null
   >(null);
+
+  const [dragged, setDragged] = useState<DraggedStat | null>(null);
+  const [dragOver, setDragOver] = useState<
+    | { zone: Exclude<DragSource, "addition">; insertIndex: number }
+    | { zone: "addition" }
+    | null
+  >(null);
+
+  const findRowIndexById = (list: GearStatRow[], rowId: string) =>
+    list.findIndex(r => r.id === rowId);
+
+  const getDraggedItem = (d: DraggedStat): GearStatRow | null => {
+    if (d.source === "addition") return addition;
+    const list = d.source === "mains" ? mains : subs;
+    const idx = findRowIndexById(list, d.rowId);
+    return idx >= 0 ? list[idx] : null;
+  };
+
+  const removeFromSource = (d: DraggedStat) => {
+    if (d.source === "addition") {
+      setAddition(null);
+      return;
+    }
+
+    if (d.source === "mains") {
+      setMains(prev => prev.filter(r => r.id !== d.rowId));
+      return;
+    }
+
+    setSubs(prev => prev.filter(r => r.id !== d.rowId));
+  };
+
+  const insertIntoList = (
+    target: Exclude<DragSource, "addition">,
+    item: GearStatRow,
+    insertIndex?: number
+  ) => {
+    const setter = target === "mains" ? setMains : setSubs;
+    setter(prev => {
+      const next = [...prev];
+      if (insertIndex === undefined || insertIndex < 0 || insertIndex > next.length) {
+        next.push(item);
+      } else {
+        next.splice(insertIndex, 0, item);
+      }
+      return next;
+    });
+  };
+
+  const startDrag = (d: DraggedStat) => (e: DragEvent) => {
+    setDragged(d);
+    setDragOver(null);
+    try {
+      e.dataTransfer.setData("application/wwm-gear-stat", JSON.stringify(d));
+      e.dataTransfer.effectAllowed = "move";
+    } catch {
+      // ignore
+    }
+  };
+
+  const allowDropIfAllowed = (e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const computeInsertIndexFromPointer = (
+    e: DragEvent,
+    rowElement: HTMLElement,
+    rowIndex: number
+  ) => {
+    const rect = rowElement.getBoundingClientRect();
+    const isTopHalf = e.clientY < rect.top + rect.height / 2;
+    return isTopHalf ? rowIndex : rowIndex + 1;
+  };
+
+  const dropOnList = (
+    targetList: Exclude<DragSource, "addition">,
+    insertIndex?: number
+  ) => (e: DragEvent) => {
+    e.preventDefault();
+    const d = dragged ?? readDraggedFromDataTransfer(e);
+    if (!d) return;
+
+    const item = getDraggedItem(d);
+    if (!item) return;
+
+    const targetListItems = targetList === "mains" ? mains : subs;
+    const targetInsertIndex =
+      insertIndex ??
+      (dragOver?.zone === targetList ? dragOver.insertIndex : targetListItems.length);
+
+    // Same-list reorder adjustment / no-op
+    if (d.source === targetList && (d.source === "mains" || d.source === "subs")) {
+      const sourceList = d.source === "mains" ? mains : subs;
+      const sourceIndex = findRowIndexById(sourceList, d.rowId);
+      if (sourceIndex < 0) {
+        setDragged(null);
+        setDragOver(null);
+        return;
+      }
+
+      // No-op drops (same position / adjacent)
+      if (targetInsertIndex === sourceIndex || targetInsertIndex === sourceIndex + 1) {
+        setDragged(null);
+        setDragOver(null);
+        return;
+      }
+
+      let adjustedInsertIndex = targetInsertIndex;
+      if (adjustedInsertIndex > sourceIndex) adjustedInsertIndex -= 1;
+      removeFromSource(d);
+      insertIntoList(targetList, item, adjustedInsertIndex);
+    } else {
+      // Cross-group move (including addition -> list)
+      removeFromSource(d);
+      insertIntoList(targetList, item, targetInsertIndex);
+    }
+
+    setDragged(null);
+    setDragOver(null);
+  };
+
+  const dropOnAddition = () => (e: DragEvent) => {
+    e.preventDefault();
+    const d = dragged ?? readDraggedFromDataTransfer(e);
+    if (!d) return;
+
+    const item = getDraggedItem(d);
+    if (!item) return;
+
+    // Swap behavior: if addition exists, put it back to the source list (append)
+    const prevAddition = addition;
+    removeFromSource(d);
+    setAddition(item);
+
+    if (prevAddition && d.source !== "addition") {
+      if (d.source === "mains") insertIntoList("mains", prevAddition);
+      else if (d.source === "subs") insertIntoList("subs", prevAddition);
+    }
+
+    setDragged(null);
+    setDragOver(null);
+  };
 
   const [ocrLoading, setOcrLoading] = useState(false);
   const handleOcr = async (file: File) => {
@@ -76,15 +266,15 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       if (result.slot) setSlot(result.slot as GearSlot);
 
       if (result.mains) {
-        const parsedMains: { stat: keyof InputStats; value: number }[] =
+        const parsedMains: GearStatRow[] =
           result.mains
             .map((m: { stat: string; value: number }) => {
               const stat = normalizeStatKey(m.stat);
               if (!stat) return null;
-              return { stat, value: m.value };
+              return { id: crypto.randomUUID(), stat, value: m.value };
             })
             .filter(
-              (v): v is { stat: keyof InputStats; value: number } =>
+              (v): v is GearStatRow =>
                 v !== null
             );
 
@@ -92,15 +282,15 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       }
 
       if (result.subs) {
-        const parsedSubs: { stat: keyof InputStats; value: number }[] =
+        const parsedSubs: GearStatRow[] =
           result.subs
             .map((s: { stat: string; value: number }) => {
               const stat = normalizeStatKey(s.stat);
               if (!stat) return null;
-              return { stat, value: s.value };
+              return { id: crypto.randomUUID(), stat, value: s.value };
             })
             .filter(
-              (v): v is { stat: keyof InputStats; value: number } =>
+              (v): v is GearStatRow =>
                 v !== null
             );
 
@@ -112,6 +302,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         const stat = normalizeStatKey(result.addition.stat);
         if (stat) {
           setAddition({
+            id: crypto.randomUUID(),
             stat,
             value: result.addition.value,
           });
@@ -133,10 +324,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     setName(initialGear.name);
     setSlot(initialGear.slot);
 
-    setMains(initialGear.mains);
+    setMains(initialGear.mains.map(m => ({ id: crypto.randomUUID(), ...m })));
 
-    setSubs(initialGear.subs ?? []);
-    setAddition(initialGear.addition ?? null);
+    setSubs((initialGear.subs ?? []).map(s => ({ id: crypto.randomUUID(), ...s })));
+    setAddition(
+      initialGear.addition
+        ? { id: crypto.randomUUID(), ...initialGear.addition }
+        : null
+    );
   }, [initialGear]);
 
   /* -------------------- submit -------------------- */
@@ -163,9 +358,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         id,
         name,
         slot,
-        mains,
-        subs,
-        addition: addition ?? undefined,
+        mains: mains.map(({ stat, value }) => ({ stat, value })),
+        subs: subs.map(({ stat, value }) => ({ stat, value })),
+        addition: addition ? { stat: addition.stat, value: addition.value } : undefined,
       };
 
       setCustomGears(g =>
@@ -194,16 +389,16 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   /* -------------------- helpers -------------------- */
   const addMain = () =>
-    setMains(m => [...m, { stat: "MaxPhysicalAttack", value: 0 }]);
+    setMains(m => [...m, { id: crypto.randomUUID(), stat: "MaxPhysicalAttack", value: 0 }]);
 
-  const removeMain = (i: number) =>
-    setMains(m => m.filter((_, idx) => idx !== i));
+  const removeMain = (rowId: string) =>
+    setMains(m => m.filter(r => r.id !== rowId));
 
   const addSub = () =>
-    setSubs(s => [...s, { stat: "CriticalRate", value: 0 }]);
+    setSubs(s => [...s, { id: crypto.randomUUID(), stat: "CriticalRate", value: 0 }]);
 
-  const removeSub = (i: number) =>
-    setSubs(s => s.filter((_, idx) => idx !== i));
+  const removeSub = (rowId: string) =>
+    setSubs(s => s.filter(r => r.id !== rowId));
 
   /* =======================
      UI
@@ -245,45 +440,90 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
           </Button>
         </div>
 
-        {mains.map((m, i) => (
-          <div key={i} className="flex gap-2">
-            <select
-              className="flex-1 border rounded px-2 py-1"
-              value={m.stat}
-              onChange={e => {
-                const v = [...mains];
-                v[i].stat = e.target.value as GearStatKey;
-                setMains(v);
-              }}
-            >
-              {STAT_OPTIONS.map(s => (
-                <option key={s} value={s}>
-                  {getStatLabel(String(s))}
-                </option>
-              ))}
-            </select>
-
-            <Input
-              type="number"
-              value={m.value}
-              onChange={e => {
-                const v = [...mains];
-                v[i].value = Number(e.target.value);
-                setMains(v);
-              }}
-            />
-
-            {mains.length > 1 && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => removeMain(i)}
+        <div
+          onDragOver={e => {
+            // Avoid overwriting row-level insertion index due to bubbling.
+            if (e.currentTarget !== e.target) return;
+            allowDropIfAllowed(e);
+            setDragOver({ zone: "mains", insertIndex: mains.length });
+          }}
+          onDragLeave={() =>
+            setDragOver(prev => (prev?.zone === "mains" ? null : prev))
+          }
+          onDrop={dropOnList("mains")}
+          className={`space-y-2 rounded ${dragOver?.zone === "mains" ? "ring-1 ring-slate-300" : ""}`}
+        >
+          {dragOver?.zone === "mains" && dragOver.insertIndex === 0 && (
+            <div className="h-0.5 bg-sky-500/80 rounded" />
+          )}
+          {mains.map((m, i) => (
+            <div key={m.id}>
+              {dragOver?.zone === "mains" && dragOver.insertIndex === i && (
+                <div className="h-0.5 bg-sky-500/80 rounded" />
+              )}
+              <div
+                className={`flex gap-2 rounded`}
+                onDragOver={e => {
+                  const el = e.currentTarget as HTMLElement;
+                  allowDropIfAllowed(e);
+                  const insertIndex = computeInsertIndexFromPointer(e, el, i);
+                  setDragOver({ zone: "mains", insertIndex });
+                }}
+                onDrop={e => {
+                  e.stopPropagation();
+                  const insertIndex =
+                    dragOver?.zone === "mains" ? dragOver.insertIndex : undefined;
+                  dropOnList("mains", insertIndex)(e);
+                }}
               >
-                ✕
-              </Button>
-            )}
-          </div>
-        ))}
+                <div
+                  className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
+                  draggable
+                  onDragStart={startDrag({ source: "mains", rowId: m.id })}
+                  onDragEnd={() => {
+                    setDragged(null);
+                    setDragOver(null);
+                  }}
+                  title="Drag to reorder"
+                >
+                  <GripVertical className="w-4 h-4" />
+                </div>
+                <select
+                  className="flex-1 border rounded px-2 py-1"
+                  value={m.stat}
+                  onChange={e => {
+                    const nextStat = e.target.value as GearStatKey;
+                    setMains(prev =>
+                      prev.map(r => (r.id === m.id ? { ...r, stat: nextStat } : r))
+                    );
+                  }}
+                >
+                  {renderStatOptions()}
+                </select>
+
+                <Input
+                  type="number"
+                  value={m.value}
+                  onChange={e => {
+                    const nextValue = Number(e.target.value);
+                    setMains(prev =>
+                      prev.map(r => (r.id === m.id ? { ...r, value: nextValue } : r))
+                    );
+                  }}
+                />
+
+                {mains.length > 1 && (
+                  <Button size="icon" variant="ghost" onClick={() => removeMain(m.id)}>
+                    ✕
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+          {dragOver?.zone === "mains" && dragOver.insertIndex === mains.length && (
+            <div className="h-0.5 bg-sky-500/80 rounded" />
+          )}
+        </div>
       </div>
 
       {/* Sub attributes */}
@@ -295,47 +535,116 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
           </Button>
         </div>
 
-        {subs.map((s, i) => (
-          <div key={i} className="flex gap-2">
-            <select
-              className="flex-1 border rounded px-2 py-1"
-              value={s.stat}
-              onChange={e => {
-                const v = [...subs];
-                v[i].stat = e.target.value as GearStatKey;
-                setSubs(v);
-              }}
-            >
-              {STAT_OPTIONS.map(st => (
-                <option key={st} value={st}>
-                  {getStatLabel(String(st))}
-                </option>
-              ))}
-            </select>
+        <div
+          onDragOver={e => {
+            // Avoid overwriting row-level insertion index due to bubbling.
+            if (e.currentTarget !== e.target) return;
+            allowDropIfAllowed(e);
+            setDragOver({ zone: "subs", insertIndex: subs.length });
+          }}
+          onDragLeave={() =>
+            setDragOver(prev => (prev?.zone === "subs" ? null : prev))
+          }
+          onDrop={dropOnList("subs")}
+          className={`space-y-2 rounded ${dragOver?.zone === "subs" ? "ring-1 ring-slate-300" : ""}`}
+        >
+          {dragOver?.zone === "subs" && dragOver.insertIndex === 0 && (
+            <div className="h-0.5 bg-sky-500/80 rounded" />
+          )}
+          {subs.map((s, i) => (
+            <div key={s.id}>
+              {dragOver?.zone === "subs" && dragOver.insertIndex === i && (
+                <div className="h-0.5 bg-sky-500/80 rounded" />
+              )}
+              <div
+                className="flex gap-2 rounded"
+                onDragOver={e => {
+                  const el = e.currentTarget as HTMLElement;
+                  allowDropIfAllowed(e);
+                  const insertIndex = computeInsertIndexFromPointer(e, el, i);
+                  setDragOver({ zone: "subs", insertIndex });
+                }}
+                onDrop={e => {
+                  e.stopPropagation();
+                  const insertIndex =
+                    dragOver?.zone === "subs" ? dragOver.insertIndex : undefined;
+                  dropOnList("subs", insertIndex)(e);
+                }}
+              >
+                <div
+                  className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
+                  draggable
+                  onDragStart={startDrag({ source: "subs", rowId: s.id })}
+                  onDragEnd={() => {
+                    setDragged(null);
+                    setDragOver(null);
+                  }}
+                  title="Drag to reorder"
+                >
+                  <GripVertical className="w-4 h-4" />
+                </div>
+                <select
+                  className="flex-1 border rounded px-2 py-1"
+                  value={s.stat}
+                  onChange={e => {
+                    const nextStat = e.target.value as GearStatKey;
+                    setSubs(prev =>
+                      prev.map(r => (r.id === s.id ? { ...r, stat: nextStat } : r))
+                    );
+                  }}
+                >
+                  {renderStatOptions()}
+                </select>
 
-            <Input
-              type="number"
-              value={s.value}
-              onChange={e => {
-                const v = [...subs];
-                v[i].value = Number(e.target.value);
-                setSubs(v);
-              }}
-            />
+                <Input
+                  type="number"
+                  value={s.value}
+                  onChange={e => {
+                    const nextValue = Number(e.target.value);
+                    setSubs(prev =>
+                      prev.map(r => (r.id === s.id ? { ...r, value: nextValue } : r))
+                    );
+                  }}
+                />
 
-            <Button size="icon" variant="ghost" onClick={() => removeSub(i)}>
-              ✕
-            </Button>
-          </div>
-        ))}
+                <Button size="icon" variant="ghost" onClick={() => removeSub(s.id)}>
+                  ✕
+                </Button>
+              </div>
+            </div>
+          ))}
+          {dragOver?.zone === "subs" && dragOver.insertIndex === subs.length && (
+            <div className="h-0.5 bg-sky-500/80 rounded" />
+          )}
+        </div>
       </div>
 
       {/* Addition */}
-      <div className="border rounded p-3 space-y-2">
+      <div
+        className={`border rounded p-3 space-y-2 ${dragOver?.zone === "addition" ? "ring-1 ring-slate-300" : ""}`}
+        onDragOver={e => {
+          allowDropIfAllowed(e);
+          setDragOver({ zone: "addition" });
+        }}
+        onDragLeave={() => setDragOver(prev => (prev?.zone === "addition" ? null : prev))}
+        onDrop={dropOnAddition()}
+      >
         <p className="text-sm font-medium">Additional Attribute</p>
 
         {addition ? (
           <div className="flex gap-2">
+            <div
+              className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
+              draggable
+              onDragStart={startDrag({ source: "addition" })}
+              onDragEnd={() => {
+                setDragged(null);
+                setDragOver(null);
+              }}
+              title="Drag to move"
+            >
+              <GripVertical className="w-4 h-4" />
+            </div>
             <select
               className="flex-1 border rounded px-2 py-1"
               value={addition.stat}
@@ -343,11 +652,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 setAddition({ ...addition, stat: e.target.value as GearStatKey })
               }
             >
-              {STAT_OPTIONS.map(s => (
-                <option key={s} value={s}>
-                  {getStatLabel(String(s))}
-                </option>
-              ))}
+              {renderStatOptions()}
             </select>
 
             <Input
@@ -367,7 +672,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             size="sm"
             variant="secondary"
             onClick={() =>
-              setAddition({ stat: "CriticalRate", value: 0 })
+              setAddition({ id: crypto.randomUUID(), stat: "CriticalRate", value: 0 })
             }
           >
             + Add Additional Attribute
