@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Rotation, ElementStats } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
-import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
+import { LIST_MARTIAL_ARTS, MartialArtId } from "@/app/domain/skill/types";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
 import { Button } from "@/components/ui/button";
@@ -132,7 +132,20 @@ export default function RotationPanel({
     setDropPosition(null);
   };
 
-  // Filter skills: only show skills that match current martial art (or have no martial art)
+  const handleExportRotation = (rotation: Rotation) => {
+    const dataStr = JSON.stringify(rotation, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${rotation.name.replace(/\s+/g, "_")}_rotation.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Filter skills: only show skills that match rotation's martial art (or have no martial art)
   const currentMartialArtId = elementStats.martialArtsId;
   const availableSkills = SKILLS.filter((skill) => {
     // Filter by current martial art from StatsPanel
@@ -225,6 +238,12 @@ export default function RotationPanel({
                     className="text-xs"
                   >
                     Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleExportRotation(rotation)}
+                    className="text-xs"
+                  >
+                    Export to JSON
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {

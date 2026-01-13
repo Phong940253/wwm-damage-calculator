@@ -238,4 +238,29 @@ export const INNER_WAYS: InnerWay[] = [
     ],
     level: 2,
   },
+  {
+    id: "iw_bamboocut_echoes_oblivion",
+    name: "Echoes of Oblivion",
+    description: "Infernal Twinblades' Light Attacks ignore 10% Physical Defense and 10 Bamboocut Resistance. Gain Samsara and increase HP damage dealt by 5%",
+    applicableToMartialArtId: "bamboocut_wind",
+    modifiers: [
+      {
+        stat: "PhysicalPenetration",
+        type: "flat",
+        value: 10,
+      },
+      {
+        stat: "bamboocutPenetration",
+        type: "flat",
+        value: 10,
+      },
+      {
+        stat: "DamageBoost",
+        type: "flat",
+        value: 5,
+      },
+    ],
+    level: 5,
+    notes: "Normal Light Attacks apply Sin debuff; Flamelash Light Attacks apply Karma debuff. Attacking targets with both Sin and Karma grants additional bonuses. Dealing 6 instances of damage within 2 seconds resets Delusion cooldown (once every 10s).",
+  },
 ];
