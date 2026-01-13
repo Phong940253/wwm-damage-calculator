@@ -21,13 +21,16 @@ export interface GearOcrResult {
 }
 
 export const GEAR_OCR_PROMPT = `
-You are extracting gear information from a game screenshot.
+You are extracting gear information from a Where Winds Meet gear screenshot.
 
 Return STRICT JSON only.
 No explanation.
 No markdown.
 No comments.
 No trailing text.
+
+Focus only on the gear's own stats section.
+Ignore set effects, set bonuses, descriptions, durability, mastery, level requirements, flavor text.
 
 ====================
 ALLOWED SLOTS
@@ -48,6 +51,34 @@ Bellstrike
 Stonesplit
 Silkbind
 Bamboocut
+
+====================
+RARITY (STRICT)
+====================
+
+Rarity is NOT usually written as text.
+You must infer rarity from the TOP HEADER/BANNER background color behind the gear name/slot.
+
+Return rarity as ONE of the following exact strings:
+- Common
+- Uncommon
+- Rare
+- Epic
+- Legendary
+
+Color → rarity mapping (use the dominant header background color):
+- Grey / White / Neutral / Silver → Common
+- Green → Uncommon
+- Blue / Cyan → Rare
+- Purple / Violet → Epic
+- Orange / Gold / Yellow → Legendary
+
+IMPORTANT: if a reliable color-based rarity are available, prefer the COLOR-BASED rarity.
+
+Rules:
+- If rarity/tier is unclear or not visible, OMIT the "rarity" field.
+- Do NOT invent rarity.
+- Do NOT return other values.
 
 ====================
 ATTRIBUTE STATS (SUB ONLY)
@@ -135,6 +166,11 @@ GENERAL RULES
 - Percent values return NUMBER only
   Example: "12.5%" → 12.5
 
+- If a stat text does NOT map to one of the VALID STAT KEYS below, omit it.
+- "Set" / "Jadeware set" sections are NOT gear stats. Ignore completely.
+- The line directly under the Tier header like "Max Physical Attack 65" is usually a main stat.
+- Stats listed in the middle panel are usually subs/addition; still follow the key rules.
+
 ====================
 VALID STAT KEYS
 ====================
@@ -185,7 +221,7 @@ OUTPUT SCHEMA
 {
   "name": string,
   "slot": string,
-  "rarity": string,
+  "rarity"?: "Tier <number>" | "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary",
   "mains": [{ "stat": string, "value": number }],
   "subs": [{ "stat": string, "value": number }],
   "addition": { "stat": string, "value": number } | null
