@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { GEAR_SLOTS } from "@/app/constants";
 import { OptimizeResult } from "../../domain/gear/gearOptimize";
-import { CustomGear } from "@/app/types";
+import { CustomGear, ElementStats } from "@/app/types";
 
 import {
   HoverCard,
@@ -33,6 +33,7 @@ interface Props {
   results: OptimizeResult[];
   baseDamage: number;
   combos: number;
+  elementStats: ElementStats;
   maxDisplay: number;
   setMaxDisplay: (v: number) => void;
   onRecalculate: () => void;
@@ -49,6 +50,7 @@ export default function GearOptimizeDialog({
   results,
   baseDamage,
   combos,
+  elementStats,
   maxDisplay,
   setMaxDisplay,
   onRecalculate,
@@ -298,7 +300,11 @@ export default function GearOptimizeDialog({
                                               align="start"
                                               className="p-0 w-auto"
                                             >
-                                              <GearHoverDetail gear={g} oldGear={oldGear} />
+                                              <GearHoverDetail
+                                                gear={g}
+                                                oldGear={oldGear}
+                                                elementStats={elementStats}
+                                              />
                                             </HoverCardContent>
                                           </HoverCard>
                                         ) : (

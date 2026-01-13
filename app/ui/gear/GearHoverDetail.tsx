@@ -1,81 +1,129 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { CustomGear } from "@/app/types";
+import { ElementStats } from "@/app/types";
+import { getStatLabel } from "@/app/utils/statLabel";
 
 interface Props {
   gear: CustomGear;
   oldGear?: CustomGear | null;
+  elementStats: ElementStats;
 }
 
-export default function GearHoverDetail({ gear, oldGear }: Props) {
-  const newStats = [...gear.mains, ...gear.subs, gear.addition].filter(Boolean);
-  const oldStats = oldGear ? [...oldGear.mains, ...oldGear.subs, oldGear.addition].filter(Boolean) : [];
+function getGearStatTotals(gear?: CustomGear | null): Map<string, number> {
+  const totals = new Map<string, number>();
+  if (!gear) return totals;
 
-  // Create a map of old stats for easy lookup
-  const oldStatsMap = new Map(oldStats.map((s) => [s!.stat, s!.value]));
+  const attrs = [gear.main, ...gear.mains, ...gear.subs, gear.addition].filter(Boolean);
+  for (const a of attrs) {
+    const key = String(a!.stat);
+    totals.set(key, (totals.get(key) ?? 0) + (a!.value ?? 0));
+  }
+  return totals;
+}
 
-  // Get all unique stat keys from both gears
-  const allStatKeys = new Set([
-    ...newStats.map((s) => s!.stat),
-    ...oldStats.map((s) => s!.stat),
-  ]);
+export default function GearHoverDetail({ gear, oldGear, elementStats }: Props) {
+  const newTotals = getGearStatTotals(gear);
+  const oldTotals = getGearStatTotals(oldGear);
+
+  const allKeys = new Set<string>([...newTotals.keys(), ...oldTotals.keys()]);
+
+  const rows = Array.from(allKeys)
+    .map((statKey) => {
+      const newValue = newTotals.get(statKey) ?? 0;
+      const oldValue = oldTotals.get(statKey) ?? 0;
+      const diff = newValue - oldValue;
+      return {
+        statKey,
+        label: getStatLabel(statKey, elementStats),
+        newValue,
+        oldValue,
+        diff,
+      };
+    })
+    // Hide completely-empty rows
+    .filter((r) => r.newValue !== 0 || r.oldValue !== 0)
+    .sort((a, b) => {
+      // Prefer the most impactful changes first
+      const da = Math.abs(a.diff);
+      const db = Math.abs(b.diff);
+      if (da !== db) return db - da;
+      return a.label.localeCompare(b.label);
+    });
+
+  const changedCount = rows.reduce((acc, r) => acc + (r.diff !== 0 ? 1 : 0), 0);
 
   return (
-    <div className="p-3 space-y-2 text-xs">
-      <div>
-        <div className="font-semibold text-sm text-emerald-600">{gear.name}</div>
-        <div className="flex flex-wrap gap-1 mt-1">
-          <Badge variant="outline">{gear.slot}</Badge>
-          {gear.rarity && <Badge>{gear.rarity}</Badge>}
+    <div className="w-[380px] p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold truncate">{gear.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <Badge className="bg-emerald-500/15 text-emerald-700" variant="outline">
+              New
+            </Badge>
+            <Badge variant="secondary">{gear.slot}</Badge>
+            {gear.rarity && <Badge variant="secondary">{gear.rarity}</Badge>}
+            {oldGear && (
+              <Badge variant="outline" className="text-muted-foreground">
+                Δ {changedCount}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
       {oldGear && (
-        <div className="border-t pt-2">
-          <div className="font-semibold text-sm text-muted-foreground mb-1">
-            {oldGear.name}
+        <>
+          <Separator className="my-3" />
+          <div className="text-xs text-muted-foreground">
+            Equipped: <span className="font-medium text-foreground">{oldGear.name}</span>
           </div>
-        </div>
+        </>
       )}
 
-      <div className="space-y-1">
-        {Array.from(allStatKeys).map((stat) => {
-          const newValue = newStats.find((s) => s!.stat === stat)?.value || 0;
-          const oldValue = oldStatsMap.get(stat) || 0;
-          const diff = newValue - oldValue;
+      <Separator className="my-3" />
+
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-xs">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Stat</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">New</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">Old</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">Δ</div>
+
+        {rows.map((r) => {
+          const diffTone =
+            r.diff > 0
+              ? "text-emerald-600"
+              : r.diff < 0
+                ? "text-red-600"
+                : "text-muted-foreground";
 
           return (
-            <div key={stat} className="flex justify-between gap-2">
-              <span className="text-muted-foreground min-w-24">{stat}</span>
-              <div className="flex gap-2">
-                <span className="font-medium text-emerald-600 text-right min-w-12">
-                  {newValue > 0 ? "+" : ""}
-                  {newValue.toFixed(1)}
-                </span>
-                {oldGear && (
-                  <>
-                    <span className="text-muted-foreground text-right min-w-12">
-                      {oldValue > 0 ? "+" : ""}
-                      {oldValue.toFixed(1)}
-                    </span>
-                    <span
-                      className={`text-right min-w-12 font-medium ${diff > 0
-                        ? "text-emerald-500"
-                        : diff < 0
-                          ? "text-red-500"
-                          : "text-muted-foreground"
-                        }`}
-                    >
-                      {diff > 0 ? "+" : ""}
-                      {diff.toFixed(1)}
-                    </span>
-                  </>
-                )}
+            <div key={r.statKey} className="contents">
+              <div className="min-w-0 truncate" title={r.label}>
+                {r.label}
+              </div>
+              <div className="text-right tabular-nums font-medium text-emerald-700">
+                {r.newValue > 0 ? "+" : ""}
+                {r.newValue.toFixed(1)}
+              </div>
+              <div className="text-right tabular-nums text-muted-foreground">
+                {r.oldValue > 0 ? "+" : ""}
+                {r.oldValue.toFixed(1)}
+              </div>
+              <div className={`text-right tabular-nums font-semibold ${diffTone}`}>
+                {r.diff > 0 ? "+" : ""}
+                {r.diff.toFixed(1)}
               </div>
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-3 text-[11px] text-muted-foreground">
+        Note: duplicate stats are summed before comparing.
       </div>
     </div>
   );
