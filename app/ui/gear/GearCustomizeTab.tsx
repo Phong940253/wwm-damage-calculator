@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useGear } from "../../providers/GearContext";
 import GearCard from "./GearCard";
@@ -48,6 +49,35 @@ function getStatTotal(gear: CustomGear, stat: string): number {
   return total;
 }
 
+function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
+  if (a.size !== b.size) return false;
+  for (const v of a) {
+    if (!b.has(v)) return false;
+  }
+  return true;
+}
+
+function toSortedCsv(values: Iterable<string>): string {
+  return Array.from(values).sort().join(",");
+}
+
+function parseCsvParam(value: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function canonicalizeSearchParams(sp: URLSearchParams): string {
+  const entries = Array.from(sp.entries());
+  entries.sort(([ak, av], [bk, bv]) => {
+    if (ak === bk) return av.localeCompare(bv);
+    return ak.localeCompare(bk);
+  });
+  return new URLSearchParams(entries).toString();
+}
+
 /* =======================
    Props
 ======================= */
@@ -63,6 +93,10 @@ interface Props {
 ======================= */
 
 export default function GearCustomizeTab({ stats, elementStats, rotation }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const { customGears, setCustomGears, equipped, setEquipped } = useGear();
 
   const [open, setOpen] = useState(false);
@@ -82,6 +116,68 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
 
   const [sortStat, setSortStat] = useState("none");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [urlHydrated, setUrlHydrated] = useState(false);
+
+  /* =======================
+     URL sync (filter + sort)
+  ======================= */
+
+  const allowedSlotKeys = useMemo(() => {
+    return new Set<string>(GEAR_SLOTS.map((s) => String(s.key)));
+  }, []);
+
+  useEffect(() => {
+    const urlSlots = new Set<GearSlot>(
+      parseCsvParam(searchParams.get("gSlot"))
+        .filter((s) => allowedSlotKeys.has(s))
+        .map((s) => s as GearSlot)
+    );
+
+    const urlStats = new Set<string>(parseCsvParam(searchParams.get("gStat")));
+
+    const urlSortStat = searchParams.get("gSort") ?? "none";
+    const urlSortDir = searchParams.get("gDir") === "asc" ? "asc" : "desc";
+
+    setSlotFilter((prev) => (setsEqual(prev, urlSlots) ? prev : urlSlots));
+    setStatFilter((prev) => (setsEqual(prev, urlStats) ? prev : urlStats));
+    setSortStat((prev) => (prev === urlSortStat ? prev : urlSortStat));
+    setSortDir((prev) => (prev === urlSortDir ? prev : urlSortDir));
+
+    // Prevent the URL-write effect from running with pre-hydration defaults.
+    setUrlHydrated(true);
+  }, [searchParams, allowedSlotKeys]);
+
+  useEffect(() => {
+    if (!urlHydrated) return;
+
+    const next = new URLSearchParams(searchParams.toString());
+
+    const slotCsv = toSortedCsv(Array.from(slotFilter).map(String));
+    if (slotFilter.size > 0) next.set("gSlot", slotCsv);
+    else next.delete("gSlot");
+
+    const statCsv = toSortedCsv(statFilter);
+    if (statFilter.size > 0) next.set("gStat", statCsv);
+    else next.delete("gStat");
+
+    if (sortStat && sortStat !== "none") {
+      next.set("gSort", sortStat);
+      next.set("gDir", sortDir);
+    } else {
+      next.delete("gSort");
+      next.delete("gDir");
+    }
+
+    const nextQuery = canonicalizeSearchParams(next);
+    const currentQuery = canonicalizeSearchParams(
+      new URLSearchParams(searchParams.toString())
+    );
+    if (nextQuery === currentQuery) return;
+
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
+  }, [urlHydrated, slotFilter, statFilter, sortStat, sortDir, pathname, router, searchParams]);
 
   const filteredGears = useMemo(() => {
     let list = [...customGears];
