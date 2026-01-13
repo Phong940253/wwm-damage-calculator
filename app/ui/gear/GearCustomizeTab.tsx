@@ -256,7 +256,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   ======================= */
 
   const displayGears = useMemo(() => {
-    let list = [...filteredGears];
+    const list = [...filteredGears];
 
     /* ---- Sort ---- */
     if (sortStat !== "none") {

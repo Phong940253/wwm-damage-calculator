@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useGear } from "../../providers/GearContext";
-import { CustomGear, GearSlot, InputStats } from "../../types";
+import { CustomGear, GearSlot } from "../../types";
 import { GEAR_SLOTS } from "../../constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,6 @@ import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } fro
    Types
 ======================= */
 
-type GearStatKey = keyof InputStats;
 
 interface GearFormProps {
   initialGear?: CustomGear | null;

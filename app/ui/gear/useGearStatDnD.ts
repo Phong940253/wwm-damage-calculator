@@ -28,13 +28,16 @@ const readDraggedFromDataTransfer = (
   const raw = e.dataTransfer.getData("application/wwm-gear-stat");
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as DraggedStat;
+    const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || !("source" in parsed))
       return null;
-    if (parsed.source === "addition") return { source: "addition" };
-    if (parsed.source === "mains" || parsed.source === "subs") {
-      if (typeof (parsed as any).rowId !== "string") return null;
-      return { source: parsed.source, rowId: (parsed as any).rowId };
+    const source = (parsed as { source?: unknown }).source;
+    if (source === "addition") return { source: "addition" };
+    if (source === "mains" || source === "subs") {
+      if (!("rowId" in parsed)) return null;
+      const rowId = (parsed as { rowId?: unknown }).rowId;
+      if (typeof rowId !== "string") return null;
+      return { source, rowId };
     }
     return null;
   } catch {
