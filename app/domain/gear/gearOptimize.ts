@@ -33,6 +33,13 @@ export interface OptimizeComputation {
 export const MAX_RESULTS_CAP = 10_000;
 export const MAX_COMBINATIONS = 1_000_000_000;
 
+export class OptimizeCancelledError extends Error {
+  constructor() {
+    super("Optimization cancelled");
+    this.name = "OptimizeCancelledError";
+  }
+}
+
 /* =======================
    ASYNC OPTIMIZER (non-blocking)
 ======================= */
@@ -48,11 +55,18 @@ export async function computeOptimizeResultsAsync(
     candidateGears?: CustomGear[];
     slotsToOptimize?: GearSlot[];
   },
-  onProgress?: (current: number, total: number) => void
+  onProgress?: (current: number, total: number) => void,
+  signal?: AbortSignal
 ): Promise<OptimizeComputation> {
+  const throwIfCancelled = () => {
+    if (signal?.aborted) throw new OptimizeCancelledError();
+  };
+
   /* ============================================================
      1️⃣ BASE DAMAGE = WITH EQUIPPED GEAR
   ============================================================ */
+
+  throwIfCancelled();
 
   const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
   const baseRotationBonuses = computeRotationBonuses(
@@ -72,6 +86,7 @@ export async function computeOptimizeResultsAsync(
   if (rotation && rotation.skills.length > 0) {
     let rotationTotal = 0;
     for (const rotSkill of rotation.skills) {
+      throwIfCancelled();
       const skill = SKILLS.find((s) => s.id === rotSkill.id);
       if (!skill) continue;
       const skillDamage = calculateSkillDamage(baseCtx, skill);
@@ -119,6 +134,8 @@ export async function computeOptimizeResultsAsync(
     1
   );
 
+  throwIfCancelled();
+
   if (estimated > MAX_COMBINATIONS) {
     throw new Error(`Too many combinations (${estimated.toLocaleString()})`);
   }
@@ -150,6 +167,7 @@ export async function computeOptimizeResultsAsync(
 
   /* Async DFS with time-based progress updates */
   const dfs = async (i: number) => {
+    throwIfCancelled();
     if (i === slotOptions.length) {
       total++;
 
@@ -160,8 +178,10 @@ export async function computeOptimizeResultsAsync(
         lastProgressTime = now;
         // Yield to browser to update UI
         await new Promise((resolve) => setTimeout(resolve, 0));
+        throwIfCancelled();
       }
 
+      throwIfCancelled();
       const rotationBonuses = computeRotationBonuses(
         stats,
         elementStats,
@@ -178,6 +198,7 @@ export async function computeOptimizeResultsAsync(
       if (rotation && rotation.skills.length > 0) {
         let rotationTotal = 0;
         for (const rotSkill of rotation.skills) {
+          throwIfCancelled();
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
           const skillDamage = calculateSkillDamage(ctxWithModifiers, skill);
@@ -204,6 +225,7 @@ export async function computeOptimizeResultsAsync(
     const { slot, items, equippedGear } = slotOptions[i];
 
     for (const gear of items) {
+      throwIfCancelled();
       // Remove old gear
       if (equippedGear) {
         applyGear(equippedGear, -1);

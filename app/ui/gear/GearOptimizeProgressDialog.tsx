@@ -10,15 +10,29 @@ import {
 interface Props {
   open: boolean;
   progress: { current: number; total: number };
+  onCancel?: () => void;
 }
 
-export default function GearOptimizeProgressDialog({ open, progress }: Props) {
+export default function GearOptimizeProgressDialog({
+  open,
+  progress,
+  onCancel,
+}: Props) {
   const percent =
     progress.total > 0 ? Math.min((progress.current / progress.total) * 100, 100) : 0;
 
   return (
-    <Dialog open={open} onOpenChange={() => { }}>
-      <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        // Treat any user attempt to close as a cancel request.
+        if (!v) onCancel?.();
+      }}
+    >
+      <DialogContent
+        className="max-w-sm"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Calculating Gear Optimization</DialogTitle>
         </DialogHeader>

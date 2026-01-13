@@ -508,7 +508,11 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         </DialogContent>
       </Dialog>
 
-      <GearOptimizeProgressDialog open={opt.loading} progress={opt.progress} />
+      <GearOptimizeProgressDialog
+        open={opt.loading}
+        progress={opt.progress}
+        onCancel={opt.cancel}
+      />
 
       <GearOptimizeDialog
         open={optOpen}
