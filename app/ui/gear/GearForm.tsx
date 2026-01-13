@@ -1,11 +1,10 @@
 // app/gear/GearForm.tsx
 "use client";
 
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGear } from "../../providers/GearContext";
 import { CustomGear, GearSlot, InputStats } from "../../types";
-import { GEAR_SLOTS, STAT_GROUPS } from "../../constants";
-import { getStatLabel } from "@/app/utils/statLabel";
+import { GEAR_SLOTS } from "../../constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { callGeminiVision } from "@/lib/gemini";
@@ -14,6 +13,8 @@ import { fileToBase64 } from "@/lib/utils";
 import { GEAR_OCR_PROMPT } from "../../domain/gear/gearOcrSchema";
 import { GearOcrResult } from "../../domain/gear/gearOcrSchema";
 import { GripVertical, Loader2 } from "lucide-react";
+import { GearStatSelect } from "./GearStatSelect";
+import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } from "./useGearStatDnD";
 
 
 /* =======================
@@ -22,64 +23,13 @@ import { GripVertical, Loader2 } from "lucide-react";
 
 type GearStatKey = keyof InputStats;
 
-type GearStatRow = {
-  id: string;
-  stat: GearStatKey;
-  value: number;
-};
-
 interface GearFormProps {
   initialGear?: CustomGear | null;
   onSuccess?: () => void;
 }
 
-const STAT_OPTION_GROUPS: { label: string; options: GearStatKey[] }[] = [
-  ...Object.entries(STAT_GROUPS).map(([label, options]) => ({
-    label,
-    options: options as GearStatKey[],
-  })),
-  {
-    label: "Special",
-    options: ["ChargeSkillDamageBoost"],
-  },
-];
-
-const renderStatOptions = () =>
-  STAT_OPTION_GROUPS.map(group => (
-    <optgroup key={group.label} label={group.label}>
-      {Array.from(new Set(group.options)).map(statKey => (
-        <option key={statKey} value={statKey}>
-          {getStatLabel(String(statKey))}
-        </option>
-      ))}
-    </optgroup>
-  ));
-
 /* Armor slots that should NOT have main attributes */
 const ARMOR_SLOTS: GearSlot[] = ["head", "chest", "hand", "leg"];
-
-type DragSource = "mains" | "subs" | "addition";
-
-type DraggedStat =
-  | { source: "mains" | "subs"; rowId: string }
-  | { source: "addition" };
-
-const readDraggedFromDataTransfer = (e: DragEvent): DraggedStat | null => {
-  const raw = e.dataTransfer.getData("application/wwm-gear-stat");
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as DraggedStat;
-    if (!parsed || typeof parsed !== "object" || !("source" in parsed)) return null;
-    if (parsed.source === "addition") return { source: "addition" };
-    if (parsed.source === "mains" || parsed.source === "subs") {
-      if (typeof (parsed as any).rowId !== "string") return null;
-      return { source: parsed.source, rowId: (parsed as any).rowId };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-};
 
 
 /* =======================
@@ -108,147 +58,20 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   >(null);
 
   const [dragged, setDragged] = useState<DraggedStat | null>(null);
-  const [dragOver, setDragOver] = useState<
-    | { zone: Exclude<DragSource, "addition">; insertIndex: number }
-    | { zone: "addition" }
-    | null
-  >(null);
+  const [dragOver, setDragOver] = useState<DragOver>(null);
 
-  const findRowIndexById = (list: GearStatRow[], rowId: string) =>
-    list.findIndex(r => r.id === rowId);
-
-  const getDraggedItem = (d: DraggedStat): GearStatRow | null => {
-    if (d.source === "addition") return addition;
-    const list = d.source === "mains" ? mains : subs;
-    const idx = findRowIndexById(list, d.rowId);
-    return idx >= 0 ? list[idx] : null;
-  };
-
-  const removeFromSource = (d: DraggedStat) => {
-    if (d.source === "addition") {
-      setAddition(null);
-      return;
-    }
-
-    if (d.source === "mains") {
-      setMains(prev => prev.filter(r => r.id !== d.rowId));
-      return;
-    }
-
-    setSubs(prev => prev.filter(r => r.id !== d.rowId));
-  };
-
-  const insertIntoList = (
-    target: Exclude<DragSource, "addition">,
-    item: GearStatRow,
-    insertIndex?: number
-  ) => {
-    const setter = target === "mains" ? setMains : setSubs;
-    setter(prev => {
-      const next = [...prev];
-      if (insertIndex === undefined || insertIndex < 0 || insertIndex > next.length) {
-        next.push(item);
-      } else {
-        next.splice(insertIndex, 0, item);
-      }
-      return next;
-    });
-  };
-
-  const startDrag = (d: DraggedStat) => (e: DragEvent) => {
-    setDragged(d);
-    setDragOver(null);
-    try {
-      e.dataTransfer.setData("application/wwm-gear-stat", JSON.stringify(d));
-      e.dataTransfer.effectAllowed = "move";
-    } catch {
-      // ignore
-    }
-  };
-
-  const allowDropIfAllowed = (e: DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const computeInsertIndexFromPointer = (
-    e: DragEvent,
-    rowElement: HTMLElement,
-    rowIndex: number
-  ) => {
-    const rect = rowElement.getBoundingClientRect();
-    const isTopHalf = e.clientY < rect.top + rect.height / 2;
-    return isTopHalf ? rowIndex : rowIndex + 1;
-  };
-
-  const dropOnList = (
-    targetList: Exclude<DragSource, "addition">,
-    insertIndex?: number
-  ) => (e: DragEvent) => {
-    e.preventDefault();
-    const d = dragged ?? readDraggedFromDataTransfer(e);
-    if (!d) return;
-
-    const item = getDraggedItem(d);
-    if (!item) return;
-
-    const targetListItems = targetList === "mains" ? mains : subs;
-    const targetInsertIndex =
-      insertIndex ??
-      (dragOver?.zone === targetList ? dragOver.insertIndex : targetListItems.length);
-
-    // Same-list reorder adjustment / no-op
-    if (d.source === targetList && (d.source === "mains" || d.source === "subs")) {
-      const sourceList = d.source === "mains" ? mains : subs;
-      const sourceIndex = findRowIndexById(sourceList, d.rowId);
-      if (sourceIndex < 0) {
-        setDragged(null);
-        setDragOver(null);
-        return;
-      }
-
-      // No-op drops (same position / adjacent)
-      if (targetInsertIndex === sourceIndex || targetInsertIndex === sourceIndex + 1) {
-        setDragged(null);
-        setDragOver(null);
-        return;
-      }
-
-      let adjustedInsertIndex = targetInsertIndex;
-      if (adjustedInsertIndex > sourceIndex) adjustedInsertIndex -= 1;
-      removeFromSource(d);
-      insertIntoList(targetList, item, adjustedInsertIndex);
-    } else {
-      // Cross-group move (including addition -> list)
-      removeFromSource(d);
-      insertIntoList(targetList, item, targetInsertIndex);
-    }
-
-    setDragged(null);
-    setDragOver(null);
-  };
-
-  const dropOnAddition = () => (e: DragEvent) => {
-    e.preventDefault();
-    const d = dragged ?? readDraggedFromDataTransfer(e);
-    if (!d) return;
-
-    const item = getDraggedItem(d);
-    if (!item) return;
-
-    // Swap behavior: if addition exists, put it back to the source list (append)
-    const prevAddition = addition;
-    removeFromSource(d);
-    setAddition(item);
-
-    if (prevAddition && d.source !== "addition") {
-      if (d.source === "mains") insertIntoList("mains", prevAddition);
-      else if (d.source === "subs") insertIntoList("subs", prevAddition);
-    }
-
-    setDragged(null);
-    setDragOver(null);
-  };
+  const dnd = useGearStatDnD({
+    mains,
+    setMains,
+    subs,
+    setSubs,
+    addition,
+    setAddition,
+    dragged,
+    setDragged,
+    dragOver,
+    setDragOver,
+  });
 
   const [ocrLoading, setOcrLoading] = useState(false);
   const handleOcr = async (file: File) => {
@@ -444,13 +267,13 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
           onDragOver={e => {
             // Avoid overwriting row-level insertion index due to bubbling.
             if (e.currentTarget !== e.target) return;
-            allowDropIfAllowed(e);
-            setDragOver({ zone: "mains", insertIndex: mains.length });
+            dnd.allowDrop(e);
+            dnd.setDragOver({ zone: "mains", insertIndex: mains.length });
           }}
           onDragLeave={() =>
-            setDragOver(prev => (prev?.zone === "mains" ? null : prev))
+            dnd.setDragOver(prev => (prev?.zone === "mains" ? null : prev))
           }
-          onDrop={dropOnList("mains")}
+          onDrop={dnd.dropOnList("mains")}
           className={`space-y-2 rounded ${dragOver?.zone === "mains" ? "ring-1 ring-slate-300" : ""}`}
         >
           {dragOver?.zone === "mains" && dragOver.insertIndex === 0 && (
@@ -465,41 +288,36 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 className={`flex gap-2 rounded`}
                 onDragOver={e => {
                   const el = e.currentTarget as HTMLElement;
-                  allowDropIfAllowed(e);
-                  const insertIndex = computeInsertIndexFromPointer(e, el, i);
-                  setDragOver({ zone: "mains", insertIndex });
+                  dnd.allowDrop(e);
+                  const insertIndex = dnd.computeInsertIndexFromPointer(e, el, i);
+                  dnd.setDragOver({ zone: "mains", insertIndex });
                 }}
                 onDrop={e => {
                   e.stopPropagation();
                   const insertIndex =
                     dragOver?.zone === "mains" ? dragOver.insertIndex : undefined;
-                  dropOnList("mains", insertIndex)(e);
+                  dnd.dropOnList("mains", insertIndex)(e);
                 }}
               >
                 <div
                   className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
                   draggable
-                  onDragStart={startDrag({ source: "mains", rowId: m.id })}
+                  onDragStart={dnd.startDrag({ source: "mains", rowId: m.id })}
                   onDragEnd={() => {
-                    setDragged(null);
-                    setDragOver(null);
+                    dnd.endDrag();
                   }}
                   title="Drag to reorder"
                 >
                   <GripVertical className="w-4 h-4" />
                 </div>
-                <select
-                  className="flex-1 border rounded px-2 py-1"
+                <GearStatSelect
                   value={m.stat}
-                  onChange={e => {
-                    const nextStat = e.target.value as GearStatKey;
+                  onChange={nextStat =>
                     setMains(prev =>
                       prev.map(r => (r.id === m.id ? { ...r, stat: nextStat } : r))
-                    );
-                  }}
-                >
-                  {renderStatOptions()}
-                </select>
+                    )
+                  }
+                />
 
                 <Input
                   type="number"
@@ -539,13 +357,13 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
           onDragOver={e => {
             // Avoid overwriting row-level insertion index due to bubbling.
             if (e.currentTarget !== e.target) return;
-            allowDropIfAllowed(e);
-            setDragOver({ zone: "subs", insertIndex: subs.length });
+            dnd.allowDrop(e);
+            dnd.setDragOver({ zone: "subs", insertIndex: subs.length });
           }}
           onDragLeave={() =>
-            setDragOver(prev => (prev?.zone === "subs" ? null : prev))
+            dnd.setDragOver(prev => (prev?.zone === "subs" ? null : prev))
           }
-          onDrop={dropOnList("subs")}
+          onDrop={dnd.dropOnList("subs")}
           className={`space-y-2 rounded ${dragOver?.zone === "subs" ? "ring-1 ring-slate-300" : ""}`}
         >
           {dragOver?.zone === "subs" && dragOver.insertIndex === 0 && (
@@ -560,41 +378,36 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 className="flex gap-2 rounded"
                 onDragOver={e => {
                   const el = e.currentTarget as HTMLElement;
-                  allowDropIfAllowed(e);
-                  const insertIndex = computeInsertIndexFromPointer(e, el, i);
-                  setDragOver({ zone: "subs", insertIndex });
+                  dnd.allowDrop(e);
+                  const insertIndex = dnd.computeInsertIndexFromPointer(e, el, i);
+                  dnd.setDragOver({ zone: "subs", insertIndex });
                 }}
                 onDrop={e => {
                   e.stopPropagation();
                   const insertIndex =
                     dragOver?.zone === "subs" ? dragOver.insertIndex : undefined;
-                  dropOnList("subs", insertIndex)(e);
+                  dnd.dropOnList("subs", insertIndex)(e);
                 }}
               >
                 <div
                   className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
                   draggable
-                  onDragStart={startDrag({ source: "subs", rowId: s.id })}
+                  onDragStart={dnd.startDrag({ source: "subs", rowId: s.id })}
                   onDragEnd={() => {
-                    setDragged(null);
-                    setDragOver(null);
+                    dnd.endDrag();
                   }}
                   title="Drag to reorder"
                 >
                   <GripVertical className="w-4 h-4" />
                 </div>
-                <select
-                  className="flex-1 border rounded px-2 py-1"
+                <GearStatSelect
                   value={s.stat}
-                  onChange={e => {
-                    const nextStat = e.target.value as GearStatKey;
+                  onChange={nextStat =>
                     setSubs(prev =>
                       prev.map(r => (r.id === s.id ? { ...r, stat: nextStat } : r))
-                    );
-                  }}
-                >
-                  {renderStatOptions()}
-                </select>
+                    )
+                  }
+                />
 
                 <Input
                   type="number"
@@ -623,11 +436,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       <div
         className={`border rounded p-3 space-y-2 ${dragOver?.zone === "addition" ? "ring-1 ring-slate-300" : ""}`}
         onDragOver={e => {
-          allowDropIfAllowed(e);
-          setDragOver({ zone: "addition" });
+          dnd.allowDrop(e);
+          dnd.setDragOver({ zone: "addition" });
         }}
-        onDragLeave={() => setDragOver(prev => (prev?.zone === "addition" ? null : prev))}
-        onDrop={dropOnAddition()}
+        onDragLeave={() => dnd.setDragOver(prev => (prev?.zone === "addition" ? null : prev))}
+        onDrop={dnd.dropOnAddition()}
       >
         <p className="text-sm font-medium">Additional Attribute</p>
 
@@ -636,24 +449,18 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             <div
               className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
               draggable
-              onDragStart={startDrag({ source: "addition" })}
+              onDragStart={dnd.startDrag({ source: "addition" })}
               onDragEnd={() => {
-                setDragged(null);
-                setDragOver(null);
+                dnd.endDrag();
               }}
               title="Drag to move"
             >
               <GripVertical className="w-4 h-4" />
             </div>
-            <select
-              className="flex-1 border rounded px-2 py-1"
+            <GearStatSelect
               value={addition.stat}
-              onChange={e =>
-                setAddition({ ...addition, stat: e.target.value as GearStatKey })
-              }
-            >
-              {renderStatOptions()}
-            </select>
+              onChange={nextStat => setAddition({ ...addition, stat: nextStat })}
+            />
 
             <Input
               type="number"
