@@ -44,6 +44,10 @@ export async function computeOptimizeResultsAsync(
   equipped: Partial<Record<GearSlot, string | undefined>>,
   desiredDisplay: number,
   rotation?: Rotation,
+  options?: {
+    candidateGears?: CustomGear[];
+    slotsToOptimize?: GearSlot[];
+  },
   onProgress?: (current: number, total: number) => void
 ): Promise<OptimizeComputation> {
   /* ============================================================
@@ -82,10 +86,26 @@ export async function computeOptimizeResultsAsync(
      2️⃣ PREPARE SLOT OPTIONS
   ============================================================ */
 
-  const slotOptions = GEAR_SLOTS.map(({ key }) => {
-    const items = customGears.filter((g) => g.slot === key);
+  const candidateGears = options?.candidateGears ?? customGears;
+  const optimizeSlots =
+    options?.slotsToOptimize && options.slotsToOptimize.length > 0
+      ? new Set<GearSlot>(options.slotsToOptimize)
+      : null;
+
+  const slotOptions = GEAR_SLOTS.filter(({ key }) =>
+    optimizeSlots ? optimizeSlots.has(key) : true
+  ).map(({ key }) => {
     const equippedGear =
       equipped[key] && customGears.find((g) => g.id === equipped[key]);
+
+    // Respect UI filters via candidateGears, but always allow keeping currently-equipped
+    // gear (otherwise filters could accidentally force "no gear" for a slot).
+    const filteredItems = candidateGears.filter((g) => g.slot === key);
+    const items = equippedGear
+      ? filteredItems.some((g) => g.id === equippedGear.id)
+        ? filteredItems
+        : [equippedGear, ...filteredItems]
+      : filteredItems;
 
     return {
       slot: key,
@@ -169,9 +189,9 @@ export async function computeOptimizeResultsAsync(
       }
 
       results.push({
-        key: GEAR_SLOTS.map(({ key }) => selection[key]?.id ?? "none").join(
-          "|"
-        ),
+        key: slotOptions
+          .map(({ slot }) => selection[slot]?.id ?? "none")
+          .join("|"),
         damage: dmg,
         percentGain:
           baseDamage === 0 ? 0 : ((dmg - baseDamage) / baseDamage) * 100,

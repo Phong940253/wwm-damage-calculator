@@ -15,6 +15,34 @@ import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
 import { GEAR_SLOTS } from "@/app/constants";
 
+function normalizeRarity(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getRarityPillClass(rarity: string): string {
+  const r = normalizeRarity(rarity);
+
+  // Common synonyms / variants
+  if (r === "common" || r === "normal") {
+    return "bg-slate-500/15 text-slate-200 border-slate-400/20";
+  }
+  if (r === "uncommon") {
+    return "bg-lime-500/15 text-lime-200 border-lime-400/20";
+  }
+  if (r === "rare") {
+    return "bg-sky-500/15 text-sky-200 border-sky-400/20";
+  }
+  if (r === "epic") {
+    return "bg-violet-500/15 text-violet-200 border-violet-400/20";
+  }
+  if (r === "legendary") {
+    return "bg-amber-500/15 text-amber-200 border-amber-400/20";
+  }
+
+  // Fallback for custom rarities
+  return "bg-background/30 text-muted-foreground border-white/10";
+}
+
 interface Props {
   gear: CustomGear;
   elementStats?: ElementStats;
@@ -89,7 +117,13 @@ export default function GearCard({ gear, elementStats, onEdit, onDelete }: Props
               {slotLabel}
             </span>
             {gear.rarity && (
-              <span className="rounded-md border border-white/10 bg-background/30 px-2 py-0.5 text-[11px] text-muted-foreground">
+              <span
+                className={
+                  "rounded-md border px-2 py-0.5 text-[11px] font-medium " +
+                  getRarityPillClass(gear.rarity)
+                }
+                title={gear.rarity}
+              >
                 {gear.rarity}
               </span>
             )}

@@ -41,6 +41,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   const [name, setName] = useState("");
   const [slot, setSlot] = useState<GearSlot>("weapon_1");
+  const [rarity, setRarity] = useState("");
 
   /** 🔥 MULTI MAIN */
 
@@ -87,6 +88,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       if (result.name) setName(result.name);
       if (result.slot) setSlot(result.slot as GearSlot);
+      if (result.rarity) setRarity(String(result.rarity));
 
       if (result.mains) {
         const parsedMains: GearStatRow[] =
@@ -146,6 +148,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
     setName(initialGear.name);
     setSlot(initialGear.slot);
+    setRarity(initialGear.rarity ?? "");
 
     setMains(initialGear.mains.map(m => ({ id: crypto.randomUUID(), ...m })));
 
@@ -184,6 +187,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         mains: mains.map(({ stat, value }) => ({ stat, value })),
         subs: subs.map(({ stat, value }) => ({ stat, value })),
         addition: addition ? { stat: addition.stat, value: addition.value } : undefined,
+        rarity: rarity.trim() ? rarity.trim() : undefined,
       };
 
       setCustomGears(g =>
@@ -250,6 +254,23 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="col-span-2">
+          <label className="text-xs">Rarity</label>
+          <Input
+            value={rarity}
+            onChange={(e) => setRarity(e.target.value)}
+            placeholder="e.g. Common, Rare, Epic, Legendary"
+            list="gear-rarity-options"
+          />
+          <datalist id="gear-rarity-options">
+            <option value="Common" />
+            <option value="Uncommon" />
+            <option value="Rare" />
+            <option value="Epic" />
+            <option value="Legendary" />
+          </datalist>
         </div>
       </div>
 

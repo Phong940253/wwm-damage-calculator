@@ -83,7 +83,37 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   const [sortStat, setSortStat] = useState("none");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const opt = useGearOptimize(stats, elementStats, customGears, equipped, rotation);
+  const filteredGears = useMemo(() => {
+    let list = [...customGears];
+
+    if (slotFilter.size > 0) {
+      list = list.filter((g) => slotFilter.has(g.slot));
+    }
+
+    if (statFilter.size > 0) {
+      list = list.filter((g) =>
+        Array.from(statFilter).some((stat) => getStatTotal(g, stat) > 0)
+      );
+    }
+
+    return list;
+  }, [customGears, slotFilter, statFilter]);
+
+  const optimizeOptions = useMemo(() => {
+    return {
+      candidateGears: filteredGears,
+      slotsToOptimize: slotFilter.size > 0 ? Array.from(slotFilter) : undefined,
+    };
+  }, [filteredGears, slotFilter]);
+
+  const opt = useGearOptimize(
+    stats,
+    elementStats,
+    customGears,
+    equipped,
+    rotation,
+    optimizeOptions
+  );
 
   useEffect(() => {
     if (optOpen) {
@@ -130,19 +160,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   ======================= */
 
   const displayGears = useMemo(() => {
-    let list = [...customGears];
-
-    /* ---- Slot filter ---- */
-    if (slotFilter.size > 0) {
-      list = list.filter((g) => slotFilter.has(g.slot));
-    }
-
-    /* ---- Stat filter ---- */
-    if (statFilter.size > 0) {
-      list = list.filter((g) =>
-        Array.from(statFilter).some((stat) => getStatTotal(g, stat) > 0)
-      );
-    }
+    let list = [...filteredGears];
 
     /* ---- Sort ---- */
     if (sortStat !== "none") {
@@ -160,7 +178,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
     }
 
     return list;
-  }, [customGears, slotFilter, statFilter, sortStat, sortDir]);
+  }, [filteredGears, sortStat, sortDir]);
 
   return (
     <div className="space-y-6">
@@ -248,7 +266,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
     absolute z-50 top-full left-0 mt-2 w-48
     rounded-lg border bg-card shadow-lg
     p-2 space-y-1
-    ${pinSlot ? "block" : "hidden group-hover:block"}
+    ${pinStat ? "block" : "hidden group-hover:block"}
   `}
           >
             <input

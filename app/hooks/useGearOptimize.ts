@@ -16,7 +16,11 @@ export function useGearOptimize(
   elementStats: ElementStats,
   customGears: CustomGear[],
   equipped: Partial<Record<GearSlot, string | undefined>>,
-  rotation?: Rotation
+  rotation?: Rotation,
+  options?: {
+    candidateGears?: CustomGear[];
+    slotsToOptimize?: GearSlot[];
+  }
 ) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +43,7 @@ export function useGearOptimize(
           equipped,
           maxDisplay,
           rotation,
+          options,
           (current, total) => setProgress({ current, total })
         );
         setResults(r.results);
@@ -53,7 +58,7 @@ export function useGearOptimize(
         setLoading(false);
       }
     },
-    [stats, elementStats, customGears, equipped, rotation]
+    [stats, elementStats, customGears, equipped, rotation, options]
   );
 
   return { run, loading, error, results, baseDamage, combos, progress };

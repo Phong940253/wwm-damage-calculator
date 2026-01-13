@@ -2,6 +2,7 @@
 export interface GearOcrResult {
   name?: string;
   slot?: string;
+  rarity?: string;
 
   mains?: {
     stat: string;
@@ -184,6 +185,7 @@ OUTPUT SCHEMA
 {
   "name": string,
   "slot": string,
+  "rarity": string,
   "mains": [{ "stat": string, "value": number }],
   "subs": [{ "stat": string, "value": number }],
   "addition": { "stat": string, "value": number } | null
