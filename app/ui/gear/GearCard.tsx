@@ -1,6 +1,7 @@
 "use client";
 
-import { CustomGear, ElementStats, InputStats } from "../../types";
+import { useMemo } from "react";
+import { CustomGear, ElementStats, InputStats, Rotation } from "../../types";
 import { useGear } from "../../providers/GearContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,45 @@ import { getStatLabel } from "@/app/utils/statLabel";
 import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
 import { GEAR_SLOTS } from "@/app/constants";
+import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
+import { buildDamageContext } from "@/app/domain/damage/damageContext";
+import { calculateDamage } from "@/app/domain/damage/damageCalculator";
+import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { SKILLS } from "@/app/domain/skill/skills";
+import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+
+function calcRotationAwareNormalDamage(
+  stats: InputStats,
+  elementStats: ElementStats,
+  gearBonus: Record<string, number>,
+  rotation?: Rotation
+): number {
+  const rotationBonuses = computeRotationBonuses(
+    stats,
+    elementStats,
+    gearBonus,
+    rotation
+  );
+
+  const ctx = buildDamageContext(
+    stats,
+    elementStats,
+    sumBonuses(gearBonus, rotationBonuses)
+  );
+
+  if (rotation && rotation.skills.length > 0) {
+    let totalNormal = 0;
+    for (const rotSkill of rotation.skills) {
+      const skill = SKILLS.find((s) => s.id === rotSkill.id);
+      if (!skill) continue;
+      const dmg = calculateSkillDamage(ctx, skill);
+      totalNormal += dmg.total.normal.value * rotSkill.count;
+    }
+    return totalNormal;
+  }
+
+  return calculateDamage(ctx).normal || 0;
+}
 
 function normalizeRarity(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, " ");
@@ -46,6 +86,8 @@ function getRarityPillClass(rarity: string): string {
 interface Props {
   gear: CustomGear;
   elementStats?: ElementStats;
+  stats: InputStats;
+  rotation?: Rotation;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -54,8 +96,8 @@ interface Props {
    Component
 ======================= */
 
-export default function GearCard({ gear, elementStats, onEdit, onDelete }: Props) {
-  const { equipped, setEquipped } = useGear();
+export default function GearCard({ gear, elementStats, stats, rotation, onEdit, onDelete }: Props) {
+  const { customGears, equipped, setEquipped } = useGear();
   const isEquipped = equipped[gear.slot] === gear.id;
 
   const slotLabel =
@@ -82,6 +124,80 @@ export default function GearCard({ gear, elementStats, onEdit, onDelete }: Props
     : gear.main
       ? [gear.main]
       : [];
+
+  const impactPctByLineKey = useMemo(() => {
+    if (!elementStats) return {} as Record<string, number>;
+
+    // Baseline: keep other equipped slots, but remove THIS slot
+    const equippedWithoutSlot = { ...equipped };
+    delete (equippedWithoutSlot as Record<string, string>)[gear.slot];
+
+    const bonusWithoutSlot = aggregateEquippedGearBonus(
+      customGears,
+      equippedWithoutSlot
+    );
+
+    const base = calcRotationAwareNormalDamage(
+      stats,
+      elementStats,
+      bonusWithoutSlot,
+      rotation
+    );
+    if (base <= 0) return {} as Record<string, number>;
+
+    const result: Record<string, number> = {};
+
+    // Main lines (rendered as mains)
+    mains.forEach((m, i) => {
+      const statKey = String(m.stat);
+      const value = Number(m.value ?? 0);
+      if (!value) return;
+      const testBonus = { ...bonusWithoutSlot };
+      testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+      const dmg = calcRotationAwareNormalDamage(
+        stats,
+        elementStats,
+        testBonus,
+        rotation
+      );
+      result[`mains:${i}`] = ((dmg - base) / base) * 100;
+    });
+
+    // Sub lines
+    (gear.subs ?? []).forEach((s, i) => {
+      const statKey = String(s.stat);
+      const value = Number(s.value ?? 0);
+      if (!value) return;
+      const testBonus = { ...bonusWithoutSlot };
+      testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+      const dmg = calcRotationAwareNormalDamage(
+        stats,
+        elementStats,
+        testBonus,
+        rotation
+      );
+      result[`subs:${i}`] = ((dmg - base) / base) * 100;
+    });
+
+    // Bonus/addition
+    if (gear.addition) {
+      const statKey = String(gear.addition.stat);
+      const value = Number(gear.addition.value ?? 0);
+      if (value) {
+        const testBonus = { ...bonusWithoutSlot };
+        testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+        const dmg = calcRotationAwareNormalDamage(
+          stats,
+          elementStats,
+          testBonus,
+          rotation
+        );
+        result["addition:0"] = ((dmg - base) / base) * 100;
+      }
+    }
+
+    return result;
+  }, [customGears, equipped, gear, mains, elementStats, stats, rotation]);
 
   return (
     <Card
@@ -168,10 +284,11 @@ export default function GearCard({ gear, elementStats, onEdit, onDelete }: Props
               {mains.map((m, i) => (
                 <StatLine
                   key={`${String(m.stat)}-${i}`}
-                  stat={m.stat}
+                  stat={String(m.stat)}
                   value={m.value}
                   type="main"
                   elementStats={elementStats}
+                  impactPct={impactPctByLineKey[`mains:${i}`]}
                 />
               ))}
             </div>
@@ -188,10 +305,11 @@ export default function GearCard({ gear, elementStats, onEdit, onDelete }: Props
               {gear.subs.map((s, i) => (
                 <StatLine
                   key={`${String(s.stat)}-${i}`}
-                  stat={s.stat}
+                  stat={String(s.stat)}
                   value={s.value}
                   type="sub"
                   elementStats={elementStats}
+                  impactPct={impactPctByLineKey[`subs:${i}`]}
                 />
               ))}
             </div>
@@ -202,10 +320,11 @@ export default function GearCard({ gear, elementStats, onEdit, onDelete }: Props
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">Bonus</p>
             <StatLine
-              stat={gear.addition.stat}
+              stat={String(gear.addition.stat)}
               value={gear.addition.value}
               type="bonus"
               elementStats={elementStats}
+              impactPct={impactPctByLineKey["addition:0"]}
             />
           </div>
         )}
@@ -223,13 +342,27 @@ function StatLine({
   value,
   type,
   elementStats,
+  impactPct,
 }: {
-  stat: keyof InputStats;
+  stat: string;
   value: number;
   type: StatType;
   elementStats?: ElementStats;
+  impactPct?: number;
 }) {
   const key = String(stat);
+  const showPct =
+    typeof impactPct === "number" &&
+    Number.isFinite(impactPct) &&
+    Math.abs(impactPct) >= 0.01;
+  const pctTone =
+    !showPct
+      ? "text-muted-foreground"
+      : impactPct! > 0
+        ? "text-emerald-400"
+        : impactPct! < 0
+          ? "text-red-400"
+          : "text-muted-foreground";
 
   return (
     <div
@@ -246,7 +379,13 @@ function StatLine({
         {getStatLabel(key, elementStats)}
       </span>
       <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">
-        +{value}
+        +{Number(value).toFixed(1)}
+        {showPct && (
+          <span className={`ml-1 font-normal ${pctTone}`}>
+            ({impactPct! >= 0 ? "+" : ""}
+            {impactPct!.toFixed(2)}%)
+          </span>
+        )}
       </span>
     </div>
   );
