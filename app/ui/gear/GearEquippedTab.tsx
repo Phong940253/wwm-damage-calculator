@@ -21,6 +21,26 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
 
+function getGearStatTotals(gear?: {
+  main?: { stat: string; value: number } | null;
+  mains?: Array<{ stat: string; value: number }>;
+  subs?: Array<{ stat: string; value: number }>;
+  addition?: { stat: string; value: number } | null;
+} | null) {
+  const totals = new Map<string, number>();
+  if (!gear) return totals;
+
+  const attrs = [gear.main, ...(gear.mains ?? []), ...(gear.subs ?? []), gear.addition].filter(
+    Boolean
+  );
+
+  for (const a of attrs) {
+    const statKey = String(a.stat);
+    totals.set(statKey, (totals.get(statKey) ?? 0) + Number(a.value ?? 0));
+  }
+  return totals;
+}
+
 function calcRotationAwareNormalDamage(
   stats: InputStats,
   elementStats: ElementStats,
@@ -97,6 +117,30 @@ export default function GearEquippedTab() {
         selectedRotation
       );
 
+      const perStat = (() => {
+        const totals = getGearStatTotals(equippedGear);
+        const impactPctByStat: Record<string, number> = {};
+        if (!equippedGear || totals.size === 0 || damageWithoutSlot <= 0) {
+          return { impactPctByStat };
+        }
+
+        for (const [statKey, value] of totals.entries()) {
+          if (!value) continue;
+          const testBonus = { ...bonusWithoutSlot };
+          testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+          const dmg = calcRotationAwareNormalDamage(
+            stats,
+            elementStats,
+            testBonus,
+            selectedRotation
+          );
+          impactPctByStat[statKey] =
+            ((dmg - damageWithoutSlot) / damageWithoutSlot) * 100;
+        }
+
+        return { impactPctByStat };
+      })();
+
       const diff = fullDamage - damageWithoutSlot;
       const percent =
         damageWithoutSlot <= 0 ? 0 : (diff / damageWithoutSlot) * 100;
@@ -109,6 +153,7 @@ export default function GearEquippedTab() {
         damageWithoutSlot,
         diff,
         percent,
+        perStat,
       };
     });
 
@@ -244,7 +289,11 @@ export default function GearEquippedTab() {
               </select>
 
               {row.equippedGear ? (
-                <GearDetailCard gear={row.equippedGear} />
+                <GearDetailCard
+                  gear={row.equippedGear}
+                  elementStats={elementStats}
+                  impactPctByStat={row.perStat.impactPctByStat}
+                />
               ) : (
                 <div className="h-36 rounded bg-muted/40 flex items-center justify-center text-xs text-muted-foreground">
                   {row.label}
