@@ -38,7 +38,7 @@ export default function GearDetailCard({
         <div>
           <p className="text-xs text-muted-foreground mb-1">Main</p>
           <StatLine
-            stat={gear.main.stat}
+            stat={String(gear.main.stat)}
             value={gear.main.value}
             type="main"
             elementStats={elementStats}
@@ -58,7 +58,7 @@ export default function GearDetailCard({
             {gear.mains.map((m, i) => (
               <StatLine
                 key={i}
-                stat={m.stat}
+                stat={String(m.stat)}
                 value={m.value}
                 type="main"
                 elementStats={elementStats}
@@ -80,7 +80,7 @@ export default function GearDetailCard({
             {gear.subs.map((s, i) => (
               <StatLine
                 key={i}
-                stat={s.stat}
+                stat={String(s.stat)}
                 value={s.value}
                 type="sub"
                 elementStats={elementStats}
@@ -99,7 +99,7 @@ export default function GearDetailCard({
         <div>
           <p className="text-xs text-muted-foreground mb-1">Bonus</p>
           <StatLine
-            stat={gear.addition.stat}
+            stat={String(gear.addition.stat)}
             value={gear.addition.value}
             type="bonus"
             elementStats={elementStats}

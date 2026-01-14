@@ -199,6 +199,49 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     return result;
   }, [customGears, equipped, gear, mains, elementStats, stats, rotation]);
 
+  const impactPctNoMain = useMemo(() => {
+    if (!elementStats) return 0;
+
+    const equippedWithoutSlot = { ...equipped };
+    delete (equippedWithoutSlot as Record<string, string>)[gear.slot];
+    const bonusWithoutSlot = aggregateEquippedGearBonus(
+      customGears,
+      equippedWithoutSlot
+    );
+
+    const base = calcRotationAwareNormalDamage(
+      stats,
+      elementStats,
+      bonusWithoutSlot,
+      rotation
+    );
+    if (base <= 0) return 0;
+
+    const testBonus = { ...bonusWithoutSlot };
+
+    // Apply subs + addition only
+    (gear.subs ?? []).forEach((s) => {
+      const statKey = String(s.stat);
+      const value = Number(s.value ?? 0);
+      if (!value) return;
+      testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+    });
+
+    if (gear.addition) {
+      const statKey = String(gear.addition.stat);
+      const value = Number(gear.addition.value ?? 0);
+      if (value) testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+    }
+
+    const dmg = calcRotationAwareNormalDamage(
+      stats,
+      elementStats,
+      testBonus,
+      rotation
+    );
+    return ((dmg - base) / base) * 100;
+  }, [customGears, equipped, gear, elementStats, stats, rotation]);
+
   return (
     <Card
       className={
@@ -226,6 +269,17 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                 Equipped
               </span>
             )}
+            {typeof impactPctNoMain === "number" &&
+              Number.isFinite(impactPctNoMain) &&
+              Math.abs(impactPctNoMain) >= 0.01 && (
+                <span
+                  className="shrink-0 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200"
+                  title="Gear impact excluding main stats (subs + bonus only)"
+                >
+                  No-main {impactPctNoMain >= 0 ? "+" : ""}
+                  {impactPctNoMain.toFixed(2)}%
+                </span>
+              )}
           </div>
 
           <div className="mt-1 flex flex-wrap items-center gap-2">

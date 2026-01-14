@@ -144,12 +144,13 @@ export default function GearEquippedTab() {
 
       const perStat = (() => {
         const impactPctByLineKey: Record<string, number> = {};
+        let impactPctNoMain = 0;
         if (!equippedGear || damageWithoutSlot <= 0) {
-          return { impactPctByLineKey };
+          return { impactPctByLineKey, impactPctNoMain };
         }
 
         const lines = getGearStatLines(equippedGear);
-        if (lines.length === 0) return { impactPctByLineKey };
+        if (lines.length === 0) return { impactPctByLineKey, impactPctNoMain };
 
         for (const line of lines) {
           const testBonus = { ...bonusWithoutSlot };
@@ -164,7 +165,25 @@ export default function GearEquippedTab() {
             ((dmg - damageWithoutSlot) / damageWithoutSlot) * 100;
         }
 
-        return { impactPctByLineKey };
+        // Gear-level impact excluding main stats: apply subs + addition together (skip main/mainStats)
+        const noMainLines = lines.filter(
+          (l) => !l.lineKey.startsWith("main:") && !l.lineKey.startsWith("mains:")
+        );
+        if (noMainLines.length > 0) {
+          const testBonus = { ...bonusWithoutSlot };
+          for (const l of noMainLines) {
+            testBonus[l.statKey] = (testBonus[l.statKey] ?? 0) + l.value;
+          }
+          const dmgNoMain = calcRotationAwareNormalDamage(
+            stats,
+            elementStats,
+            testBonus,
+            selectedRotation
+          );
+          impactPctNoMain = ((dmgNoMain - damageWithoutSlot) / damageWithoutSlot) * 100;
+        }
+
+        return { impactPctByLineKey, impactPctNoMain };
       })();
 
       const diff = fullDamage - damageWithoutSlot;
@@ -261,6 +280,18 @@ export default function GearEquippedTab() {
                   >
                     {pctText}
                   </Badge>
+                  {typeof row.perStat.impactPctNoMain === "number" &&
+                    Number.isFinite(row.perStat.impactPctNoMain) &&
+                    Math.abs(row.perStat.impactPctNoMain) >= 0.01 && (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-400/30 bg-amber-500/10 text-amber-700"
+                        title="Gear impact excluding main stats (subs + bonus only)"
+                      >
+                        No-main {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
+                        {row.perStat.impactPctNoMain.toFixed(2)}%
+                      </Badge>
+                    )}
                   {isWorst && (
                     <Badge className="bg-amber-500/15 text-amber-700" variant="outline">
                       Worst
