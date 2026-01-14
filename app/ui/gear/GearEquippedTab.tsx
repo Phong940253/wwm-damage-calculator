@@ -20,7 +20,7 @@ import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierE
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
-import type { CustomGear, GearAttribute } from "@/app/types";
+import type { CustomGear } from "@/app/types";
 
 function getGearStatLines(gear?: CustomGear | null): Array<{
   lineKey: string;

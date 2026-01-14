@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useGear } from "../../providers/GearContext";
@@ -117,6 +117,24 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   const [sortStat, setSortStat] = useState("none");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [urlHydrated, setUrlHydrated] = useState(false);
+
+  /* ===== Infinite list ===== */
+
+  const PAGE_SIZE = 16;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  const handleEdit = useCallback((gear: CustomGear) => {
+    setEditing(gear);
+    setOpen(true);
+  }, []);
+
+  const handleDelete = useCallback(
+    (gearId: string) => {
+      setCustomGears((x) => x.filter((i) => i.id !== gearId));
+    },
+    [setCustomGears]
+  );
 
   /* =======================
      URL sync (filter + sort)
@@ -275,6 +293,44 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
 
     return list;
   }, [filteredGears, sortStat, sortDir]);
+
+  const filterKey = useMemo(() => {
+    const slotCsv = toSortedCsv(Array.from(slotFilter).map(String));
+    const statCsv = toSortedCsv(statFilter);
+    return `${slotCsv}|${statCsv}|${sortStat}|${sortDir}|${displayGears.length}`;
+  }, [slotFilter, statFilter, sortStat, sortDir, displayGears.length]);
+
+  useEffect(() => {
+    // Reset pagination when the result set changes (filters/sort/custom gear changes)
+    setVisibleCount(PAGE_SIZE);
+  }, [filterKey]);
+
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    if (visibleCount >= displayGears.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (!first?.isIntersecting) return;
+        setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, displayGears.length));
+      },
+      {
+        root: null,
+        rootMargin: "400px 0px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [visibleCount, displayGears.length]);
+
+  const visibleGears = useMemo(() => {
+    return displayGears.slice(0, visibleCount);
+  }, [displayGears, visibleCount]);
 
   return (
     <div className="space-y-6">
@@ -480,23 +536,29 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           GEAR LIST
       ======================= */}
       <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {displayGears.map((g) => (
+        {visibleGears.map((g) => (
           <GearCard
             key={g.id}
             gear={g}
             elementStats={elementStats}
             stats={stats}
             rotation={rotation}
-            onEdit={() => {
-              setEditing(g);
-              setOpen(true);
-            }}
-            onDelete={() =>
-              setCustomGears((x) => x.filter((i) => i.id !== g.id))
-            }
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         ))}
       </div>
+
+      {/* Infinite-scroll sentinel */}
+      {visibleCount < displayGears.length && (
+        <div className="flex justify-center">
+          <div
+            ref={loadMoreRef}
+            className="h-10 w-full"
+            aria-label="Loading more gear"
+          />
+        </div>
+      )}
 
       {/* =======================
           DIALOGS
