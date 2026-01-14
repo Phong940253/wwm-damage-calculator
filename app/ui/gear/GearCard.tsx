@@ -346,42 +346,47 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         {/* Top row */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="min-w-0 truncate text-sm font-semibold">{gear.name}</p>
-              {isEquipped && (
-                <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
-                  Equipped
-                </span>
-              )}
-              {impactEnabled &&
-                typeof impactPctTotal === "number" &&
-                Number.isFinite(impactPctTotal) &&
-                Math.abs(impactPctTotal) >= 0.01 && (
-                  <span
-                    className={
-                      "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium " +
-                      (impactPctTotal >= 0
-                        ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
-                        : "border-red-400/25 bg-red-500/10 text-red-200")
-                    }
-                    title="Gear impact vs empty slot (keeping other equipped slots)"
-                  >
-                    {impactPctTotal >= 0 ? "+" : ""}
-                    {impactPctTotal.toFixed(2)}%
+            <div className="flex items-center gap-2 flex-col">
+              <div className="flex w-full items-center gap-2">
+                <p className="min-w-0 truncate text-sm font-semibold">{gear.name}</p>
+                {isEquipped && (
+                  <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
+                    Equipped
                   </span>
-                )}
-              {impactEnabled &&
-                typeof impactPctNoMain === "number" &&
-                Number.isFinite(impactPctNoMain) &&
-                Math.abs(impactPctNoMain) >= 0.01 && (
-                  <span
-                    className="shrink-0 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200"
-                    title="Gear impact excluding main stats (subs + bonus only)"
-                  >
-                    No-main {impactPctNoMain >= 0 ? "+" : ""}
-                    {impactPctNoMain.toFixed(2)}%
-                  </span>
-                )}
+                )}</div>
+              <div className="flex w-full items-center gap-2">
+
+
+                {impactEnabled &&
+                  typeof impactPctTotal === "number" &&
+                  Number.isFinite(impactPctTotal) &&
+                  Math.abs(impactPctTotal) >= 0.01 && (
+                    <span
+                      className={
+                        "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium " +
+                        (impactPctTotal >= 0
+                          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
+                          : "border-red-400/25 bg-red-500/10 text-red-200")
+                      }
+                      title="Gear impact vs empty slot (keeping other equipped slots)"
+                    >
+                      {impactPctTotal >= 0 ? "+" : ""}
+                      {impactPctTotal.toFixed(2)}%
+                    </span>
+                  )}
+                {impactEnabled &&
+                  typeof impactPctNoMain === "number" &&
+                  Number.isFinite(impactPctNoMain) &&
+                  Math.abs(impactPctNoMain) >= 0.01 && (
+                    <span
+                      className="shrink-0 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200"
+                      title="Gear impact excluding main stats (subs + bonus only)"
+                    >
+                      No-main {impactPctNoMain >= 0 ? "+" : ""}
+                      {impactPctNoMain.toFixed(2)}%
+                    </span>
+                  )}
+              </div>
             </div>
 
             <div className="mt-1 flex flex-wrap items-center gap-2">

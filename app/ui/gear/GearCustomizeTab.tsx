@@ -237,11 +237,25 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   }, [optOpen]);
 
   const apply = (sel: Partial<Record<GearSlot, CustomGear>>) => {
-    setEquipped(() => {
-      const next: Partial<Record<GearSlot, string>> = {};
-      GEAR_SLOTS.forEach(({ key }) => {
-        if (sel[key]) next[key] = sel[key]!.id;
-      });
+    setEquipped((prev) => {
+      const next: Partial<Record<GearSlot, string>> = { ...prev };
+
+      // If user filters slots in the optimizer UI, results only include those slots.
+      // Preserve other equipped slots (don't wipe them).
+      const optimizedSlots: GearSlot[] =
+        slotFilter.size > 0
+          ? Array.from(slotFilter)
+          : GEAR_SLOTS.map(({ key }) => key);
+
+      for (const slot of optimizedSlots) {
+        const gear = sel[slot];
+        if (gear) {
+          next[slot] = gear.id;
+        } else {
+          delete next[slot];
+        }
+      }
+
       return next;
     });
     setOptOpen(false);
