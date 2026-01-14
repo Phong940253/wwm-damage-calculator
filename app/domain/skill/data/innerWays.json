@@ -118,7 +118,7 @@
         ],
         "modifiers": [
             {
-                "stat": "DamageBoost",
+                "stat": "ChargeSkillDamageBoost",
                 "type": "flat",
                 "value": 15
             }
