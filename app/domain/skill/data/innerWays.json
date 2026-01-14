@@ -189,6 +189,26 @@
         "level": 2
     },
     {
+        "id": "iw_universal_mountains_might_t4",
+        "name": "Mountain's Might (Tier 4)",
+        "description": "While Long Wind is active: +1.5% Affinity Rate; +1.5% against boss targets.",
+        "applicableToMartialArtId": "bellstrike_splendor",
+        "modifiers": [
+            {
+                "stat": "AffinityRate",
+                "type": "flat",
+                "value": 1.5
+            },
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 1.5
+            }
+        ],
+        "level": 4,
+        "notes": "In-game: the +1.5% damage applies only vs bosses and only while Long Wind is active. This calculator approximates it as +1.5% Damage Boost (unconditional)."
+    },
+    {
         "id": "iw_bamboocut_1",
         "name": "Bamboocut Precision",
         "description": "Increases Bamboocut element damage by 10%",
