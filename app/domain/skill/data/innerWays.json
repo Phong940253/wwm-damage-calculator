@@ -1,79 +1,5 @@
 [
     {
-        "id": "iw_universal_1",
-        "name": "Strength Training",
-        "description": "Increases Physical Attack by 8%",
-        "modifiers": [
-            {
-                "stat": "MinPhysicalAttack",
-                "type": "scale",
-                "sourceStat": "MinPhysicalAttack",
-                "ratio": 0.08
-            },
-            {
-                "stat": "MaxPhysicalAttack",
-                "type": "scale",
-                "sourceStat": "MaxPhysicalAttack",
-                "ratio": 0.08
-            }
-        ],
-        "level": 1
-    },
-    {
-        "id": "iw_universal_2",
-        "name": "Defense Mastery",
-        "description": "Increases Physical Defense by 10%",
-        "modifiers": [
-            {
-                "stat": "PhysicalDefense",
-                "type": "scale",
-                "sourceStat": "PhysicalDefense",
-                "ratio": 0.1
-            }
-        ],
-        "level": 1
-    },
-    {
-        "id": "iw_universal_3",
-        "name": "Critical Focus",
-        "description": "Increases Critical Rate by 5%",
-        "modifiers": [
-            {
-                "stat": "CriticalRate",
-                "type": "flat",
-                "value": 5
-            }
-        ],
-        "level": 1
-    },
-    {
-        "id": "iw_universal_4",
-        "name": "Damage Amplification",
-        "description": "Increases Damage Boost by 5%",
-        "modifiers": [
-            {
-                "stat": "DamageBoost",
-                "type": "flat",
-                "value": 5
-            }
-        ],
-        "level": 2
-    },
-    {
-        "id": "iw_universal_5",
-        "name": "Health Training",
-        "description": "Increases Max HP by 10%",
-        "modifiers": [
-            {
-                "stat": "HP",
-                "type": "scale",
-                "sourceStat": "HP",
-                "ratio": 0.1
-            }
-        ],
-        "level": 1
-    },
-    {
         "id": "iw_universal_battle_anthem_t4",
         "name": "Battle Anthem (Tier 4)",
         "description": "Charged skills deal +15% damage; increases Endurance cost by 10%.",
@@ -106,34 +32,6 @@
         ],
         "level": 6,
         "notes": "Tier 6: When dealing damage with a Charged Skill, if the target is a player, increases the damage by 1% for every 10 Endurance difference between you and the target, up to 10%; if the target is a boss, deals bonus damage based on the Endurance you have consumed: 1% bonus damage for every 10 Endurance consumed, up to 10%."
-    },
-    {
-        "id": "iw_bellstrike_1",
-        "name": "Bellstrike Resonance Mastery",
-        "description": "Increases Bellstrike element damage by 15%",
-        "applicableToMartialArtId": "bellstrike_splendor",
-        "modifiers": [
-            {
-                "stat": "bellstrikeDMGBonus",
-                "type": "flat",
-                "value": 15
-            }
-        ],
-        "level": 2
-    },
-    {
-        "id": "iw_bellstrike_2",
-        "name": "Bellstrike Penetration",
-        "description": "Increases Bellstrike penetration by 2",
-        "applicableToMartialArtId": "bellstrike_splendor",
-        "modifiers": [
-            {
-                "stat": "bellstrikePenetration",
-                "type": "flat",
-                "value": 2
-            }
-        ],
-        "level": 2
     },
     {
         "id": "iw_silkbind_1",
@@ -192,7 +90,9 @@
         "id": "iw_universal_mountains_might_t4",
         "name": "Mountain's Might (Tier 4)",
         "description": "While Long Wind is active: +1.5% Affinity Rate; +1.5% against boss targets.",
-        "applicableToMartialArtId": "bellstrike_splendor",
+        "defaultEnabledForMartialArtIds": [
+            "bellstrike_splendor"
+        ],
         "modifiers": [
             {
                 "stat": "AffinityRate",
@@ -207,6 +107,41 @@
         ],
         "level": 4,
         "notes": "In-game: the +1.5% damage applies only vs bosses and only while Long Wind is active. This calculator approximates it as +1.5% Damage Boost (unconditional)."
+    },
+    {
+        "id": "iw_bellstrike_sword_morph_t3",
+        "name": "Sword Morph (Tier 3)",
+        "description": "After sword energy hits a target: sword energy deals more damage (stacks).",
+        "applicableToMartialArtId": "bellstrike_splendor",
+        "defaultEnabledForMartialArtIds": [
+            "bellstrike_splendor"
+        ],
+        "modifiers": [
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 15
+            }
+        ],
+        "level": 3,
+        "notes": "In-game: for 5s after sword energy hits a target, sword energy deals +5% damage to that target; consecutive hits stack up to +15%. If the target is a non-player unit and Exhausted, each stack becomes +8% (up to +24% at 3 stacks). This calculator approximates the max normal stack as +15% Damage Boost (unconditional)."
+    },
+    {
+        "id": "iw_bellstrike_sword_morph_t5",
+        "name": "Sword Morph (Tier 5)",
+        "description": "Increases Direct Affinity Rate by 2.3%.",
+        "applicableToMartialArtId": "bellstrike_splendor",
+        "defaultEnabledForMartialArtIds": [
+            "bellstrike_splendor"
+        ],
+        "modifiers": [
+            {
+                "stat": "AffinityRate",
+                "type": "flat",
+                "value": 2.3
+            }
+        ],
+        "level": 5
     },
     {
         "id": "iw_bamboocut_1",
