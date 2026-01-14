@@ -12,12 +12,19 @@ interface Props {
   elementStats?: ElementStats;
   /** Percent impact per stat key (vs baseline), e.g. { CriticalRate: 1.23 } */
   impactPctByStat?: Record<string, number>;
+  /** Percent impact per specific stat line key (preferred if provided) */
+  impactPctByLineKey?: Record<string, number>;
 }
 /* =======================
    Component
 ======================= */
 
-export default function GearDetailCard({ gear, elementStats, impactPctByStat }: Props) {
+export default function GearDetailCard({
+  gear,
+  elementStats,
+  impactPctByStat,
+  impactPctByLineKey,
+}: Props) {
   return (
     <Card className="p-3 space-y-2 border border-white/10 bg-card/70">
       {/* Gear name */}
@@ -35,7 +42,10 @@ export default function GearDetailCard({ gear, elementStats, impactPctByStat }: 
             value={gear.main.value}
             type="main"
             elementStats={elementStats}
-            impactPctByStat={impactPctByStat}
+            impactPct={
+              impactPctByLineKey?.["main:0"] ??
+              impactPctByStat?.[String(gear.main.stat)]
+            }
           />
         </div>
       )}
@@ -52,7 +62,10 @@ export default function GearDetailCard({ gear, elementStats, impactPctByStat }: 
                 value={m.value}
                 type="main"
                 elementStats={elementStats}
-                impactPctByStat={impactPctByStat}
+                impactPct={
+                  impactPctByLineKey?.[`mains:${i}`] ??
+                  impactPctByStat?.[String(m.stat)]
+                }
               />
             ))}
           </div>
@@ -71,7 +84,10 @@ export default function GearDetailCard({ gear, elementStats, impactPctByStat }: 
                 value={s.value}
                 type="sub"
                 elementStats={elementStats}
-                impactPctByStat={impactPctByStat}
+                impactPct={
+                  impactPctByLineKey?.[`subs:${i}`] ??
+                  impactPctByStat?.[String(s.stat)]
+                }
               />
             ))}
           </div>
@@ -87,7 +103,10 @@ export default function GearDetailCard({ gear, elementStats, impactPctByStat }: 
             value={gear.addition.value}
             type="bonus"
             elementStats={elementStats}
-            impactPctByStat={impactPctByStat}
+            impactPct={
+              impactPctByLineKey?.["addition:0"] ??
+              impactPctByStat?.[String(gear.addition.stat)]
+            }
           />
         </div>
       )}
@@ -104,16 +123,16 @@ function StatLine({
   value,
   type,
   elementStats,
-  impactPctByStat,
+  impactPct,
 }: {
   stat: string;
   value: number;
   type: StatType;
   elementStats?: ElementStats;
-  impactPctByStat?: Record<string, number>;
+  impactPct?: number;
 }) {
   const key = String(stat);
-  const pct = impactPctByStat?.[key];
+  const pct = impactPct;
   const showPct = typeof pct === "number" && Number.isFinite(pct) && Math.abs(pct) >= 0.01;
   const pctTone =
     !showPct

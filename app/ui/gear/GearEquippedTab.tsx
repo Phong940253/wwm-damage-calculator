@@ -20,25 +20,50 @@ import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierE
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
+import type { CustomGear, GearAttribute } from "@/app/types";
 
-function getGearStatTotals(gear?: {
-  main?: { stat: string; value: number } | null;
-  mains?: Array<{ stat: string; value: number }>;
-  subs?: Array<{ stat: string; value: number }>;
-  addition?: { stat: string; value: number } | null;
-} | null) {
-  const totals = new Map<string, number>();
-  if (!gear) return totals;
+function getGearStatLines(gear?: CustomGear | null): Array<{
+  lineKey: string;
+  statKey: string;
+  value: number;
+}> {
+  if (!gear) return [];
 
-  const attrs = [gear.main, ...(gear.mains ?? []), ...(gear.subs ?? []), gear.addition].filter(
-    Boolean
-  );
+  const lines: Array<{ lineKey: string; statKey: string; value: number }> = [];
 
-  for (const a of attrs) {
-    const statKey = String(a.stat);
-    totals.set(statKey, (totals.get(statKey) ?? 0) + Number(a.value ?? 0));
+  if (gear.main) {
+    lines.push({
+      lineKey: "main:0",
+      statKey: String(gear.main.stat),
+      value: Number(gear.main.value ?? 0),
+    });
   }
-  return totals;
+
+  (gear.mains ?? []).forEach((m, i) => {
+    lines.push({
+      lineKey: `mains:${i}`,
+      statKey: String(m.stat),
+      value: Number(m.value ?? 0),
+    });
+  });
+
+  (gear.subs ?? []).forEach((s, i) => {
+    lines.push({
+      lineKey: `subs:${i}`,
+      statKey: String(s.stat),
+      value: Number(s.value ?? 0),
+    });
+  });
+
+  if (gear.addition) {
+    lines.push({
+      lineKey: "addition:0",
+      statKey: String(gear.addition.stat),
+      value: Number(gear.addition.value ?? 0),
+    });
+  }
+
+  return lines.filter((x) => x.value !== 0);
 }
 
 function calcRotationAwareNormalDamage(
@@ -118,27 +143,28 @@ export default function GearEquippedTab() {
       );
 
       const perStat = (() => {
-        const totals = getGearStatTotals(equippedGear);
-        const impactPctByStat: Record<string, number> = {};
-        if (!equippedGear || totals.size === 0 || damageWithoutSlot <= 0) {
-          return { impactPctByStat };
+        const impactPctByLineKey: Record<string, number> = {};
+        if (!equippedGear || damageWithoutSlot <= 0) {
+          return { impactPctByLineKey };
         }
 
-        for (const [statKey, value] of totals.entries()) {
-          if (!value) continue;
+        const lines = getGearStatLines(equippedGear);
+        if (lines.length === 0) return { impactPctByLineKey };
+
+        for (const line of lines) {
           const testBonus = { ...bonusWithoutSlot };
-          testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+          testBonus[line.statKey] = (testBonus[line.statKey] ?? 0) + line.value;
           const dmg = calcRotationAwareNormalDamage(
             stats,
             elementStats,
             testBonus,
             selectedRotation
           );
-          impactPctByStat[statKey] =
+          impactPctByLineKey[line.lineKey] =
             ((dmg - damageWithoutSlot) / damageWithoutSlot) * 100;
         }
 
-        return { impactPctByStat };
+        return { impactPctByLineKey };
       })();
 
       const diff = fullDamage - damageWithoutSlot;
@@ -292,7 +318,7 @@ export default function GearEquippedTab() {
                 <GearDetailCard
                   gear={row.equippedGear}
                   elementStats={elementStats}
-                  impactPctByStat={row.perStat.impactPctByStat}
+                  impactPctByLineKey={row.perStat.impactPctByLineKey}
                 />
               ) : (
                 <div className="h-36 rounded bg-muted/40 flex items-center justify-center text-xs text-muted-foreground">
