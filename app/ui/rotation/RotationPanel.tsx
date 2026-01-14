@@ -392,21 +392,46 @@ export default function RotationPanel({
             {showInnerWays && (
               <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
                 {INNER_WAYS.filter((iw) => {
-                  // Show if applicable to all or to current martial art
-                  return (
-                    !iw.applicableToMartialArtId ||
-                    iw.applicableToMartialArtId === selectedRotation.martialArtId
-                  );
+                  const martialArtId = selectedRotation.martialArtId as
+                    | import("@/app/domain/skill/types").MartialArtId
+                    | undefined;
+
+                  // Martial-art specific inner way
+                  if (iw.applicableToMartialArtId) {
+                    return iw.applicableToMartialArtId === martialArtId;
+                  }
+
+                  // Universal inner way: if defaultEnabledForMartialArtIds is set, treat as allow-list
+                  if (iw.defaultEnabledForMartialArtIds) {
+                    return (
+                      !!martialArtId &&
+                      iw.defaultEnabledForMartialArtIds.includes(martialArtId)
+                    );
+                  }
+
+                  return true;
                 }).length === 0 ? (
                   <p className="text-xs text-zinc-500 italic">
                     No inner ways available
                   </p>
                 ) : (
                   INNER_WAYS.filter((iw) => {
-                    return (
-                      !iw.applicableToMartialArtId ||
-                      iw.applicableToMartialArtId === selectedRotation.martialArtId
-                    );
+                    const martialArtId = selectedRotation.martialArtId as
+                      | import("@/app/domain/skill/types").MartialArtId
+                      | undefined;
+
+                    if (iw.applicableToMartialArtId) {
+                      return iw.applicableToMartialArtId === martialArtId;
+                    }
+
+                    if (iw.defaultEnabledForMartialArtIds) {
+                      return (
+                        !!martialArtId &&
+                        iw.defaultEnabledForMartialArtIds.includes(martialArtId)
+                      );
+                    }
+
+                    return true;
                   }).map((inner) => (
                     <div
                       key={inner.id}

@@ -7,6 +7,7 @@ import { INNER_WAYS } from "@/app/domain/skill/innerWays";
 import { MartialArtId } from "@/app/domain/skill/types";
 
 const STORAGE_KEY = "wwm_rotations";
+const STORAGE_SELECTED_ID_KEY = "wwm_rotations_selected_id";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 15);
@@ -52,8 +53,15 @@ function normalizeRotation(
       return !!martialArtId && iw.applicableToMartialArtId === martialArtId;
     }
 
-    // Universal inner way: disable for all
-    return false;
+    // Universal inner way: allowed for all martial arts.
+    // If defaultEnabledForMartialArtIds is provided, treat it as an allow-list.
+    if (iw.defaultEnabledForMartialArtIds) {
+      return (
+        !!martialArtId &&
+        iw.defaultEnabledForMartialArtIds.includes(martialArtId)
+      );
+    }
+    return true;
   };
 
   const defaultInnerWayIds = INNER_WAYS.filter((iw) => {
@@ -160,6 +168,7 @@ export const useRotation = () => {
   // Load từ localStorage
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
+    const savedSelectedId = localStorage.getItem(STORAGE_SELECTED_ID_KEY) || "";
     let savedRotations: Rotation[] = [];
 
     if (raw) {
@@ -171,7 +180,7 @@ export const useRotation = () => {
           normalizeRotation(r, r.martialArtId as MartialArtId)
         );
         setRotations(normalized);
-        setSelectedRotationId(normalized[0].id);
+        setSelectedRotationId(savedSelectedId || normalized[0].id);
         return;
       }
     }
@@ -192,7 +201,11 @@ export const useRotation = () => {
     );
 
     setRotations(mergedRotations);
-    setSelectedRotationId(DEFAULT_ROTATIONS[0].id);
+
+    const exists = mergedRotations.some((r) => r.id === savedSelectedId);
+    setSelectedRotationId(
+      exists ? savedSelectedId : mergedRotations[0]?.id ?? ""
+    );
   }, []);
 
   // Persist vào localStorage mỗi khi rotations thay đổi
@@ -201,6 +214,13 @@ export const useRotation = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rotations));
     }
   }, [rotations]);
+
+  // Persist selected rotation id
+  useEffect(() => {
+    if (selectedRotationId) {
+      localStorage.setItem(STORAGE_SELECTED_ID_KEY, selectedRotationId);
+    }
+  }, [selectedRotationId]);
 
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
 
@@ -224,10 +244,13 @@ export const useRotation = () => {
   };
 
   const deleteRotation = (id: string) => {
-    setRotations((prev) => prev.filter((r) => r.id !== id));
-    if (selectedRotationId === id) {
-      setSelectedRotationId(rotations[0]?.id ?? "");
-    }
+    setRotations((prev) => {
+      const next = prev.filter((r) => r.id !== id);
+      if (selectedRotationId === id) {
+        setSelectedRotationId(next[0]?.id ?? "");
+      }
+      return next;
+    });
   };
 
   const renameRotation = (id: string, newName: string) => {
