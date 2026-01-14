@@ -242,6 +242,56 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     return ((dmg - base) / base) * 100;
   }, [customGears, equipped, gear, elementStats, stats, rotation]);
 
+  const impactPctTotal = useMemo(() => {
+    if (!elementStats) return 0;
+
+    const equippedWithoutSlot = { ...equipped };
+    delete (equippedWithoutSlot as Record<string, string>)[gear.slot];
+    const bonusWithoutSlot = aggregateEquippedGearBonus(
+      customGears,
+      equippedWithoutSlot
+    );
+
+    const base = calcRotationAwareNormalDamage(
+      stats,
+      elementStats,
+      bonusWithoutSlot,
+      rotation
+    );
+    if (base <= 0) return 0;
+
+    const testBonus = { ...bonusWithoutSlot };
+
+    // Apply all gear lines (main/mainStats + subs + addition)
+    mains.forEach((m) => {
+      const statKey = String(m.stat);
+      const value = Number(m.value ?? 0);
+      if (!value) return;
+      testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+    });
+
+    (gear.subs ?? []).forEach((s) => {
+      const statKey = String(s.stat);
+      const value = Number(s.value ?? 0);
+      if (!value) return;
+      testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+    });
+
+    if (gear.addition) {
+      const statKey = String(gear.addition.stat);
+      const value = Number(gear.addition.value ?? 0);
+      if (value) testBonus[statKey] = (testBonus[statKey] ?? 0) + value;
+    }
+
+    const dmg = calcRotationAwareNormalDamage(
+      stats,
+      elementStats,
+      testBonus,
+      rotation
+    );
+    return ((dmg - base) / base) * 100;
+  }, [customGears, equipped, gear, mains, elementStats, stats, rotation]);
+
   return (
     <Card
       className={
@@ -269,6 +319,22 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                 Equipped
               </span>
             )}
+            {typeof impactPctTotal === "number" &&
+              Number.isFinite(impactPctTotal) &&
+              Math.abs(impactPctTotal) >= 0.01 && (
+                <span
+                  className={
+                    "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium " +
+                    (impactPctTotal >= 0
+                      ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
+                      : "border-red-400/25 bg-red-500/10 text-red-200")
+                  }
+                  title="Gear impact vs empty slot (keeping other equipped slots)"
+                >
+                  {impactPctTotal >= 0 ? "+" : ""}
+                  {impactPctTotal.toFixed(2)}%
+                </span>
+              )}
             {typeof impactPctNoMain === "number" &&
               Number.isFinite(impactPctNoMain) &&
               Math.abs(impactPctNoMain) >= 0.01 && (
