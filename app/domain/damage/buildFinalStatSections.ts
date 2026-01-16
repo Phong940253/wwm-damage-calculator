@@ -91,6 +91,16 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
           label: "Attribute Attack DMG Bonus",
           value: pct(ctx.get("AttributeAttackDMGBonusOfYOURType")),
         },
+      ],
+    },
+    {
+      title: "Hidden Stats",
+      rows: [
+        {
+          label: "Charge Skill DMG Boost",
+          value: pct(ctx.get("ChargeSkillDamageBoost")),
+        },
+
         {
           label: "Damage Boost",
           value: pct(ctx.get("DamageBoost")),
