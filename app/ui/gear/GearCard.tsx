@@ -326,10 +326,10 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
   }, [baseline, elementStats, gear.subs, gear.addition, mains, stats, rotation]);
 
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} className="h-full">
       <Card
         className={
-          "group relative overflow-hidden rounded-xl border border-white/10 bg-card/70 p-4 " +
+          "group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-card/70 p-4 " +
           "transition-shadow hover:shadow-lg hover:shadow-black/20"
         }
       >
@@ -434,7 +434,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         </div>
 
         {/* Stats */}
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 flex flex-1 flex-col gap-3">
           {mains.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -478,7 +478,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           )}
 
           {gear.addition && (
-            <div className="space-y-1.5">
+            <div className="mt-auto space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground">Bonus</p>
               <StatLine
                 stat={String(gear.addition.stat)}
