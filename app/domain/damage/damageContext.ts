@@ -165,6 +165,13 @@ export function buildDamageContext(
   const explain = (k: string): StatExplanation | null => {
     const total = get(k);
 
+    const makeLine = (
+      kind: StatSourceKind,
+      label: string,
+      value: number,
+      note?: string
+    ): StatSourceLine => ({ kind, label, value, note });
+
     const passiveEntries = bonusBreakdown?.passives
       ? Object.entries(bonusBreakdown.passives)
       : [];
@@ -181,7 +188,7 @@ export function buildDamageContext(
       // Gear-only bonus if we have it; otherwise fall back to merged bonus.
       const gearValue = (gearOnly ? gearOnly[key] : gearBonus[key]) || 0;
       if (gearValue !== 0) {
-        lines.push({ kind: "gear", label: "Gear", value: gearValue });
+        lines.push(makeLine("gear", "Gear", gearValue));
       }
 
       for (const [, p] of passiveEntries) {
@@ -191,22 +198,13 @@ export function buildDamageContext(
           typeof p.uptimePct === "number" && p.uptimePct !== 100
             ? `Uptime ${p.uptimePct}%`
             : undefined;
-        lines.push({
-          kind: "passive",
-          label: `Passive: ${p.name}`,
-          value: v,
-          note,
-        });
+        lines.push(makeLine("passive", `Passive: ${p.name}`, v, note));
       }
 
       for (const [, iw] of innerEntries) {
         const v = iw.bonus[key] || 0;
         if (v === 0) continue;
-        lines.push({
-          kind: "inner-way",
-          label: `Inner Way: ${iw.name}`,
-          value: v,
-        });
+        lines.push(makeLine("inner-way", `Inner Way: ${iw.name}`, v));
       }
 
       return lines;
@@ -215,21 +213,27 @@ export function buildDamageContext(
     const explainInputStat = (key: keyof InputStats): StatSourceLine[] => {
       const base = Number(stats[key]?.current || 0);
       const inc = Number(stats[key]?.increase || 0);
-      return [
-        { kind: "base", label: "Base", value: base },
-        { kind: "increase", label: "Increase", value: inc },
+
+      const lines: StatSourceLine[] = [
+        makeLine("base", "Base", base),
+        makeLine("increase", "Increase", inc),
         ...explainBonusLines(String(key)),
-      ].filter((x) => x.value !== 0);
+      ];
+
+      return lines.filter((x) => x.value !== 0);
     };
 
     const explainElementStat = (key: ElementStatKey): StatSourceLine[] => {
       const base = Number(elementStats[key]?.current || 0);
       const inc = Number(elementStats[key]?.increase || 0);
-      return [
-        { kind: "base", label: "Base", value: base },
-        { kind: "increase", label: "Increase", value: inc },
+
+      const lines: StatSourceLine[] = [
+        makeLine("base", "Base", base),
+        makeLine("increase", "Increase", inc),
         ...explainBonusLines(String(key)),
-      ].filter((x) => x.value !== 0);
+      ];
+
+      return lines.filter((x) => x.value !== 0);
     };
 
     // YOUR element keys
@@ -278,24 +282,16 @@ export function buildDamageContext(
           innerSum += iw.bonus[String(ek)] || 0;
       }
       const lines: StatSourceLine[] = [
-        {
-          kind: "element-other",
-          label: "Other elements (base)",
-          value: baseSum,
-          note: "Sum of Min across all non-selected elements",
-        },
-        { kind: "increase", label: "Other elements (increase)", value: incSum },
-        { kind: "gear", label: "Other elements (gear)", value: gearSum },
-        {
-          kind: "passive",
-          label: "Other elements (passives)",
-          value: passiveSum,
-        },
-        {
-          kind: "inner-way",
-          label: "Other elements (inner ways)",
-          value: innerSum,
-        },
+        makeLine(
+          "element-other",
+          "Other elements (base)",
+          baseSum,
+          "Sum of Min across all non-selected elements"
+        ),
+        makeLine("increase", "Other elements (increase)", incSum),
+        makeLine("gear", "Other elements (gear)", gearSum),
+        makeLine("passive", "Other elements (passives)", passiveSum),
+        makeLine("inner-way", "Other elements (inner ways)", innerSum),
       ].filter((x) => x.value !== 0);
       return { key: k, total, lines };
     }
@@ -345,24 +341,16 @@ export function buildDamageContext(
       }
 
       const lines: StatSourceLine[] = [
-        {
-          kind: "element-other",
-          label: "Other elements (base)",
-          value: baseSum,
-          note: "Sum of Max (clamped by Min) across all non-selected elements",
-        },
-        { kind: "increase", label: "Other elements (increase)", value: incSum },
-        { kind: "gear", label: "Other elements (gear)", value: gearSum },
-        {
-          kind: "passive",
-          label: "Other elements (passives)",
-          value: passiveSum,
-        },
-        {
-          kind: "inner-way",
-          label: "Other elements (inner ways)",
-          value: innerSum,
-        },
+        makeLine(
+          "element-other",
+          "Other elements (base)",
+          baseSum,
+          "Sum of Max (clamped by Min) across all non-selected elements"
+        ),
+        makeLine("increase", "Other elements (increase)", incSum),
+        makeLine("gear", "Other elements (gear)", gearSum),
+        makeLine("passive", "Other elements (passives)", passiveSum),
+        makeLine("inner-way", "Other elements (inner ways)", innerSum),
       ].filter((x) => x.value !== 0);
 
       return { key: k, total, lines };
@@ -378,8 +366,8 @@ export function buildDamageContext(
         formula: "Agility×1 + Power×0.246",
         lines: [
           ...explainInputStat("MinPhysicalAttack"),
-          { kind: "derived", label: "From Agility", value: agility * 1 },
-          { kind: "derived", label: "From Power", value: power * 0.246 },
+          makeLine("derived", "From Agility", agility * 1),
+          makeLine("derived", "From Power", power * 0.246),
         ].filter((x) => x.value !== 0),
       };
     }
@@ -394,8 +382,8 @@ export function buildDamageContext(
         formula: "Momentum×0.9 + Power×1.315",
         lines: [
           ...explainInputStat("MaxPhysicalAttack"),
-          { kind: "derived", label: "From Momentum", value: momentum * 0.9 },
-          { kind: "derived", label: "From Power", value: power * 1.315 },
+          makeLine("derived", "From Momentum", momentum * 0.9),
+          makeLine("derived", "From Power", power * 1.315),
         ].filter((x) => x.value !== 0),
       };
     }
@@ -408,7 +396,7 @@ export function buildDamageContext(
         formula: "Agility×0.075",
         lines: [
           ...explainInputStat("CriticalRate"),
-          { kind: "derived", label: "From Agility", value: agility * 0.075 },
+          makeLine("derived", "From Agility", agility * 0.075),
         ].filter((x) => x.value !== 0),
       };
     }
@@ -421,7 +409,7 @@ export function buildDamageContext(
         formula: "Momentum×0.04",
         lines: [
           ...explainInputStat("AffinityRate"),
-          { kind: "derived", label: "From Momentum", value: momentum * 0.04 },
+          makeLine("derived", "From Momentum", momentum * 0.04),
         ].filter((x) => x.value !== 0),
       };
     }
