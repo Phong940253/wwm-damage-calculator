@@ -80,7 +80,7 @@ export default function DamagePanel({
     "ultimate",
     "mystic-skill",
   ];
-  
+
   const categoryLabels: Record<Skill["category"], string> = {
     "martial-art-skill": "Martial Art Skill",
     "special-skill": "Special Skill",
@@ -114,7 +114,7 @@ export default function DamagePanel({
         <div className="flex flex-col">
           <div className="text-lg pb-4 font-bold">Stats</div>
 
-          <FinalStatPanel sections={finalStats} />
+          <FinalStatPanel sections={finalStats} ctx={ctx} />
 
           <div className="flex flex-row gap-x-2 text-lg pt-4 font-bold">
             <Zap className="text-yellow-500" /> Damage output

@@ -27,6 +27,8 @@ export interface FinalStatRow {
   label: string;
   value: string;
   highlight?: boolean;
+  /** Keys passed to DamageContext.get/explain for backprop display (e.g. Min/Max). */
+  ctxKeys?: string[];
 }
 
 export interface FinalStatSection {
