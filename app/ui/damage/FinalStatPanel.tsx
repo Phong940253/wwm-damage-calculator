@@ -154,7 +154,9 @@ export default function FinalStatPanel({
                 <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
                   <LegendRow kind="base" label="Base" note="Your saved/base stat value" />
                   <LegendRow kind="increase" label="Increase" note="Temporary increase inputs" />
-                  <LegendRow kind="gear" label="Gear/Modifiers" note="Gear bonus + passive modifiers" />
+                  <LegendRow kind="gear" label="Gear" note="Gear bonus (raw)" />
+                  <LegendRow kind="passive" label="Passive" note="Passive skill contribution" />
+                  <LegendRow kind="inner-way" label="Inner Way" note="Inner way contribution" />
                   <LegendRow kind="derived" label="Derived" note="Computed from attributes" />
                   <LegendRow kind="element-other" label="Other elements" note="Summed from non-selected elements" />
                 </div>
@@ -251,6 +253,10 @@ function kindToDotClass(kind: StatSourceKind) {
       return "bg-amber-400";
     case "gear":
       return "bg-blue-400";
+    case "passive":
+      return "bg-cyan-400";
+    case "inner-way":
+      return "bg-emerald-400";
     case "derived":
       return "bg-purple-400";
     case "element-other":

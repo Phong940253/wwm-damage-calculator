@@ -24,8 +24,20 @@ export type StatSourceKind =
   | "base"
   | "increase"
   | "gear"
+  | "passive"
+  | "inner-way"
   | "derived"
   | "element-other";
+
+export interface DamageBonusBreakdown {
+  /** Raw gear-only bonus (without passives/inner ways). */
+  gear?: Record<string, number>;
+  passives?: Record<
+    string,
+    { name: string; uptimePct?: number; bonus: Record<string, number> }
+  >;
+  innerWays?: Record<string, { name: string; bonus: Record<string, number> }>;
+}
 
 export interface StatSourceLine {
   kind: StatSourceKind;
@@ -44,7 +56,8 @@ export interface StatExplanation {
 export function buildDamageContext(
   stats: InputStats,
   elementStats: ElementStats,
-  gearBonus: Record<string, number>
+  gearBonus: Record<string, number>,
+  bonusBreakdown?: DamageBonusBreakdown
 ): DamageContext {
   /* ============================
      Helpers
@@ -152,25 +165,70 @@ export function buildDamageContext(
   const explain = (k: string): StatExplanation | null => {
     const total = get(k);
 
+    const passiveEntries = bonusBreakdown?.passives
+      ? Object.entries(bonusBreakdown.passives)
+      : [];
+
+    const innerEntries = bonusBreakdown?.innerWays
+      ? Object.entries(bonusBreakdown.innerWays)
+      : [];
+
+    const gearOnly = bonusBreakdown?.gear;
+
+    const explainBonusLines = (key: string): StatSourceLine[] => {
+      const lines: StatSourceLine[] = [];
+
+      // Gear-only bonus if we have it; otherwise fall back to merged bonus.
+      const gearValue = (gearOnly ? gearOnly[key] : gearBonus[key]) || 0;
+      if (gearValue !== 0) {
+        lines.push({ kind: "gear", label: "Gear", value: gearValue });
+      }
+
+      for (const [id, p] of passiveEntries) {
+        const v = p.bonus[key] || 0;
+        if (v === 0) continue;
+        const note =
+          typeof p.uptimePct === "number" && p.uptimePct !== 100
+            ? `Uptime ${p.uptimePct}%`
+            : undefined;
+        lines.push({
+          kind: "passive",
+          label: `Passive: ${p.name}`,
+          value: v,
+          note,
+        });
+      }
+
+      for (const [id, iw] of innerEntries) {
+        const v = iw.bonus[key] || 0;
+        if (v === 0) continue;
+        lines.push({
+          kind: "inner-way",
+          label: `Inner Way: ${iw.name}`,
+          value: v,
+        });
+      }
+
+      return lines;
+    };
+
     const explainInputStat = (key: keyof InputStats): StatSourceLine[] => {
       const base = Number(stats[key]?.current || 0);
       const inc = Number(stats[key]?.increase || 0);
-      const gear = gearBonus[String(key)] || 0;
       return [
         { kind: "base", label: "Base", value: base },
         { kind: "increase", label: "Increase", value: inc },
-        { kind: "gear", label: "Gear/Modifiers", value: gear },
+        ...explainBonusLines(String(key)),
       ].filter((x) => x.value !== 0);
     };
 
     const explainElementStat = (key: ElementStatKey): StatSourceLine[] => {
       const base = Number(elementStats[key]?.current || 0);
       const inc = Number(elementStats[key]?.increase || 0);
-      const gear = gearBonus[String(key)] || 0;
       return [
         { kind: "base", label: "Base", value: base },
         { kind: "increase", label: "Increase", value: inc },
-        { kind: "gear", label: "Gear/Modifiers", value: gear },
+        ...explainBonusLines(String(key)),
       ].filter((x) => x.value !== 0);
     };
 
@@ -204,11 +262,20 @@ export function buildDamageContext(
       let baseSum = 0;
       let incSum = 0;
       let gearSum = 0;
+      let passiveSum = 0;
+      let innerSum = 0;
       for (const e of otherElementsFilter) {
         const ek = elementKey(e.key, "Min");
         baseSum += Number(elementStats[ek]?.current || 0);
         incSum += Number(elementStats[ek]?.increase || 0);
-        gearSum += gearBonus[String(ek)] || 0;
+
+        gearSum +=
+          (gearOnly ? gearOnly[String(ek)] : gearBonus[String(ek)]) || 0;
+
+        for (const [, p] of passiveEntries)
+          passiveSum += p.bonus[String(ek)] || 0;
+        for (const [, iw] of innerEntries)
+          innerSum += iw.bonus[String(ek)] || 0;
       }
       const lines: StatSourceLine[] = [
         {
@@ -218,7 +285,17 @@ export function buildDamageContext(
           note: "Sum of Min across all non-selected elements",
         },
         { kind: "increase", label: "Other elements (increase)", value: incSum },
-        { kind: "gear", label: "Other elements (gear/mods)", value: gearSum },
+        { kind: "gear", label: "Other elements (gear)", value: gearSum },
+        {
+          kind: "passive",
+          label: "Other elements (passives)",
+          value: passiveSum,
+        },
+        {
+          kind: "inner-way",
+          label: "Other elements (inner ways)",
+          value: innerSum,
+        },
       ].filter((x) => x.value !== 0);
       return { key: k, total, lines };
     }
@@ -227,6 +304,8 @@ export function buildDamageContext(
       let baseSum = 0;
       let incSum = 0;
       let gearSum = 0;
+      let passiveSum = 0;
+      let innerSum = 0;
 
       for (const e of otherElementsFilter) {
         const minK = elementKey(e.key, "Min");
@@ -242,7 +321,27 @@ export function buildDamageContext(
 
         const gearMin = gearBonus[String(minK)] || 0;
         const gearMax = gearBonus[String(maxK)] || 0;
-        gearSum += Math.max(gearMax, gearMin);
+
+        const gearMinOnly = (gearOnly ? gearOnly[String(minK)] : gearMin) || 0;
+        const gearMaxOnly = (gearOnly ? gearOnly[String(maxK)] : gearMax) || 0;
+        gearSum += Math.max(gearMaxOnly, gearMinOnly);
+
+        // For passives/inner ways, sum max-clamped too.
+        let pMin = 0;
+        let pMax = 0;
+        for (const [, p] of passiveEntries) {
+          pMin += p.bonus[String(minK)] || 0;
+          pMax += p.bonus[String(maxK)] || 0;
+        }
+        passiveSum += Math.max(pMax, pMin);
+
+        let iwMin = 0;
+        let iwMax = 0;
+        for (const [, iw] of innerEntries) {
+          iwMin += iw.bonus[String(minK)] || 0;
+          iwMax += iw.bonus[String(maxK)] || 0;
+        }
+        innerSum += Math.max(iwMax, iwMin);
       }
 
       const lines: StatSourceLine[] = [
@@ -253,7 +352,17 @@ export function buildDamageContext(
           note: "Sum of Max (clamped by Min) across all non-selected elements",
         },
         { kind: "increase", label: "Other elements (increase)", value: incSum },
-        { kind: "gear", label: "Other elements (gear/mods)", value: gearSum },
+        { kind: "gear", label: "Other elements (gear)", value: gearSum },
+        {
+          kind: "passive",
+          label: "Other elements (passives)",
+          value: passiveSum,
+        },
+        {
+          kind: "inner-way",
+          label: "Other elements (inner ways)",
+          value: innerSum,
+        },
       ].filter((x) => x.value !== 0);
 
       return { key: k, total, lines };

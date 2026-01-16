@@ -3,8 +3,11 @@ import {
   buildDamageContext,
   DamageContext,
 } from "@/app/domain/damage/damageContext";
-import { usePassiveModifiers } from "./usePassiveModifiers";
-import { sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { useMemo } from "react";
+import {
+  computeRotationBonusesWithBreakdown,
+  sumBonuses,
+} from "@/app/domain/skill/modifierEngine";
 
 /**
  * Enhanced version of buildDamageContext that includes passive skills + inner ways
@@ -17,13 +20,36 @@ export function useDamageContextWithModifiers(
   gearBonus: Record<string, number>,
   rotation?: Rotation
 ): DamageContext {
-  const passiveBonuses = usePassiveModifiers(
-    stats,
-    elementStats,
-    gearBonus,
-    rotation
+  const breakdown = useMemo(
+    () =>
+      computeRotationBonusesWithBreakdown(
+        stats,
+        elementStats,
+        gearBonus,
+        rotation
+      ),
+    [stats, elementStats, gearBonus, rotation]
   );
 
-  const combinedBonus = sumBonuses(gearBonus, passiveBonuses);
-  return buildDamageContext(stats, elementStats, combinedBonus);
+  const combinedBonus = sumBonuses(gearBonus, breakdown.total);
+
+  return buildDamageContext(stats, elementStats, combinedBonus, {
+    gear: gearBonus,
+    passives: Object.fromEntries(
+      Object.entries(breakdown.byPassive).map(([id, bonus]) => [
+        id,
+        {
+          name: breakdown.meta.passives[id]?.name ?? id,
+          uptimePct: breakdown.meta.passives[id]?.uptimePct,
+          bonus,
+        },
+      ])
+    ),
+    innerWays: Object.fromEntries(
+      Object.entries(breakdown.byInnerWay).map(([id, bonus]) => [
+        id,
+        { name: breakdown.meta.innerWays[id]?.name ?? id, bonus },
+      ])
+    ),
+  });
 }

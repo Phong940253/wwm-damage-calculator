@@ -8,7 +8,7 @@ import { calcExpectedNormalBreakdown } from "../domain/damage/damageFormula";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import {
-  computeRotationBonuses,
+  computeRotationBonusesWithBreakdown,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
 
@@ -41,29 +41,79 @@ export function useDamage(
     };
 
     // Apply passive skills + inner ways (additive/scale) on top of gear bonus
-    const passiveBonusesBase = computeRotationBonuses(
+    const passiveBreakdownBase = computeRotationBonusesWithBreakdown(
       baseStats,
       baseElementStats,
       gearBonus,
       rotation
     );
-    const passiveBonusesFinal = computeRotationBonuses(
+    const passiveBreakdownFinal = computeRotationBonusesWithBreakdown(
       stats,
       elementStats,
       gearBonus,
       rotation
     );
 
+    // Keep the old shape around for any downstream usage.
+    const passiveBonusesBase = passiveBreakdownBase.total;
+    const passiveBonusesFinal = passiveBreakdownFinal.total;
+
     const baseCtxWithModifiers = buildDamageContext(
       baseStats,
       baseElementStats,
-      sumBonuses(gearBonus, passiveBonusesBase)
+      sumBonuses(gearBonus, passiveBonusesBase),
+      {
+        gear: gearBonus,
+        passives: Object.fromEntries(
+          Object.entries(passiveBreakdownBase.byPassive).map(([id, bonus]) => [
+            id,
+            {
+              name: passiveBreakdownBase.meta.passives[id]?.name ?? id,
+              uptimePct: passiveBreakdownBase.meta.passives[id]?.uptimePct,
+              bonus,
+            },
+          ])
+        ),
+        innerWays: Object.fromEntries(
+          Object.entries(passiveBreakdownBase.byInnerWay).map(([id, bonus]) => [
+            id,
+            {
+              name: passiveBreakdownBase.meta.innerWays[id]?.name ?? id,
+              bonus,
+            },
+          ])
+        ),
+      }
     );
 
     const finalCtxWithModifiers = buildDamageContext(
       stats,
       elementStats,
-      sumBonuses(gearBonus, passiveBonusesFinal)
+      sumBonuses(gearBonus, passiveBonusesFinal),
+      {
+        gear: gearBonus,
+        passives: Object.fromEntries(
+          Object.entries(passiveBreakdownFinal.byPassive).map(([id, bonus]) => [
+            id,
+            {
+              name: passiveBreakdownFinal.meta.passives[id]?.name ?? id,
+              uptimePct: passiveBreakdownFinal.meta.passives[id]?.uptimePct,
+              bonus,
+            },
+          ])
+        ),
+        innerWays: Object.fromEntries(
+          Object.entries(passiveBreakdownFinal.byInnerWay).map(
+            ([id, bonus]) => [
+              id,
+              {
+                name: passiveBreakdownFinal.meta.innerWays[id]?.name ?? id,
+                bonus,
+              },
+            ]
+          )
+        ),
+      }
     );
 
     /* ---------- Calculate damage based on rotation or default ---------- */
