@@ -6,6 +6,7 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
+import { DEFAULT_ROTATIONS } from "@/app/domain/rotation/defaultRotations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -40,6 +41,10 @@ interface RotationPanelProps {
   onToggleInnerWay: (rotationId: string, innerId: string) => void;
 }
 
+const DEFAULT_ROTATION_IDS = new Set(DEFAULT_ROTATIONS.map((r) => r.id));
+const isDefaultRotation = (rotation?: Rotation | null) =>
+  !!rotation && DEFAULT_ROTATION_IDS.has(rotation.id);
+
 export default function RotationPanel({
   rotations,
   selectedRotationId,
@@ -57,6 +62,7 @@ export default function RotationPanel({
   onToggleInnerWay,
 }: RotationPanelProps) {
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
+  const selectedIsDefault = isDefaultRotation(selectedRotation);
   const [newRotationName, setNewRotationName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renamingValue, setRenamingValue] = useState("");
@@ -75,6 +81,7 @@ export default function RotationPanel({
   };
 
   const handleRenameStart = (rotation: Rotation) => {
+    if (isDefaultRotation(rotation)) return;
     setRenamingId(rotation.id);
     setRenamingValue(rotation.name);
   };
@@ -87,10 +94,12 @@ export default function RotationPanel({
   };
 
   const handleDragStart = (index: number) => {
+    if (selectedIsDefault) return;
     setDraggedIndex(index);
   };
 
   const handleDragOver = (index: number, e: React.DragEvent) => {
+    if (selectedIsDefault) return;
     e.preventDefault();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const midpoint = rect.top + rect.height / 2;
@@ -106,6 +115,7 @@ export default function RotationPanel({
   };
 
   const handleDrop = (index: number) => {
+    if (selectedIsDefault) return;
     if (draggedIndex !== null && draggedIndex !== index && selectedRotation) {
       // Calculate insertion index based on drop position
       let insertIndex = index;
@@ -193,71 +203,89 @@ export default function RotationPanel({
         <h3 className="text-sm font-semibold">Rotations</h3>
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {rotations.map((rotation) => (
-            <div
-              key={rotation.id}
-              className={cn(
-                "flex items-center justify-between p-2 rounded border cursor-pointer transition-colors",
-                selectedRotationId === rotation.id
-                  ? "border-yellow-500 bg-yellow-500/10"
-                  : "border-zinc-700 hover:border-zinc-600"
-              )}
-            >
-              <div
-                className="flex-1 min-w-0"
-                onClick={() => onSelectRotation(rotation.id)}
-              >
-                {renamingId === rotation.id ? (
-                  <input
-                    autoFocus
-                    value={renamingValue}
-                    onChange={(e) => setRenamingValue(e.target.value)}
-                    onBlur={handleRenameSave}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleRenameSave();
-                      if (e.key === "Escape") setRenamingId(null);
-                    }}
-                    className="bg-zinc-800 text-xs border border-zinc-600 px-2 py-1 rounded w-full"
-                  />
-                ) : (
-                  <p className="text-sm font-medium truncate">{rotation.name}</p>
-                )}
-                <p className="text-xs text-zinc-400">
-                  {rotation.skills.length} skill{rotation.skills.length !== 1 ? "s" : ""}
-                </p>
-              </div>
+            (() => {
+              const rotationIsDefault = isDefaultRotation(rotation);
+              return (
+                <div
+                  key={rotation.id}
+                  className={cn(
+                    "flex items-center justify-between p-2 rounded border cursor-pointer transition-colors",
+                    selectedRotationId === rotation.id
+                      ? "border-yellow-500 bg-yellow-500/10"
+                      : "border-zinc-700 hover:border-zinc-600"
+                  )}
+                >
+                  <div
+                    className="flex-1 min-w-0"
+                    onClick={() => onSelectRotation(rotation.id)}
+                  >
+                    {renamingId === rotation.id ? (
+                      <input
+                        autoFocus
+                        value={renamingValue}
+                        onChange={(e) => setRenamingValue(e.target.value)}
+                        onBlur={handleRenameSave}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRenameSave();
+                          if (e.key === "Escape") setRenamingId(null);
+                        }}
+                        className="bg-zinc-800 text-xs border border-zinc-600 px-2 py-1 rounded w-full"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="text-sm font-medium truncate">{rotation.name}</p>
+                        {rotationIsDefault && (
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] h-5 flex-shrink-0"
+                          >
+                            Default
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-zinc-400">
+                      {rotation.skills.length} skill{rotation.skills.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    ⋮
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-36">
-                  <DropdownMenuItem
-                    onClick={() => handleRenameStart(rotation)}
-                    className="text-xs"
-                  >
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleExportRotation(rotation)}
-                    className="text-xs"
-                  >
-                    Export to JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (confirm(`Delete "${rotation.name}"?`)) {
-                        onDeleteRotation(rotation.id);
-                      }
-                    }}
-                    className="text-xs text-red-400"
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        ⋮
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36">
+                      <DropdownMenuItem
+                        disabled={rotationIsDefault}
+                        onClick={() => handleRenameStart(rotation)}
+                        className="text-xs"
+                      >
+                        Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleExportRotation(rotation)}
+                        className="text-xs"
+                      >
+                        Export to JSON
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (rotationIsDefault) return;
+                          if (confirm(`Delete "${rotation.name}"?`)) {
+                            onDeleteRotation(rotation.id);
+                          }
+                        }}
+                        disabled={rotationIsDefault}
+                        className="text-xs text-red-400"
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              );
+            })()
           ))}
         </div>
       </div>
@@ -265,6 +293,18 @@ export default function RotationPanel({
       {/* Selected Rotation Skills */}
       {selectedRotation && (
         <Card className="p-4">
+          {selectedIsDefault && (
+            <div className="mb-4 rounded border border-zinc-700 bg-zinc-800/50 p-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs h-5">
+                  Default
+                </Badge>
+                <p className="text-xs text-zinc-300">
+                  This rotation is read-only. Create a new rotation to customize.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="mb-4 p-3 bg-zinc-800 rounded border border-zinc-700">
             <p className="text-xs text-zinc-400 mb-2">Current Martial Art</p>
             <p className="text-sm font-semibold">
@@ -310,9 +350,11 @@ export default function RotationPanel({
                         checked={selectedRotation.activePassiveSkills.includes(
                           passive.id
                         )}
-                        onCheckedChange={() =>
-                          onTogglePassiveSkill(selectedRotation.id, passive.id)
-                        }
+                        disabled={selectedIsDefault}
+                        onCheckedChange={() => {
+                          if (selectedIsDefault) return;
+                          onTogglePassiveSkill(selectedRotation.id, passive.id);
+                        }}
                         className="mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
@@ -347,11 +389,13 @@ export default function RotationPanel({
                                 100
                               }
                               disabled={
+                                selectedIsDefault ||
                                 !selectedRotation.activePassiveSkills.includes(
                                   passive.id
                                 )
                               }
                               onChange={(e) =>
+                                !selectedIsDefault &&
                                 onUpdatePassiveUptime(
                                   selectedRotation.id,
                                   passive.id,
@@ -439,9 +483,11 @@ export default function RotationPanel({
                     >
                       <Checkbox
                         checked={selectedRotation.activeInnerWays.includes(inner.id)}
-                        onCheckedChange={() =>
-                          onToggleInnerWay(selectedRotation.id, inner.id)
-                        }
+                        disabled={selectedIsDefault}
+                        onCheckedChange={() => {
+                          if (selectedIsDefault) return;
+                          onToggleInnerWay(selectedRotation.id, inner.id);
+                        }}
                         className="mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
@@ -482,9 +528,10 @@ export default function RotationPanel({
               Skills in &quot;{selectedRotation.name}&quot;
             </h3>
             <Button
-              onClick={() => setShowSkillPicker(!showSkillPicker)}
+              onClick={() => !selectedIsDefault && setShowSkillPicker(!showSkillPicker)}
               size="sm"
               className="text-xs"
+              disabled={selectedIsDefault}
             >
               {showSkillPicker ? "Hide" : "Add Skill"}
             </Button>
@@ -504,9 +551,11 @@ export default function RotationPanel({
                   <button
                     key={skill.id}
                     onClick={() => {
+                      if (selectedIsDefault) return;
                       onAddSkill(selectedRotation.id, skill.id);
                       setSearchSkill("");
                     }}
+                    disabled={selectedIsDefault}
                     className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-zinc-700 transition-colors"
                   >
                     <p className="font-medium">{skill.name}</p>
@@ -534,7 +583,7 @@ export default function RotationPanel({
                 return (
                   <div
                     key={rotSkill.entryId}
-                    draggable
+                    draggable={!selectedIsDefault}
                     onDragStart={() => handleDragStart(idx)}
                     onDragOver={(e) => handleDragOver(idx, e)}
                     onDragLeave={handleDragLeave}
@@ -542,6 +591,7 @@ export default function RotationPanel({
                     onDragEnd={handleDragEnd}
                     className={cn(
                       "relative flex items-center justify-between p-2 bg-zinc-800 rounded border group cursor-move transition-colors",
+                      selectedIsDefault ? "cursor-not-allowed" : "cursor-move",
                       draggedIndex === idx ? "opacity-50 border-yellow-500" : "border-zinc-700",
                       dragOverIndex === idx && draggedIndex !== idx ? "border-yellow-400 bg-yellow-500/10" : ""
                     )}
@@ -574,7 +624,9 @@ export default function RotationPanel({
                           type="number"
                           min="1"
                           value={rotSkill.count}
+                          disabled={selectedIsDefault}
                           onChange={(e) =>
+                            !selectedIsDefault &&
                             onUpdateSkillCount(
                               selectedRotation.id,
                               rotSkill.entryId,
@@ -590,9 +642,11 @@ export default function RotationPanel({
                         size="sm"
                         className="h-6 w-6 p-0 text-xs"
                         onClick={() =>
-                          idx > 0 && onMoveSkill(selectedRotation.id, idx, idx - 1)
+                          !selectedIsDefault &&
+                          idx > 0 &&
+                          onMoveSkill(selectedRotation.id, idx, idx - 1)
                         }
-                        disabled={idx === 0}
+                        disabled={selectedIsDefault || idx === 0}
                         title="Move up"
                       >
                         ↑
@@ -602,10 +656,13 @@ export default function RotationPanel({
                         size="sm"
                         className="h-6 w-6 p-0 text-xs"
                         onClick={() =>
+                          !selectedIsDefault &&
                           idx < selectedRotation.skills.length - 1 &&
                           onMoveSkill(selectedRotation.id, idx, idx + 1)
                         }
-                        disabled={idx === selectedRotation.skills.length - 1}
+                        disabled={
+                          selectedIsDefault || idx === selectedRotation.skills.length - 1
+                        }
                         title="Move down"
                       >
                         ↓
@@ -615,8 +672,10 @@ export default function RotationPanel({
                         size="sm"
                         className="h-6 w-6 p-0 text-xs text-red-400 hover:text-red-300"
                         onClick={() =>
+                          !selectedIsDefault &&
                           onRemoveSkill(selectedRotation.id, rotSkill.entryId)
                         }
+                        disabled={selectedIsDefault}
                         title="Remove"
                       >
                         ✕
