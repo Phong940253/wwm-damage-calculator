@@ -14,6 +14,12 @@ import { createSkillContext } from "@/app/domain/skill/skillContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { explainCalcExpectedNormal } from "@/app/domain/damage/damageFormula";
 import { Separator } from "@/components/ui/separator";
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { getStatLabel } from "@/app/utils/statLabel";
 
 function fmt(n: number, digits = 4) {
     if (!Number.isFinite(n)) return "NaN";
@@ -25,6 +31,104 @@ function fmt(n: number, digits = 4) {
 function Num({ n }: { n: number }) {
     return (
         <span className="font-mono text-xs text-zinc-100 tabular-nums">{fmt(n)}</span>
+    );
+}
+
+function statTone(statKey: string): string {
+    const k = statKey.toLowerCase();
+    if (k.includes("rate")) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+    if (k.includes("penetration")) return "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200";
+    if (k.includes("dmgbonus") || k.includes("damageboost"))
+        return "border-amber-500/30 bg-amber-500/10 text-amber-200";
+    if (k.includes("multiplier")) return "border-sky-500/30 bg-sky-500/10 text-sky-200";
+    if (k.includes("attack")) return "border-cyan-500/30 bg-cyan-500/10 text-cyan-200";
+    if (k.includes("flat")) return "border-zinc-500/30 bg-zinc-500/10 text-zinc-200";
+    return "border-white/15 bg-white/5 text-zinc-200";
+}
+
+function StatValue({
+    statKey,
+    value,
+    unit,
+}: {
+    statKey: string;
+    value: number;
+    unit?: "percent";
+}) {
+    const label = getStatLabel(statKey);
+    const display = unit === "percent" ? `${fmt(value, 2)}%` : fmt(value, 2);
+    const tone = statTone(statKey);
+
+    return (
+        <HoverCard openDelay={120} closeDelay={80}>
+            <HoverCardTrigger asChild>
+                <span
+                    className={`
+                        inline-flex items-center
+                        rounded-md border px-1.5 py-0.5
+                        font-mono text-xs tabular-nums
+                        cursor-help select-none
+                        ${tone}
+                    `}
+                    aria-label={label}
+                >
+                    {display}
+                </span>
+            </HoverCardTrigger>
+
+            <HoverCardContent align="start" side="top" className="w-72">
+                <div className="space-y-1">
+                    <div className="text-sm font-semibold">{label}</div>
+                    <div className="text-xs text-muted-foreground font-mono break-all">
+                        {statKey}
+                    </div>
+                    <div className="text-xs">
+                        value: <span className="font-mono">{display}</span>
+                    </div>
+                </div>
+            </HoverCardContent>
+        </HoverCard>
+    );
+}
+
+function DerivedValue({
+    name,
+    value,
+    explain,
+}: {
+    name: string;
+    value: number;
+    explain: string;
+}) {
+    return (
+        <HoverCard openDelay={120} closeDelay={80}>
+            <HoverCardTrigger asChild>
+                <span
+                    className="
+                        inline-flex items-center
+                        rounded-md border border-white/15 bg-white/5
+                        px-1.5 py-0.5
+                        font-mono text-xs tabular-nums text-zinc-100
+                        cursor-help select-none
+                    "
+                    aria-label={name}
+                >
+                    {fmt(value, 2)}
+                </span>
+            </HoverCardTrigger>
+
+            <HoverCardContent align="start" side="top" className="w-72">
+                <div className="space-y-1">
+                    <div className="text-sm font-semibold">{name}</div>
+                    <div className="text-xs text-muted-foreground font-mono break-words">
+                        {explain}
+                    </div>
+                    <div className="text-xs">
+                        value: <span className="font-mono">{fmt(value, 4)}</span>
+                    </div>
+                </div>
+            </HoverCardContent>
+        </HoverCard>
     );
 }
 
@@ -222,6 +326,93 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <Separator className="bg-white/10" />
+
+                                    <div className="space-y-2">
+                                        <div className="text-xs font-medium text-zinc-300">
+                                            Base stats (hover for stat name)
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <StatValue statKey="MinPhysicalAttack" value={steps.cache.minPhysAtk} />
+                                            <StatValue statKey="MaxPhysicalAttack" value={steps.cache.maxPhysAtk} />
+                                            <StatValue
+                                                statKey="PhysicalPenetration"
+                                                value={steps.cache.physPenetration}
+                                            />
+                                            <StatValue
+                                                statKey="PhysicalDMGBonus"
+                                                value={steps.cache.physDmgBonus}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="MINAttributeAttackOfOtherType"
+                                                value={steps.cache.minOtherAttr}
+                                            />
+                                            <StatValue
+                                                statKey="MAXAttributeAttackOfOtherType"
+                                                value={steps.cache.maxOtherAttr}
+                                            />
+                                            <StatValue
+                                                statKey="PhysicalAttackMultiplier"
+                                                value={steps.cache.physAtkMult}
+                                                unit="percent"
+                                            />
+                                            <StatValue statKey="FlatDamage" value={steps.cache.flatDmg} />
+                                            <StatValue
+                                                statKey="MINAttributeAttackOfYOURType"
+                                                value={steps.cache.minYourAttr}
+                                            />
+                                            <StatValue
+                                                statKey="MAXAttributeAttackOfYOURType"
+                                                value={steps.cache.maxYourAttr}
+                                            />
+                                            <StatValue
+                                                statKey="MainElementMultiplier"
+                                                value={steps.cache.elementMult}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="AttributeAttackPenetrationOfYOURType"
+                                                value={steps.cache.attrPenetration}
+                                            />
+                                            <StatValue
+                                                statKey="AttributeAttackDMGBonusOfYOURType"
+                                                value={steps.cache.attrDmgBonus}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="CriticalDMGBonus"
+                                                value={steps.cache.critDmgBonus}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="AffinityDMGBonus"
+                                                value={steps.cache.affinityDmgBonus}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="DamageBoost"
+                                                value={steps.cache.dmgBoost}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="PrecisionRate"
+                                                value={steps.P_raw * 100}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="CriticalRate"
+                                                value={steps.C_raw * 100}
+                                                unit="percent"
+                                            />
+                                            <StatValue
+                                                statKey="AffinityRate"
+                                                value={steps.A_raw * 100}
+                                                unit="percent"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
                                         <div className="text-xs font-medium text-zinc-300">Substituted (numbers)</div>
 
@@ -230,27 +421,67 @@ export function SkillDamageBackpropDialog({
                                             <Op tone="eq">=</Op>
                                             <Op tone="paren">(</Op>
                                             <Op tone="paren">(</Op>
-                                            <Num n={steps.avgPhysAtk} />
+                                            <DerivedValue
+                                                name="avgPhysAtk"
+                                                value={steps.avgPhysAtk}
+                                                explain="avgPhysAtk = (MinPhysicalAttack + MaxPhysicalAttack) / 2"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={steps.physModifier} />
+                                            <DerivedValue
+                                                name="physModifier"
+                                                value={steps.physModifier}
+                                                explain="physModifier = 1 + PhysicalPenetration / 200"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={steps.physBonus} />
+                                            <DerivedValue
+                                                name="physBonus"
+                                                value={steps.physBonus}
+                                                explain="physBonus = 1 + PhysicalDMGBonus / 100"
+                                            />
                                             <Op tone="add">+</Op>
-                                            <Num n={steps.avgOtherAttr} />
+                                            <DerivedValue
+                                                name="avgOtherAttr"
+                                                value={steps.avgOtherAttr}
+                                                explain={
+                                                    steps.avgOtherAttrMode === "min"
+                                                        ? "avgOtherAttr = MINAttributeAttackOfOtherType (since minOtherAttr ≥ maxOtherAttr)"
+                                                        : "avgOtherAttr = (MINAttributeAttackOfOtherType + MAXAttributeAttackOfOtherType) / 2"
+                                                }
+                                            />
                                             <Op tone="paren">)</Op>
                                             <Op tone="mul">×</Op>
-                                            <Num n={physAtkMult} />
+                                            <DerivedValue
+                                                name="physAtkMult"
+                                                value={physAtkMult}
+                                                explain="physAtkMult = PhysicalAttackMultiplier / 100"
+                                            />
                                             <Op tone="add">+</Op>
-                                            <Num n={steps.cache.flatDmg} />
+                                            <StatValue statKey="FlatDamage" value={steps.cache.flatDmg} />
                                             <Op tone="add">+</Op>
-                                            <Num n={steps.avgYourAttr} />
+                                            <DerivedValue
+                                                name="avgYourAttr"
+                                                value={steps.avgYourAttr}
+                                                explain="avgYourAttr = (MINAttributeAttackOfYOURType + MAXAttributeAttackOfYOURType) / 2"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={elemMult} />
+                                            <DerivedValue
+                                                name="elemMult"
+                                                value={elemMult}
+                                                explain="elemMult = MainElementMultiplier / 100"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={steps.elementModifier} />
+                                            <DerivedValue
+                                                name="elementModifier"
+                                                value={steps.elementModifier}
+                                                explain="elementModifier = 1 + AttributeAttackPenetrationOfYOURType/200 + AttributeAttackDMGBonusOfYOURType/100"
+                                            />
                                             <Op tone="paren">)</Op>
                                             <Op tone="mul">×</Op>
-                                            <Num n={steps.dmgBoost} />
+                                            <DerivedValue
+                                                name="dmgBoost"
+                                                value={steps.dmgBoost}
+                                                explain="dmgBoost = 1 + DamageBoost / 100"
+                                            />
                                             <Op tone="eq">=</Op>
                                             <Num n={steps.base} />
                                         </ExprRow>
@@ -260,22 +491,45 @@ export function SkillDamageBackpropDialog({
                                             <Op tone="eq">=</Op>
                                             <Name>ROUND1(</Name>
                                             <Op tone="paren">(</Op>
-                                            <Num n={minInnerPhys} />
+                                            <DerivedValue
+                                                name="minInnerPhys"
+                                                value={minInnerPhys}
+                                                explain="minInnerPhys = MinPhysicalAttack*physPenFactor*physBonusFactor + MINAttributeAttackOfOtherType"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={physAtkMult} />
+                                            <DerivedValue
+                                                name="physAtkMult"
+                                                value={physAtkMult}
+                                                explain="physAtkMult = PhysicalAttackMultiplier / 100"
+                                            />
                                             <Op tone="add">+</Op>
-                                            <Num n={steps.cache.flatDmg} />
+                                            <StatValue statKey="FlatDamage" value={steps.cache.flatDmg} />
                                             <Op tone="add">+</Op>
-                                            <Num n={steps.cache.minYourAttr} />
+                                            <StatValue
+                                                statKey="MINAttributeAttackOfYOURType"
+                                                value={steps.cache.minYourAttr}
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={elemMult} />
+                                            <DerivedValue
+                                                name="elemMult"
+                                                value={elemMult}
+                                                explain="elemMult = MainElementMultiplier / 100"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={elemFactor} />
+                                            <DerivedValue
+                                                name="elemFactor"
+                                                value={elemFactor}
+                                                explain="elemFactor = 1 + AttributeAttackPenetrationOfYOURType/200 + AttributeAttackDMGBonusOfYOURType/100"
+                                            />
                                             <Op tone="paren">)</Op>
                                             <Op tone="mul">×</Op>
                                             <Num n={1.02} />
                                             <Op tone="mul">×</Op>
-                                            <Num n={dmgBoost} />
+                                            <DerivedValue
+                                                name="dmgBoost"
+                                                value={dmgBoost}
+                                                explain="dmgBoost = 1 + DamageBoost / 100"
+                                            />
                                             <Name>)</Name>
                                             <Op tone="eq">=</Op>
                                             <Num n={steps.minDamage} />
@@ -288,22 +542,49 @@ export function SkillDamageBackpropDialog({
                                             <Name>critical</Name>
                                             <Op tone="eq">=</Op>
                                             <Op tone="paren">(</Op>
-                                            <Num n={maxInnerPhys} />
+                                            <DerivedValue
+                                                name="maxInnerPhys"
+                                                value={maxInnerPhys}
+                                                explain="maxInnerPhys = MaxPhysicalAttack*physPenFactor*physBonusFactor + max(MINAttributeAttackOfOtherType, MAXAttributeAttackOfOtherType)"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={physAtkMult} />
+                                            <DerivedValue
+                                                name="physAtkMult"
+                                                value={physAtkMult}
+                                                explain="physAtkMult = PhysicalAttackMultiplier / 100"
+                                            />
                                             <Op tone="add">+</Op>
-                                            <Num n={steps.cache.flatDmg} />
+                                            <StatValue statKey="FlatDamage" value={steps.cache.flatDmg} />
                                             <Op tone="add">+</Op>
-                                            <Num n={steps.cache.maxYourAttr} />
+                                            <StatValue
+                                                statKey="MAXAttributeAttackOfYOURType"
+                                                value={steps.cache.maxYourAttr}
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={elemMult} />
+                                            <DerivedValue
+                                                name="elemMult"
+                                                value={elemMult}
+                                                explain="elemMult = MainElementMultiplier / 100"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={elemFactor} />
+                                            <DerivedValue
+                                                name="elemFactor"
+                                                value={elemFactor}
+                                                explain="elemFactor = 1 + AttributeAttackPenetrationOfYOURType/200 + AttributeAttackDMGBonusOfYOURType/100"
+                                            />
                                             <Op tone="paren">)</Op>
                                             <Op tone="mul">×</Op>
-                                            <Num n={criticalBonus} />
+                                            <DerivedValue
+                                                name="criticalBonus"
+                                                value={criticalBonus}
+                                                explain="criticalBonus = 1 + CriticalDMGBonus / 100"
+                                            />
                                             <Op tone="mul">×</Op>
-                                            <Num n={dmgBoost} />
+                                            <DerivedValue
+                                                name="dmgBoost"
+                                                value={dmgBoost}
+                                                explain="dmgBoost = 1 + DamageBoost / 100"
+                                            />
                                             <Op tone="eq">=</Op>
                                             <Num n={damage.critical} />
                                             <span className="text-xs text-muted-foreground">
