@@ -131,6 +131,7 @@ export default function DamagePanel({
                   key={skill.id}
                   skill={skill}
                   result={result}
+                  ctx={ctx}
                   showHeader={idx === 0}
                   isEven={idx % 2 === 1}
                 />

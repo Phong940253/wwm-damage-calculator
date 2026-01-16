@@ -3,15 +3,20 @@
 import { Skill } from "@/app/domain/skill/types";
 import DamageLine from "./DamageLine";
 import { SkillDamageResult } from "@/app/domain/damage/type";
+import { DamageContext } from "@/app/domain/damage/damageContext";
+import React, { useState } from "react";
+import { SkillDamageBackpropDialog } from "./SkillDamageBackpropDialog";
 
 interface Props {
     skill: Skill;
     result: SkillDamageResult;
+    ctx: DamageContext;
     showHeader?: boolean;
     isEven?: boolean;
 }
 
-export function SkillDamagePanel({ skill, result, showHeader = false, isEven = false }: Props) {
+export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEven = false }: Props) {
+    const [open, setOpen] = useState(false);
     const total = result.total;
     const formatList = (values: number[]) => values.map(Math.round).join(" + ");
 
@@ -38,6 +43,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
 
     return (
         <>
+            <SkillDamageBackpropDialog open={open} onOpenChange={setOpen} skill={skill} ctx={ctx} />
             {showHeader && (
                 <div
                     className={`
@@ -55,18 +61,24 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
             )}
 
             {/* ================= Damage table (responsive) ================= */}
-            <div
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
                 className={`
-                    grid grid-cols-2 gap-2 text-xs items-center
+                    w-full grid grid-cols-2 gap-2 text-xs items-center text-left
                     md:grid-cols-3
                     ${columnTemplateClass}
-                    ${isEven ? 'bg-zinc-800/30' : ''}
+                    ${isEven ? "bg-zinc-800/30" : ""}
+                    rounded-md
+                    hover:bg-zinc-700/25
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                    min-h-[44px]
         `}
             >
                 <div
                     className="
                         rounded-md
-                        px-2 py-2 flex flex-col gap-1 justify-center
+                        w-full px-2 py-2 flex flex-col gap-1 justify-center
                         col-span-2 md:col-span-1 lg:col-span-1
                     "
                     title={hitsTooltip}
@@ -106,7 +118,7 @@ export function SkillDamagePanel({ skill, result, showHeader = false, isEven = f
                         color="amber"
                     />
                 </div>
-            </div>
+            </button>
 
             {/* ================= Notes ================= */}
             {skill.notes && skill.notes !== "Placeholder multipliers" && (
