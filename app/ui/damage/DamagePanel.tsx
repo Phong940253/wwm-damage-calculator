@@ -42,12 +42,28 @@ export default function DamagePanel({
 }: Props) {
   const finalStats = buildFinalStatSections(ctx);
   const selectedMartialArtId = elementStats?.martialArtsId;
-  const skills = SKILLS.filter((skill) => {
+
+  const baseSkills = SKILLS.filter((skill) => {
+    // Universal skills (no martialArtId) should always be visible.
+    if (!skill.martialArtId) return true;
+
     if (selectedMartialArtId) return skill.martialArtId === selectedMartialArtId;
-    if (elementStats?.selected)
-      return skill.martialArtId?.includes(elementStats.selected) ?? false;
+    if (elementStats?.selected) return skill.martialArtId.includes(elementStats.selected);
     return true;
   });
+
+  // If we are using a rotation (e.g. in gear optimize), ensure any skills referenced
+  // by the rotation are included in the breakdown even if they don't match the
+  // current martial-art filter (this is important for mystic skills).
+  const skillById = new Map(baseSkills.map((s) => [s.id, s] as const));
+  if (rotation?.skills?.length) {
+    for (const entry of rotation.skills) {
+      const s = SKILLS.find((x) => x.id === entry.id);
+      if (s) skillById.set(s.id, s);
+    }
+  }
+
+  const skills = Array.from(skillById.values());
 
   const skillDamages = useSkillDamage(ctx, skills);
   const completedSkillDamages = skillDamages.filter(
