@@ -184,14 +184,14 @@ function Section({
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="rounded-xl bg-black/30 border border-white/10">
+    <div className="rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-black/30 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
       <button
         onClick={() => setOpen(!open)}
         className="
           w-full flex items-center justify-between
-          px-4 py-2 text-sm font-medium
+          px-4 py-2.5 text-sm font-medium
           text-zinc-200
-          hover:bg-white/5
+          hover:bg-white/[0.06]
         "
       >
         {section.title}
@@ -202,42 +202,53 @@ function Section({
       </button>
 
       {open && (
-        <div className="px-4 pb-2 space-y-0.5">
-          {section.rows.map((row, i) => (
-            <div
-              key={i}
-              className="group/row -mx-2 flex items-center justify-between gap-3 rounded-lg border border-transparent px-2 py-1 text-[13px] transition-colors hover:bg-white/5 hover:border-white/10 focus-within:bg-white/5 focus-within:border-white/10"
-            >
-              <div className="min-w-0 flex items-center gap-1.5">
-                {row.ctxKeys && row.ctxKeys.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0 text-zinc-300 hover:text-zinc-100 opacity-0 pointer-events-none transition-opacity group-hover/row:opacity-100 group-hover/row:pointer-events-auto group-focus-within/row:opacity-100 group-focus-within/row:pointer-events-auto"
-                    onClick={() => onOpenDetails(row.label, row.ctxKeys!)}
-                    title="Show breakdown"
+        <div className="px-4 pb-3">
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-black/20 divide-y divide-white/5">
+            {section.rows.map((row, i) => {
+              const hasDetails = Boolean(row.ctxKeys && row.ctxKeys.length > 0);
+
+              return (
+                <div
+                  key={i}
+                  className={
+                    "group/row flex items-center justify-between gap-3 px-2 py-1 text-[13px] transition-colors focus-within:bg-white/[0.06] hover:bg-white/[0.06] " +
+                    (row.highlight ? "bg-yellow-500/[0.06]" : "")
+                  }
+                >
+                  <div className="min-w-0 flex items-center gap-1.5">
+                    {hasDetails ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-zinc-300 hover:bg-white/10 hover:text-zinc-100 opacity-0 pointer-events-none transition-opacity group-hover/row:opacity-100 group-hover/row:pointer-events-auto group-focus-within/row:opacity-100 group-focus-within/row:pointer-events-auto"
+                        onClick={() => onOpenDetails(row.label, row.ctxKeys!)}
+                        title="Show breakdown"
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </Button>
+                    ) : (
+                      <span className="h-7 w-7 shrink-0" aria-hidden />
+                    )}
+
+                    <span className="text-zinc-200/70 truncate">
+                      {row.label}
+                    </span>
+                  </div>
+
+                  <span
+                    className={
+                      row.highlight
+                        ? "text-yellow-300 font-semibold tabular-nums min-w-[88px] text-right"
+                        : "text-zinc-100 tabular-nums min-w-[88px] text-right"
+                    }
                   >
-                    <Info className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-
-                <span className="text-muted-foreground truncate">
-                  {row.label}
-                </span>
-              </div>
-
-              <span
-                className={
-                  row.highlight
-                    ? "text-yellow-400 font-semibold tabular-nums min-w-[88px] text-right"
-                    : "text-zinc-100 tabular-nums min-w-[88px] text-right"
-                }
-              >
-                {row.value}
-              </span>
-            </div>
-          ))}
+                    {row.value}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

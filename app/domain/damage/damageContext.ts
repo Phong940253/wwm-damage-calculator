@@ -184,7 +184,7 @@ export function buildDamageContext(
         lines.push({ kind: "gear", label: "Gear", value: gearValue });
       }
 
-      for (const [id, p] of passiveEntries) {
+      for (const [, p] of passiveEntries) {
         const v = p.bonus[key] || 0;
         if (v === 0) continue;
         const note =
@@ -199,7 +199,7 @@ export function buildDamageContext(
         });
       }
 
-      for (const [id, iw] of innerEntries) {
+      for (const [, iw] of innerEntries) {
         const v = iw.bonus[key] || 0;
         if (v === 0) continue;
         lines.push({
