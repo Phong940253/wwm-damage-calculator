@@ -1,5 +1,5 @@
 // app/utils/importExport.ts
-import { CustomGear, GearSlot } from "@/app/types";
+import { CustomGear, GearSlot, Rotation } from "@/app/types";
 
 export interface ExportPayload {
   version: "1.0";
@@ -8,6 +8,10 @@ export interface ExportPayload {
   gear?: {
     customGears: CustomGear[];
     equipped: Partial<Record<GearSlot, string>>;
+  };
+  rotations?: {
+    list: Rotation[];
+    selectedId?: string;
   };
 }
 
