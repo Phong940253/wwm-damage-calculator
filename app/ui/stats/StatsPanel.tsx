@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { STAT_GROUPS } from "../../constants";
 import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
@@ -65,7 +66,7 @@ export default function StatsPanel({
   onStatChange,
   onElementChange,
   onApplyIncrease,
-  onSaveCurrent
+  onSaveCurrent,
 }: Props) {
   // Track local input values for instant UI feedback
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
@@ -201,24 +202,26 @@ export default function StatsPanel({
         ring-1 ring-white/5
       "
     >
-      <CardContent className="pt-6 space-y-10">
+      <CardContent className="p-6 space-y-10">
         {/* Element Selection */}
         <section className="space-y-5">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold">Elements</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground">
-              Martial Art
-            </label>
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between gap-3">
+              <label className="text-xs text-muted-foreground">Martial Art</label>
+              <span className="text-[11px] text-muted-foreground">
+                Auto-syncs main element
+              </span>
+            </div>
             <select
-              className="w-full border rounded px-2 py-2 bg-background"
+              className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
               value={elementStats.martialArtsId}
               onChange={(e) => {
                 const nextId = e.target.value;
                 const art = LIST_MARTIAL_ARTS.find((m) => m.id === nextId);
-                console.log("Selected martial art:", art);
 
                 onElementChange("martialArtsId", "selected", nextId);
 
@@ -257,7 +260,8 @@ export default function StatsPanel({
                 const gear = gearBonus[k] || 0;
                 const derivedValue = derived[k as keyof typeof derived] || 0;
                 const base = Number(stat.current || 0);
-                const total = Math.round((base + gear + derivedValue) * 100000) / 100000;
+                const total =
+                  Math.round((base + gear + derivedValue) * 100000) / 100000;
 
                 return (
                   <StatCard
@@ -287,31 +291,32 @@ export default function StatsPanel({
           </section>
         ))}
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={onApplyIncrease}
-            className="
-              rounded-xl px-3 py-2 text-sm font-medium
-              bg-emerald-500/15 text-emerald-400
-              border border-emerald-500/30
-              hover:bg-emerald-500/25
-            "
-          >
-            Apply Increase → Current
-          </button>
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Actions</h2>
+            <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
 
-          <button
-            onClick={onSaveCurrent}
-            className="
-              rounded-xl px-3 py-2 text-sm font-medium
-              bg-amber-500/15 text-amber-400
-              border border-amber-500/30
-              hover:bg-amber-500/25
-            "
-          >
-            Save Current
-          </button>
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={onApplyIncrease}
+              className="rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 hover:text-emerald-200"
+              variant="secondary"
+              type="button"
+            >
+              Apply Increase → Current
+            </Button>
+
+            <Button
+              onClick={onSaveCurrent}
+              className="rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 hover:text-amber-200"
+              variant="secondary"
+              type="button"
+            >
+              Save Current
+            </Button>
+          </div>
+        </section>
       </CardContent>
     </Card>
   );
