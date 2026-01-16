@@ -202,35 +202,40 @@ function Section({
       </button>
 
       {open && (
-        <div className="px-4 pb-2 space-y-1">
+        <div className="px-4 pb-2 space-y-0.5">
           {section.rows.map((row, i) => (
-            <div key={i} className="flex items-center justify-between gap-3 text-sm">
-              <span className="text-muted-foreground">{row.label}</span>
-
-              <div className="flex items-center gap-2">
-                <span
-                  className={
-                    row.highlight
-                      ? "text-yellow-400 font-semibold"
-                      : "text-zinc-100"
-                  }
-                >
-                  {row.value}
-                </span>
-
+            <div
+              key={i}
+              className="group/row -mx-2 flex items-center justify-between gap-3 rounded-lg border border-transparent px-2 py-1 text-[13px] transition-colors hover:bg-white/5 hover:border-white/10 focus-within:bg-white/5 focus-within:border-white/10"
+            >
+              <div className="min-w-0 flex items-center gap-1.5">
                 {row.ctxKeys && row.ctxKeys.length > 0 && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-zinc-300 hover:text-zinc-100"
+                    className="h-7 w-7 shrink-0 text-zinc-300 hover:text-zinc-100 opacity-0 pointer-events-none transition-opacity group-hover/row:opacity-100 group-hover/row:pointer-events-auto group-focus-within/row:opacity-100 group-focus-within/row:pointer-events-auto"
                     onClick={() => onOpenDetails(row.label, row.ctxKeys!)}
                     title="Show breakdown"
                   >
-                    <Info className="h-4 w-4" />
+                    <Info className="h-3.5 w-3.5" />
                   </Button>
                 )}
+
+                <span className="text-muted-foreground truncate">
+                  {row.label}
+                </span>
               </div>
+
+              <span
+                className={
+                  row.highlight
+                    ? "text-yellow-400 font-semibold tabular-nums min-w-[88px] text-right"
+                    : "text-zinc-100 tabular-nums min-w-[88px] text-right"
+                }
+              >
+                {row.value}
+              </span>
             </div>
           ))}
         </div>
