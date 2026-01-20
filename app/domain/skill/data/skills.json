@@ -1088,6 +1088,38 @@
     "notes": "Placeholder multipliers"
   },
   {
+    "id": "mystic_leaping_toad",
+    "name": "Leaping Toad",
+    "category": "mystic-skill",
+    "hits": [
+      {
+        "physicalMultiplier": 0.5097,
+        "elementMultiplier": 0.5097,
+        "flatPhysical": 34,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 3.0583,
+        "elementMultiplier": 3.0583,
+        "flatPhysical": 207,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 1.5292,
+        "elementMultiplier": 1.5292,
+        "flatPhysical": 103,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 1.5292,
+        "elementMultiplier": 1.5292,
+        "flatPhysical": 103,
+        "hits": 1
+      }
+    ],
+    "notes": "4-hit sequence: knockback → lunge → Toad Venom x2. Tooltip: Cooldown 8s, Vitality 25/100. (Golden Toad Crash variant not modeled here.)"
+  },
+  {
     "id": "mystic_soaring_spin",
     "name": "Soaring Spin",
     "category": "mystic-skill",
