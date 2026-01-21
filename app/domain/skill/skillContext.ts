@@ -1,5 +1,6 @@
 // app/domain/skill/skillContext.ts
 import { DamageContext } from "../damage/damageContext";
+import { DamageSkillType } from "./types";
 
 export function createSkillContext(
   baseCtx: DamageContext,
@@ -8,13 +9,13 @@ export function createSkillContext(
     elementMultiplier: number;
     flatPhysical?: number;
     flatAttribute?: number;
-    damageSkillType?: "normal" | "charged";
-  }
+    damageSkillTypes?: DamageSkillType[];
+  },
 ): DamageContext {
   // Pre-calculate combined flat damage outside getter to avoid recalculation
   const totalFlatDamage = (opts.flatPhysical || 0) + (opts.flatAttribute || 0);
 
-  const isChargedSkill = opts.damageSkillType === "charged";
+  const isChargedSkill = opts.damageSkillTypes?.includes("charged") ?? false;
 
   // Cache for frequently accessed values
   const cache = new Map<string, number>();

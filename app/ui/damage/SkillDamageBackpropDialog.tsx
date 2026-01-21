@@ -207,7 +207,7 @@ export function SkillDamageBackpropDialog({
     ctx: DamageContext;
 }) {
     const hitExplains = useMemo(() => {
-        const damageSkillType = skill.damageSkillType ?? "normal";
+        const damageSkillTypes = skill.damageSkillType ?? ["normal"];
 
         return skill.hits.map((hit, hitIndex) => {
             const hitCtx = createSkillContext(ctx, {
@@ -215,7 +215,7 @@ export function SkillDamageBackpropDialog({
                 elementMultiplier: hit.elementMultiplier,
                 flatPhysical: hit.flatPhysical,
                 flatAttribute: hit.flatAttribute,
-                damageSkillType,
+                damageSkillTypes,
             });
 
             const damage = calculateDamage(hitCtx);

@@ -8,11 +8,11 @@ import { calcExpectedNormalBreakdown } from "../damage/damageFormula";
 
 export function calculateSkillDamage(
   ctx: DamageContext,
-  skill: Skill
+  skill: Skill,
 ): SkillDamageResult {
   const perHit: DamageResult[] = [];
 
-  const damageSkillType = skill.damageSkillType ?? "normal";
+  const damageSkillTypes = skill.damageSkillType ?? ["normal"];
 
   // Process each hit type and multiply by hit count
   for (const hit of skill.hits) {
@@ -21,7 +21,7 @@ export function calculateSkillDamage(
       elementMultiplier: hit.elementMultiplier,
       flatPhysical: hit.flatPhysical,
       flatAttribute: hit.flatAttribute,
-      damageSkillType,
+      damageSkillTypes,
     });
 
     const damage = calculateDamage(hitCtx);

@@ -479,8 +479,10 @@
     "category": "special-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 1.765,
+        "elementMultiplier": 2.6475,
+        "flatPhysical": 258,
+        "flatAttribute": 151,
         "hits": 1
       }
     ],
@@ -497,8 +499,8 @@
         "physicalMultiplier": 1.0248,
         "elementMultiplier": 1.5371,
         "hits": 1,
-        "flatPhysical": 144,
-        "flatAttribute": 85
+        "flatPhysical": 149,
+        "flatAttribute": 87
       }
     ],
     "notes": "Placeholder multipliers"
@@ -511,11 +513,11 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 1.5371,
-        "elementMultiplier": 2.3057,
-        "hits": 1,
-        "flatPhysical": 216,
-        "flatAttribute": 127
+        "physicalMultiplier": 0.7686,
+        "elementMultiplier": 1.15285,
+        "hits": 2,
+        "flatPhysical": 112,
+        "flatAttribute": 66
       }
     ],
     "notes": "Placeholder multipliers"
@@ -528,11 +530,11 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 2.5691,
-        "elementMultiplier": 3.8428,
-        "hits": 1,
-        "flatPhysical": 360,
-        "flatAttribute": 212
+        "physicalMultiplier": 0.854,
+        "elementMultiplier": 1.28,
+        "hits": 3,
+        "flatPhysical": 125,
+        "flatAttribute": 73
       }
     ],
     "notes": "Placeholder multipliers"

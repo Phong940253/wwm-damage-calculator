@@ -1,7 +1,14 @@
 import { ElementKey } from "@/app/constants";
 import { DamageResult } from "../damage/type";
 
-export type WeaponType = "Umbrella" | "Fan" | "Sword" | "Spear" | "Mo Blade" | "Rope Dart" | "Dual Blades";
+export type WeaponType =
+  | "Umbrella"
+  | "Fan"
+  | "Sword"
+  | "Spear"
+  | "Mo Blade"
+  | "Rope Dart"
+  | "Dual Blades";
 
 export interface SkillHit {
   physicalMultiplier: number; // e.g. 1.2 = 120%
@@ -33,11 +40,11 @@ export interface Skill {
   hits: SkillHit[];
 
   /**
-   * Damage-type tag used by the calculator for conditional stats.
+   * Damage-type tags used by the calculator for conditional stats.
    * - "charged": charged skill (uses ChargeSkillDamageBoost)
    * - "normal": default
    */
-  damageSkillType?: DamageSkillType;
+  damageSkillType?: DamageSkillType[];
 
   /** whether skill can crit / affinity */
   canCrit?: boolean;
