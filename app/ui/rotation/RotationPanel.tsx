@@ -660,7 +660,7 @@ export default function RotationPanel({
                         </div>
                       )}
 
-                      {skill.id === "vernal_umbrella_light" && (
+                      {skill.id === "vernal_umbrella_light_spring_away" && (
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-zinc-400 whitespace-nowrap">Duration (s)</span>
                           <input
