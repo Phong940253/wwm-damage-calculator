@@ -36,15 +36,12 @@ export default function RotationDamagePie({
     const skill = SKILLS.find((s) => s.id === rotSkill.id);
     if (!skill) return;
 
-    // Total hits for ONE usage/cast of the skill (sum of hit groups)
-    const hitsPerCast = (skill.hits ?? []).reduce(
-      (sum, h) => sum + (typeof h.hits === "number" ? h.hits : 1),
-      0
-    );
-    const totalHits = hitsPerCast * rotSkill.count;
-
-    const skillDamage = calculateSkillDamage(ctx, skill);
+    const skillDamage = calculateSkillDamage(ctx, skill, { params: rotSkill.params });
     if (!skillDamage) return;
+
+    // Total hits for ONE usage/cast of the skill (supports scaled skills)
+    const hitsPerCast = skillDamage.perHit.length;
+    const totalHits = hitsPerCast * rotSkill.count;
 
     // Average damage = normal damage nhân với count
     const avgDamage = skillDamage.total.normal.value * rotSkill.count;

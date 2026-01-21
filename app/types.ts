@@ -111,6 +111,9 @@ export interface RotationSkill {
   id: string; // skill ID
   order: number;
   count: number; // số lần sử dụng skill này
+
+  /** Optional per-skill-entry parameters (e.g. Blossoms for Unfaded Flower). */
+  params?: Record<string, number>;
 }
 
 export interface Rotation {

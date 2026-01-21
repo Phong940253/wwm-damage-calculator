@@ -32,6 +32,7 @@ interface RotationPanelProps {
   onRemoveSkill: (rotationId: string, entryId: string) => void;
   onMoveSkill: (rotationId: string, fromIndex: number, toIndex: number) => void;
   onUpdateSkillCount: (rotationId: string, entryId: string, count: number) => void;
+  onUpdateSkillParams: (rotationId: string, entryId: string, patch: Record<string, number>) => void;
   onTogglePassiveSkill: (rotationId: string, passiveId: string) => void;
   onUpdatePassiveUptime: (
     rotationId: string,
@@ -57,6 +58,7 @@ export default function RotationPanel({
   onRemoveSkill,
   onMoveSkill,
   onUpdateSkillCount,
+  onUpdateSkillParams,
   onTogglePassiveSkill,
   onUpdatePassiveUptime,
   onToggleInnerWay,
@@ -636,6 +638,27 @@ export default function RotationPanel({
                           className="w-10 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
                         />
                       </div>
+
+                      {skill.id === "vernal_unfaded_flower" && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-zinc-400 whitespace-nowrap">Blossoms</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={rotSkill.params?.blossoms ?? 50}
+                            disabled={selectedIsDefault}
+                            onChange={(e) => {
+                              if (selectedIsDefault) return;
+                              const next = Number(e.target.value);
+                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
+                                blossoms: Number.isFinite(next) ? next : 0,
+                              });
+                            }}
+                            className="w-16 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                            title="Unfaded Flower scaling: duration ~= Blossoms / 10s"
+                          />
+                        </div>
+                      )}
 
                       <Button
                         variant="ghost"

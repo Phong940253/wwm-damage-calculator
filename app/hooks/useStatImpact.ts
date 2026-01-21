@@ -16,7 +16,7 @@ export function useStatImpact(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
-  rotation?: Rotation
+  rotation?: Rotation,
 ) {
   return useMemo(() => {
     const impacts: Record<string, number> = {};
@@ -33,7 +33,9 @@ export function useStatImpact(
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
-          const dmg = calculateSkillDamage(ctx, skill);
+          const dmg = calculateSkillDamage(ctx, skill, {
+            params: rotSkill.params,
+          });
           totalNormal += dmg.total.normal.value * rotSkill.count;
         }
         return totalNormal;
@@ -50,13 +52,16 @@ export function useStatImpact(
       Object.entries(stats).map(([k, v]) => [
         k,
         { current: Number(v.current || 0), increase: 0 },
-      ])
+      ]),
     );
 
     const baseElements: Record<ElementStatKey, number> = Object.fromEntries(
       Object.keys(elementStats)
         .filter((k) => k !== "selected" && k !== "martialArtsId")
-        .map((k) => [k, Number(elementStats[k as ElementStatKey].current || 0)])
+        .map((k) => [
+          k,
+          Number(elementStats[k as ElementStatKey].current || 0),
+        ]),
     ) as Record<ElementStatKey, number>;
 
     const buildCtx = (s: InputStats, e: Record<ElementStatKey, number>) =>
@@ -65,7 +70,7 @@ export function useStatImpact(
           selected: elementStats.selected,
           martialArtsId: elementStats.martialArtsId,
           ...Object.fromEntries(
-            Object.entries(e).map(([k, v]) => [k, { current: v, increase: 0 }])
+            Object.entries(e).map(([k, v]) => [k, { current: v, increase: 0 }]),
           ),
         } as ElementStats;
 
@@ -73,7 +78,7 @@ export function useStatImpact(
           s,
           es,
           gearBonus,
-          rotation
+          rotation,
         );
         return buildDamageContext(s, es, sumBonuses(gearBonus, passiveBonuses));
       })();
@@ -116,7 +121,7 @@ export function useStatImpact(
       if (key === "bamboocutMin" && isDebugBamboocutMinEnabled()) {
         // eslint-disable-next-line no-console
         console.groupCollapsed(
-          `[StatImpact debug] bamboocutMin inc=${inc} selected=${elementStats.selected}`
+          `[StatImpact debug] bamboocutMin inc=${inc} selected=${elementStats.selected}`,
         );
         // eslint-disable-next-line no-console
         console.debug({
@@ -132,22 +137,22 @@ export function useStatImpact(
         // eslint-disable-next-line no-console
         console.debug("Context getters", {
           MINAttributeAttackOfOtherType_base: baseCtx.get(
-            "MINAttributeAttackOfOtherType"
+            "MINAttributeAttackOfOtherType",
           ),
           MAXAttributeAttackOfOtherType_base: baseCtx.get(
-            "MAXAttributeAttackOfOtherType"
+            "MAXAttributeAttackOfOtherType",
           ),
           MINAttributeAttackOfOtherType_test: testCtx.get(
-            "MINAttributeAttackOfOtherType"
+            "MINAttributeAttackOfOtherType",
           ),
           MAXAttributeAttackOfOtherType_test: testCtx.get(
-            "MAXAttributeAttackOfOtherType"
+            "MAXAttributeAttackOfOtherType",
           ),
           MINAttributeAttackOfYOURType_base: baseCtx.get(
-            "MINAttributeAttackOfYOURType"
+            "MINAttributeAttackOfYOURType",
           ),
           MAXAttributeAttackOfYOURType_base: baseCtx.get(
-            "MAXAttributeAttackOfYOURType"
+            "MAXAttributeAttackOfYOURType",
           ),
         });
         // eslint-disable-next-line no-console

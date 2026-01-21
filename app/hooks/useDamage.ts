@@ -16,7 +16,7 @@ export function useDamage(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
-  rotation?: Rotation
+  rotation?: Rotation,
 ): DamageResult {
   return useMemo(() => {
     /* ---------- BASE (NO increase) ---------- */
@@ -25,7 +25,7 @@ export function useDamage(
       Object.entries(stats).map(([k, v]) => [
         k,
         { current: Number(v.current || 0), increase: 0 },
-      ])
+      ]),
     );
 
     const baseElementStats: ElementStats = {
@@ -36,7 +36,7 @@ export function useDamage(
           .map(([k, v]) => [
             k,
             { current: Number(v.current || 0), increase: 0 },
-          ])
+          ]),
       ),
     };
 
@@ -45,13 +45,13 @@ export function useDamage(
       baseStats,
       baseElementStats,
       gearBonus,
-      rotation
+      rotation,
     );
     const passiveBreakdownFinal = computeRotationBonusesWithBreakdown(
       stats,
       elementStats,
       gearBonus,
-      rotation
+      rotation,
     );
 
     // Keep the old shape around for any downstream usage.
@@ -72,7 +72,7 @@ export function useDamage(
               uptimePct: passiveBreakdownBase.meta.passives[id]?.uptimePct,
               bonus,
             },
-          ])
+          ]),
         ),
         innerWays: Object.fromEntries(
           Object.entries(passiveBreakdownBase.byInnerWay).map(([id, bonus]) => [
@@ -81,9 +81,9 @@ export function useDamage(
               name: passiveBreakdownBase.meta.innerWays[id]?.name ?? id,
               bonus,
             },
-          ])
+          ]),
         ),
-      }
+      },
     );
 
     const finalCtxWithModifiers = buildDamageContext(
@@ -100,7 +100,7 @@ export function useDamage(
               uptimePct: passiveBreakdownFinal.meta.passives[id]?.uptimePct,
               bonus,
             },
-          ])
+          ]),
         ),
         innerWays: Object.fromEntries(
           Object.entries(passiveBreakdownFinal.byInnerWay).map(
@@ -110,10 +110,10 @@ export function useDamage(
                 name: passiveBreakdownFinal.meta.innerWays[id]?.name ?? id,
                 bonus,
               },
-            ]
-          )
+            ],
+          ),
         ),
-      }
+      },
     );
 
     /* ---------- Calculate damage based on rotation or default ---------- */
@@ -156,7 +156,8 @@ export function useDamage(
         // Base damage for this skill (without increases)
         const baseSkillDamage = calculateSkillDamage(
           baseCtxWithModifiers,
-          skill
+          skill,
+          { params: rotSkill.params },
         );
         baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
         baseNormalTotal += baseSkillDamage.total.normal.value * rotSkill.count;
@@ -170,7 +171,8 @@ export function useDamage(
         // Final damage for this skill (with increases)
         const finalSkillDamage = calculateSkillDamage(
           finalCtxWithModifiers,
-          skill
+          skill,
+          { params: rotSkill.params },
         );
         const skillNormalDamage =
           finalSkillDamage.total.normal.value * rotSkill.count;
@@ -222,7 +224,7 @@ export function useDamage(
       finalValues = final;
       breakdown = calcExpectedNormalBreakdown(
         finalCtxWithModifiers.get,
-        final.affinity
+        final.affinity,
       );
     }
 

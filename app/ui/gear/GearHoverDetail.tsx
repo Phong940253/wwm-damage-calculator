@@ -104,7 +104,7 @@ export default function GearHoverDetail({
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
-          const dmg = calculateSkillDamage(ctx, skill);
+          const dmg = calculateSkillDamage(ctx, skill, { params: rotSkill.params });
           totalNormal += dmg.total.normal.value * rotSkill.count;
         }
         return totalNormal;

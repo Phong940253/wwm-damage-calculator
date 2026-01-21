@@ -56,7 +56,7 @@ export async function computeOptimizeResultsAsync(
     slotsToOptimize?: GearSlot[];
   },
   onProgress?: (current: number, total: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<OptimizeComputation> {
   const throwIfCancelled = () => {
     if (signal?.aborted) throw new OptimizeCancelledError();
@@ -73,12 +73,12 @@ export async function computeOptimizeResultsAsync(
     stats,
     elementStats,
     baseBonus,
-    rotation
+    rotation,
   );
   const baseCtx = buildDamageContext(
     stats,
     elementStats,
-    sumBonuses(baseBonus, baseRotationBonuses)
+    sumBonuses(baseBonus, baseRotationBonuses),
   );
 
   /* Calculate base damage - rotation-aware */
@@ -89,7 +89,9 @@ export async function computeOptimizeResultsAsync(
       throwIfCancelled();
       const skill = SKILLS.find((s) => s.id === rotSkill.id);
       if (!skill) continue;
-      const skillDamage = calculateSkillDamage(baseCtx, skill);
+      const skillDamage = calculateSkillDamage(baseCtx, skill, {
+        params: rotSkill.params,
+      });
       rotationTotal += skillDamage.total.normal.value * rotSkill.count;
     }
     baseDamage = rotationTotal;
@@ -108,7 +110,7 @@ export async function computeOptimizeResultsAsync(
       : null;
 
   const slotOptions = GEAR_SLOTS.filter(({ key }) =>
-    optimizeSlots ? optimizeSlots.has(key) : true
+    optimizeSlots ? optimizeSlots.has(key) : true,
   ).map(({ key }) => {
     const equippedGear =
       equipped[key] && customGears.find((g) => g.id === equipped[key]);
@@ -131,7 +133,7 @@ export async function computeOptimizeResultsAsync(
 
   const estimated = slotOptions.reduce(
     (acc, { items }) => acc * items.length,
-    1
+    1,
   );
 
   throwIfCancelled();
@@ -186,12 +188,12 @@ export async function computeOptimizeResultsAsync(
         stats,
         elementStats,
         bonus,
-        rotation
+        rotation,
       );
       const ctxWithModifiers = buildDamageContext(
         stats,
         elementStats,
-        sumBonuses(bonus, rotationBonuses)
+        sumBonuses(bonus, rotationBonuses),
       );
 
       let dmg: number;
@@ -201,7 +203,9 @@ export async function computeOptimizeResultsAsync(
           throwIfCancelled();
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
-          const skillDamage = calculateSkillDamage(ctxWithModifiers, skill);
+          const skillDamage = calculateSkillDamage(ctxWithModifiers, skill, {
+            params: rotSkill.params,
+          });
           rotationTotal += skillDamage.total.normal.value * rotSkill.count;
         }
         dmg = rotationTotal;
@@ -266,7 +270,7 @@ export async function computeOptimizeResultsAsync(
   results.sort((a, b) =>
     b.percentGain === a.percentGain
       ? b.damage - a.damage
-      : b.percentGain - a.percentGain
+      : b.percentGain - a.percentGain,
   );
 
   return {

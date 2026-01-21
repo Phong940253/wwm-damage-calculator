@@ -18,10 +18,10 @@ function generateId() {
  */
 function normalizeRotation(
   rotation: Rotation,
-  martialArtId?: MartialArtId
+  martialArtId?: MartialArtId,
 ): Rotation {
   const hadActivePassiveSkillsField = Array.isArray(
-    rotation.activePassiveSkills
+    rotation.activePassiveSkills,
   );
   const hadActiveInnerWaysField = Array.isArray(rotation.activeInnerWays);
 
@@ -29,7 +29,10 @@ function normalizeRotation(
   // We clone the shallow structure + key nested collections that we modify.
   const next: Rotation = {
     ...rotation,
-    skills: (rotation.skills ?? []).map((s) => ({ ...s })),
+    skills: (rotation.skills ?? []).map((s) => ({
+      ...s,
+      params: s.params ? { ...s.params } : undefined,
+    })),
     activePassiveSkills: hadActivePassiveSkillsField
       ? [...rotation.activePassiveSkills]
       : [],
@@ -95,7 +98,7 @@ function normalizeRotation(
     next.activePassiveSkills = martialArtId ? defaultPassiveIdsForMA : [];
   } else {
     next.activePassiveSkills = next.activePassiveSkills.filter((id) =>
-      allPassiveIds.has(id)
+      allPassiveIds.has(id),
     );
 
     // If rotation is tied to a martial art and all passives were removed, enable current defaults
@@ -121,7 +124,7 @@ function normalizeRotation(
     const originalLength = rotation.activeInnerWays.length;
 
     next.activeInnerWays = (next.activeInnerWays ?? []).filter(
-      (id) => allInnerWayIds.has(id) && isInnerWayAllowed(id)
+      (id) => allInnerWayIds.has(id) && isInnerWayAllowed(id),
     );
 
     // If the user explicitly saved an empty list, keep it empty.
@@ -177,7 +180,7 @@ export const useRotation = () => {
       } catch {
         // Fallback to default only
         const normalized = DEFAULT_ROTATIONS.map((r) =>
-          normalizeRotation(r, r.martialArtId as MartialArtId)
+          normalizeRotation(r, r.martialArtId as MartialArtId),
         );
         setRotations(normalized);
         setSelectedRotationId(savedSelectedId || normalized[0].id);
@@ -192,19 +195,19 @@ export const useRotation = () => {
     const savedById = new Map(savedRotations.map((r) => [r.id, r] as const));
 
     const mergedDefaults = DEFAULT_ROTATIONS.map(
-      (def) => savedById.get(def.id) ?? def
+      (def) => savedById.get(def.id) ?? def,
     );
     const uniqueSaved = savedRotations.filter((r) => !defaultIds.has(r.id));
 
     const mergedRotations = [...mergedDefaults, ...uniqueSaved].map((r) =>
-      normalizeRotation(r, r.martialArtId as MartialArtId)
+      normalizeRotation(r, r.martialArtId as MartialArtId),
     );
 
     setRotations(mergedRotations);
 
     const exists = mergedRotations.some((r) => r.id === savedSelectedId);
     setSelectedRotationId(
-      exists ? savedSelectedId : mergedRotations[0]?.id ?? ""
+      exists ? savedSelectedId : (mergedRotations[0]?.id ?? ""),
     );
   }, []);
 
@@ -256,8 +259,8 @@ export const useRotation = () => {
   const renameRotation = (id: string, newName: string) => {
     setRotations((prev) =>
       prev.map((r) =>
-        r.id === id ? { ...r, name: newName, updatedAt: Date.now() } : r
-      )
+        r.id === id ? { ...r, name: newName, updatedAt: Date.now() } : r,
+      ),
     );
   };
 
@@ -277,7 +280,7 @@ export const useRotation = () => {
           skills: [...r.skills, newSkill],
           updatedAt: Date.now(),
         };
-      })
+      }),
     );
   };
 
@@ -297,14 +300,14 @@ export const useRotation = () => {
           skills: reordered,
           updatedAt: Date.now(),
         };
-      })
+      }),
     );
   };
 
   const moveSkill = (
     rotationId: string,
     fromIndex: number,
-    toIndex: number
+    toIndex: number,
   ) => {
     setRotations((prev) =>
       prev.map((r) => {
@@ -325,14 +328,14 @@ export const useRotation = () => {
           skills: reordered,
           updatedAt: Date.now(),
         };
-      })
+      }),
     );
   };
 
   const updateSkillCount = (
     rotationId: string,
     entryId: string,
-    count: number
+    count: number,
   ) => {
     setRotations((prev) =>
       prev.map((r) => {
@@ -341,11 +344,33 @@ export const useRotation = () => {
         return {
           ...r,
           skills: r.skills.map((s) =>
-            s.entryId === entryId ? { ...s, count: Math.max(1, count) } : s
+            s.entryId === entryId ? { ...s, count: Math.max(1, count) } : s,
           ),
           updatedAt: Date.now(),
         };
-      })
+      }),
+    );
+  };
+
+  const updateSkillParams = (
+    rotationId: string,
+    entryId: string,
+    patch: Record<string, number>,
+  ) => {
+    setRotations((prev) =>
+      prev.map((r) => {
+        if (r.id !== rotationId) return r;
+
+        return {
+          ...r,
+          skills: r.skills.map((s) => {
+            if (s.entryId !== entryId) return s;
+            const nextParams = { ...(s.params ?? {}), ...patch };
+            return { ...s, params: nextParams };
+          }),
+          updatedAt: Date.now(),
+        };
+      }),
     );
   };
 
@@ -376,14 +401,14 @@ export const useRotation = () => {
           passiveUptimes: nextUptimes,
           updatedAt: Date.now(),
         };
-      })
+      }),
     );
   };
 
   const updatePassiveUptime = (
     rotationId: string,
     passiveId: string,
-    uptimePercent: number
+    uptimePercent: number,
   ) => {
     const v = Math.round(Math.min(100, Math.max(0, uptimePercent)));
     setRotations((prev) =>
@@ -394,7 +419,7 @@ export const useRotation = () => {
           passiveUptimes: { ...(r.passiveUptimes || {}), [passiveId]: v },
           updatedAt: Date.now(),
         };
-      })
+      }),
     );
   };
 
@@ -411,7 +436,7 @@ export const useRotation = () => {
             : [...r.activeInnerWays, innerId],
           updatedAt: Date.now(),
         };
-      })
+      }),
     );
   };
 
@@ -427,6 +452,7 @@ export const useRotation = () => {
     removeSkillFromRotation,
     moveSkill,
     updateSkillCount,
+    updateSkillParams,
     togglePassiveSkill,
     toggleInnerWay,
     updatePassiveUptime,
