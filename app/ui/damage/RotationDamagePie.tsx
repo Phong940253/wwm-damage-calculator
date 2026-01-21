@@ -26,6 +26,12 @@ export default function RotationDamagePie({
   rotation,
   ctx,
 }: RotationDamagePieProps) {
+  const formatHitCount = (v: number) => {
+    if (!Number.isFinite(v)) return "0";
+    const rounded = Math.round(v * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  };
+
   // Tính toán damage cho mỗi skill trong rotation, merge duplicates
   const skillDamageMap = new Map<
     string,
@@ -40,7 +46,12 @@ export default function RotationDamagePie({
     if (!skillDamage) return;
 
     // Total hits for ONE usage/cast of the skill (supports scaled skills)
-    const hitsPerCast = skillDamage.perHit.length;
+    const baseHitsPerCast = skillDamage.perHit.length;
+    const duration =
+      skill.id === "vernal_umbrella_light"
+        ? Math.max(0, Number(rotSkill.params?.duration ?? 1))
+        : 1;
+    const hitsPerCast = baseHitsPerCast * duration;
     const totalHits = hitsPerCast * rotSkill.count;
 
     // Average damage = normal damage nhân với count
@@ -54,11 +65,11 @@ export default function RotationDamagePie({
         value: existing.value + avgDamage,
         count: existing.count + rotSkill.count,
         totalHits: existing.totalHits + totalHits,
-        name: `${skill.name} x${existing.totalHits + totalHits}`,
+        name: `${skill.name} x${formatHitCount(existing.totalHits + totalHits)}`,
       });
     } else {
       skillDamageMap.set(skill.id, {
-        name: `${skill.name} x${totalHits}`,
+        name: `${skill.name} x${formatHitCount(totalHits)}`,
         value: avgDamage,
         skillId: skill.id,
         count: rotSkill.count,

@@ -694,7 +694,7 @@
   },
   {
     "id": "vernal_umbrella_light",
-    "name": "Umbrella - Light Attack / Spring Away",
+    "name": "Umbrella - Light Attack",
     "martialArtId": "silkbind_jade",
     "weaponType": "Umbrella",
     "category": "basic",
@@ -705,7 +705,28 @@
         "hits": 1
       }
     ],
-    "notes": "Placeholder multipliers"
+    "notes": "DPS-based skill: in rotation, total damage scales by Duration (seconds)."
+  },
+  {
+    "id": "vernal_umbrella_light_spring_away",
+    "name": "Umbrella - Light Attack Spring Away",
+    "martialArtId": "silkbind_jade",
+    "weaponType": "Umbrella",
+    "category": "basic",
+    "damageSkillType": [
+      "charged",
+      "ballistic"
+    ],
+    "hits": [
+      {
+        "physicalMultiplier": 0.9912,
+        "elementMultiplier": 1.4867,
+        "hits": 1,
+        "flatPhysical": 96,
+        "flatAttribute": 42
+      }
+    ],
+    "notes": "DPS-based skill: in rotation, total damage scales by Duration (seconds)."
   },
   {
     "id": "vernal_apricot_heaven",

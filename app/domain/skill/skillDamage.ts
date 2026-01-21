@@ -11,6 +11,24 @@ export interface SkillDamageOptions {
   params?: Record<string, number>;
 }
 
+function scaleDamageResult(dmg: DamageResult, scale: number): DamageResult {
+  const s = Number.isFinite(scale) ? scale : 1;
+  return {
+    min: { value: dmg.min.value * s, percent: dmg.min.percent },
+    normal: { value: dmg.normal.value * s, percent: dmg.normal.percent },
+    critical: { value: dmg.critical.value * s, percent: dmg.critical.percent },
+    affinity: { value: dmg.affinity.value * s, percent: dmg.affinity.percent },
+    averageBreakdown: dmg.averageBreakdown
+      ? {
+          abrasion: dmg.averageBreakdown.abrasion * s,
+          affinity: dmg.averageBreakdown.affinity * s,
+          critical: dmg.averageBreakdown.critical * s,
+          normal: dmg.averageBreakdown.normal * s,
+        }
+      : dmg.averageBreakdown,
+  };
+}
+
 function getEffectiveSkillHits(skill: Skill, opts?: SkillDamageOptions) {
   // Default: use JSON hits as-is.
   const baseHits = skill.hits ?? [];
@@ -54,6 +72,15 @@ export function calculateSkillDamage(
 
   const effectiveHits = getEffectiveSkillHits(skill, opts);
 
+  // Umbrella - Spring Away: DPS-based skill.
+  // Interpret the JSON hit template as "damage per second", then scale linearly by Duration seconds (float).
+  const durationScale = (() => {
+    if (skill.id !== "vernal_umbrella_light_spring_away") return 1;
+    const raw = opts?.params?.duration;
+    const v = Number.isFinite(raw as number) ? (raw as number) : 1;
+    return Math.max(0, v);
+  })();
+
   // Process each hit type and multiply by hit count
   for (const hit of effectiveHits) {
     const hitCtx = createSkillContext(ctx, {
@@ -68,13 +95,18 @@ export function calculateSkillDamage(
     const breakdown = calcExpectedNormalBreakdown(hitCtx.get, damage.affinity);
 
     // Create damage object once and reuse for multiple hits
-    const hitDamage: DamageResult = {
+    const hitDamageBase: DamageResult = {
       min: { value: damage.min, percent: 0 },
       normal: { value: damage.normal, percent: 0 },
       critical: { value: damage.critical, percent: 0 },
       affinity: { value: damage.affinity, percent: 0 },
       averageBreakdown: breakdown,
     };
+
+    const hitDamage =
+      durationScale === 1
+        ? hitDamageBase
+        : scaleDamageResult(hitDamageBase, durationScale);
 
     // Add hit count times instead of creating separate objects
     for (let i = 0; i < hit.hits; i++) {

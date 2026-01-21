@@ -660,6 +660,28 @@ export default function RotationPanel({
                         </div>
                       )}
 
+                      {skill.id === "vernal_umbrella_light" && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-zinc-400 whitespace-nowrap">Duration (s)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={rotSkill.params?.duration ?? 1}
+                            disabled={selectedIsDefault}
+                            onChange={(e) => {
+                              if (selectedIsDefault) return;
+                              const next = Number(e.target.value);
+                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
+                                duration: Number.isFinite(next) ? next : 1,
+                              });
+                            }}
+                            className="w-14 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                            title="Spring Away is DPS-based: total = DPS × duration"
+                          />
+                        </div>
+                      )}
+
                       <Button
                         variant="ghost"
                         size="sm"

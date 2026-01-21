@@ -26,7 +26,7 @@ export type CategorySkill =
   | "ultimate"
   | "mystic-skill";
 
-export type DamageSkillType = "normal" | "charged";
+export type DamageSkillType = "normal" | "charged" | "ballistic";
 
 export interface Skill {
   id: string;
