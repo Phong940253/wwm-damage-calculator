@@ -48,7 +48,7 @@ export default function RotationDamagePie({
     // Total hits for ONE usage/cast of the skill (supports scaled skills)
     const baseHitsPerCast = skillDamage.perHit.length;
     const duration =
-      skill.id === "vernal_umbrella_light"
+      skill.id === "vernal_umbrella_light_spring_away"
         ? Math.max(0, Number(rotSkill.params?.duration ?? 1))
         : 1;
     const hitsPerCast = baseHitsPerCast * duration;
