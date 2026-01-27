@@ -35,7 +35,7 @@ function readStatValue(
   stats: InputStats,
   elementStats: ElementStats,
   bonus: Record<string, number>,
-  key: StatKey
+  key: StatKey,
 ) {
   const k = String(key);
 
@@ -69,7 +69,7 @@ function readStatValue(
 
 export function collectRotationModifiers(
   rotation?: Rotation,
-  martialArtId?: ElementStats["martialArtsId"]
+  martialArtId?: ElementStats["martialArtsId"],
 ): PassiveModifier[] {
   if (!rotation) return [];
 
@@ -103,7 +103,7 @@ export function computeRotationBonuses(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
-  rotation?: Rotation
+  rotation?: Rotation,
 ): Record<string, number> {
   if (!rotation) return {};
 
@@ -175,7 +175,7 @@ export function computeRotationBonuses(
         stats,
         elementStats,
         baseForScale,
-        modifier.sourceStat
+        modifier.sourceStat,
       );
 
       const addRaw = sourceValue * modifier.ratio;
@@ -202,7 +202,7 @@ export function computeRotationBonuses(
         stats,
         elementStats,
         baseForScale,
-        modifier.sourceStat
+        modifier.sourceStat,
       );
 
       const addRaw = sourceValue * modifier.ratio;
@@ -223,7 +223,7 @@ export function computeRotationBonusesWithBreakdown(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
-  rotation?: Rotation
+  rotation?: Rotation,
 ): RotationBonusBreakdown {
   if (!rotation) {
     return {
@@ -258,7 +258,7 @@ export function computeRotationBonusesWithBreakdown(
   const addTo = (
     bucket: Record<string, number>,
     key: string,
-    value: number
+    value: number,
   ) => {
     bucket[key] = (bucket[key] || 0) + value;
   };
@@ -305,7 +305,7 @@ export function computeRotationBonusesWithBreakdown(
 
   const flatTotal = sumRecords(
     ...Object.values(byPassiveFlat),
-    ...Object.values(byInnerFlat)
+    ...Object.values(byInnerFlat),
   );
 
   // 2) Scale modifiers (from base + gear + flat)
@@ -329,7 +329,7 @@ export function computeRotationBonusesWithBreakdown(
         stats,
         elementStats,
         baseForScale,
-        modifier.sourceStat
+        modifier.sourceStat,
       );
 
       const addRaw = sourceValue * modifier.ratio;
@@ -357,7 +357,7 @@ export function computeRotationBonusesWithBreakdown(
         stats,
         elementStats,
         baseForScale,
-        modifier.sourceStat
+        modifier.sourceStat,
       );
 
       const addRaw = sourceValue * modifier.ratio;
@@ -384,7 +384,7 @@ export function computeRotationBonusesWithBreakdown(
 
   const total = sumRecords(
     ...Object.values(byPassive),
-    ...Object.values(byInnerWay)
+    ...Object.values(byInnerWay),
   );
 
   return {
@@ -397,7 +397,7 @@ export function computeRotationBonusesWithBreakdown(
 
 export function sumBonuses(
   base: Record<string, number>,
-  extra?: Record<string, number>
+  extra?: Record<string, number>,
 ): Record<string, number> {
   return sumRecords(base, extra);
 }

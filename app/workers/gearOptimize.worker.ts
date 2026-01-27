@@ -1,4 +1,10 @@
-import type { CustomGear, ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
+import type {
+  CustomGear,
+  ElementStats,
+  GearSlot,
+  InputStats,
+  Rotation,
+} from "@/app/types";
 import {
   computeOptimizeResultsAsync,
   OptimizeCancelledError,
@@ -8,6 +14,9 @@ import {
 type OptimizeWorkerOptions = {
   candidateGears?: CustomGear[];
   slotsToOptimize?: GearSlot[];
+  lockedSlots?: Partial<Record<GearSlot, string | null>>;
+  restrictSlots?: Partial<Record<GearSlot, Array<string | null>>>;
+  yieldToEventLoop?: boolean;
   autoReduceIfOverCombos?: number;
   reduceTargetCombos?: number;
   reducePerSlotCap?: number;
@@ -60,7 +69,9 @@ type CancelledMessage = {
 
 const controllers = new Map<string, AbortController>();
 
-function post(msg: ProgressMessage | DoneMessage | ErrorMessage | CancelledMessage) {
+function post(
+  msg: ProgressMessage | DoneMessage | ErrorMessage | CancelledMessage,
+) {
   (self as unknown as { postMessage: (m: unknown) => void }).postMessage(msg);
 }
 

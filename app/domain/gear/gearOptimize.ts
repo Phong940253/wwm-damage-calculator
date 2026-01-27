@@ -40,7 +40,7 @@ export class OptimizeCancelledError extends Error {
   }
 }
 
-type StatDelta = { stat: string; value: number };
+type StatDelta = { stat: string | number; value: number };
 
 function compareOptimizeResults(a: OptimizeResult, b: OptimizeResult) {
   // Ascending: "worse" first. Used for min-heap.
@@ -136,11 +136,26 @@ export async function computeOptimizeResultsAsync(
   options?: {
     candidateGears?: CustomGear[];
     slotsToOptimize?: GearSlot[];
+    /**
+     * Lock a slot to a specific gear id (or null for empty) for partitioned search.
+     * When provided, that slot's candidates are replaced with exactly that choice.
+     */
+    lockedSlots?: Partial<Record<GearSlot, string | null>>;
+    /**
+     * Restrict a slot to a subset of candidate ids (or null for empty).
+     * Useful for partitioning search across workers while still covering all combos.
+     */
+    restrictSlots?: Partial<Record<GearSlot, Array<string | null>>>;
+    /**
+     * Yield to the event loop during the search (keeps UI responsive on main thread).
+     * In workers you can set this to false for higher throughput.
+     */
+    yieldToEventLoop?: boolean;
     /** If estimated combos exceed this, auto-reduce per-slot candidates via single-swap scoring. */
     autoReduceIfOverCombos?: number;
     /** Target max combos after reduction. */
     reduceTargetCombos?: number;
-    /** Hard cap per slot after reduction (minimum 5). */
+    /** Hard cap per slot after reduction (minimum 2). */
     reducePerSlotCap?: number;
   },
   onProgress?: (current: number, total: number) => void,
@@ -178,7 +193,8 @@ export async function computeOptimizeResultsAsync(
     dir: 1 | -1,
   ) => {
     for (const d of getGearDeltas(gear)) {
-      bonus[d.stat] = (bonus[d.stat] || 0) + dir * d.value;
+      const key = String(d.stat);
+      bonus[key] = (bonus[key] || 0) + dir * d.value;
     }
   };
 
@@ -231,11 +247,52 @@ export async function computeOptimizeResultsAsync(
       ? new Set<GearSlot>(options.slotsToOptimize)
       : null;
 
+  const lockedSlots = options?.lockedSlots;
+  const restrictSlots = options?.restrictSlots;
+
   const slotOptions = GEAR_SLOTS.filter(({ key }) =>
     optimizeSlots ? optimizeSlots.has(key) : true,
   ).map(({ key }) => {
     const equippedGear =
       equipped[key] && customGears.find((g) => g.id === equipped[key]);
+
+    // If this slot is locked, override candidates to exactly the locked choice.
+    if (lockedSlots && Object.prototype.hasOwnProperty.call(lockedSlots, key)) {
+      const locked = lockedSlots[key];
+      const lockedGear =
+        typeof locked === "string"
+          ? (customGears.find((g) => g.id === locked) ??
+            candidateGears.find((g) => g.id === locked))
+          : null;
+
+      return {
+        slot: key,
+        items: [lockedGear ?? null],
+        equippedGear,
+      };
+    }
+
+    // If slot is restricted, override candidates to the provided subset.
+    if (
+      restrictSlots &&
+      Object.prototype.hasOwnProperty.call(restrictSlots, key)
+    ) {
+      const allowed = restrictSlots[key] ?? [];
+      const items: Array<CustomGear | null> = allowed.map((id) => {
+        if (id === null) return null;
+        return (
+          customGears.find((g) => g.id === id) ??
+          candidateGears.find((g) => g.id === id) ??
+          null
+        );
+      });
+
+      return {
+        slot: key,
+        items: items.length ? items : [null],
+        equippedGear,
+      };
+    }
 
     // Respect UI filters via candidateGears, but always allow keeping currently-equipped
     // gear (otherwise filters could accidentally force "no gear" for a slot).
@@ -260,9 +317,13 @@ export async function computeOptimizeResultsAsync(
 
   throwIfCancelled();
 
-  const autoReduceIfOverCombos = options?.autoReduceIfOverCombos ?? 2_000_000;
-  const reduceTargetCombos = options?.reduceTargetCombos ?? 2_000_000;
-  const reducePerSlotCap = Math.max(5, options?.reducePerSlotCap ?? 0);
+  // Default reduction triggers earlier so medium search spaces (e.g. 5^8 ~= 390k)
+  // can still be trimmed when desired.
+  const autoReduceIfOverCombos = options?.autoReduceIfOverCombos ?? 200_000;
+  const reduceTargetCombos = options?.reduceTargetCombos ?? 200_000;
+  const reducePerSlotCapRaw = options?.reducePerSlotCap ?? 0;
+  const reducePerSlotCap =
+    reducePerSlotCapRaw > 0 ? Math.max(2, reducePerSlotCapRaw) : 0;
 
   const reduceSlotOptionsIfNeeded = async () => {
     // Reduce only when the estimated search space is huge.
@@ -270,7 +331,7 @@ export async function computeOptimizeResultsAsync(
 
     const slotCount = slotOptions.length || 1;
     const capFromTarget = Math.max(
-      5,
+      2,
       Math.floor(Math.pow(reduceTargetCombos, 1 / slotCount)),
     );
     const perSlotCap = reducePerSlotCap > 0 ? reducePerSlotCap : capFromTarget;
@@ -349,6 +410,12 @@ export async function computeOptimizeResultsAsync(
   const limit = Math.min(Math.max(desiredDisplay, 1), MAX_RESULTS_CAP);
   const totalCombos = finalEstimated;
 
+  // Provide an initial total so the UI can render a correct denominator
+  // even before the first time-based progress tick.
+  if (onProgress) {
+    onProgress(0, totalCombos);
+  }
+
   /* ============================================================
      3️⃣ ASYNC DFS STATE
   ============================================================ */
@@ -362,6 +429,7 @@ export async function computeOptimizeResultsAsync(
   // Time-based progress tracking
   let lastProgressTime = Date.now();
   const PROGRESS_INTERVAL_MS = 100; // Update every 100ms
+  const yieldToEventLoop = options?.yieldToEventLoop ?? true;
 
   /* Async DFS with time-based progress updates */
   const dfs = async (i: number) => {
@@ -374,9 +442,11 @@ export async function computeOptimizeResultsAsync(
       if (onProgress && now - lastProgressTime >= PROGRESS_INTERVAL_MS) {
         onProgress(total, totalCombos);
         lastProgressTime = now;
-        // Yield to browser to update UI
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        throwIfCancelled();
+        // Yield to event loop when desired (main thread); disable in workers for max throughput.
+        if (yieldToEventLoop) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          throwIfCancelled();
+        }
       }
 
       throwIfCancelled();
@@ -405,12 +475,11 @@ export async function computeOptimizeResultsAsync(
 
     const { slot, items, equippedGear } = finalSlotOptions[i];
 
+    // Remove currently-equipped gear once for this slot level.
+    if (equippedGear) applyGear(bonus, equippedGear, -1);
+
     for (const gear of items) {
       throwIfCancelled();
-      // Remove old gear
-      if (equippedGear) {
-        applyGear(bonus, equippedGear, -1);
-      }
 
       if (gear) {
         selection[slot] = gear;
@@ -426,11 +495,10 @@ export async function computeOptimizeResultsAsync(
         applyGear(bonus, gear, -1);
         delete selection[slot];
       }
-
-      if (equippedGear) {
-        applyGear(bonus, equippedGear, +1);
-      }
     }
+
+    // Restore equipped gear once after exploring all candidates.
+    if (equippedGear) applyGear(bonus, equippedGear, +1);
   };
 
   await dfs(0);

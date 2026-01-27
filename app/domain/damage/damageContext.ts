@@ -9,7 +9,7 @@ import { computeDerivedStats } from "../stats/derivedStats";
 
 function elementKey(
   element: ElementKey,
-  suffix: ElementStatSuffix
+  suffix: ElementStatSuffix,
 ): ElementStatKey {
   return `${element}${suffix}` as ElementStatKey;
 }
@@ -57,7 +57,7 @@ export function buildDamageContext(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
-  bonusBreakdown?: DamageBonusBreakdown
+  bonusBreakdown?: DamageBonusBreakdown,
 ): DamageContext {
   /* ============================
      Helpers
@@ -90,7 +90,7 @@ export function buildDamageContext(
     Object.keys(stats).map((k) => [
       k,
       { current: cur(k as keyof InputStats), increase: 0 },
-    ])
+    ]),
   ) as InputStats;
 
   const derived = computeDerivedStats(derivedInput, {});
@@ -101,12 +101,12 @@ export function buildDamageContext(
 
   // Pre-calculate other elements min/max to avoid filtering on every call
   const otherElementsFilter = ELEMENT_TYPES.filter(
-    (e) => e.key !== elementStats.selected
+    (e) => e.key !== elementStats.selected,
   );
 
   const cachedOtherMinAttr = otherElementsFilter.reduce(
     (sum, e) => sum + ele(elementKey(e.key, "Min")),
-    0
+    0,
   );
 
   const cachedOtherMaxAttr = otherElementsFilter.reduce((sum, e) => {
@@ -169,7 +169,7 @@ export function buildDamageContext(
       kind: StatSourceKind,
       label: string,
       value: number,
-      note?: string
+      note?: string,
     ): StatSourceLine => ({ kind, label, value, note });
 
     const passiveEntries = bonusBreakdown?.passives
@@ -286,7 +286,7 @@ export function buildDamageContext(
           "element-other",
           "Other elements (base)",
           baseSum,
-          "Sum of Min across all non-selected elements"
+          "Sum of Min across all non-selected elements",
         ),
         makeLine("increase", "Other elements (increase)", incSum),
         makeLine("gear", "Other elements (gear)", gearSum),
@@ -345,7 +345,7 @@ export function buildDamageContext(
           "element-other",
           "Other elements (base)",
           baseSum,
-          "Sum of Max (clamped by Min) across all non-selected elements"
+          "Sum of Max (clamped by Min) across all non-selected elements",
         ),
         makeLine("increase", "Other elements (increase)", incSum),
         makeLine("gear", "Other elements (gear)", gearSum),
