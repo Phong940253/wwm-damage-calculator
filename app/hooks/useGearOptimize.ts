@@ -13,7 +13,7 @@ import {
 } from "@/app/domain/gear/gearOptimize";
 import { GEAR_SLOTS } from "@/app/constants";
 
-type LockedSlots = Partial<Record<GearSlot, string | null>>;
+// type LockedSlots = Partial<Record<GearSlot, string | null>>;
 type RestrictSlots = Partial<Record<GearSlot, Array<string | null>>>;
 
 type WorkerProgress = { current: number; total: number };
