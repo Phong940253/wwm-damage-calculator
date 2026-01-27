@@ -269,7 +269,7 @@ export default function GearCompareTab({
                       if (!skill) continue;
 
                       const skillDmgA = calculateSkillDamage(ctxA, skill, {
-                        params: selectedRotation.skills.find((rs) => rs.id === skill.id)?.params,
+                        params: rotSkill.params,
                       });
                       totalMinA +=
                         skillDmgA.total.min.value * rotSkill.count;
@@ -279,7 +279,7 @@ export default function GearCompareTab({
                         skillDmgA.total.affinity.value * rotSkill.count;
 
                       const skillDmgB = calculateSkillDamage(ctxB, skill, {
-                        params: selectedRotation.skills.find((rs) => rs.id === skill.id)?.params,
+                        params: rotSkill.params,
                       });
                       totalMinB +=
                         skillDmgB.total.min.value * rotSkill.count;
