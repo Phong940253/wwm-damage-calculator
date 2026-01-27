@@ -189,17 +189,13 @@ export const useRotation = () => {
     }
 
     // Merge default rotations with saved rotations.
-    // IMPORTANT: if a saved rotation has the same id as a default rotation,
-    // we must prefer the saved version (otherwise edits to defaults reset on refresh).
+    // IMPORTANT: default rotations are treated as immutable templates.
+    // If a saved rotation has the same id as a default rotation, we always prefer
+    // the current DEFAULT_ROTATIONS version (so defaults can be updated over time).
     const defaultIds = new Set(DEFAULT_ROTATIONS.map((r) => r.id));
-    const savedById = new Map(savedRotations.map((r) => [r.id, r] as const));
-
-    const mergedDefaults = DEFAULT_ROTATIONS.map(
-      (def) => savedById.get(def.id) ?? def,
-    );
     const uniqueSaved = savedRotations.filter((r) => !defaultIds.has(r.id));
 
-    const mergedRotations = [...mergedDefaults, ...uniqueSaved].map((r) =>
+    const mergedRotations = [...DEFAULT_ROTATIONS, ...uniqueSaved].map((r) =>
       normalizeRotation(r, r.martialArtId as MartialArtId),
     );
 

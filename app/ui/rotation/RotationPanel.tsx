@@ -157,6 +157,38 @@ export default function RotationPanel({
     URL.revokeObjectURL(url);
   };
 
+  const copyTextToClipboard = async (text: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    // Fallback for older browsers / restricted contexts
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+
+    if (!ok) throw new Error("Copy failed");
+  };
+
+  const handleCopyRotationToClipboard = async (rotation: Rotation) => {
+    try {
+      const dataStr = JSON.stringify(rotation, null, 2);
+      await copyTextToClipboard(dataStr);
+    } catch {
+      alert("Failed to copy rotation JSON to clipboard.");
+    }
+  };
+
   // Filter skills: only show skills that match rotation's martial art (or have no martial art)
   const currentMartialArtId = elementStats.martialArtsId;
   const availableSkills = SKILLS.filter((skill) => {
@@ -264,6 +296,12 @@ export default function RotationPanel({
                         className="text-xs"
                       >
                         Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleCopyRotationToClipboard(rotation)}
+                        className="text-xs"
+                      >
+                        Copy JSON
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleExportRotation(rotation)}
