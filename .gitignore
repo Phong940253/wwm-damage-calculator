@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 all_ts_code.txt
+
+settings.json
+pnpm-lock.yaml
