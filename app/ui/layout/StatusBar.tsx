@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { TabButton } from "@/components/ui/TabButton";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   LayoutDashboard,
   Shield,
@@ -111,7 +112,9 @@ export function StatusBar() {
       </div>
 
       {/* RIGHT — balancing */}
-      <div />
+      <div className="flex justify-end">
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

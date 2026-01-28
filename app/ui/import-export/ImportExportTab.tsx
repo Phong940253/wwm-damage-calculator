@@ -37,6 +37,30 @@ export default function ImportExportTab() {
   const [status, setStatus] = useState<StatusState>(null);
 
   /* =======================
+     Clear Local Data
+  ======================= */
+
+  const handleClearData = () => {
+    const ok = window.confirm(
+      "This will clear all saved calculator data (stats, gear, rotations) from this browser. Continue?"
+    );
+    if (!ok) return;
+
+    try {
+      const keysToRemove = Object.keys(localStorage).filter((k) =>
+        k.startsWith("wwm_")
+      );
+      for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+      }
+
+      setStatus({ variant: "secondary", text: "Cleared local data. Reload to apply." });
+    } catch {
+      setStatus({ variant: "destructive", text: "Clear failed" });
+    }
+  };
+
+  /* =======================
      Export
   ======================= */
 
@@ -308,6 +332,33 @@ export default function ImportExportTab() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handleImport}>
               Import from Clipboard
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => window.location.reload()}
+              type="button"
+            >
+              Reload
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Danger zone */}
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-destructive">
+              Danger zone
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Permanently deletes all saved data in this browser.
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button variant="destructive" onClick={handleClearData} type="button">
+              Clear Data
             </Button>
             <Button
               variant="secondary"
