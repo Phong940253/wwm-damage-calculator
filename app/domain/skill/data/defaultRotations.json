@@ -1,7 +1,7 @@
 [
   {
     "id": "wiahcsqysyn",
-    "name": "Nameless Sword DPS Rotation",
+    "name": "Nameless Sword DPS Rotation (Tier 5 Standard)",
     "martialArtId": "bellstrike_splendor",
     "skills": [
       {
@@ -174,6 +174,217 @@
     ],
     "createdAt": 1768290819233,
     "updatedAt": 1768562023310,
+    "passiveUptimes": {
+      "ps_universal_jadeware": 100,
+      "ps_bellstrike_splendor_1": 60,
+      "ps_bellstrike_splendor_2": 100
+    }
+  },
+  {
+    "id": "6v6btcvmjha",
+    "name": "Nameless Sword DPS Rotation (Tier 5 Expert)",
+    "martialArtId": "bellstrike_splendor",
+    "skills": [
+      {
+        "entryId": "d5vs4dw5eg7",
+        "id": "nameless_homeless_charge_3",
+        "order": 0,
+        "count": 1
+      },
+      {
+        "entryId": "u1u44xeywqf",
+        "id": "nameless_homeless_charge_3",
+        "order": 1,
+        "count": 1
+      },
+      {
+        "entryId": "wwmri30qhm",
+        "id": "mystic_soaring_spin",
+        "order": 2,
+        "count": 1
+      },
+      {
+        "entryId": "b77h8ecdrk9",
+        "id": "nameless_homeless_charge_3",
+        "order": 3,
+        "count": 1
+      },
+      {
+        "entryId": "s9vs7k4w9tr",
+        "id": "nameless_homeless_charge_3",
+        "order": 4,
+        "count": 1
+      },
+      {
+        "entryId": "luo027e3z5e",
+        "id": "nameless_qiankuns_lock",
+        "order": 5,
+        "count": 1
+      },
+      {
+        "entryId": "en46wqc41tv",
+        "id": "nameless_homeless_charge_3",
+        "order": 6,
+        "count": 1
+      },
+      {
+        "entryId": "5gxjy2azun8",
+        "id": "mystic_leaping_toad",
+        "order": 7,
+        "count": 1
+      },
+      {
+        "entryId": "yif7ogtvbq",
+        "id": "nameless_homeless_charge_3",
+        "order": 8,
+        "count": 1
+      },
+      {
+        "entryId": "og10n5jqowp",
+        "id": "mystic_soaring_spin",
+        "order": 9,
+        "count": 1
+      },
+      {
+        "entryId": "luu7ddokj1",
+        "id": "nameless_homeless_charge_3",
+        "order": 10,
+        "count": 1
+      },
+      {
+        "entryId": "aigtqvbli96",
+        "id": "nameless_qiankuns_lock",
+        "order": 11,
+        "count": 1
+      },
+      {
+        "entryId": "jqjuk9egs2m",
+        "id": "nameless_homeless_charge_3",
+        "order": 12,
+        "count": 1
+      },
+      {
+        "entryId": "9q3bahhzgql",
+        "id": "nameless_homeless_charge_3",
+        "order": 13,
+        "count": 1
+      },
+      {
+        "entryId": "a3u4m4520a9",
+        "id": "mystic_leaping_toad",
+        "order": 14,
+        "count": 1
+      },
+      {
+        "entryId": "3uk8xd9u2q2",
+        "id": "nameless_homeless_charge_3",
+        "order": 15,
+        "count": 1
+      },
+      {
+        "entryId": "mdq6v663yrr",
+        "id": "mystic_soaring_spin",
+        "order": 16,
+        "count": 1
+      },
+      {
+        "entryId": "nw0qsns13dd",
+        "id": "nameless_homeless_charge_3",
+        "order": 17,
+        "count": 1
+      },
+      {
+        "entryId": "d7geyt6esmd",
+        "id": "nameless_qiankuns_lock",
+        "order": 18,
+        "count": 1
+      },
+      {
+        "entryId": "lvx4ztzb3f",
+        "id": "nameless_homeless_charge_3",
+        "order": 19,
+        "count": 1
+      },
+      {
+        "entryId": "tzqfki39joc",
+        "id": "mystic_leaping_toad",
+        "order": 20,
+        "count": 1
+      },
+      {
+        "entryId": "6acr02okjsn",
+        "id": "nameless_homeless_charge_3",
+        "order": 21,
+        "count": 1
+      },
+      {
+        "entryId": "jr7vlcc0i3q",
+        "id": "nameless_fearless_lunge_1",
+        "order": 22,
+        "count": 1
+      },
+      {
+        "entryId": "bcflqs494a",
+        "id": "nameless_fearless_lunge_2",
+        "order": 23,
+        "count": 1
+      },
+      {
+        "entryId": "r8iyq76kw2k",
+        "id": "nameless_homeless_charge_3",
+        "order": 24,
+        "count": 1
+      },
+      {
+        "entryId": "wxv739zkxol",
+        "id": "mystic_soaring_spin",
+        "order": 25,
+        "count": 1
+      },
+      {
+        "entryId": "kvki20ss8w",
+        "id": "nameless_fearless_lunge_3",
+        "order": 26,
+        "count": 1
+      },
+      {
+        "entryId": "4ecrqmbcb7w",
+        "id": "nameless_homeless_charge_3",
+        "order": 27,
+        "count": 1
+      },
+      {
+        "entryId": "h8tc1mtsy0b",
+        "id": "nameless_qiankuns_lock",
+        "order": 28,
+        "count": 1
+      },
+      {
+        "entryId": "ilwn4qgn57c",
+        "id": "nameless_homeless_charge_3",
+        "order": 29,
+        "count": 1
+      },
+      {
+        "entryId": "9e1roe1u5i5",
+        "id": "nameless_homeless_charge_3",
+        "order": 30,
+        "count": 1
+      }
+    ],
+    "activePassiveSkills": [
+      "ps_universal_jadeware",
+      "ps_bellstrike_splendor_1",
+      "ps_bellstrike_splendor_2"
+    ],
+    "activeInnerWays": [
+      "iw_universal_battle_anthem_t4",
+      "iw_universal_mountains_might_t4",
+      "iw_bellstrike_sword_morph_t3",
+      "iw_bellstrike_sword_morph_t5"
+    ],
+    "createdAt": 1769584708955,
+    "updatedAt": 1769586141778,
     "passiveUptimes": {
       "ps_universal_jadeware": 100,
       "ps_bellstrike_splendor_1": 60,

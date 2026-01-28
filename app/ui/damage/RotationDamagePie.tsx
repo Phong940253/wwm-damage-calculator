@@ -24,6 +24,26 @@ const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
 
 const DEFAULT_ROTATION_SECONDS = 60;
 
+const ROTATION_SKILL_GROUPS: Array<{
+  id: string;
+  name: string;
+  skillIds: string[];
+}> = [
+    {
+      id: "nameless_fearless_lunge",
+      name: "Fearless Lunge",
+      skillIds: [
+        "nameless_fearless_lunge_1",
+        "nameless_fearless_lunge_2",
+        "nameless_fearless_lunge_3",
+      ],
+    },
+  ];
+
+const ROTATION_SKILL_GROUP_BY_SKILL_ID = new Map(
+  ROTATION_SKILL_GROUPS.flatMap((g) => g.skillIds.map((id) => [id, g] as const)),
+);
+
 export default function RotationDamagePie({
   rotation,
   ctx,
@@ -44,6 +64,10 @@ export default function RotationDamagePie({
     const skill = SKILLS.find((s) => s.id === rotSkill.id);
     if (!skill) return;
 
+    const group = ROTATION_SKILL_GROUP_BY_SKILL_ID.get(skill.id);
+    const groupKey = group?.id ?? skill.id;
+    const displayName = group?.name ?? skill.name;
+
     const skillDamage = calculateSkillDamage(ctx, skill, { params: rotSkill.params });
     if (!skillDamage) return;
 
@@ -59,21 +83,21 @@ export default function RotationDamagePie({
     // Average damage = normal damage nhân với count
     const avgDamage = skillDamage.total.normal.value * rotSkill.count;
 
-    // Merge by skillId
-    const existing = skillDamageMap.get(skill.id);
+    // Merge by groupKey (or skillId when ungrouped)
+    const existing = skillDamageMap.get(groupKey);
     if (existing) {
-      skillDamageMap.set(skill.id, {
+      skillDamageMap.set(groupKey, {
         ...existing,
         value: existing.value + avgDamage,
         count: existing.count + rotSkill.count,
         totalHits: existing.totalHits + totalHits,
-        name: `${skill.name} x${formatHitCount(existing.totalHits + totalHits)}`,
+        name: `${displayName} x${formatHitCount(existing.totalHits + totalHits)}`,
       });
     } else {
-      skillDamageMap.set(skill.id, {
-        name: `${skill.name} x${formatHitCount(totalHits)}`,
+      skillDamageMap.set(groupKey, {
+        name: `${displayName} x${formatHitCount(totalHits)}`,
         value: avgDamage,
-        skillId: skill.id,
+        skillId: groupKey,
         count: rotSkill.count,
         totalHits,
       });
