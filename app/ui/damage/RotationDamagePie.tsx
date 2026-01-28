@@ -38,6 +38,15 @@ const ROTATION_SKILL_GROUPS: Array<{
         "nameless_fearless_lunge_3",
       ],
     },
+    {
+      id: "nameless_homeless_charge",
+      name: "Homeless Charge",
+      skillIds: [
+        "nameless_homeless_charge_1",
+        "nameless_homeless_charge_2",
+        "nameless_homeless_charge_3",
+      ],
+    },
   ];
 
 const ROTATION_SKILL_GROUP_BY_SKILL_ID = new Map(
