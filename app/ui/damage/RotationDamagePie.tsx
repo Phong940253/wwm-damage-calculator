@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   PieChart,
   Pie,
@@ -14,6 +16,7 @@ import { Rotation } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import { Button } from "@/components/ui/button";
 
 interface RotationDamagePieProps {
   rotation: Rotation;
@@ -57,6 +60,8 @@ export default function RotationDamagePie({
   rotation,
   ctx,
 }: RotationDamagePieProps) {
+  const [isGroupedView, setIsGroupedView] = useState(true);
+
   const formatHitCount = (v: number) => {
     if (!Number.isFinite(v)) return "0";
     const rounded = Math.round(v * 10) / 10;
@@ -74,8 +79,8 @@ export default function RotationDamagePie({
     if (!skill) return;
 
     const group = ROTATION_SKILL_GROUP_BY_SKILL_ID.get(skill.id);
-    const groupKey = group?.id ?? skill.id;
-    const displayName = group?.name ?? skill.name;
+    const groupKey = isGroupedView ? (group?.id ?? skill.id) : skill.id;
+    const displayName = isGroupedView ? (group?.name ?? skill.name) : skill.name;
 
     const skillDamage = calculateSkillDamage(ctx, skill, { params: rotSkill.params });
     if (!skillDamage) return;
@@ -189,6 +194,17 @@ export default function RotationDamagePie({
 
   return (
     <div className="w-full">
+      <div className="mb-2 flex items-center justify-end">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="text-xs"
+          onClick={() => setIsGroupedView((v) => !v)}
+          title={isGroupedView ? "Switch to detailed skill view" : "Switch to grouped skill view"}
+        >
+          {isGroupedView ? "Show Detail" : "Show Group"}
+        </Button>
+      </div>
       <div className="h-64">
         <ResponsiveContainer>
           <PieChart>
