@@ -106,6 +106,14 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   DMGBonus: "DMG Bonus",
   DamageBoost: "Damage Boost",
   ChargeSkillDamageBoost: "Charged Skill Damage Boost",
+  ArtOfSwordDMGBoost: "Art of Sword DMG Boost",
+  ArtOfSpearDMGBoost: "Art of Spear DMG Boost",
+  ArtOfFanDMGBoost: "Art of Fan DMG Boost",
+  ArtOfUmbrellaDMGBoost: "Art of Umbrella DMG Boost",
+  ArtOfHorizontalBladeDMGBoost: "Art of Horizontal Blade DMG Boost",
+  ArtOfMoBladeDMGBoost: "Art of Mo Blade DMG Boost",
+  ArtOfDualBladesDMGBoost: "Art of Dual Blades DMG Boost",
+  ArtOfRopeDartDMGBoost: "Art of Rope Dart DMG Boost",
   MainElementMultiplier: "Main Element Multiplier",
 };
 
@@ -131,6 +139,14 @@ export const INITIAL_STATS: InputStats = {
 
   // Hidden / conditional stats (not shown in STAT_GROUPS by default)
   ChargeSkillDamageBoost: { current: 0, increase: 0 },
+  ArtOfSwordDMGBoost: { current: 0, increase: 0 },
+  ArtOfSpearDMGBoost: { current: 0, increase: 0 },
+  ArtOfFanDMGBoost: { current: 0, increase: 0 },
+  ArtOfUmbrellaDMGBoost: { current: 0, increase: 0 },
+  ArtOfHorizontalBladeDMGBoost: { current: 0, increase: 0 },
+  ArtOfMoBladeDMGBoost: { current: 0, increase: 0 },
+  ArtOfDualBladesDMGBoost: { current: 0, increase: 0 },
+  ArtOfRopeDartDMGBoost: { current: 0, increase: 0 },
 
   PhysicalDefense: { current: 179, increase: 0 },
   PhysicalResistance: { current: 1.8, increase: 0 },

@@ -6,6 +6,7 @@ export type WeaponType =
   | "Fan"
   | "Sword"
   | "Spear"
+  | "Horizontal Blade"
   | "Mo Blade"
   | "Rope Dart"
   | "Dual Blades";

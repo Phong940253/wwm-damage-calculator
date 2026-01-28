@@ -89,6 +89,7 @@ export function calculateSkillDamage(
       flatPhysical: hit.flatPhysical,
       flatAttribute: hit.flatAttribute,
       damageSkillTypes,
+      weaponType: skill.weaponType,
     });
 
     const damage = calculateDamage(hitCtx);

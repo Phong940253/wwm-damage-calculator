@@ -13,7 +13,17 @@ const STAT_OPTION_GROUPS: { label: string; options: GearStatKey[] }[] = [
     })),
     {
         label: "Special",
-        options: ["ChargeSkillDamageBoost"],
+        options: [
+            "ChargeSkillDamageBoost",
+            "ArtOfSwordDMGBoost",
+            "ArtOfSpearDMGBoost",
+            "ArtOfFanDMGBoost",
+            "ArtOfUmbrellaDMGBoost",
+            "ArtOfHorizontalBladeDMGBoost",
+            "ArtOfMoBladeDMGBoost",
+            "ArtOfDualBladesDMGBoost",
+            "ArtOfRopeDartDMGBoost",
+        ],
     },
 ];
 

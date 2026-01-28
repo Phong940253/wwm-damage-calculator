@@ -1,6 +1,27 @@
 // app/domain/skill/skillContext.ts
 import { DamageContext } from "../damage/damageContext";
-import { DamageSkillType } from "./types";
+import { DamageSkillType, WeaponType } from "./types";
+
+function weaponArtDamageBoostKey(weaponType: WeaponType): string {
+  switch (weaponType) {
+    case "Sword":
+      return "ArtOfSwordDMGBoost";
+    case "Spear":
+      return "ArtOfSpearDMGBoost";
+    case "Fan":
+      return "ArtOfFanDMGBoost";
+    case "Umbrella":
+      return "ArtOfUmbrellaDMGBoost";
+    case "Horizontal Blade":
+      return "ArtOfHorizontalBladeDMGBoost";
+    case "Mo Blade":
+      return "ArtOfMoBladeDMGBoost";
+    case "Dual Blades":
+      return "ArtOfDualBladesDMGBoost";
+    case "Rope Dart":
+      return "ArtOfRopeDartDMGBoost";
+  }
+}
 
 export function createSkillContext(
   baseCtx: DamageContext,
@@ -10,12 +31,16 @@ export function createSkillContext(
     flatPhysical?: number;
     flatAttribute?: number;
     damageSkillTypes?: DamageSkillType[];
+    weaponType?: WeaponType;
   },
 ): DamageContext {
   // Pre-calculate combined flat damage outside getter to avoid recalculation
   const totalFlatDamage = (opts.flatPhysical || 0) + (opts.flatAttribute || 0);
 
   const isChargedSkill = opts.damageSkillTypes?.includes("charged") ?? false;
+  const weaponArtKey = opts.weaponType
+    ? weaponArtDamageBoostKey(opts.weaponType)
+    : null;
 
   // Cache for frequently accessed values
   const cache = new Map<string, number>();
@@ -32,9 +57,11 @@ export function createSkillContext(
     if (key === "FlatDamage") {
       value = baseCtx.get(key) + totalFlatDamage;
     }
-    // Charged skill: DamageBoost includes ChargeSkillDamageBoost
-    else if (key === "DamageBoost" && isChargedSkill) {
-      value = baseCtx.get(key) + baseCtx.get("ChargeSkillDamageBoost");
+    // Conditional: charged skill and/or weapon-art-specific boost
+    else if (key === "DamageBoost") {
+      value = baseCtx.get(key);
+      if (isChargedSkill) value += baseCtx.get("ChargeSkillDamageBoost");
+      if (weaponArtKey) value += baseCtx.get(weaponArtKey);
     }
     // Physical ATK multiplied by skill multiplier
     else if (key === "MinPhysicalAttack" || key === "MaxPhysicalAttack") {
