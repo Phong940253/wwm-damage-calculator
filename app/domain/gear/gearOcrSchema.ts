@@ -32,9 +32,7 @@ No trailing text.
 Focus only on the gear's own stats section.
 Ignore set effects, set bonuses, descriptions, durability, mastery, level requirements, flavor text.
 
-====================
-ALLOWED SLOTS
-====================
+# ALLOWED SLOTS
 weapon_1
 weapon_2
 disc
@@ -44,45 +42,13 @@ chest
 hand
 leg
 
-====================
-ALLOWED ELEMENTS
-====================
+# ALLOWED ELEMENTS
 Bellstrike
 Stonesplit
 Silkbind
 Bamboocut
 
-====================
-RARITY (STRICT)
-====================
-
-Rarity is NOT usually written as text.
-You must infer rarity from the TOP HEADER/BANNER background color behind the gear name/slot.
-
-Return rarity as ONE of the following exact strings:
-- Common
-- Uncommon
-- Rare
-- Epic
-- Legendary
-
-Color → rarity mapping (use the dominant header background color):
-- Grey / White / Neutral / Silver → Common
-- Green → Uncommon
-- Blue / Cyan → Rare
-- Purple / Violet → Epic
-- Orange / Gold / Yellow → Legendary
-
-IMPORTANT: if a reliable color-based rarity are available, prefer the COLOR-BASED rarity.
-
-Rules:
-- If rarity/tier is unclear or not visible, OMIT the "rarity" field.
-- Do NOT invent rarity.
-- Do NOT return other values.
-
-====================
-ATTRIBUTE STATS (SUB ONLY)
-====================
+# ATTRIBUTE STATS (SUB ONLY)
 The following attributes:
 - Body
 - Power
@@ -97,25 +63,9 @@ Rules:
 - MUST NOT appear in "mains"
 - MUST NOT appear in "addition"
 
-====================
-MAIN STAT RULES (STRICT)
-====================
 
-1. weapon_1, weapon_2 main stats (ALL SLOTS):
-  - MinPhysicalAttack
-  - MaxPhysicalAttack
-2. disc main stats:
-  - MinPhysicalAttack
-3. pendant main stats:
-  - MaxPhysicalAttack
-4. head, chest, hand, leg main stats:
-   - PhysicalDefense
-   - HP
-5. Any other stat MUST NOT be placed in "mains"
 
-====================
-PHYSICAL ATTACK (SPECIAL CASE)
-====================
+# PHYSICAL ATTACK (SPECIAL CASE)
 
 a) Physical Attack range:
    - "Physical Attack X - Y"
@@ -130,9 +80,7 @@ b) Single Physical Attack value:
    - "Max Physical Attack +X"
      → mains: MaxPhysicalAttack = X
 
-====================
-ELEMENT STATS
-====================
+# ELEMENT STATS
 
 Element attacks (SUB ONLY, NO RANGES):
 
@@ -145,9 +93,8 @@ Element attacks (SUB ONLY, NO RANGES):
 - "Bellstrike Damage Bonus 1.6%"
   → bellstrikeDMGBonus = 1.6
 
-====================
-ELEMENT PENETRATION (ADDITION ONLY)
-====================
+
+# ELEMENT PENETRATION (ADDITION ONLY)
 
 Rules:
 - ONLY ONE stat
@@ -158,6 +105,25 @@ Examples:
 - "Bellstrike Penetration 3.1"
   → addition: bellstrikePenetration = 3.1
 
+# DEFENSE STATS
+
+- Physical Defense -> PhysicalDefense
+- Max HP -> HP 
+
+# MAIN STAT RULES (STRICT)
+
+1. weapon_1, weapon_2 main stats (ALL SLOTS):
+  - MinPhysicalAttack
+  - MaxPhysicalAttack
+2. disc main stats:
+  - MinPhysicalAttack
+3. pendant main stats:
+  - MaxPhysicalAttack
+4. head, chest, hand, leg main stats:
+   - PhysicalDefense
+   - HP
+5. Any other stat MUST NOT be placed in "mains"
+
 ====================
 GENERAL RULES
 ====================
@@ -165,6 +131,17 @@ GENERAL RULES
 - Never produce ranges except Physical Attack
 - Percent values return NUMBER only
   Example: "12.5%" → 12.5
+
+- Weapon-specific boost values (percent) return NUMBER only
+  Examples:
+  - "Art of Sword DMG Boost 3.2%" → ArtOfSwordDMGBoost = 3.2
+  - "Art of Spear DMG Boost 0.0%" → ArtOfSpearDMGBoost = 0
+  - "Art of Fan Boost 0.0%" → ArtOfFanDMGBoost = 0
+  - "Art of Umbrella Boost 0.0%" → ArtOfUmbrellaDMGBoost = 0
+  - "Art of Horizontal Blade DMG Boost 0.0%" → ArtOfHorizontalBladeDMGBoost = 0
+  - "Art of Mo Blade DMG Boost 0.0%" → ArtOfMoBladeDMGBoost = 0
+  - "Art of Dual Blades DMG Boost 0.0%" → ArtOfDualBladesDMGBoost = 0
+  - "Art of Rope Dart DMG Boost 2.3%" → ArtOfRopeDartDMGBoost = 2.3
 
 - If a stat text does NOT map to one of the VALID STAT KEYS below, omit it.
 - "Set" / "Jadeware set" sections are NOT gear stats. Ignore completely.
@@ -195,10 +172,18 @@ Rates (SUB ONLY):
 - AffinityRate
 - AffinityDMGBonus
 - DamageBoost (SUB OR ADDITION)
+- ArtOfSwordDMGBoost
+- ArtOfSpearDMGBoost
+- ArtOfFanDMGBoost
+- ArtOfUmbrellaDMGBoost
+- ArtOfHorizontalBladeDMGBoost
+- ArtOfMoBladeDMGBoost
+- ArtOfDualBladesDMGBoost
+- ArtOfRopeDartDMGBoost
 
 Defense:
-- HP (MAINS ONLY)
-- PhysicalDefense (MAINS ONLY)
+- HP (MAINS, SUB ONLY)
+- PhysicalDefense (MAINS, SUB ONLY)
 - PhysicalResistance (ADDITION ONLY)
 - PhysicalPenetration (ADDITION ONLY)
 
