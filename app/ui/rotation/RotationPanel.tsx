@@ -26,6 +26,7 @@ interface RotationPanelProps {
   elementStats: ElementStats;
   onSelectRotation: (id: string) => void;
   onCreateRotation: (name: string, martialArtId?: ElementStats["martialArtsId"]) => void;
+  onDuplicateRotation: (id: string) => void;
   onDeleteRotation: (id: string) => void;
   onRenameRotation: (id: string, name: string) => void;
   onAddSkill: (rotationId: string, skillId: string) => void;
@@ -52,6 +53,7 @@ export default function RotationPanel({
   elementStats,
   onSelectRotation,
   onCreateRotation,
+  onDuplicateRotation,
   onDeleteRotation,
   onRenameRotation,
   onAddSkill,
@@ -296,6 +298,12 @@ export default function RotationPanel({
                         className="text-xs"
                       >
                         Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDuplicateRotation(rotation.id)}
+                        className="text-xs"
+                      >
+                        Duplicate
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleCopyRotationToClipboard(rotation)}

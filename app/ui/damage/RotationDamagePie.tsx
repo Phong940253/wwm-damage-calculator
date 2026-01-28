@@ -22,6 +22,8 @@ interface RotationDamagePieProps {
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
+const DEFAULT_ROTATION_SECONDS = 60;
+
 export default function RotationDamagePie({
   rotation,
   ctx,
@@ -81,6 +83,7 @@ export default function RotationDamagePie({
   const chartData = Array.from(skillDamageMap.values());
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
+  const dps = total / DEFAULT_ROTATION_SECONDS;
   // console.log("RotationDamagePie chartData:", chartData);
 
   if (chartData.length === 0 || total === 0) {
@@ -201,7 +204,9 @@ export default function RotationDamagePie({
         <div className="border-t border-zinc-600 pt-2 mt-2">
           <div className="flex justify-between items-center text-xs font-semibold">
             <span className="text-zinc-200">Total</span>
-            <span className="text-yellow-400">{total.toFixed(1)} dmg</span>
+            <span className="text-yellow-400">
+              {total.toFixed(1)} dmg ({dps.toFixed(2)} DPS)
+            </span>
           </div>
         </div>
       </div>

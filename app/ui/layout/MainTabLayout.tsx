@@ -66,6 +66,7 @@ export default function MainTabLayout() {
     selectedRotation,
     setSelectedRotationId,
     createRotation,
+    duplicateRotation,
     deleteRotation,
     renameRotation,
     addSkillToRotation,
@@ -176,6 +177,7 @@ export default function MainTabLayout() {
                 elementStats={elementStats}
                 onSelectRotation={setSelectedRotationId}
                 onCreateRotation={createRotation}
+                onDuplicateRotation={duplicateRotation}
                 onDeleteRotation={deleteRotation}
                 onRenameRotation={renameRotation}
                 onAddSkill={addSkillToRotation}
@@ -265,6 +267,7 @@ export default function MainTabLayout() {
                 elementStats={elementStats}
                 onSelectRotation={setSelectedRotationId}
                 onCreateRotation={createRotation}
+                onDuplicateRotation={duplicateRotation}
                 onDeleteRotation={deleteRotation}
                 onRenameRotation={renameRotation}
                 onAddSkill={addSkillToRotation}

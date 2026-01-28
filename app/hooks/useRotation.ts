@@ -13,6 +13,22 @@ function generateId() {
   return Math.random().toString(36).substring(2, 15);
 }
 
+function makeDuplicateName(existingNames: Set<string>, baseName: string) {
+  const trimmed = baseName.trim();
+  const base = trimmed.length > 0 ? trimmed : "Rotation";
+
+  const preferred = `${base} (Copy)`;
+  if (!existingNames.has(preferred)) return preferred;
+
+  for (let i = 2; i < 10_000; i++) {
+    const candidate = `${base} (Copy ${i})`;
+    if (!existingNames.has(candidate)) return candidate;
+  }
+
+  // Extremely unlikely, but guarantees we always return a name.
+  return `${base} (Copy ${Date.now()})`;
+}
+
 /**
  * Normalize rotation: ensure activePassiveSkills & activeInnerWays exist
  */
@@ -242,6 +258,44 @@ export const useRotation = () => {
     return normalized;
   };
 
+  const duplicateRotation = (id: string) => {
+    const source = rotations.find((r) => r.id === id);
+    if (!source) return;
+
+    const now = Date.now();
+    const existingNames = new Set(rotations.map((r) => r.name));
+    const name = makeDuplicateName(existingNames, source.name);
+
+    const copiedSkills = [...(source.skills ?? [])]
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map((s, idx) => ({
+        ...s,
+        entryId: generateId(),
+        order: idx,
+        params: s.params ? { ...s.params } : undefined,
+      }));
+
+    const next: Rotation = {
+      ...source,
+      id: generateId(),
+      name,
+      skills: copiedSkills,
+      activePassiveSkills: [...(source.activePassiveSkills ?? [])],
+      passiveUptimes: source.passiveUptimes ? { ...source.passiveUptimes } : {},
+      activeInnerWays: [...(source.activeInnerWays ?? [])],
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const normalized = normalizeRotation(
+      next,
+      source.martialArtId as MartialArtId,
+    );
+    setRotations((prev) => [...prev, normalized]);
+    setSelectedRotationId(normalized.id);
+  };
+
   const deleteRotation = (id: string) => {
     setRotations((prev) => {
       const next = prev.filter((r) => r.id !== id);
@@ -442,6 +496,7 @@ export const useRotation = () => {
     selectedRotation,
     setSelectedRotationId,
     createRotation,
+    duplicateRotation,
     deleteRotation,
     renameRotation,
     addSkillToRotation,
