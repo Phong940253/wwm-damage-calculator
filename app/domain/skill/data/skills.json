@@ -670,9 +670,11 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
-        "hits": 1
+        "physicalMultiplier": 2.3334,
+        "elementMultiplier": 3.5001,
+        "hits": 1,
+        "flatPhysical": 226,
+        "flatAttribute": 98
       }
     ],
     "notes": "Placeholder multipliers"
@@ -685,9 +687,11 @@
     "category": "dual-weapon-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
-        "hits": 1
+        "physicalMultiplier": 0.6295,
+        "elementMultiplier": 0.9443,
+        "hits": 1,
+        "flatPhysical": 61,
+        "flatAttribute": 27
       }
     ],
     "notes": "Placeholder multipliers"
@@ -700,9 +704,25 @@
     "category": "basic",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
-        "hits": 1
+        "physicalMultiplier": 0.3039,
+        "elementMultiplier": 0.4558,
+        "hits": 1,
+        "flatPhysical": 29,
+        "flatAttribute": 12
+      },
+      {
+        "physicalMultiplier": 0.6837,
+        "elementMultiplier": 1.0256,
+        "hits": 1,
+        "flatPhysical": 66,
+        "flatAttribute": 28
+      },
+      {
+        "physicalMultiplier": 0.5317,
+        "elementMultiplier": 0.7977,
+        "hits": 1,
+        "flatPhysical": 51,
+        "flatAttribute": 22
       }
     ],
     "notes": "DPS-based skill: in rotation, total damage scales by Duration (seconds)."
