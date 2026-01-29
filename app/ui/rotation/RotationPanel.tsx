@@ -191,8 +191,26 @@ export default function RotationPanel({
     }
   };
 
-  // Filter skills: only show skills that match rotation's martial art (or have no martial art)
   const currentMartialArtId = elementStats.martialArtsId;
+
+  const availablePassiveSkills = PASSIVE_SKILLS.filter(
+    (ps) => !ps.martialArtId || ps.martialArtId === currentMartialArtId
+  );
+
+  const availableInnerWays = INNER_WAYS.filter((iw) => {
+    const martialArtId = currentMartialArtId as
+      | import("@/app/domain/skill/types").MartialArtId
+      | undefined;
+
+    // Martial-art specific inner way
+    if (iw.applicableToMartialArtId) {
+      return iw.applicableToMartialArtId === martialArtId;
+    }
+
+    // Universal inner ways should always be visible in the list.
+    return true;
+  });
+
   const availableSkills = SKILLS.filter((skill) => {
     // Filter by current martial art from StatsPanel
     if (currentMartialArtId) {
@@ -376,20 +394,12 @@ export default function RotationPanel({
 
             {showPassiveSkills && (
               <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
-                {PASSIVE_SKILLS.filter(
-                  (ps) =>
-                    !ps.martialArtId ||
-                    ps.martialArtId === selectedRotation.martialArtId
-                ).length === 0 ? (
+                {availablePassiveSkills.length === 0 ? (
                   <p className="text-xs text-zinc-500 italic">
                     No passive skills for this martial art
                   </p>
                 ) : (
-                  PASSIVE_SKILLS.filter(
-                    (ps) =>
-                      !ps.martialArtId ||
-                      ps.martialArtId === selectedRotation.martialArtId
-                  ).map((passive) => (
+                  availablePassiveSkills.map((passive) => (
                     <div
                       key={passive.id}
                       className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
@@ -483,48 +493,12 @@ export default function RotationPanel({
 
             {showInnerWays && (
               <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
-                {INNER_WAYS.filter((iw) => {
-                  const martialArtId = selectedRotation.martialArtId as
-                    | import("@/app/domain/skill/types").MartialArtId
-                    | undefined;
-
-                  // Martial-art specific inner way
-                  if (iw.applicableToMartialArtId) {
-                    return iw.applicableToMartialArtId === martialArtId;
-                  }
-
-                  // Universal inner way: if defaultEnabledForMartialArtIds is set, treat as allow-list
-                  if (iw.defaultEnabledForMartialArtIds) {
-                    return (
-                      !!martialArtId &&
-                      iw.defaultEnabledForMartialArtIds.includes(martialArtId)
-                    );
-                  }
-
-                  return true;
-                }).length === 0 ? (
+                {availableInnerWays.length === 0 ? (
                   <p className="text-xs text-zinc-500 italic">
                     No inner ways available
                   </p>
                 ) : (
-                  INNER_WAYS.filter((iw) => {
-                    const martialArtId = selectedRotation.martialArtId as
-                      | import("@/app/domain/skill/types").MartialArtId
-                      | undefined;
-
-                    if (iw.applicableToMartialArtId) {
-                      return iw.applicableToMartialArtId === martialArtId;
-                    }
-
-                    if (iw.defaultEnabledForMartialArtIds) {
-                      return (
-                        !!martialArtId &&
-                        iw.defaultEnabledForMartialArtIds.includes(martialArtId)
-                      );
-                    }
-
-                    return true;
-                  }).map((inner) => (
+                  availableInnerWays.map((inner) => (
                     <div
                       key={inner.id}
                       className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
