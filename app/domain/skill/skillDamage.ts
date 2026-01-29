@@ -33,6 +33,9 @@ function getEffectiveSkillHits(skill: Skill, opts?: SkillDamageOptions) {
   // Default: use JSON hits as-is.
   const baseHits = skill.hits ?? [];
 
+  const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
   // Unfaded Flower: model as a time-based projectile skill.
   // Tooltip: consumes 10 Blossoms per second; user can input Blossoms to scale duration.
   if (skill.id === "vernal_unfaded_flower") {
@@ -58,7 +61,50 @@ function getEffectiveSkillHits(skill: Skill, opts?: SkillDamageOptions) {
     ];
   }
 
-  return baseHits;
+  // Generic per-hit scaling, driven entirely by JSON (SkillHit.scale).
+  if (!opts?.params) return baseHits;
+
+  return baseHits.map((hit) => {
+    if (!hit.scale) return hit;
+
+    const raw = opts.params?.[hit.scale.paramKey];
+    const v = Number.isFinite(raw as number) ? (raw as number) : undefined;
+
+    const inputMin = Number.isFinite(hit.scale.inputMin as number)
+      ? (hit.scale.inputMin as number)
+      : 0;
+    const inputMax = Number.isFinite(hit.scale.inputMax as number)
+      ? (hit.scale.inputMax as number)
+      : 100;
+
+    const t = clamp01(
+      inputMax === inputMin
+        ? 1
+        : ((v ?? inputMax) - inputMin) / (inputMax - inputMin),
+    );
+
+    const roundFlats = hit.scale.roundFlats ?? true;
+    const to = hit.scale.to;
+
+    const flatPhysical = lerp(hit.flatPhysical ?? 0, to.flatPhysical ?? 0, t);
+    const flatAttribute = lerp(
+      hit.flatAttribute ?? 0,
+      to.flatAttribute ?? 0,
+      t,
+    );
+
+    return {
+      ...hit,
+      physicalMultiplier: lerp(
+        hit.physicalMultiplier,
+        to.physicalMultiplier,
+        t,
+      ),
+      elementMultiplier: lerp(hit.elementMultiplier, to.elementMultiplier, t),
+      flatPhysical: roundFlats ? Math.round(flatPhysical) : flatPhysical,
+      flatAttribute: roundFlats ? Math.round(flatAttribute) : flatAttribute,
+    };
+  });
 }
 
 export function calculateSkillDamage(

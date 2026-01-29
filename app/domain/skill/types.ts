@@ -11,12 +11,34 @@ export type WeaponType =
   | "Rope Dart"
   | "Dual Blades";
 
+export interface SkillHitScaleTo {
+  physicalMultiplier: number;
+  elementMultiplier: number;
+  flatPhysical?: number;
+  flatAttribute?: number;
+}
+
+export interface SkillHitScale {
+  /** Which RotationSkill.params key to read (e.g. chargePct). */
+  paramKey: string;
+  /** Input range used for normalization. Defaults to 0..100. */
+  inputMin?: number;
+  inputMax?: number;
+  /** Target ("to") values; base hit values are treated as the "from" endpoint. */
+  to: SkillHitScaleTo;
+  /** Round flat values after interpolation. Defaults to true. */
+  roundFlats?: boolean;
+}
+
 export interface SkillHit {
   physicalMultiplier: number; // e.g. 1.2 = 120%
   elementMultiplier: number; // e.g. 0.8 = 80%
   flatPhysical?: number; // flat physical damage per hit
   flatAttribute?: number; // flat attribute damage per hit
   hits: number;
+
+  /** Optional linear scaling of this hit using RotationSkill.params[paramKey]. */
+  scale?: SkillHitScale;
 }
 
 export type CategorySkill =

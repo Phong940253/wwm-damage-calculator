@@ -728,6 +728,29 @@ export default function RotationPanel({
                         </div>
                       )}
 
+                      {skill.id === "vernal_apricot_heaven" && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-zinc-400 whitespace-nowrap">Charge (%)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={rotSkill.params?.chargePct ?? 100}
+                            disabled={selectedIsDefault}
+                            onChange={(e) => {
+                              if (selectedIsDefault) return;
+                              const next = Number(e.target.value);
+                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
+                                chargePct: Number.isFinite(next) ? next : 100,
+                              });
+                            }}
+                            className="w-14 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                            title="Apricot Heaven: 2nd-stage damage scales linearly Min→Max by charge %"
+                          />
+                        </div>
+                      )}
+
                       <Button
                         variant="ghost"
                         size="sm"

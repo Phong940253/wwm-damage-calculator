@@ -750,7 +750,46 @@
   },
   {
     "id": "vernal_apricot_heaven",
-    "name": "Apricot Heaven / Colorful Phoenix",
+    "name": "Apricot Heaven",
+    "martialArtId": "silkbind_jade",
+    "weaponType": "Umbrella",
+    "category": "ultimate",
+    "damageSkillType": [
+      "charged"
+    ],
+    "hits": [
+      {
+        "physicalMultiplier": 0.6252,
+        "elementMultiplier": 0.9379,
+        "hits": 1,
+        "flatPhysical": 60,
+        "flatAttribute": 26
+      },
+      {
+        "physicalMultiplier": 1.5631,
+        "elementMultiplier": 2.3446,
+        "hits": 1,
+        "flatPhysical": 151,
+        "flatAttribute": 66,
+        "scale": {
+          "paramKey": "chargePct",
+          "inputMin": 0,
+          "inputMax": 100,
+          "roundFlats": true,
+          "to": {
+            "physicalMultiplier": 2.501,
+            "elementMultiplier": 3.7514,
+            "flatPhysical": 241,
+            "flatAttribute": 106
+          }
+        }
+      }
+    ],
+    "notes": "Charged Skill. Modeled as 2 hits: 1st-stage (fixed) + 2nd-stage interpolated from Min→Max by Charge % (0→100) in rotation settings."
+  },
+  {
+    "id": "vernal_colorful_phoenix",
+    "name": "Colorful Phoenix",
     "martialArtId": "silkbind_jade",
     "weaponType": "Umbrella",
     "category": "ultimate",
