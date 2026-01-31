@@ -14,6 +14,22 @@ export interface RotationBonusBreakdown {
   };
 }
 
+function isPassiveApplicableToMartialArt(
+  passive: (typeof PASSIVE_SKILLS)[number],
+  martialArtId?: ElementStats["martialArtsId"],
+) {
+  if (!passive.martialArtId) return true;
+  return passive.martialArtId === martialArtId;
+}
+
+function isInnerWayApplicableToMartialArt(
+  inner: (typeof INNER_WAYS)[number],
+  martialArtId?: ElementStats["martialArtsId"],
+) {
+  if (!inner.applicableToMartialArtId) return true;
+  return inner.applicableToMartialArtId === martialArtId;
+}
+
 function clamp(value: number, min?: number, max?: number) {
   if (typeof min === "number") value = Math.max(min, value);
   if (typeof max === "number") value = Math.min(max, value);
@@ -78,6 +94,7 @@ export function collectRotationModifiers(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (!isPassiveApplicableToMartialArt(passive, martialArtId)) continue;
     modifiers.push(...passive.modifiers);
   }
 
@@ -85,9 +102,7 @@ export function collectRotationModifiers(
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
-    if (inner.applicableToMartialArtId && martialArtId) {
-      if (inner.applicableToMartialArtId !== martialArtId) continue;
-    }
+    if (!isInnerWayApplicableToMartialArt(inner, martialArtId)) continue;
 
     modifiers.push(...inner.modifiers);
   }
@@ -129,6 +144,8 @@ export function computeRotationBonuses(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
+      continue;
     const f = uptimeFactor(passiveId);
     if (f <= 0) continue;
 
@@ -144,10 +161,8 @@ export function computeRotationBonuses(
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
-    if (inner.applicableToMartialArtId && elementStats.martialArtsId) {
-      if (inner.applicableToMartialArtId !== elementStats.martialArtsId)
-        continue;
-    }
+    if (!isInnerWayApplicableToMartialArt(inner, elementStats.martialArtsId))
+      continue;
 
     for (const modifier of inner.modifiers) {
       if (modifier.type !== "flat") continue;
@@ -164,6 +179,8 @@ export function computeRotationBonuses(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
+      continue;
     const f = uptimeFactor(passiveId);
     if (f <= 0) continue;
 
@@ -189,10 +206,8 @@ export function computeRotationBonuses(
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
-    if (inner.applicableToMartialArtId && elementStats.martialArtsId) {
-      if (inner.applicableToMartialArtId !== elementStats.martialArtsId)
-        continue;
-    }
+    if (!isInnerWayApplicableToMartialArt(inner, elementStats.martialArtsId))
+      continue;
 
     for (const modifier of inner.modifiers) {
       if (modifier.type !== "scale") continue;
@@ -267,6 +282,8 @@ export function computeRotationBonusesWithBreakdown(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
+      continue;
 
     const uptimePct = clamp(uptimePctForPassive(passiveId), 0, 100);
     metaPassives[passiveId] = { name: passive.name, uptimePct };
@@ -287,10 +304,8 @@ export function computeRotationBonusesWithBreakdown(
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
-    if (inner.applicableToMartialArtId && elementStats.martialArtsId) {
-      if (inner.applicableToMartialArtId !== elementStats.martialArtsId)
-        continue;
-    }
+    if (!isInnerWayApplicableToMartialArt(inner, elementStats.martialArtsId))
+      continue;
 
     metaInner[innerId] = { name: inner.name };
 
@@ -317,6 +332,8 @@ export function computeRotationBonusesWithBreakdown(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
+      continue;
     const f = uptimeFactor(passiveId);
     if (f <= 0) continue;
 
@@ -343,10 +360,8 @@ export function computeRotationBonusesWithBreakdown(
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
-    if (inner.applicableToMartialArtId && elementStats.martialArtsId) {
-      if (inner.applicableToMartialArtId !== elementStats.martialArtsId)
-        continue;
-    }
+    if (!isInnerWayApplicableToMartialArt(inner, elementStats.martialArtsId))
+      continue;
 
     const bucket = (byInnerScale[innerId] ??= {});
     for (const modifier of inner.modifiers) {
