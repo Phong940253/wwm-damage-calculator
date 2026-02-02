@@ -146,11 +146,11 @@ export function computeRotationBonuses(
     if (!passive) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
-    const f = uptimeFactor(passiveId);
-    if (f <= 0) continue;
 
     for (const modifier of passive.modifiers) {
       if (modifier.type !== "flat") continue;
+      const f = modifier.applyUptime === false ? 1 : uptimeFactor(passiveId);
+      if (f <= 0) continue;
       const key = String(modifier.stat);
       const add = clamp(modifier.value, modifier.min, modifier.max) * f;
       flatBonus[key] = (flatBonus[key] || 0) + add;
@@ -181,11 +181,11 @@ export function computeRotationBonuses(
     if (!passive) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
-    const f = uptimeFactor(passiveId);
-    if (f <= 0) continue;
 
     for (const modifier of passive.modifiers) {
       if (modifier.type !== "scale") continue;
+      const f = modifier.applyUptime === false ? 1 : uptimeFactor(passiveId);
+      if (f <= 0) continue;
 
       const targetKey = String(modifier.stat);
       const sourceValue = readStatValue(
@@ -284,16 +284,14 @@ export function computeRotationBonusesWithBreakdown(
     if (!passive) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
-
     const uptimePct = clamp(uptimePctForPassive(passiveId), 0, 100);
     metaPassives[passiveId] = { name: passive.name, uptimePct };
-
-    const f = uptimePct / 100;
-    if (f <= 0) continue;
 
     const bucket = (byPassiveFlat[passiveId] ??= {});
     for (const modifier of passive.modifiers) {
       if (modifier.type !== "flat") continue;
+      const f = modifier.applyUptime === false ? 1 : uptimePct / 100;
+      if (f <= 0) continue;
       const key = String(modifier.stat);
       const add = clamp(modifier.value, modifier.min, modifier.max) * f;
       addTo(bucket, key, add);
@@ -334,12 +332,12 @@ export function computeRotationBonusesWithBreakdown(
     if (!passive) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
-    const f = uptimeFactor(passiveId);
-    if (f <= 0) continue;
 
     const bucket = (byPassiveScale[passiveId] ??= {});
     for (const modifier of passive.modifiers) {
       if (modifier.type !== "scale") continue;
+      const f = modifier.applyUptime === false ? 1 : uptimeFactor(passiveId);
+      if (f <= 0) continue;
 
       const targetKey = String(modifier.stat);
       const sourceValue = readStatValue(

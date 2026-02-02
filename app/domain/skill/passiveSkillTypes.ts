@@ -15,6 +15,8 @@ export type PassiveModifier =
       stat: StatKey;
       type: "flat";
       value: number;
+      /** If false, this modifier is applied at full value regardless of passive uptime. */
+      applyUptime?: boolean;
       /** Giới hạn tối đa cho phần cộng thêm của modifier này */
       max?: number;
       /** Giới hạn tối thiểu cho phần cộng thêm của modifier này */
@@ -27,6 +29,8 @@ export type PassiveModifier =
       sourceStat: StatKey;
       /** add = source * ratio */
       ratio: number;
+      /** If false, this modifier is applied at full value regardless of passive uptime. */
+      applyUptime?: boolean;
       /** Giới hạn tối đa cho phần cộng thêm của modifier này */
       max?: number;
       /** Giới hạn tối thiểu cho phần cộng thêm của modifier này */

@@ -12,7 +12,7 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
         {
           label: "Physical Attack",
           value: `${pctNP(ctx.get("MinPhysicalAttack"))} – ${pctNP(
-            ctx.get("MaxPhysicalAttack")
+            ctx.get("MaxPhysicalAttack"),
           )}`,
           highlight: true,
           ctxKeys: ["MinPhysicalAttack", "MaxPhysicalAttack"],
@@ -50,7 +50,7 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
         {
           label: "Main Attribute Attack",
           value: `${pctNP(ctx.get("MINAttributeAttackOfYOURType"))} – ${pctNP(
-            ctx.get("MAXAttributeAttackOfYOURType")
+            ctx.get("MAXAttributeAttackOfYOURType"),
           )}`,
           ctxKeys: [
             "MINAttributeAttackOfYOURType",
@@ -60,7 +60,7 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
         {
           label: "Other Attribute Attack",
           value: `${pctNP(ctx.get("MINAttributeAttackOfOtherType"))} – ${pctNP(
-            ctx.get("MAXAttributeAttackOfOtherType")
+            ctx.get("MAXAttributeAttackOfOtherType"),
           )}`,
           ctxKeys: [
             "MINAttributeAttackOfOtherType",
@@ -121,6 +121,16 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
           label: "Charge Skill DMG Boost",
           value: pct(ctx.get("ChargeSkillDamageBoost")),
           ctxKeys: ["ChargeSkillDamageBoost"],
+        },
+        {
+          label: "Projectile Skill DMG Boost",
+          value: pct(ctx.get("BallisticSkillDamageBoost")),
+          ctxKeys: ["BallisticSkillDamageBoost"],
+        },
+        {
+          label: "Pursuit Skill DMG Boost",
+          value: pct(ctx.get("PursuitSkillDamageBoost")),
+          ctxKeys: ["PursuitSkillDamageBoost"],
         },
 
         {

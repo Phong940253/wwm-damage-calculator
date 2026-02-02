@@ -262,5 +262,31 @@
             }
         ],
         "notes": "Active during Flamelash burst skill"
+    },
+    {
+        "id": "ps_silkbind_jade_jadebreak",
+        "name": "Jadebreak",
+        "description": "Increases Projectile skill damage by 30%. When a Projectile Skill or Heavy Attack Pursuit skill hits a Boss unit, deals 10% more damage. This effect lasts 15 seconds.",
+        "defaultUptimePercent": 100,
+        "martialArtId": "silkbind_jade",
+        "modifiers": [
+            {
+                "stat": "BallisticSkillDamageBoost",
+                "type": "flat",
+                "value": 30,
+                "applyUptime": false
+            },
+            {
+                "stat": "BallisticSkillDamageBoost",
+                "type": "flat",
+                "value": 10
+            },
+            {
+                "stat": "PursuitSkillDamageBoost",
+                "type": "flat",
+                "value": 10
+            }
+        ],
+        "notes": "Modeling note: the +10% is a boss-triggered 15s buff. This calculator approximates it as an uptime-weighted bonus; set passive uptime to reflect expected boss buff uptime. The +30% projectile damage is always-on (not uptime-weighted)."
     }
 ]

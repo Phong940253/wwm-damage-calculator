@@ -38,6 +38,9 @@ export function createSkillContext(
   const totalFlatDamage = (opts.flatPhysical || 0) + (opts.flatAttribute || 0);
 
   const isChargedSkill = opts.damageSkillTypes?.includes("charged") ?? false;
+  const isBallisticSkill =
+    opts.damageSkillTypes?.includes("ballistic") ?? false;
+  const isPursuitSkill = opts.damageSkillTypes?.includes("pursuit") ?? false;
   const weaponArtKey = opts.weaponType
     ? weaponArtDamageBoostKey(opts.weaponType)
     : null;
@@ -61,6 +64,8 @@ export function createSkillContext(
     else if (key === "DamageBoost") {
       value = baseCtx.get(key);
       if (isChargedSkill) value += baseCtx.get("ChargeSkillDamageBoost");
+      if (isBallisticSkill) value += baseCtx.get("BallisticSkillDamageBoost");
+      if (isPursuitSkill) value += baseCtx.get("PursuitSkillDamageBoost");
       if (weaponArtKey) value += baseCtx.get(weaponArtKey);
     }
     // Physical ATK multiplied by skill multiplier

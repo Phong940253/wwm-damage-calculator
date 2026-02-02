@@ -49,7 +49,7 @@ export type CategorySkill =
   | "ultimate"
   | "mystic-skill";
 
-export type DamageSkillType = "normal" | "charged" | "ballistic";
+export type DamageSkillType = "normal" | "charged" | "ballistic" | "pursuit";
 
 export interface Skill {
   id: string;
@@ -65,6 +65,8 @@ export interface Skill {
   /**
    * Damage-type tags used by the calculator for conditional stats.
    * - "charged": charged skill (uses ChargeSkillDamageBoost)
+   * - "ballistic": projectile skill (uses BallisticSkillDamageBoost)
+   * - "pursuit": pursuit skill (uses PursuitSkillDamageBoost)
    * - "normal": default
    */
   damageSkillType?: DamageSkillType[];
