@@ -50,6 +50,14 @@ const ROTATION_SKILL_GROUPS: Array<{
         "nameless_homeless_charge_3",
       ],
     },
+    {
+      id: "inkwell_moonlit_shatter_spring",
+      name: "Moonlit Shatter Spring",
+      skillIds: [
+        "inkwell_moonlit_shatter_spring",
+        "inkwell_moonlit_shatter_spring_enhanced",
+      ],
+    }
   ];
 
 const ROTATION_SKILL_GROUP_BY_SKILL_ID = new Map(

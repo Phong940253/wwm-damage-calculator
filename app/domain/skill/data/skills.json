@@ -306,16 +306,43 @@
     "notes": "Placeholder multipliers"
   },
   {
-    "id": "inkwell_heavy_attack",
-    "name": "Fan - Heavy Attack / Moonlit Spring",
+    "id": "inkwell_moonlit_shatter_spring",
+    "name": "Moonlit Shatter Spring - Pursuit Skill",
     "martialArtId": "silkbind_jade",
     "weaponType": "Fan",
     "category": "ultimate",
+    "damageSkillType": [
+      "ballistic",
+      "pursuit"
+    ],
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
-        "hits": 1
+        "physicalMultiplier": 1.2458,
+        "elementMultiplier": 1.8686,
+        "hits": 1,
+        "flatPhysical": 191,
+        "flatAttribute": 111
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "inkwell_moonlit_shatter_spring_enhanced",
+    "name": "Moonlit Shatter Spring - Pursuit Skill Enhanced",
+    "martialArtId": "silkbind_jade",
+    "weaponType": "Fan",
+    "category": "ultimate",
+    "damageSkillType": [
+      "ballistic",
+      "pursuit"
+    ],
+    "hits": [
+      {
+        "physicalMultiplier": 3.0165,
+        "elementMultiplier": 4.5248,
+        "hits": 1,
+        "flatPhysical": 461,
+        "flatAttribute": 269
       }
     ],
     "notes": "Placeholder multipliers"
