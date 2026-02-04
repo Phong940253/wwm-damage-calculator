@@ -68,6 +68,13 @@ export function createSkillContext(
       if (isPursuitSkill) value += baseCtx.get("PursuitSkillDamageBoost");
       if (weaponArtKey) value += baseCtx.get(weaponArtKey);
     }
+    // Conditional: ballistic umbrella crit dmg bonus (e.g. Vernal Umbrella passives)
+    else if (key === "CriticalDMGBonus") {
+      value = baseCtx.get(key);
+      if (isBallisticSkill && opts.weaponType === "Umbrella") {
+        value += baseCtx.get("UmbrellaBallisticCriticalDMGBonus");
+      }
+    }
     // Physical ATK multiplied by skill multiplier
     else if (key === "MinPhysicalAttack" || key === "MaxPhysicalAttack") {
       value = baseCtx.get(key) * opts.physicalMultiplier;

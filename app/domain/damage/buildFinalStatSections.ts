@@ -132,6 +132,11 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
           value: pct(ctx.get("PursuitSkillDamageBoost")),
           ctxKeys: ["PursuitSkillDamageBoost"],
         },
+        {
+          label: "Umbrella Ballistic Crit DMG Bonus",
+          value: pct(ctx.get("UmbrellaBallisticCriticalDMGBonus")),
+          ctxKeys: ["UmbrellaBallisticCriticalDMGBonus"],
+        },
 
         {
           label: "Damage Boost",

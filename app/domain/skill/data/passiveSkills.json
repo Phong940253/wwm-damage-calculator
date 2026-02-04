@@ -262,10 +262,11 @@
         "notes": "Modeling note: the +10% is a boss-triggered 15s buff. This calculator approximates it as an uptime-weighted bonus; set passive uptime to reflect expected boss buff uptime. The +30% projectile damage is always-on (not uptime-weighted)."
     },
     {
-        "id": "ps_universal_spring_shock",
+        "id": "ps_silkbind_jade_spring_shock",
         "name": "Spring Shock",
         "description": "During the effect's duration, the stamina cost and damage dealt by charged skills are increased by 4%. Lasts for 15 seconds and can stack up to 5 times.",
         "defaultUptimePercent": 100,
+        "martialArtId": "silkbind_jade",
         "modifiers": [
             {
                 "stat": "ChargeSkillDamageBoost",
@@ -274,5 +275,23 @@
             }
         ],
         "notes": "Modeling note: Spring Shock stacks up to 5x (+4% each). This calculator models only the charged-skill damage part as a single +20% boost and applies passive uptime as an averaging knob. To approximate average stacks, set uptime to (avgStacks/5)*100 (e.g. ~3 stacks avg -> 60%). Stamina cost is not currently modeled in the damage formulas/UI."
+    },
+    {
+        "id": "ps_silkbind_jade_trajectory_calculation_enhancement",
+        "name": "Trajectory Calculation Enhancement",
+        "description": "Increases the Critical DMG of all Vernal Umbrella ballistic skills by 2.4% for every 50 Min Physical Attack (up to 36% increase at 750 Min Physical Attack).",
+        "defaultUptimePercent": 100,
+        "martialArtId": "silkbind_jade",
+        "modifiers": [
+            {
+                "stat": "UmbrellaBallisticCriticalDMGBonus",
+                "type": "scale",
+                "sourceStat": "MinPhysicalAttack",
+                "ratio": 0.048,
+                "max": 36,
+                "applyUptime": false
+            }
+        ],
+        "notes": "Applies only when the skill is tagged as ballistic AND weaponType is Umbrella (handled in createSkillContext)."
     }
 ]

@@ -684,6 +684,9 @@
     "martialArtId": "silkbind_jade",
     "weaponType": "Umbrella",
     "category": "special-skill",
+    "damageSkillType": [
+      "ballistic"
+    ],
     "hits": [
       {
         "physicalMultiplier": 1.0207,
@@ -701,6 +704,9 @@
     "martialArtId": "silkbind_jade",
     "weaponType": "Umbrella",
     "category": "martial-art-skill",
+    "damageSkillType": [
+      "ballistic"
+    ],
     "hits": [
       {
         "physicalMultiplier": 2.3366,
@@ -735,6 +741,9 @@
     "martialArtId": "silkbind_jade",
     "weaponType": "Umbrella",
     "category": "basic",
+    "damageSkillType": [
+      "ballistic"
+    ],
     "hits": [
       {
         "physicalMultiplier": 0.3039,
@@ -788,7 +797,8 @@
     "weaponType": "Umbrella",
     "category": "ultimate",
     "damageSkillType": [
-      "charged"
+      "charged",
+      "ballistic"
     ],
     "hits": [
       {
@@ -828,9 +838,11 @@
     "category": "ultimate",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
-        "hits": 1
+        "physicalMultiplier": 1.1584,
+        "elementMultiplier": 1.7376,
+        "hits": 1,
+        "flatPhysical": 177,
+        "flatAttribute": 104
       }
     ],
     "notes": "Placeholder multipliers"
