@@ -42,7 +42,7 @@ function getEffectiveSkillHits(skill: Skill, opts?: SkillDamageOptions) {
     const blossomsRaw = opts?.params?.blossoms;
     const blossoms = Math.max(
       0,
-      Number.isFinite(blossomsRaw as number) ? (blossomsRaw as number) : 50,
+      Number.isFinite(blossomsRaw as number) ? (blossomsRaw as number) : 100,
     );
     const seconds = Math.max(1, Math.floor(blossoms / 10));
 

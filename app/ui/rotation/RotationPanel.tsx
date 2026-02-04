@@ -665,7 +665,7 @@ export default function RotationPanel({
                           <input
                             type="number"
                             min="0"
-                            value={rotSkill.params?.blossoms ?? 50}
+                            value={rotSkill.params?.blossoms ?? 100}
                             disabled={selectedIsDefault}
                             onChange={(e) => {
                               if (selectedIsDefault) return;
