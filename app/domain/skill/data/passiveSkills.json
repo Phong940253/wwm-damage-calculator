@@ -22,6 +22,27 @@
         "notes": "Condition: targets with lower Qi% than you or below 40% Qi. Lasts 8s; triggers once every 12s."
     },
     {
+        "id": "ps_universal_hawkwing_set_4",
+        "name": "Hawkwing Set (4/4)",
+        "description": "When any of your damage triggers Affinity, gain Hawkwing: increases Physical Attack by 2% for 5s, stacking up to 5 times (conditional)",
+        "defaultUptimePercent": 100,
+        "modifiers": [
+            {
+                "stat": "MinPhysicalAttack",
+                "type": "scale",
+                "sourceStat": "MinPhysicalAttack",
+                "ratio": 0.1
+            },
+            {
+                "stat": "MaxPhysicalAttack",
+                "type": "scale",
+                "sourceStat": "MaxPhysicalAttack",
+                "ratio": 0.1
+            }
+        ],
+        "notes": "Modeling note: Hawkwing stacks up to 5x (+2% Physical Attack each, max +10%). This calculator models it as a single +10% Physical Attack boost and applies passive uptime as an averaging knob. To approximate average stacks, set uptime to (avgStacks/5)*100 (e.g. ~3 stacks avg -> 60%). Actual uptime depends on how often you trigger Affinity and the 5s buff duration."
+    },
+    {
         "id": "ps_bellstrike_splendor_1",
         "name": "Sword Qi Affinity Enhancement",
         "description": "Increases Affinity DMG based on Max Physical Attack (up to 18% at 1500 Max Physical Attack)",
