@@ -126,7 +126,9 @@ export default function RotationDamagePie({
     }
   });
 
-  const chartData = Array.from(skillDamageMap.values());
+  const chartData = Array.from(skillDamageMap.values()).sort(
+    (a, b) => b.value - a.value,
+  );
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
   const dps = total / DEFAULT_ROTATION_SECONDS;
