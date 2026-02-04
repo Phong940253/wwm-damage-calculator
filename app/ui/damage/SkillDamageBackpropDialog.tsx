@@ -211,11 +211,13 @@ export function SkillDamageBackpropDialog({
 
         return skill.hits.map((hit, hitIndex) => {
             const hitCtx = createSkillContext(ctx, {
+                skillId: skill.id,
                 physicalMultiplier: hit.physicalMultiplier,
                 elementMultiplier: hit.elementMultiplier,
                 flatPhysical: hit.flatPhysical,
                 flatAttribute: hit.flatAttribute,
                 damageSkillTypes,
+                weaponType: skill.weaponType,
             });
 
             const damage = calculateDamage(hitCtx);

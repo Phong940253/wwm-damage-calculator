@@ -293,5 +293,23 @@
             }
         ],
         "notes": "Applies only when the skill is tagged as ballistic AND weaponType is Umbrella (handled in createSkillContext)."
+    },
+    {
+        "id": "ps_silkbind_jade_heavy_attack_pursuit_enhancement",
+        "name": "Heavy Attack Pursuit Enhancement",
+        "description": "Increases the Critical DMG of Heavy Attack Pursuit Moon Shatter Spring by 2.4% for every 50 Min Physical Attack, up to 36% increase at 750 Min Physical Attack.",
+        "defaultUptimePercent": 100,
+        "martialArtId": "silkbind_jade",
+        "modifiers": [
+            {
+                "stat": "MoonlitShatterSpringPursuitCriticalDMGBonus",
+                "type": "scale",
+                "sourceStat": "MinPhysicalAttack",
+                "ratio": 0.048,
+                "max": 36,
+                "applyUptime": false
+            }
+        ],
+        "notes": "Applies only for the Moonlit Shatter Spring pursuit skills (handled in createSkillContext by skill id)."
     }
 ]

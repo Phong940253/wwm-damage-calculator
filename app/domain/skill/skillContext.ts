@@ -2,6 +2,11 @@
 import { DamageContext } from "../damage/damageContext";
 import { DamageSkillType, WeaponType } from "./types";
 
+const MOONLIT_SHATTER_SPRING_SKILL_IDS = new Set([
+  "inkwell_moonlit_shatter_spring",
+  "inkwell_moonlit_shatter_spring_enhanced",
+]);
+
 function weaponArtDamageBoostKey(weaponType: WeaponType): string {
   switch (weaponType) {
     case "Sword":
@@ -32,6 +37,7 @@ export function createSkillContext(
     flatAttribute?: number;
     damageSkillTypes?: DamageSkillType[];
     weaponType?: WeaponType;
+    skillId?: string;
   },
 ): DamageContext {
   // Pre-calculate combined flat damage outside getter to avoid recalculation
@@ -73,6 +79,15 @@ export function createSkillContext(
       value = baseCtx.get(key);
       if (isBallisticSkill && opts.weaponType === "Umbrella") {
         value += baseCtx.get("UmbrellaBallisticCriticalDMGBonus");
+      }
+
+      // Conditional: specific pursuit skill crit dmg bonus (Moonlit Shatter Spring)
+      if (
+        isPursuitSkill &&
+        opts.skillId &&
+        MOONLIT_SHATTER_SPRING_SKILL_IDS.has(opts.skillId)
+      ) {
+        value += baseCtx.get("MoonlitShatterSpringPursuitCriticalDMGBonus");
       }
     }
     // Physical ATK multiplied by skill multiplier

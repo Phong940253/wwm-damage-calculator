@@ -109,6 +109,8 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   BallisticSkillDamageBoost: "Projectile Skill Damage Boost",
   PursuitSkillDamageBoost: "Pursuit Skill Damage Boost",
   UmbrellaBallisticCriticalDMGBonus: "Umbrella Ballistic Crit DMG Bonus",
+  MoonlitShatterSpringPursuitCriticalDMGBonus:
+    "Moonlit Shatter Spring Pursuit Crit DMG Bonus",
   ArtOfSwordDMGBoost: "Art of Sword DMG Boost",
   ArtOfSpearDMGBoost: "Art of Spear DMG Boost",
   ArtOfFanDMGBoost: "Art of Fan DMG Boost",
@@ -144,6 +146,7 @@ export const INITIAL_STATS: InputStats = {
   ChargeSkillDamageBoost: { current: 0, increase: 0 },
   BallisticSkillDamageBoost: { current: 0, increase: 0 },
   PursuitSkillDamageBoost: { current: 0, increase: 0 },
+  MoonlitShatterSpringPursuitCriticalDMGBonus: { current: 0, increase: 0 },
   ArtOfSwordDMGBoost: { current: 0, increase: 0 },
   ArtOfSpearDMGBoost: { current: 0, increase: 0 },
   ArtOfFanDMGBoost: { current: 0, increase: 0 },
