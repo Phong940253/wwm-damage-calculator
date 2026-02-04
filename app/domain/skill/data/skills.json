@@ -240,30 +240,34 @@
     "notes": "Cooldown: 5s. Requires full Karmic Flame. Transforms into Wrathful Form. Grants: +10% Crit Rate, +20% Crit DMG, Tenacity, Movement Speed. Light Attacks become Celestial Fury. Drains HP continuously. Karmic Flame consumed when exhausted."
   },
   {
-    "id": "inkwell_mountain_sky",
-    "name": "Mountain Sky",
+    "id": "inkwell_peaks_silence",
+    "name": "Peak's Springless Silence",
     "martialArtId": "silkbind_jade",
     "weaponType": "Fan",
     "category": "special-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 1.2778,
+        "elementMultiplier": 1.9167,
+        "flatPhysical": 196,
+        "flatAttribute": 114,
         "hits": 1
       }
     ],
     "notes": "Placeholder multipliers"
   },
   {
-    "id": "inkwell_jadewind_shield",
-    "name": "Jadewind Shield",
+    "id": "inkwell_jadewind_barrier",
+    "name": "Emerald Barrier",
     "martialArtId": "silkbind_jade",
     "weaponType": "Fan",
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 0.9251,
+        "elementMultiplier": 1.3877,
+        "flatPhysical": 142,
+        "flatAttribute": 83,
         "hits": 1
       }
     ],
@@ -277,8 +281,10 @@
     "category": "dual-weapon-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 1.0806,
+        "elementMultiplier": 1.6210,
+        "flatPhysical": 166,
+        "flatAttribute": 97,
         "hits": 1
       }
     ],
@@ -670,11 +676,11 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 2.3334,
-        "elementMultiplier": 3.5001,
+        "physicalMultiplier": 2.3366,
+        "elementMultiplier": 3.5048,
         "hits": 1,
-        "flatPhysical": 226,
-        "flatAttribute": 98
+        "flatPhysical": 357,
+        "flatAttribute": 208
       }
     ],
     "notes": "Placeholder multipliers"
@@ -739,11 +745,11 @@
     ],
     "hits": [
       {
-        "physicalMultiplier": 0.9912,
-        "elementMultiplier": 1.4867,
+        "physicalMultiplier": 1.7170,
+        "elementMultiplier": 2.5755,
         "hits": 1,
-        "flatPhysical": 96,
-        "flatAttribute": 42
+        "flatPhysical": 261,
+        "flatAttribute": 153
       }
     ],
     "notes": "DPS-based skill: in rotation, total damage scales by Duration (seconds)."
