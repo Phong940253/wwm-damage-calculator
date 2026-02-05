@@ -173,9 +173,10 @@
         "level": 2
     },
     {
-        "id": "iw_silkbind_star_reacher",
-        "name": "Star Reacher",
-        "description": "Gain 5% Physical Attack bonus for up to 8s after applying Lingering Bone Mark (boss-usable).",
+        "id": "iw_silkbind_star_reacher_t0",
+        "name": "Star Reacher (Tier 0)",
+        "description": "Gain 5% Physical Attack bonus after applying Lingering Bone.",
+        "tierGroupId": "iw_silkbind_star_reacher",
         "applicableToMartialArtId": "silkbind_jade",
         "modifiers": [
             {
@@ -184,8 +185,45 @@
                 "value": 5
             }
         ],
+        "level": 0,
+        "notes": "In-game: triggers when applying Lingering Bone Mark; lasts up to 8s. This calculator models it as an unconditional +5% Physical ATK Multiplier when enabled."
+    },
+    {
+        "id": "iw_silkbind_star_reacher_t1",
+        "name": "Star Reacher (Tier 1)",
+        "description": "Increases Physical Attack bonus after applying Lingering Bone to 7.5%.",
+        "tierGroupId": "iw_silkbind_star_reacher",
+        "applicableToMartialArtId": "silkbind_jade",
+        "modifiers": [
+            {
+                "stat": "PhysicalAttackMultiplier",
+                "type": "flat",
+                "value": 7.5
+            }
+        ],
         "level": 1,
-        "notes": "In-game: triggers when applying Lingering Bone Mark; once per second and refreshes duration; knocking Airborne increases the bonus to 10%. Since Airborne is typically not applicable to bosses, this calculator models only the boss-usable baseline as an unconditional +5% Physical ATK Multiplier when enabled, and does not model buff uptime/refresh mechanics."
+        "notes": "In-game: triggers when applying Lingering Bone Mark. This calculator models it as an unconditional +7.5% Physical ATK Multiplier when enabled."
+    },
+    {
+        "id": "iw_silkbind_star_reacher_t5",
+        "name": "Star Reacher (Tier 5)",
+        "description": "Increases Physical Penetration by 5.1.",
+        "tierGroupId": "iw_silkbind_star_reacher",
+        "applicableToMartialArtId": "silkbind_jade",
+        "modifiers": [
+            {
+                "stat": "PhysicalAttackMultiplier",
+                "type": "flat",
+                "value": 7.5
+            },
+            {
+                "stat": "PhysicalPenetration",
+                "type": "flat",
+                "value": 5.1
+            }
+        ],
+        "level": 5,
+        "notes": "In-game: Tier 5 adds +5.1 Physical Penetration on top of the Tier 1 effect (7.5% Physical ATK after Lingering Bone)."
     },
     {
         "id": "iw_universal_mountains_might_t4",
