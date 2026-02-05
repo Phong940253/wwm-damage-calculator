@@ -9,6 +9,57 @@ import { MartialArtId } from "@/app/domain/skill/types";
 const STORAGE_KEY = "wwm_rotations";
 const STORAGE_SELECTED_ID_KEY = "wwm_rotations_selected_id";
 
+// Backward compatibility for older saves that reference removed/renamed Inner Way ids.
+const INNER_WAY_ID_ALIASES: Record<string, string> = {
+  // Old id -> new id
+  iw_star_reacher: "iw_silkbind_star_reacher",
+};
+
+const INNER_BY_ID = new Map(INNER_WAYS.map((iw) => [iw.id, iw] as const));
+const INNER_GROUP_IDS = (() => {
+  const groupToIds = new Map<string, string[]>();
+  for (const iw of INNER_WAYS) {
+    const gid = iw.tierGroupId;
+    if (!gid) continue;
+    const arr = groupToIds.get(gid) ?? [];
+    arr.push(iw.id);
+    groupToIds.set(gid, arr);
+  }
+  return groupToIds;
+})();
+
+function collapseInnerWayTiers(activeIds: string[]): string[] {
+  if (!activeIds || activeIds.length === 0) return [];
+
+  const active = new Set(activeIds);
+
+  for (const [groupId, ids] of INNER_GROUP_IDS.entries()) {
+    const enabledInGroup = ids
+      .filter((id) => active.has(id))
+      .map((id) => INNER_BY_ID.get(id))
+      .filter(Boolean) as NonNullable<(typeof INNER_WAYS)[number]>[];
+
+    if (enabledInGroup.length <= 1) continue;
+
+    // Keep the highest tier/level. If level is missing, treat as 0.
+    enabledInGroup.sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+    const keep = enabledInGroup[enabledInGroup.length - 1]!.id;
+
+    for (const id of ids) active.delete(id);
+    active.add(keep);
+  }
+
+  // Preserve original-ish ordering: keep ids that remain, in input order, plus any kept ids.
+  const out: string[] = [];
+  for (const id of activeIds) {
+    if (active.has(id) && !out.includes(id)) out.push(id);
+  }
+  for (const id of active) {
+    if (!out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
 function generateId() {
   return Math.random().toString(36).substring(2, 15);
 }
@@ -53,7 +104,9 @@ function normalizeRotation(
       ? [...rotation.activePassiveSkills]
       : [],
     activeInnerWays: hadActiveInnerWaysField
-      ? [...rotation.activeInnerWays]
+      ? [...rotation.activeInnerWays].map(
+          (id) => INNER_WAY_ID_ALIASES[id] ?? id,
+        )
       : [],
     passiveUptimes: rotation.passiveUptimes
       ? { ...rotation.passiveUptimes }
@@ -96,6 +149,8 @@ function normalizeRotation(
     return true;
   }).map((iw) => iw.id);
 
+  const defaultInnerWayIdsCollapsed = collapseInnerWayTiers(defaultInnerWayIds);
+
   const defaultPassiveIdsForMA = martialArtId
     ? PASSIVE_SKILLS.filter((p) => {
         if (p.martialArtId === martialArtId) return true;
@@ -135,7 +190,7 @@ function normalizeRotation(
     hadActiveInnerWaysField && !looksLikeNewRotationWithPlaceholderEmptyList;
   if (!hadExplicitInnerWays) {
     // Migration/default: if older saves didn't have this field, enable defaults.
-    next.activeInnerWays = defaultInnerWayIds;
+    next.activeInnerWays = defaultInnerWayIdsCollapsed;
   } else {
     const originalLength = rotation.activeInnerWays.length;
 
@@ -143,10 +198,13 @@ function normalizeRotation(
       (id) => allInnerWayIds.has(id) && isInnerWayAllowed(id),
     );
 
+    // Migration: old saves could enable multiple tiers; keep only the selected tier per group.
+    next.activeInnerWays = collapseInnerWayTiers(next.activeInnerWays);
+
     // If the user explicitly saved an empty list, keep it empty.
     // If it became empty due to invalid/removed ids, fall back to defaults.
     if (next.activeInnerWays.length === 0 && originalLength > 0) {
-      next.activeInnerWays = defaultInnerWayIds;
+      next.activeInnerWays = defaultInnerWayIdsCollapsed;
     }
   }
 
@@ -474,6 +532,31 @@ export const useRotation = () => {
   };
 
   const toggleInnerWay = (rotationId: string, innerId: string) => {
+    const iw = INNER_BY_ID.get(innerId);
+    const tierGroupId = iw?.tierGroupId;
+
+    // If this is a tiered inner way, toggling it means selecting/deselecting that tier.
+    if (tierGroupId) {
+      const groupIds = INNER_GROUP_IDS.get(tierGroupId) ?? [];
+      setRotations((prev) =>
+        prev.map((r) => {
+          if (r.id !== rotationId) return r;
+          const isActive = r.activeInnerWays.includes(innerId);
+          const nextActive = r.activeInnerWays.filter(
+            (id) => !groupIds.includes(id),
+          );
+          if (!isActive) nextActive.push(innerId);
+
+          return {
+            ...r,
+            activeInnerWays: collapseInnerWayTiers(nextActive),
+            updatedAt: Date.now(),
+          };
+        }),
+      );
+      return;
+    }
+
     setRotations((prev) =>
       prev.map((r) => {
         if (r.id !== rotationId) return r;
@@ -484,6 +567,32 @@ export const useRotation = () => {
           activeInnerWays: isActive
             ? r.activeInnerWays.filter((i) => i !== innerId)
             : [...r.activeInnerWays, innerId],
+          updatedAt: Date.now(),
+        };
+      }),
+    );
+  };
+
+  const setInnerWayTier = (
+    rotationId: string,
+    tierGroupId: string,
+    innerWayId: string | null,
+  ) => {
+    const groupIds = INNER_GROUP_IDS.get(tierGroupId) ?? [];
+
+    setRotations((prev) =>
+      prev.map((r) => {
+        if (r.id !== rotationId) return r;
+
+        const nextActive = r.activeInnerWays.filter(
+          (id) => !groupIds.includes(id),
+        );
+
+        if (innerWayId) nextActive.push(innerWayId);
+
+        return {
+          ...r,
+          activeInnerWays: collapseInnerWayTiers(nextActive),
           updatedAt: Date.now(),
         };
       }),
@@ -506,6 +615,7 @@ export const useRotation = () => {
     updateSkillParams,
     togglePassiveSkill,
     toggleInnerWay,
+    setInnerWayTier,
     updatePassiveUptime,
   };
 };

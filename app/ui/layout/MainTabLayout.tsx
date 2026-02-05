@@ -76,6 +76,7 @@ export default function MainTabLayout() {
     updateSkillParams,
     togglePassiveSkill,
     toggleInnerWay,
+    setInnerWayTier,
     updatePassiveUptime,
   } = useRotation();
 
@@ -188,6 +189,7 @@ export default function MainTabLayout() {
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}
+                onSetInnerWayTier={setInnerWayTier}
               />
             )}
           </div>
@@ -278,6 +280,7 @@ export default function MainTabLayout() {
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}
+                onSetInnerWayTier={setInnerWayTier}
               />
             )}
           </div>

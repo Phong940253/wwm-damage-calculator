@@ -3,6 +3,7 @@
         "id": "iw_universal_battle_anthem_t4",
         "name": "Battle Anthem (Tier 4)",
         "description": "Charged skills deal +15% damage; increases Endurance cost by 10%.",
+        "tierGroupId": "iw_universal_battle_anthem",
         "defaultEnabledForMartialArtIds": [
             "bellstrike_splendor"
         ],
@@ -20,6 +21,7 @@
         "id": "iw_universal_battle_anthem_t6",
         "name": "Battle Anthem (Tier 6)",
         "description": "On Charged Skill damage: conditional bonus damage (player/boss) up to 10%.",
+        "tierGroupId": "iw_universal_battle_anthem",
         "defaultEnabledForMartialArtIds": [
             "bellstrike_splendor"
         ],
@@ -37,6 +39,7 @@
         "id": "iw_universal_morale_chant_t0",
         "name": "Morale Chant (Tier 0)",
         "description": "Yi River stacks: increases damage/healing (modeled as damage only).",
+        "tierGroupId": "iw_universal_morale_chant",
         "modifiers": [
             {
                 "stat": "DamageBoost",
@@ -51,6 +54,7 @@
         "id": "iw_universal_morale_chant_t1",
         "name": "Morale Chant (Tier 1)",
         "description": "Yi River stacks: +Physical Penetration and +damage/healing (modeled as damage only).",
+        "tierGroupId": "iw_universal_morale_chant",
         "modifiers": [
             {
                 "stat": "PhysicalPenetration",
@@ -70,6 +74,7 @@
         "id": "iw_universal_morale_chant_t3",
         "name": "Morale Chant (Tier 3)",
         "description": "When target is controlled: doubles Yi River effects (modeled as boss-friendly max 10% dmg and 20 pen).",
+        "tierGroupId": "iw_universal_morale_chant",
         "modifiers": [
             {
                 "stat": "DamageBoost",
@@ -89,6 +94,7 @@
         "id": "iw_universal_morale_chant_t5",
         "name": "Morale Chant (Tier 5)",
         "description": "Adds +4.6% Critical Rate (modeled with the same default-effect factor).",
+        "tierGroupId": "iw_universal_morale_chant",
         "modifiers": [
             {
                 "stat": "DamageBoost",
@@ -113,6 +119,7 @@
         "id": "iw_silkbind_blossom_barrage_t1",
         "name": "Blossom Barrage (Tier 1)",
         "description": "Increases the ballistic skill DMG Bonus from Combo effect to 20%.",
+        "tierGroupId": "iw_silkbind_blossom_barrage",
         "applicableToMartialArtId": "silkbind_jade",
         "modifiers": [
             {
@@ -128,12 +135,18 @@
         "id": "iw_silkbind_blossom_barrage_t4",
         "name": "Blossom Barrage (Tier 4)",
         "description": "In non-Arena modes, when Spring Away hits a target with Combo effect from you: damage +10%; max targets 3→5.",
+        "tierGroupId": "iw_silkbind_blossom_barrage",
         "applicableToMartialArtId": "silkbind_jade",
         "modifiers": [
             {
                 "stat": "SpringAwayDamageBoost",
                 "type": "flat",
                 "value": 10
+            },
+            {
+                "stat": "BallisticSkillDamageBoost",
+                "type": "flat",
+                "value": 20
             }
         ],
         "level": 4,
@@ -200,6 +213,7 @@
         "id": "iw_bellstrike_sword_morph_t3",
         "name": "Sword Morph (Tier 3)",
         "description": "After sword energy hits a target: sword energy deals more damage (stacks).",
+        "tierGroupId": "iw_bellstrike_sword_morph",
         "applicableToMartialArtId": "bellstrike_splendor",
         "defaultEnabledForMartialArtIds": [
             "bellstrike_splendor"
@@ -218,6 +232,7 @@
         "id": "iw_bellstrike_sword_morph_t5",
         "name": "Sword Morph (Tier 5)",
         "description": "Increases Direct Affinity Rate by 2.3%.",
+        "tierGroupId": "iw_bellstrike_sword_morph",
         "applicableToMartialArtId": "bellstrike_splendor",
         "defaultEnabledForMartialArtIds": [
             "bellstrike_splendor"

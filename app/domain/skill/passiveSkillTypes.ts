@@ -73,6 +73,13 @@ export interface InnerWay {
   description: string;
 
   /**
+   * Optional: groups multiple tier entries of the same Inner Way.
+   * If provided, the UI will show a single selector and only one tier in the group
+   * can be active at a time.
+   */
+  tierGroupId?: string;
+
+  /**
    * - null/undefined = applicable to all martial arts
    * - specific MartialArtId = only for that martial art
    */

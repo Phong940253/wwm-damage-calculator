@@ -41,6 +41,11 @@ interface RotationPanelProps {
     uptimePercent: number
   ) => void;
   onToggleInnerWay: (rotationId: string, innerId: string) => void;
+  onSetInnerWayTier: (
+    rotationId: string,
+    tierGroupId: string,
+    innerWayId: string | null,
+  ) => void;
 }
 
 const DEFAULT_ROTATION_IDS = new Set(DEFAULT_ROTATIONS.map((r) => r.id));
@@ -64,6 +69,7 @@ export default function RotationPanel({
   onTogglePassiveSkill,
   onUpdatePassiveUptime,
   onToggleInnerWay,
+  onSetInnerWayTier,
 }: RotationPanelProps) {
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
   const selectedIsDefault = isDefaultRotation(selectedRotation);
@@ -210,6 +216,42 @@ export default function RotationPanel({
     // Universal inner ways should always be visible in the list.
     return true;
   });
+
+  const innerWayGroups = (() => {
+    const map = new Map<string, typeof availableInnerWays>();
+    for (const iw of availableInnerWays) {
+      const key = iw.tierGroupId ?? iw.id;
+      const arr = map.get(key) ?? [];
+      arr.push(iw);
+      map.set(key, arr);
+    }
+
+    const groups = Array.from(map.entries()).map(([key, items]) => {
+      const sorted = [...items].sort(
+        (a, b) => (a.level ?? 0) - (b.level ?? 0),
+      );
+      const hasTiers = !!sorted[0]?.tierGroupId && sorted.length > 1;
+      const selected = sorted
+        .filter((x) => selectedRotation?.activeInnerWays.includes(x.id))
+        .sort((a, b) => (a.level ?? 0) - (b.level ?? 0))
+        .at(-1);
+
+      const baseName = hasTiers
+        ? (sorted[0]?.name ?? key).replace(/\s*\(Tier\s*\d+\)\s*$/i, "")
+        : sorted[0]?.name ?? key;
+
+      return {
+        key,
+        items: sorted,
+        hasTiers,
+        selected,
+        baseName,
+      };
+    });
+
+    groups.sort((a, b) => a.baseName.localeCompare(b.baseName));
+    return groups;
+  })();
 
   const availableSkills = SKILLS.filter((skill) => {
     // Filter by current martial art from StatsPanel
@@ -498,48 +540,129 @@ export default function RotationPanel({
                     No inner ways available
                   </p>
                 ) : (
-                  availableInnerWays.map((inner) => (
-                    <div
-                      key={inner.id}
-                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
-                    >
-                      <Checkbox
-                        checked={selectedRotation.activeInnerWays.includes(inner.id)}
-                        disabled={selectedIsDefault}
-                        onCheckedChange={() => {
-                          if (selectedIsDefault) return;
-                          onToggleInnerWay(selectedRotation.id, inner.id);
-                        }}
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-medium text-zinc-100">
-                            {inner.name}
+                  innerWayGroups.map((group) => {
+                    if (!selectedRotation) return null;
+
+                    // Non-tiered inner way: keep checkbox UX
+                    if (!group.hasTiers) {
+                      const inner = group.items[0];
+                      if (!inner) return null;
+
+                      return (
+                        <div
+                          key={inner.id}
+                          className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                        >
+                          <Checkbox
+                            checked={selectedRotation.activeInnerWays.includes(inner.id)}
+                            disabled={selectedIsDefault}
+                            onCheckedChange={() => {
+                              if (selectedIsDefault) return;
+                              onToggleInnerWay(selectedRotation.id, inner.id);
+                            }}
+                            className="mt-0.5"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-medium text-zinc-100">
+                                {inner.name}
+                              </p>
+                              {typeof inner.level === "number" && (
+                                <Badge variant="secondary" className="text-xs h-5">
+                                  Tier {inner.level}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-zinc-400 leading-tight">
+                              {inner.description}
+                            </p>
+                            {inner.notes && (
+                              <p className="text-xs text-zinc-500 italic mt-1">
+                                {inner.notes}
+                              </p>
+                            )}
+                            {inner.applicableToMartialArtId && (
+                              <p className="text-xs text-blue-400 mt-1">
+                                ↳ {LIST_MARTIAL_ARTS.find(
+                                  (m) => m.id === inner.applicableToMartialArtId,
+                                )?.name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Tiered inner way: single selector (Off / Tier)
+                    const selectedTier = group.selected;
+                    const displayTier = selectedTier
+                      ? `Tier ${selectedTier.level ?? "?"}`
+                      : "Off";
+                    const details = selectedTier ?? group.items[group.items.length - 1];
+
+                    return (
+                      <div
+                        key={group.key}
+                        className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="mt-0.5 h-7 px-2 text-xs"
+                              disabled={selectedIsDefault}
+                              title={selectedIsDefault ? "Default rotations are locked" : "Select tier"}
+                            >
+                              {displayTier}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-56">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                if (selectedIsDefault) return;
+                                onSetInnerWayTier(selectedRotation.id, group.key, null);
+                              }}
+                            >
+                              Off
+                            </DropdownMenuItem>
+                            {group.items.map((tier) => (
+                              <DropdownMenuItem
+                                key={tier.id}
+                                onClick={() => {
+                                  if (selectedIsDefault) return;
+                                  onSetInnerWayTier(selectedRotation.id, group.key, tier.id);
+                                }}
+                              >
+                                Tier {tier.level ?? "?"}: {tier.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium text-zinc-100">
+                              {group.baseName}
+                            </p>
+                            {selectedTier && typeof selectedTier.level === "number" && (
+                              <Badge variant="secondary" className="text-xs h-5">
+                                Tier {selectedTier.level}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-400 leading-tight">
+                            {details?.description ?? ""}
                           </p>
-                          {inner.level && (
-                            <Badge variant="secondary" className="text-xs h-5">
-                              Lvl {inner.level}
-                            </Badge>
+                          {details?.notes && (
+                            <p className="text-xs text-zinc-500 italic mt-1">
+                              {details.notes}
+                            </p>
                           )}
                         </div>
-                        <p className="text-xs text-zinc-400 leading-tight">
-                          {inner.description}
-                        </p>
-                        {inner.notes && (
-                          <p className="text-xs text-zinc-500 italic mt-1">
-                            {inner.notes}
-                          </p>
-                        )}
-                        {inner.applicableToMartialArtId && (
-                          <p className="text-xs text-blue-400 mt-1">
-                            ↳ {LIST_MARTIAL_ARTS.find((m) => m.id === inner.applicableToMartialArtId)
-                              ?.name}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
