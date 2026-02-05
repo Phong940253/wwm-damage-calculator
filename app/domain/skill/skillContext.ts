@@ -7,6 +7,8 @@ const MOONLIT_SHATTER_SPRING_SKILL_IDS = new Set([
   "inkwell_moonlit_shatter_spring_enhanced",
 ]);
 
+const SPRING_AWAY_SKILL_IDS = new Set(["vernal_umbrella_light_spring_away"]);
+
 function weaponArtDamageBoostKey(weaponType: WeaponType): string {
   switch (weaponType) {
     case "Sword":
@@ -73,6 +75,11 @@ export function createSkillContext(
       if (isBallisticSkill) value += baseCtx.get("BallisticSkillDamageBoost");
       if (isPursuitSkill) value += baseCtx.get("PursuitSkillDamageBoost");
       if (weaponArtKey) value += baseCtx.get(weaponArtKey);
+
+      // Conditional: Spring Away damage boost (e.g. Inner Ways)
+      if (opts.skillId && SPRING_AWAY_SKILL_IDS.has(opts.skillId)) {
+        value += baseCtx.get("SpringAwayDamageBoost");
+      }
     }
     // Conditional: ballistic umbrella crit dmg bonus (e.g. Vernal Umbrella passives)
     else if (key === "CriticalDMGBonus") {

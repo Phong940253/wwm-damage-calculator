@@ -108,6 +108,7 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   ChargeSkillDamageBoost: "Charged Skill Damage Boost",
   BallisticSkillDamageBoost: "Projectile Skill Damage Boost",
   PursuitSkillDamageBoost: "Pursuit Skill Damage Boost",
+  SpringAwayDamageBoost: "Spring Away Damage Boost",
   UmbrellaBallisticCriticalDMGBonus: "Umbrella Ballistic Crit DMG Bonus",
   MoonlitShatterSpringPursuitCriticalDMGBonus:
     "Moonlit Shatter Spring Pursuit Crit DMG Bonus",
