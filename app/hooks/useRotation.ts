@@ -194,8 +194,12 @@ function normalizeRotation(
   } else {
     const originalLength = rotation.activeInnerWays.length;
 
-    next.activeInnerWays = (next.activeInnerWays ?? []).filter(
-      (id) => allInnerWayIds.has(id) && isInnerWayAllowed(id),
+    // IMPORTANT: keep explicitly-saved inner ways even if they don't match rotation.martialArtId.
+    // The actual effect is already gated by elementStats.martialArtsId in modifierEngine.
+    // Filtering by martialArtId here causes user selections (e.g. Silkbind inner ways) to be
+    // dropped on refresh when a rotation's martialArtId is missing/out-of-date.
+    next.activeInnerWays = (next.activeInnerWays ?? []).filter((id) =>
+      allInnerWayIds.has(id),
     );
 
     // Migration: old saves could enable multiple tiers; keep only the selected tier per group.
