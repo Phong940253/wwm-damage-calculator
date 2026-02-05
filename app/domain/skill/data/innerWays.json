@@ -34,6 +34,67 @@
         "notes": "Tier 6: When dealing damage with a Charged Skill, if the target is a player, increases the damage by 1% for every 10 Endurance difference between you and the target, up to 10%; if the target is a boss, deals bonus damage based on the Endurance you have consumed: 1% bonus damage for every 10 Endurance consumed, up to 10%."
     },
     {
+        "id": "iw_universal_morale_chant_t0",
+        "name": "Morale Chant (Tier 0)",
+        "description": "Yi River stacks: increases damage/healing (modeled as damage only).",
+        "modifiers": [
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 5
+            }
+        ],
+        "level": 0,
+        "notes": "In-game: 1% dmg/heal per stack, up to 5 stacks for 12s. This calculator models only damage."
+    },
+    {
+        "id": "iw_universal_morale_chant_t1",
+        "name": "Morale Chant (Tier 1)",
+        "description": "Yi River stacks: +Physical Penetration and +damage/healing (modeled as damage only).",
+        "modifiers": [
+            {
+                "stat": "PhysicalPenetration",
+                "type": "flat",
+                "value": 10
+            }
+        ],
+        "level": 1,
+        "notes": "In-game: +2 Physical Penetration and +1% dmg/heal per stack, up to 5 stacks (max 10 pen, 5% dmg)."
+    },
+    {
+        "id": "iw_universal_morale_chant_t3",
+        "name": "Morale Chant (Tier 3)",
+        "description": "When target is controlled: doubles Yi River effects (modeled as boss-friendly max 10% dmg and 20 pen).",
+        "modifiers": [
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 1
+            },
+            {
+                "stat": "PhysicalPenetration",
+                "type": "flat",
+                "value": 2
+            }
+        ],
+        "level": 3,
+        "notes": "In-game: when target is controlled, doubles Yi River's effect (+2% dmg/heal and +4 pen per stack) and stacks gained. With 5 stacks: max 10% dmg and 20 pen. Default effect approximated as 60%: 10% → 6%, 20 → 12."
+    },
+    {
+        "id": "iw_universal_morale_chant_t5",
+        "name": "Morale Chant (Tier 5)",
+        "description": "Adds +4.6% Critical Rate (modeled with the same default-effect factor).",
+        "modifiers": [
+            {
+                "stat": "CriticalRate",
+                "type": "flat",
+                "value": 4.6
+            }
+        ],
+        "level": 5,
+        "notes": "Tier 5: +4.6% Critical Rate in-game."
+    },
+    {
         "id": "iw_silkbind_blossom_barrage_t1",
         "name": "Blossom Barrage (Tier 1)",
         "description": "Increases the ballistic skill DMG Bonus from Combo effect to 20%.",
