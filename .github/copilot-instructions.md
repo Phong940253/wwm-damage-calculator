@@ -1,50 +1,66 @@
 # Copilot instructions (wwm-damage-calculator)
 
-## What this is
+## Project overview
 
-- Next.js 15 (App Router) client-heavy damage calculator for _Where Winds Meet_.
-- Domain logic lives in `app/domain/*` (math/DB-like data) and UI lives in `app/ui/*`.
+Next.js 15 (App Router) client-side damage calculator for _Where Winds Meet_. Domain logic in `app/domain/*`, UI in `app/ui/*`, hooks in `app/hooks/*`.
 
 ## Dev commands
 
-- `pnpm dev` (Turbopack) • `pnpm dev:webpack` (useful when debugging module workers) • `pnpm lint` • `pnpm build` • `pnpm start`
+```bash
+pnpm dev          # Turbopack (fast, but workers may fail)
+pnpm dev:webpack  # Use when debugging module workers
+pnpm lint         # ESLint
+pnpm build && pnpm start
+```
 
-## Entry + navigation pattern
+## Architecture & data flow
 
-- Entry chain: `app/page.tsx` → `app/DMGOptimizerClient.tsx` → `app/ui/layout/MainContent.tsx`.
-- Tabs are URL-search-param driven: `?root=main|gear&tab=...` (see `app/ui/layout/MainTabLayout.tsx`, `GearTabLayout.tsx`, `StatusBar.tsx`).
+**Entry chain:** `app/page.tsx` → `DMGOptimizerClient.tsx` → `app/ui/layout/MainContent.tsx`
+**Navigation:** URL params `?root=main|gear&tab=...` drive tab switching.
 
-## Core data flow (the “why”)
+**Damage calculation pipeline:**
 
-- The UI edits stats/element/gear + optional rotation, then builds a getter-based context and runs pure formulas.
-- Pattern: `aggregateEquippedGearBonus(...)` + `computeRotationBonuses(...)` → `buildDamageContext(...)` → `calculateDamage(ctx)`.
-- Rotation passives/inner-ways are additive/scale bonuses applied via `app/domain/skill/modifierEngine.ts` and summed with gear bonuses (see `app/hooks/useDamage.ts`).
-- Formulas read via `const g = ctx.get; g("StatName")` (see `app/domain/damage/damageContext.ts`, `damageFormula.ts`, `damageCalculator.ts`).
+1. `aggregateEquippedGearBonus(...)` – sums gear attributes
+2. `computeRotationBonuses(...)` – applies passive skills & inner ways via `modifierEngine.ts`
+3. `buildDamageContext(stats, elementStats, combinedBonus)` – creates getter-based context
+4. `calculateDamage(ctx)` – runs pure formulas; access stats via `ctx.get("StatName")`
 
-## State & persistence conventions
+Key files: `app/domain/damage/damageContext.ts`, `damageCalculator.ts`, `app/hooks/useDamage.ts`
 
-- Stat inputs are UX-friendly: `Stat = { current: number | "", increase: number | "" }` → use `Number(x || 0)` when computing.
-- localStorage keys are stable API (don’t rename lightly):
-  - `wwm_dmg_current_stats`, `wwm_element_stats`, `wwm_custom_gear`, `wwm_equipped`, `wwm_rotations`, `wwm_rotations_selected_id`.
-- Gear state must be under `GearProvider` (`app/providers/GearContext.tsx`) before calling `useGear()`.
-- Gear slot migration exists (`ring/talisman` → `disc/pendant`) in `app/hooks/useGear.ts`.
+## State & persistence
 
-## Gear optimizer (worker + sharding)
+**Stat model:** `Stat = { current: number | "", increase: number | "" }`. Always use `Number(x || 0)` when computing.
 
-- Optimizer is async + cancellable: `computeOptimizeResultsAsync(...)` with `AbortSignal` (see `app/domain/gear/gearOptimize.ts`).
-- UI entry is `app/hooks/useGearOptimize.ts`: prefers module workers (`app/workers/gearOptimize.worker.ts`), shards by restricting one slot via `restrictSlots`, then merges top-K results.
-- If module workers fail in dev (notably with Turbopack), the hook hard-falls back to main-thread computation; `pnpm dev:webpack` is a good workaround for worker debugging.
+**localStorage keys (stable API – don't rename):**
 
-## Adding/changing domain features (follow existing shapes)
+- `wwm_dmg_current_stats`, `wwm_element_stats`, `wwm_custom_gear`, `wwm_equipped`
+- `wwm_rotations`, `wwm_rotations_selected_id`
 
-- New stat: update `app/constants.ts` (groups/labels/defaults) + `app/types.ts` (`InputStats`).
-- New damage math: add pure functions in `app/domain/damage/damageFormula.ts` and wire in `damageCalculator.ts`.
-- New skill/hit pattern: add to `app/domain/skill/skills.ts`; multi-hit scaling flows through `skillContext.ts`/`skillDamage.ts`.
-- Passive/Inner Way modifiers live in `app/domain/skill/passiveSkills.ts` / `innerWays.ts` and apply via `app/hooks/usePassiveModifiers.ts`.
+**Gear context:** Wrap components in `<GearProvider>` before calling `useGear()`.
 
-## Integrations & UI primitives
+## Gear optimizer (workers)
 
-- OCR import uses Gemini: `lib/gemini.ts` + schema `app/domain/gear/gearOcrSchema.ts` (used by `app/ui/gear/GearForm.tsx`).
-- Export PNG uses `html-to-image` in `app/utils/exportPng.ts`.
-- Import/export uses JSON clipboard payloads (`app/utils/importExport.ts`), currently `version: "1.0"`.
-- Use shadcn/ui primitives from `components/ui/*` (don’t hand-roll basic controls).
+- Async + cancellable via `AbortSignal`: see `app/domain/gear/gearOptimize.ts`
+- Hook `useGearOptimize` prefers module workers, shards by slot, merges top-K results
+- **Turbopack quirk:** Workers may fail; use `pnpm dev:webpack` or main-thread fallback kicks in
+
+## Adding new features
+
+| Feature               | Files to update                                                                |
+| --------------------- | ------------------------------------------------------------------------------ |
+| New stat              | `app/constants.ts` (groups/labels/defaults), `app/types.ts` (`InputStats`)     |
+| New formula           | `app/domain/damage/damageFormula.ts`, wire in `damageCalculator.ts`            |
+| New skill             | `app/domain/skill/skills.ts`; multi-hit via `skillContext.ts`/`skillDamage.ts` |
+| New passive/inner way | `passiveSkills.ts` / `innerWays.ts`, apply via `modifierEngine.ts`             |
+
+## Integrations
+
+- **OCR import:** Gemini API in `lib/gemini.ts`, schema in `app/domain/gear/gearOcrSchema.ts`
+- **Export PNG:** `html-to-image` in `app/utils/exportPng.ts`
+- **Import/export:** JSON clipboard, version `"1.0"` in `app/utils/importExport.ts`
+
+## Conventions
+
+- Use shadcn/ui primitives from `components/ui/*` – don't hand-roll basic controls
+- UI components receive computed data from hooks; keep domain logic pure
+- Gear slots: `weapon_1`, `weapon_2`, `disc`, `pendant`, `head`, `chest`, `hand`, `leg`
