@@ -33,7 +33,7 @@ function collapseInnerWayTiers(activeIds: string[]): string[] {
 
   const active = new Set(activeIds);
 
-  for (const [groupId, ids] of INNER_GROUP_IDS.entries()) {
+  for (const [, ids] of INNER_GROUP_IDS.entries()) {
     const enabledInGroup = ids
       .filter((id) => active.has(id))
       .map((id) => INNER_BY_ID.get(id))
