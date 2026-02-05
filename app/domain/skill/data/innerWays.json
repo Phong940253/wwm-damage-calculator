@@ -205,27 +205,6 @@
         "notes": "In-game: triggers when applying Lingering Bone Mark. This calculator models it as an unconditional +7.5% Physical ATK Multiplier when enabled."
     },
     {
-        "id": "iw_silkbind_star_reacher_t5",
-        "name": "Star Reacher (Tier 5)",
-        "description": "Increases Physical Penetration by 5.1.",
-        "tierGroupId": "iw_silkbind_star_reacher",
-        "applicableToMartialArtId": "silkbind_jade",
-        "modifiers": [
-            {
-                "stat": "PhysicalAttackMultiplier",
-                "type": "flat",
-                "value": 7.5
-            },
-            {
-                "stat": "PhysicalPenetration",
-                "type": "flat",
-                "value": 5.1
-            }
-        ],
-        "level": 5,
-        "notes": "In-game: Tier 5 adds +5.1 Physical Penetration on top of the Tier 1 effect (7.5% Physical ATK after Lingering Bone)."
-    },
-    {
         "id": "iw_universal_mountains_might_t4",
         "name": "Mountain's Might (Tier 4)",
         "description": "While Long Wind is active: +1.5% Affinity Rate; +1.5% against boss targets.",
@@ -313,5 +292,35 @@
         ],
         "level": 5,
         "notes": "Normal Light Attacks apply Sin debuff; Flamelash Light Attacks apply Karma debuff. Attacking targets with both Sin and Karma grants additional bonuses. Dealing 6 instances of damage within 2 seconds resets Delusion cooldown (once every 10s)."
+    },
+    {
+        "id": "iw_universal_invigorated_warrior_t0",
+        "name": "Invigorated Warrior (Tier 0)",
+        "description": "Increases all damage and healing done by 5%.",
+        "tierGroupId": "iw_universal_invigorated_warrior",
+        "modifiers": [
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 5
+            }
+        ],
+        "level": 0,
+        "notes": "In-game: This effect is disabled for 5 seconds after being hit. Taking a hit also grants a Cage effect, increasing all damage taken by 5%. This calculator models only the damage boost portion."
+    },
+    {
+        "id": "iw_universal_invigorated_warrior_t4",
+        "name": "Invigorated Warrior (Tier 4)",
+        "description": "Increases all damage and healing done by 8%.",
+        "tierGroupId": "iw_universal_invigorated_warrior",
+        "modifiers": [
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 8
+            }
+        ],
+        "level": 4,
+        "notes": "Tier 4: Damage boost increased from 5% to 8%."
     }
 ]
