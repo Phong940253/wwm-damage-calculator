@@ -116,26 +116,6 @@ function normalizeRotation(
   const allPassiveIds = new Set(PASSIVE_SKILLS.map((p) => p.id));
   const allInnerWayIds = new Set(INNER_WAYS.map((i) => i.id));
 
-  const isInnerWayAllowed = (innerId: string) => {
-    const iw = INNER_WAYS.find((x) => x.id === innerId);
-    if (!iw) return false;
-
-    // Martial-art specific inner way: only allowed for matching MA
-    if (iw.applicableToMartialArtId) {
-      return !!martialArtId && iw.applicableToMartialArtId === martialArtId;
-    }
-
-    // Universal inner way: allowed for all martial arts.
-    // If defaultEnabledForMartialArtIds is provided, treat it as an allow-list.
-    if (iw.defaultEnabledForMartialArtIds) {
-      return (
-        !!martialArtId &&
-        iw.defaultEnabledForMartialArtIds.includes(martialArtId)
-      );
-    }
-    return true;
-  };
-
   const defaultInnerWayIds = INNER_WAYS.filter((iw) => {
     if (iw.applicableToMartialArtId) {
       return !!martialArtId && iw.applicableToMartialArtId === martialArtId;

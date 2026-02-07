@@ -6,6 +6,12 @@ import {
 } from "@/app/types";
 import { ELEMENT_TYPES, ElementKey } from "@/app/constants";
 import { computeDerivedStats } from "../stats/derivedStats";
+import {
+  getBossResistancePct,
+  getPlayerDirectPrecisionPct,
+  getStoredLevelContext,
+  type LevelContext,
+} from "../level/levelSettings";
 
 function elementKey(
   element: ElementKey,
@@ -58,6 +64,7 @@ export function buildDamageContext(
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
   bonusBreakdown?: DamageBonusBreakdown,
+  levelContext?: Partial<LevelContext>,
 ): DamageContext {
   /* ============================
      Helpers
@@ -94,6 +101,26 @@ export function buildDamageContext(
   ) as InputStats;
 
   const derived = computeDerivedStats(derivedInput, {});
+
+  /* ============================
+     Enemy resistance / direct stats
+  ============================ */
+
+  const storedLevels = getStoredLevelContext();
+  const playerLevel =
+    typeof levelContext?.playerLevel === "number"
+      ? levelContext.playerLevel
+      : storedLevels.playerLevel;
+  const enemyLevel =
+    typeof levelContext?.enemyLevel === "number"
+      ? levelContext.enemyLevel
+      : storedLevels.enemyLevel;
+
+  const bossResistance = getBossResistancePct(enemyLevel) / 100;
+  const levelDirectPrecision = getPlayerDirectPrecisionPct(playerLevel);
+
+  const applyBossResistanceToRate = (basePct: number) =>
+    basePct * (1 - bossResistance);
 
   /* ============================
      Cache for OTHER elements
@@ -154,8 +181,27 @@ export function buildDamageContext(
       return cur("MinPhysicalAttack") + derived.minAtk;
     if (k === "MaxPhysicalAttack")
       return cur("MaxPhysicalAttack") + derived.maxAtk;
-    if (k === "CriticalRate") return cur("CriticalRate") + derived.critRate;
-    if (k === "AffinityRate") return cur("AffinityRate") + derived.affinityRate;
+
+    // Boss resistance applies only to: PrecisionRate, CriticalRate, AffinityRate
+    // - Precision: final = (base + direct) * (1 - bossResistance)
+    // - Critical/Affinity: final = base * (1 - bossResistance) + direct
+    if (k === "PrecisionRate") {
+      const base = cur("PrecisionRate");
+      const direct = cur("DirectPrecisionRate") + levelDirectPrecision;
+      return applyBossResistanceToRate(base + direct);
+    }
+
+    if (k === "CriticalRate") {
+      const base = cur("CriticalRate") + derived.critRate;
+      const direct = cur("DirectCriticalRate");
+      return applyBossResistanceToRate(base) + direct;
+    }
+
+    if (k === "AffinityRate") {
+      const base = cur("AffinityRate") + derived.affinityRate;
+      const direct = cur("DirectAffinityRate");
+      return applyBossResistanceToRate(base) + direct;
+    }
 
     /* ---------- Fallback ---------- */
 
@@ -223,6 +269,77 @@ export function buildDamageContext(
       return lines.filter((x) => x.value !== 0);
     };
 
+    const explainRateWithBossResistance = (args: {
+      key: string;
+      baseKey: keyof InputStats;
+      directKey: keyof InputStats;
+      derivedAdd?: number;
+      levelDirectAdd?: number;
+      resistanceAppliesToDirect?: boolean;
+    }): StatExplanation => {
+      const baseLines = explainInputStat(args.baseKey);
+      const directLines = explainInputStat(args.directKey);
+
+      const derivedAdd = args.derivedAdd ?? 0;
+      const levelDirectAdd = args.levelDirectAdd ?? 0;
+      const resistanceAppliesToDirect = args.resistanceAppliesToDirect ?? false;
+
+      const basePre = cur(args.baseKey) + derivedAdd;
+      const directPre = cur(args.directKey) + levelDirectAdd;
+      const preResist = basePre + directPre;
+
+      const totalPost = resistanceAppliesToDirect
+        ? applyBossResistanceToRate(preResist)
+        : applyBossResistanceToRate(basePre) + directPre;
+
+      const lines: StatSourceLine[] = [];
+      lines.push(...baseLines);
+
+      if (derivedAdd !== 0) {
+        lines.push(makeLine("derived", "Derived", derivedAdd));
+      }
+
+      if (bossResistance !== 0) {
+        // Represent resistance as a derived-style adjustment so UI legend works without new kinds.
+        const delta = resistanceAppliesToDirect
+          ? totalPost - preResist
+          : applyBossResistanceToRate(basePre) - basePre;
+        lines.push(
+          makeLine(
+            "derived",
+            "Boss resistance",
+            delta,
+            `Enemy Lv ${enemyLevel} (${(bossResistance * 100).toFixed(1)}%)`,
+          ),
+        );
+      }
+
+      // Keep direct stat breakdown grouped
+      for (const l of directLines) {
+        lines.push({ ...l, label: `Direct: ${l.label}` });
+      }
+
+      if (levelDirectAdd !== 0) {
+        lines.push(
+          makeLine(
+            "derived",
+            "Direct (Player level)",
+            levelDirectAdd,
+            `Player Lv ${playerLevel}`,
+          ),
+        );
+      }
+
+      return {
+        key: args.key,
+        total: totalPost,
+        lines: lines.filter((x) => x.value !== 0),
+        formula: resistanceAppliesToDirect
+          ? `(base + direct) × (1 - resistance)`
+          : `base × (1 - resistance) + direct`,
+      };
+    };
+
     const explainElementStat = (key: ElementStatKey): StatSourceLine[] => {
       const base = Number(elementStats[key]?.current || 0);
       const inc = Number(elementStats[key]?.increase || 0);
@@ -259,6 +376,34 @@ export function buildDamageContext(
         total,
         lines: explainElementStat("MainElementMultiplier"),
       };
+    }
+
+    if (k === "PrecisionRate") {
+      return explainRateWithBossResistance({
+        key: k,
+        baseKey: "PrecisionRate",
+        directKey: "DirectPrecisionRate",
+        levelDirectAdd: levelDirectPrecision,
+        resistanceAppliesToDirect: true,
+      });
+    }
+
+    if (k === "CriticalRate") {
+      return explainRateWithBossResistance({
+        key: k,
+        baseKey: "CriticalRate",
+        directKey: "DirectCriticalRate",
+        derivedAdd: derived.critRate,
+      });
+    }
+
+    if (k === "AffinityRate") {
+      return explainRateWithBossResistance({
+        key: k,
+        baseKey: "AffinityRate",
+        directKey: "DirectAffinityRate",
+        derivedAdd: derived.affinityRate,
+      });
     }
 
     // OTHER elements (cached): report by source-kind sums for transparency.

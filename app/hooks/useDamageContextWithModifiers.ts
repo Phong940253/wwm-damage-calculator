@@ -8,6 +8,7 @@ import {
   computeRotationBonusesWithBreakdown,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 
 /**
  * Enhanced version of buildDamageContext that includes passive skills + inner ways
@@ -18,7 +19,8 @@ export function useDamageContextWithModifiers(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
-  rotation?: Rotation
+  rotation?: Rotation,
+  levelContext?: LevelContext,
 ): DamageContext {
   const breakdown = useMemo(
     () =>
@@ -26,30 +28,36 @@ export function useDamageContextWithModifiers(
         stats,
         elementStats,
         gearBonus,
-        rotation
+        rotation,
       ),
-    [stats, elementStats, gearBonus, rotation]
+    [stats, elementStats, gearBonus, rotation],
   );
 
   const combinedBonus = sumBonuses(gearBonus, breakdown.total);
 
-  return buildDamageContext(stats, elementStats, combinedBonus, {
-    gear: gearBonus,
-    passives: Object.fromEntries(
-      Object.entries(breakdown.byPassive).map(([id, bonus]) => [
-        id,
-        {
-          name: breakdown.meta.passives[id]?.name ?? id,
-          uptimePct: breakdown.meta.passives[id]?.uptimePct,
-          bonus,
-        },
-      ])
-    ),
-    innerWays: Object.fromEntries(
-      Object.entries(breakdown.byInnerWay).map(([id, bonus]) => [
-        id,
-        { name: breakdown.meta.innerWays[id]?.name ?? id, bonus },
-      ])
-    ),
-  });
+  return buildDamageContext(
+    stats,
+    elementStats,
+    combinedBonus,
+    {
+      gear: gearBonus,
+      passives: Object.fromEntries(
+        Object.entries(breakdown.byPassive).map(([id, bonus]) => [
+          id,
+          {
+            name: breakdown.meta.passives[id]?.name ?? id,
+            uptimePct: breakdown.meta.passives[id]?.uptimePct,
+            bonus,
+          },
+        ]),
+      ),
+      innerWays: Object.fromEntries(
+        Object.entries(breakdown.byInnerWay).map(([id, bonus]) => [
+          id,
+          { name: breakdown.meta.innerWays[id]?.name ?? id, bonus },
+        ]),
+      ),
+    },
+    levelContext,
+  );
 }

@@ -12,6 +12,7 @@ import {
   OptimizeCancelledError,
 } from "@/app/domain/gear/gearOptimize";
 import { GEAR_SLOTS } from "@/app/constants";
+import { useLevelContext } from "@/app/hooks/useLevelContext";
 
 // type LockedSlots = Partial<Record<GearSlot, string | null>>;
 type RestrictSlots = Partial<Record<GearSlot, Array<string | null>>>;
@@ -46,6 +47,7 @@ export function useGearOptimize(
     reducePerSlotCap?: number;
   },
 ) {
+  const { levelContext } = useLevelContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<OptimizeResult[]>([]);
@@ -178,6 +180,7 @@ export function useGearOptimize(
             equipped,
             maxDisplay,
             rotation,
+            levelContext,
             options,
             (current, total) => setProgress({ current, total }),
             controller.signal,
@@ -286,6 +289,7 @@ export function useGearOptimize(
                 equipped,
                 desiredDisplay: maxDisplay,
                 rotation,
+                levelContext,
                 options: {
                   ...options,
                   restrictSlots,
@@ -403,7 +407,18 @@ export function useGearOptimize(
       // Fallback: run on main thread (older browsers / environments)
       return runOnMainThread();
     },
-    [stats, elementStats, customGears, equipped, rotation, options, cancel],
+    [
+      cancel,
+      computeShardPlan,
+      customGears,
+      elementStats,
+      equipped,
+      levelContext,
+      options,
+      rotation,
+      stats,
+      terminateWorkers,
+    ],
   );
 
   return { run, cancel, loading, error, results, baseDamage, combos, progress };

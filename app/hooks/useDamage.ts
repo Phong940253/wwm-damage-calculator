@@ -7,6 +7,7 @@ import { DamageResult } from "../domain/damage/type";
 import { calcExpectedNormalBreakdown } from "../domain/damage/damageFormula";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 import {
   computeRotationBonusesWithBreakdown,
   sumBonuses,
@@ -17,6 +18,7 @@ export function useDamage(
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
   rotation?: Rotation,
+  levelContext?: LevelContext,
 ): DamageResult {
   return useMemo(() => {
     /* ---------- BASE (NO increase) ---------- */
@@ -84,6 +86,7 @@ export function useDamage(
           ]),
         ),
       },
+      levelContext,
     );
 
     const finalCtxWithModifiers = buildDamageContext(
@@ -114,6 +117,7 @@ export function useDamage(
           ),
         ),
       },
+      levelContext,
     );
 
     /* ---------- Calculate damage based on rotation or default ---------- */
@@ -249,5 +253,5 @@ export function useDamage(
       },
       averageBreakdown: breakdown,
     };
-  }, [stats, elementStats, gearBonus, rotation]);
+  }, [stats, elementStats, gearBonus, rotation, levelContext]);
 }

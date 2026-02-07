@@ -169,11 +169,9 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
   };
 
   /** 🔁 backward compatibility */
-  const mains = gear.mains?.length
-    ? gear.mains
-    : gear.main
-      ? [gear.main]
-      : [];
+  const mains = useMemo(() => {
+    return gear.mains?.length ? gear.mains : gear.main ? [gear.main] : [];
+  }, [gear.mains, gear.main]);
 
   const baseline = useMemo(() => {
     if (!impactEnabled || !elementStats) return null;

@@ -91,6 +91,9 @@ export default function MainTabLayout() {
     warnings,
     onStatChange,
     onElementChange,
+    levelContext,
+    setPlayerLevel,
+    setEnemyLevel,
   } = useDMGOptimizer(INITIAL_STATS, INITIAL_ELEMENT_STATS, selectedRotation);
 
   const [showFormula, setShowFormula] = useState(false);
@@ -100,7 +103,8 @@ export default function MainTabLayout() {
     stats,
     elementStats,
     gearBonus,
-    selectedRotation
+    selectedRotation,
+    levelContext,
   );
 
   /* ---------- ACTIONS (GIỮ NGUYÊN) ---------- */
@@ -162,6 +166,9 @@ export default function MainTabLayout() {
                 elementStats={elementStats}
                 gearBonus={gearBonus}
                 statImpact={statImpact}
+                levelContext={levelContext}
+                setPlayerLevel={setPlayerLevel}
+                setEnemyLevel={setEnemyLevel}
                 onStatChange={onStatChange}
                 onElementChange={onElementChange}
                 onApplyIncrease={onApplyIncrease}
@@ -253,6 +260,9 @@ export default function MainTabLayout() {
                 elementStats={elementStats}
                 gearBonus={gearBonus}
                 statImpact={statImpact}
+                levelContext={levelContext}
+                setPlayerLevel={setPlayerLevel}
+                setEnemyLevel={setEnemyLevel}
                 onStatChange={onStatChange}
                 onElementChange={onElementChange}
                 onApplyIncrease={onApplyIncrease}

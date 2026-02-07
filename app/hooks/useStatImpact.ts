@@ -9,6 +9,7 @@ import {
   computeRotationBonuses,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 
 type ElementStatKey = Exclude<keyof ElementStats, "selected" | "martialArtsId">;
 
@@ -17,6 +18,7 @@ export function useStatImpact(
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
   rotation?: Rotation,
+  levelContext?: LevelContext,
 ) {
   return useMemo(() => {
     const impacts: Record<string, number> = {};
@@ -80,7 +82,13 @@ export function useStatImpact(
           gearBonus,
           rotation,
         );
-        return buildDamageContext(s, es, sumBonuses(gearBonus, passiveBonuses));
+        return buildDamageContext(
+          s,
+          es,
+          sumBonuses(gearBonus, passiveBonuses),
+          undefined,
+          levelContext,
+        );
       })();
 
     const baseValue = calcNormal(buildCtx(baseStats, baseElements));
@@ -119,11 +127,9 @@ export function useStatImpact(
       const diff = ((normal - baseValue) / baseValue) * 100;
 
       if (key === "bamboocutMin" && isDebugBamboocutMinEnabled()) {
-        // eslint-disable-next-line no-console
         console.groupCollapsed(
           `[StatImpact debug] bamboocutMin inc=${inc} selected=${elementStats.selected}`,
         );
-        // eslint-disable-next-line no-console
         console.debug({
           key,
           inc,
@@ -134,7 +140,6 @@ export function useStatImpact(
           diffPercent: diff,
           rotationSkills: rotation?.skills?.length ?? 0,
         });
-        // eslint-disable-next-line no-console
         console.debug("Context getters", {
           MINAttributeAttackOfOtherType_base: baseCtx.get(
             "MINAttributeAttackOfOtherType",
@@ -155,7 +160,6 @@ export function useStatImpact(
             "MAXAttributeAttackOfYOURType",
           ),
         });
-        // eslint-disable-next-line no-console
         console.groupEnd();
       }
 
@@ -163,5 +167,5 @@ export function useStatImpact(
     }
 
     return impacts;
-  }, [stats, elementStats, gearBonus, rotation]);
+  }, [stats, elementStats, gearBonus, rotation, levelContext]);
 }

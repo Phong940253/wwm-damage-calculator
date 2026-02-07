@@ -5,6 +5,7 @@ import type {
   InputStats,
   Rotation,
 } from "@/app/types";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 import {
   computeOptimizeResultsAsync,
   OptimizeCancelledError,
@@ -32,6 +33,7 @@ type StartMessage = {
     equipped: Partial<Record<GearSlot, string | undefined>>;
     desiredDisplay: number;
     rotation?: Rotation;
+    levelContext?: LevelContext;
     options?: OptimizeWorkerOptions;
   };
 };
@@ -103,6 +105,7 @@ self.addEventListener("message", async (event: MessageEvent) => {
       payload.equipped,
       payload.desiredDisplay,
       payload.rotation,
+      payload.levelContext,
       payload.options,
       (current, total) => post({ type: "progress", jobId, current, total }),
       controller.signal,

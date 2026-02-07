@@ -12,6 +12,7 @@ import { calculateDamage } from "../damage/damageCalculator";
 import { SKILLS } from "../skill/skills";
 import { calculateSkillDamage } from "../skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
+import type { LevelContext } from "../level/levelSettings";
 
 /* =======================
    Types
@@ -133,6 +134,7 @@ export async function computeOptimizeResultsAsync(
   equipped: Partial<Record<GearSlot, string | undefined>>,
   desiredDisplay: number,
   rotation?: Rotation,
+  levelContext?: LevelContext,
   options?: {
     candidateGears?: CustomGear[];
     slotsToOptimize?: GearSlot[];
@@ -209,6 +211,8 @@ export async function computeOptimizeResultsAsync(
       stats,
       elementStats,
       sumBonuses(gearBonus, rotationBonuses),
+      undefined,
+      levelContext,
     );
 
     if (rotationPlan && rotationPlan.length > 0) {

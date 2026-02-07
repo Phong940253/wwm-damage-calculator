@@ -8,6 +8,7 @@ import { STAT_GROUPS } from "../../constants";
 import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
 import StatCard from "./StatCard";
+import { SUPPORTED_LEVELS } from "@/app/domain/level/levelSettings";
 
 /* =======================
    Types
@@ -21,6 +22,9 @@ interface Props {
   elementStats: ElementStats;
   gearBonus: Record<string, number>;
   statImpact?: Partial<Record<string, number>>; // ✅ optional
+  levelContext?: { playerLevel: number; enemyLevel: number };
+  setPlayerLevel?: (level: number) => void;
+  setEnemyLevel?: (level: number) => void;
   onStatChange: (
     key: keyof InputStats,
     field: "current" | "increase",
@@ -63,11 +67,17 @@ export default function StatsPanel({
   elementStats,
   gearBonus,
   statImpact = {},
+  levelContext,
+  setPlayerLevel,
+  setEnemyLevel,
   onStatChange,
   onElementChange,
   onApplyIncrease,
   onSaveCurrent,
 }: Props) {
+  const safeLevelContext = levelContext ?? { playerLevel: 81, enemyLevel: 81 };
+  const safeSetPlayerLevel = setPlayerLevel ?? (() => { });
+  const safeSetEnemyLevel = setEnemyLevel ?? (() => { });
   // Track local input values for instant UI feedback
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
 
@@ -203,6 +213,46 @@ export default function StatsPanel({
       "
     >
       <CardContent className="p-6 space-y-10">
+        {/* Level Selection */}
+        <section className="space-y-5">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Levels</h2>
+            <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Player level</label>
+              <select
+                className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
+                value={safeLevelContext.playerLevel}
+                onChange={(e) => safeSetPlayerLevel(Number(e.target.value))}
+              >
+                {SUPPORTED_LEVELS.map((lv) => (
+                  <option key={lv} value={lv}>
+                    {lv}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Enemy level</label>
+              <select
+                className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
+                value={safeLevelContext.enemyLevel}
+                onChange={(e) => safeSetEnemyLevel(Number(e.target.value))}
+              >
+                {SUPPORTED_LEVELS.map((lv) => (
+                  <option key={lv} value={lv}>
+                    {lv}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+
         {/* Element Selection */}
         <section className="space-y-5">
           <div className="flex items-center gap-3">

@@ -107,7 +107,7 @@
                 "value": 12
             },
             {
-                "stat": "CriticalRate",
+                "stat": "DirectCriticalRate",
                 "type": "flat",
                 "value": 4.6
             }

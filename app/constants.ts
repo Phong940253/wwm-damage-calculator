@@ -87,9 +87,12 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
 
   // ---- Rates ----
   PrecisionRate: "Precision Rate",
+  DirectPrecisionRate: "Direct Precision Rate",
   CriticalRate: "Critical Rate",
+  DirectCriticalRate: "Direct Critical Rate",
   CriticalDMGBonus: "Critical DMG",
   AffinityRate: "Affinity Rate",
+  DirectAffinityRate: "Direct Affinity Rate",
   AffinityDMGBonus: "Affinity DMG",
 
   // ---- Defense ----
@@ -136,9 +139,12 @@ export const INITIAL_STATS: InputStats = {
   FlatDamage: { current: 378, increase: 0 },
 
   PrecisionRate: { current: 85, increase: 0 },
+  DirectPrecisionRate: { current: 0, increase: 0 },
   CriticalRate: { current: 35, increase: 0 },
+  DirectCriticalRate: { current: 0, increase: 0 },
   CriticalDMGBonus: { current: 50, increase: 0 },
   AffinityRate: { current: 25, increase: 0 },
+  DirectAffinityRate: { current: 0, increase: 0 },
   AffinityDMGBonus: { current: 35, increase: 0 },
 
   DamageBoost: { current: 0, increase: 0 },

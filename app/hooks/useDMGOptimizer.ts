@@ -6,29 +6,43 @@ import { aggregateEquippedGearBonus } from "../domain/gear/gearAggregate";
 import { InputStats, ElementStats, Rotation } from "../types";
 import { useStatImpact } from "./useStatImpact";
 import { ElementKey } from "../constants";
+import { useLevelContext } from "./useLevelContext";
 
 type ElementField = "current" | "increase";
 
 export function useDMGOptimizer(
   initialStats: InputStats,
   initialElements: ElementStats,
-  rotation?: Rotation
+  rotation?: Rotation,
 ) {
   const { stats, setStats } = useStats(initialStats);
   const { elementStats, setElementStats } = useElementStats(initialElements);
+  const { levelContext, setPlayerLevel, setEnemyLevel } = useLevelContext();
 
   const { customGears, equipped } = useGear();
   const gearBonus = aggregateEquippedGearBonus(customGears, equipped);
 
-  const damage = useDamage(stats, elementStats, gearBonus, rotation);
-  const statImpact = useStatImpact(stats, elementStats, gearBonus, rotation);
+  const damage = useDamage(
+    stats,
+    elementStats,
+    gearBonus,
+    rotation,
+    levelContext,
+  );
+  const statImpact = useStatImpact(
+    stats,
+    elementStats,
+    gearBonus,
+    rotation,
+    levelContext,
+  );
 
   /* ---------- handlers ---------- */
 
   const onStatChange = (
     key: keyof InputStats,
     field: "current" | "increase",
-    value: string
+    value: string,
   ) => {
     setStats((prev) => ({
       ...prev,
@@ -39,7 +53,7 @@ export function useDMGOptimizer(
   const onElementChange = (
     key: keyof ElementStats | "selected",
     field: ElementField | "selected",
-    value: string
+    value: string,
   ) => {
     setElementStats((prev) => {
       // ✅ handle selected element
@@ -88,5 +102,8 @@ export function useDMGOptimizer(
     warnings,
     onStatChange,
     onElementChange,
+    levelContext,
+    setPlayerLevel,
+    setEnemyLevel,
   };
 }
