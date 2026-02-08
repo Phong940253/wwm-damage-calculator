@@ -296,21 +296,6 @@
     {
         "id": "iw_universal_invigorated_warrior_t0",
         "name": "Invigorated Warrior (Tier 0)",
-        "description": "Increases all damage and healing done by 5%.",
-        "tierGroupId": "iw_universal_invigorated_warrior",
-        "modifiers": [
-            {
-                "stat": "DamageBoost",
-                "type": "flat",
-                "value": 5
-            }
-        ],
-        "level": 0,
-        "notes": "In-game: This effect is disabled for 5 seconds after being hit. Taking a hit also grants a Cage effect, increasing all damage taken by 5%. This calculator models only the damage boost portion."
-    },
-    {
-        "id": "iw_universal_invigorated_warrior_t4",
-        "name": "Invigorated Warrior (Tier 4)",
         "description": "Increases all damage and healing done by 8%.",
         "tierGroupId": "iw_universal_invigorated_warrior",
         "modifiers": [
@@ -320,7 +305,22 @@
                 "value": 8
             }
         ],
+        "level": 0,
+        "notes": "In-game: This effect is disabled for 5 seconds after being hit. Taking a hit also grants a Cage effect, increasing all damage taken by 5%. This calculator models only the damage boost portion."
+    },
+    {
+        "id": "iw_universal_invigorated_warrior_t4",
+        "name": "Invigorated Warrior (Tier 4)",
+        "description": "Increases all damage and healing done by 16%.",
+        "tierGroupId": "iw_universal_invigorated_warrior",
+        "modifiers": [
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 16
+            }
+        ],
         "level": 4,
-        "notes": "Tier 4: Damage boost increased from 5% to 8%."
+        "notes": "Tier 4: Damage boost increased from 8% to 16%."
     }
 ]

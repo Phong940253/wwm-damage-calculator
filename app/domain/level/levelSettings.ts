@@ -21,6 +21,7 @@ const LEVEL_EFFECTS: Record<
     playerDirectPrecisionPct: number;
   }
 > = {
+  71: { bossResistancePct: 0, playerDirectPrecisionPct: 8.5 },
   81: { bossResistancePct: 13, playerDirectPrecisionPct: 9.8 },
 };
 
