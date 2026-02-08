@@ -309,8 +309,7 @@
                 "type": "scale",
                 "sourceStat": "MinPhysicalAttack",
                 "ratio": 0.048,
-                "max": 36,
-                "applyUptime": false
+                "max": 36
             }
         ],
         "notes": "Applies only when the skill is tagged as ballistic AND weaponType is Umbrella (handled in createSkillContext)."

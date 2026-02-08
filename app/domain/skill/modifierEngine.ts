@@ -2,6 +2,7 @@ import { ElementStats, InputStats, Rotation } from "@/app/types";
 import { INNER_WAYS } from "./innerWays";
 import { PASSIVE_SKILLS } from "./passiveSkills";
 import { PassiveModifier, StatKey } from "./passiveSkillTypes";
+import { computeDerivedStats } from "../stats/derivedStats";
 
 export interface RotationBonusBreakdown {
   /** Total bonus = sum of all sources (passives + inner ways) */
@@ -81,6 +82,53 @@ function readStatValue(
   }
 
   return bonus[k] || 0;
+}
+
+function computeDerivedForScale(
+  stats: InputStats,
+  baseForScale: Record<string, number>,
+) {
+  const derivedInput: InputStats = Object.fromEntries(
+    Object.keys(stats).map((k) => [
+      k,
+      {
+        current:
+          Number(
+            (
+              stats as Record<
+                string,
+                { current?: number | ""; increase?: number | "" }
+              >
+            )[k]?.current || 0,
+          ) +
+          Number(
+            (
+              stats as Record<
+                string,
+                { current?: number | ""; increase?: number | "" }
+              >
+            )[k]?.increase || 0,
+          ) +
+          (baseForScale[k] || 0),
+        increase: 0,
+      },
+    ]),
+  ) as InputStats;
+
+  return computeDerivedStats(derivedInput, {});
+}
+
+function readScaleSourceValue(
+  stats: InputStats,
+  elementStats: ElementStats,
+  baseForScale: Record<string, number>,
+  key: StatKey,
+  derivedForScale: { minAtk: number; maxAtk: number },
+): number {
+  const base = readStatValue(stats, elementStats, baseForScale, key);
+  if (key === "MinPhysicalAttack") return base + derivedForScale.minAtk;
+  if (key === "MaxPhysicalAttack") return base + derivedForScale.maxAtk;
+  return base;
 }
 
 export function collectRotationModifiers(
@@ -174,6 +222,7 @@ export function computeRotationBonuses(
 
   // 2) Compute scale modifiers from (base + gear + flat)
   const baseForScale = sumRecords(gearBonus, flatBonus);
+  const derivedForScale = computeDerivedForScale(stats, baseForScale);
   const scaleBonus: Record<string, number> = {};
 
   for (const passiveId of rotation.activePassiveSkills) {
@@ -188,11 +237,12 @@ export function computeRotationBonuses(
       if (f <= 0) continue;
 
       const targetKey = String(modifier.stat);
-      const sourceValue = readStatValue(
+      const sourceValue = readScaleSourceValue(
         stats,
         elementStats,
         baseForScale,
         modifier.sourceStat,
+        derivedForScale,
       );
 
       const addRaw = sourceValue * modifier.ratio;
@@ -213,11 +263,12 @@ export function computeRotationBonuses(
       if (modifier.type !== "scale") continue;
 
       const targetKey = String(modifier.stat);
-      const sourceValue = readStatValue(
+      const sourceValue = readScaleSourceValue(
         stats,
         elementStats,
         baseForScale,
         modifier.sourceStat,
+        derivedForScale,
       );
 
       const addRaw = sourceValue * modifier.ratio;
@@ -323,6 +374,7 @@ export function computeRotationBonusesWithBreakdown(
 
   // 2) Scale modifiers (from base + gear + flat)
   const baseForScale = sumRecords(gearBonus, flatTotal);
+  const derivedForScale = computeDerivedForScale(stats, baseForScale);
 
   const byPassiveScale: Record<string, Record<string, number>> = {};
   const byInnerScale: Record<string, Record<string, number>> = {};
@@ -340,11 +392,12 @@ export function computeRotationBonusesWithBreakdown(
       if (f <= 0) continue;
 
       const targetKey = String(modifier.stat);
-      const sourceValue = readStatValue(
+      const sourceValue = readScaleSourceValue(
         stats,
         elementStats,
         baseForScale,
         modifier.sourceStat,
+        derivedForScale,
       );
 
       const addRaw = sourceValue * modifier.ratio;
@@ -366,11 +419,12 @@ export function computeRotationBonusesWithBreakdown(
       if (modifier.type !== "scale") continue;
 
       const targetKey = String(modifier.stat);
-      const sourceValue = readStatValue(
+      const sourceValue = readScaleSourceValue(
         stats,
         elementStats,
         baseForScale,
         modifier.sourceStat,
+        derivedForScale,
       );
 
       const addRaw = sourceValue * modifier.ratio;
