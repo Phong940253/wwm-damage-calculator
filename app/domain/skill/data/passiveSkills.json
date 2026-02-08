@@ -260,7 +260,6 @@
         "id": "ps_silkbind_jade_jadebreak",
         "name": "Jadebreak",
         "description": "Increases Projectile skill damage by 30%. When a Projectile Skill or Heavy Attack Pursuit skill hits a Boss unit, deals 10% more damage. This effect lasts 15 seconds.",
-        "defaultUptimePercent": 100,
         "martialArtId": "silkbind_jade",
         "modifiers": [
             {
@@ -286,7 +285,6 @@
         "id": "ps_silkbind_jade_spring_shock",
         "name": "Spring Shock",
         "description": "During the effect's duration, the stamina cost and damage dealt by charged skills are increased by 4%. Lasts for 15 seconds and can stack up to 5 times.",
-        "defaultUptimePercent": 100,
         "martialArtId": "silkbind_jade",
         "modifiers": [
             {
@@ -301,7 +299,6 @@
         "id": "ps_silkbind_jade_trajectory_calculation_enhancement",
         "name": "Trajectory Calculation Enhancement",
         "description": "Increases the Critical DMG of all Vernal Umbrella ballistic skills by 2.4% for every 50 Min Physical Attack (up to 36% increase at 750 Min Physical Attack).",
-        "defaultUptimePercent": 100,
         "martialArtId": "silkbind_jade",
         "modifiers": [
             {
@@ -318,7 +315,6 @@
         "id": "ps_silkbind_jade_heavy_attack_pursuit_enhancement",
         "name": "Heavy Attack Pursuit Enhancement",
         "description": "Increases the Critical DMG of Heavy Attack Pursuit Moon Shatter Spring by 2.4% for every 50 Min Physical Attack, up to 36% increase at 750 Min Physical Attack.",
-        "defaultUptimePercent": 100,
         "martialArtId": "silkbind_jade",
         "modifiers": [
             {
@@ -326,8 +322,7 @@
                 "type": "scale",
                 "sourceStat": "MinPhysicalAttack",
                 "ratio": 0.048,
-                "max": 36,
-                "applyUptime": false
+                "max": 36
             }
         ],
         "notes": "Applies only for the Moonlit Shatter Spring pursuit skills (handled in createSkillContext by skill id)."
