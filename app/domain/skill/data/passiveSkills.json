@@ -22,6 +22,38 @@
         "notes": "Condition: targets with lower Qi% than you or below 40% Qi. Lasts 8s; triggers once every 12s."
     },
     {
+        "id": "ps_universal_included_physical_attack_up_agility",
+        "name": "Physical Attack UP (Agility, included in stats)",
+        "description": "Increases Min Physical Attack based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
+        "includedInStats": true,
+        "modifiers": [
+            {
+                "stat": "MinPhysicalAttack",
+                "type": "scale",
+                "sourceStat": "Agility",
+                "ratio": 0.2635714286,
+                "max": 46.125
+            }
+        ],
+        "notes": "Model: bonus = min(Agility, 175) * 0.2635714286 (cap represented via max=46.125). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+    },
+    {
+        "id": "ps_universal_included_critical_rate_up_agility",
+        "name": "Critical Rate UP (Agility, included in stats)",
+        "description": "Increases Critical Rate based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
+        "includedInStats": true,
+        "modifiers": [
+            {
+                "stat": "CriticalRate",
+                "type": "scale",
+                "sourceStat": "Agility",
+                "ratio": 0.03,
+                "max": 5.25
+            }
+        ],
+        "notes": "Model: bonus = min(Agility, 175) * 0.03 (cap represented via max=5.25). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+    },
+    {
         "id": "ps_universal_hawkwing_set_4",
         "name": "Hawkwing Set (4/4)",
         "description": "When any of your damage triggers Affinity, gain Hawkwing: increases Physical Attack by 2% for 5s, stacking up to 5 times (conditional)",

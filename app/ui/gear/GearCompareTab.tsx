@@ -11,6 +11,8 @@ import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { computeIncludedInStatsGearBonusDelta } from "@/app/domain/skill/includedInStatsImpact";
 
 interface GearCompareTabProps {
   stats: InputStats;
@@ -247,9 +249,37 @@ export default function GearCompareTab({
                     equippedB
                   );
 
+                  // Baseline is current equipped gear, because user-input stats are assumed
+                  // to already include in-game displayed bonuses.
+                  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
+
+                  const buildCtx = (gearBonus: Record<string, number>) => {
+                    const includedDelta = computeIncludedInStatsGearBonusDelta(
+                      stats,
+                      elementStats,
+                      rotation,
+                      baseBonus,
+                      gearBonus
+                    );
+                    const effectiveGearBonus = sumBonuses(gearBonus, includedDelta);
+
+                    const rotationBonuses = computeRotationBonuses(
+                      stats,
+                      elementStats,
+                      effectiveGearBonus,
+                      rotation
+                    );
+
+                    return buildDamageContext(
+                      stats,
+                      elementStats,
+                      sumBonuses(effectiveGearBonus, rotationBonuses)
+                    );
+                  };
+
                   // Build contexts
-                  const ctxA = buildDamageContext(stats, elementStats, bonusA);
-                  const ctxB = buildDamageContext(stats, elementStats, bonusB);
+                  const ctxA = buildCtx(bonusA);
+                  const ctxB = buildCtx(bonusB);
 
                   // Calculate damage - rotation-aware
                   let damageA: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };

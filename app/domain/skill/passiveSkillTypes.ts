@@ -45,6 +45,15 @@ export interface PassiveSkill {
   name: string;
   description: string;
 
+  /**
+   * If true, this passive is assumed to already be included in the in-game displayed stats
+   * that the user inputs (so we must NOT add its modifiers again).
+   *
+   * Use-case: still needed for stat impact (e.g. Agility -> bonus Crit/Atk), but toggling
+   * should not change base/final stats to avoid double-counting.
+   */
+  includedInStats?: boolean;
+
   /** martial art mà passive này thuộc về */
   martialArtId?: MartialArtId;
 

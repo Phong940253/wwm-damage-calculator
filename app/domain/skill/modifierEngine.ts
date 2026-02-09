@@ -142,6 +142,7 @@ export function collectRotationModifiers(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (passive.includedInStats) continue;
     if (!isPassiveApplicableToMartialArt(passive, martialArtId)) continue;
     modifiers.push(...passive.modifiers);
   }
@@ -192,6 +193,7 @@ export function computeRotationBonuses(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (passive.includedInStats) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
 
@@ -228,6 +230,7 @@ export function computeRotationBonuses(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (passive.includedInStats) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
 
@@ -333,6 +336,7 @@ export function computeRotationBonusesWithBreakdown(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (passive.includedInStats) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
     const uptimePct = clamp(uptimePctForPassive(passiveId), 0, 100);
@@ -382,6 +386,7 @@ export function computeRotationBonusesWithBreakdown(
   for (const passiveId of rotation.activePassiveSkills) {
     const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
     if (!passive) continue;
+    if (passive.includedInStats) continue;
     if (!isPassiveApplicableToMartialArt(passive, elementStats.martialArtsId))
       continue;
 

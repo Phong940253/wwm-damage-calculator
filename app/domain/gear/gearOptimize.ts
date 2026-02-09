@@ -13,6 +13,7 @@ import { SKILLS } from "../skill/skills";
 import { calculateSkillDamage } from "../skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
 import type { LevelContext } from "../level/levelSettings";
+import { computeIncludedInStatsGearBonusDelta } from "../skill/includedInStatsImpact";
 
 /* =======================
    Types
@@ -200,17 +201,32 @@ export async function computeOptimizeResultsAsync(
     }
   };
 
+  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
+
   const computeTotalDamage = (gearBonus: Record<string, number>) => {
+    // Some passives are already included in the in-game displayed stats.
+    // When gearBonus changes, we apply ONLY the delta (test - base) so optimizer sees
+    // correct marginal value without double-counting the baseline.
+    const includedDelta = computeIncludedInStatsGearBonusDelta(
+      stats,
+      elementStats,
+      rotation,
+      baseBonus,
+      gearBonus,
+    );
+
+    const effectiveGearBonus = sumBonuses(gearBonus, includedDelta);
+
     const rotationBonuses = computeRotationBonuses(
       stats,
       elementStats,
-      gearBonus,
+      effectiveGearBonus,
       rotation,
     );
     const ctx = buildDamageContext(
       stats,
       elementStats,
-      sumBonuses(gearBonus, rotationBonuses),
+      sumBonuses(effectiveGearBonus, rotationBonuses),
       undefined,
       levelContext,
     );
@@ -238,7 +254,6 @@ export async function computeOptimizeResultsAsync(
 
   throwIfCancelled();
 
-  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
   const baseDamage = computeTotalDamage(baseBonus);
 
   /* ============================================================

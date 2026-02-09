@@ -19,6 +19,7 @@ import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import { computeIncludedInStatsGearBonusDelta } from "@/app/domain/skill/includedInStatsImpact";
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
 import type { CustomGear } from "@/app/types";
 
@@ -70,19 +71,32 @@ function calcRotationAwareNormalDamage(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
-  rotation?: Rotation
+  rotation?: Rotation,
+  baseGearBonus?: Record<string, number>
 ): number {
+  const includedDelta =
+    rotation && baseGearBonus
+      ? computeIncludedInStatsGearBonusDelta(
+        stats,
+        elementStats,
+        rotation,
+        baseGearBonus,
+        gearBonus
+      )
+      : {};
+
+  const effectiveGearBonus = sumBonuses(gearBonus, includedDelta);
   const rotationBonuses = computeRotationBonuses(
     stats,
     elementStats,
-    gearBonus,
+    effectiveGearBonus,
     rotation
   );
 
   const ctx = buildDamageContext(
     stats,
     elementStats,
-    sumBonuses(gearBonus, rotationBonuses)
+    sumBonuses(effectiveGearBonus, rotationBonuses)
   );
 
   if (rotation && rotation.skills.length > 0) {
@@ -117,7 +131,8 @@ export default function GearEquippedTab() {
       stats,
       elementStats,
       bonus,
-      selectedRotation
+      selectedRotation,
+      bonus
     );
   }, [stats, elementStats, bonus, selectedRotation]);
 
@@ -139,7 +154,8 @@ export default function GearEquippedTab() {
         stats,
         elementStats,
         bonusWithoutSlot,
-        selectedRotation
+        selectedRotation,
+        bonus
       );
 
       const perStat = (() => {
@@ -159,7 +175,8 @@ export default function GearEquippedTab() {
             stats,
             elementStats,
             testBonus,
-            selectedRotation
+            selectedRotation,
+            bonus
           );
           impactPctByLineKey[line.lineKey] =
             ((dmg - damageWithoutSlot) / damageWithoutSlot) * 100;
@@ -178,7 +195,8 @@ export default function GearEquippedTab() {
             stats,
             elementStats,
             testBonus,
-            selectedRotation
+            selectedRotation,
+            bonus
           );
           impactPctNoMain = ((dmgNoMain - damageWithoutSlot) / damageWithoutSlot) * 100;
         }
