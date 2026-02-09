@@ -478,13 +478,23 @@ export async function computeOptimizeResultsAsync(
         selection: {},
       };
 
-      const worst = heap.peek();
-      if (!worst || compareOptimizeResults(candidate, worst) > 0) {
+      // IMPORTANT: always fill the heap up to `limit` first.
+      // Only once full, apply the "better than current worst" check.
+      if (heap.size < limit) {
         candidate.key = finalSlotOptions
           .map(({ slot }) => selection[slot]?.id ?? "none")
           .join("|");
         candidate.selection = { ...selection };
         heap.push(candidate);
+      } else {
+        const worst = heap.peek();
+        if (worst && compareOptimizeResults(candidate, worst) > 0) {
+          candidate.key = finalSlotOptions
+            .map(({ slot }) => selection[slot]?.id ?? "none")
+            .join("|");
+          candidate.selection = { ...selection };
+          heap.push(candidate);
+        }
       }
 
       return;
