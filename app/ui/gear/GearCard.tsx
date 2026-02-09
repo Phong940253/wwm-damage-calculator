@@ -21,24 +21,21 @@ import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
-import { computeIncludedInStatsGearBonusDelta } from "@/app/domain/skill/includedInStatsImpact";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 
 function calcRotationAwareNormalDamage(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
   rotation?: Rotation,
-  baseGearBonus?: Record<string, number>
 ): number {
-  const baseline = baseGearBonus ?? gearBonus;
-  const includedDelta = computeIncludedInStatsGearBonusDelta(
+  const includedAbs = computeIncludedInStatsGearBonus(
     stats,
     elementStats,
     rotation,
-    baseline,
     gearBonus
   );
-  const effectiveGearBonus = sumBonuses(gearBonus, includedDelta);
+  const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
 
   const rotationBonuses = computeRotationBonuses(
     stats,
@@ -188,10 +185,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
   const baseline = useMemo(() => {
     if (!impactEnabled || !elementStats) return null;
 
-    // Baseline for included-in-stats passives must match the user's input stats.
-    // We assume users input stats while wearing their currently equipped gear.
-    const baseGearBonus = aggregateEquippedGearBonus(customGears, equipped);
-
     // Baseline: keep other equipped slots, but remove THIS slot
     const equippedWithoutSlot = { ...equipped };
     delete (equippedWithoutSlot as Record<string, string>)[gear.slot];
@@ -205,14 +198,12 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       stats,
       elementStats,
       bonusWithoutSlot,
-      rotation,
-      baseGearBonus
+      rotation
     );
 
     return {
       base,
       bonusWithoutSlot,
-      baseGearBonus,
     };
   }, [impactEnabled, elementStats, equipped, gear.slot, customGears, stats, rotation]);
 
@@ -221,7 +212,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       return {} as Record<string, number>;
     }
 
-    const { base, bonusWithoutSlot, baseGearBonus } = baseline;
+    const { base, bonusWithoutSlot } = baseline;
     const result: Record<string, number> = {};
 
     // Main lines (rendered as mains)
@@ -235,8 +226,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         stats,
         elementStats,
         testBonus,
-        rotation,
-        baseGearBonus
+        rotation
       );
       result[`mains:${i}`] = ((dmg - base) / base) * 100;
     });
@@ -252,8 +242,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         stats,
         elementStats,
         testBonus,
-        rotation,
-        baseGearBonus
+        rotation
       );
       result[`subs:${i}`] = ((dmg - base) / base) * 100;
     });
@@ -269,8 +258,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           stats,
           elementStats,
           testBonus,
-          rotation,
-          baseGearBonus
+          rotation
         );
         result["addition:0"] = ((dmg - base) / base) * 100;
       }
@@ -281,7 +269,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
   const impactPctNoMain = useMemo(() => {
     if (!baseline || baseline.base <= 0 || !elementStats) return 0;
-    const { base, bonusWithoutSlot, baseGearBonus } = baseline;
+    const { base, bonusWithoutSlot } = baseline;
 
     const testBonus = { ...bonusWithoutSlot };
 
@@ -303,15 +291,14 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       stats,
       elementStats,
       testBonus,
-      rotation,
-      baseGearBonus
+      rotation
     );
     return ((dmg - base) / base) * 100;
   }, [baseline, elementStats, gear.subs, gear.addition, stats, rotation]);
 
   const impactPctTotal = useMemo(() => {
     if (!baseline || baseline.base <= 0 || !elementStats) return 0;
-    const { base, bonusWithoutSlot, baseGearBonus } = baseline;
+    const { base, bonusWithoutSlot } = baseline;
 
     const testBonus = { ...bonusWithoutSlot };
 
@@ -340,8 +327,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       stats,
       elementStats,
       testBonus,
-      rotation,
-      baseGearBonus
+      rotation
     );
     return ((dmg - base) / base) * 100;
   }, [baseline, elementStats, gear.subs, gear.addition, mains, stats, rotation]);

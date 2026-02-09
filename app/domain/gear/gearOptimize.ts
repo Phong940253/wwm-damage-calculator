@@ -13,7 +13,7 @@ import { SKILLS } from "../skill/skills";
 import { calculateSkillDamage } from "../skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
 import type { LevelContext } from "../level/levelSettings";
-import { computeIncludedInStatsGearBonusDelta } from "../skill/includedInStatsImpact";
+import { computeIncludedInStatsGearBonus } from "../skill/includedInStatsImpact";
 
 /* =======================
    Types
@@ -205,17 +205,15 @@ export async function computeOptimizeResultsAsync(
 
   const computeTotalDamage = (gearBonus: Record<string, number>) => {
     // Some passives are already included in the in-game displayed stats.
-    // When gearBonus changes, we apply ONLY the delta (test - base) so optimizer sees
-    // correct marginal value without double-counting the baseline.
-    const includedDelta = computeIncludedInStatsGearBonusDelta(
+    // We always add them as an absolute bonus derived from the current gearBonus.
+    const includedAbs = computeIncludedInStatsGearBonus(
       stats,
       elementStats,
       rotation,
-      baseBonus,
       gearBonus,
     );
 
-    const effectiveGearBonus = sumBonuses(gearBonus, includedDelta);
+    const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
 
     const rotationBonuses = computeRotationBonuses(
       stats,
@@ -257,8 +255,8 @@ export async function computeOptimizeResultsAsync(
   const baseDamage = computeTotalDamage(baseBonus);
 
   /* ============================================================
-     2️⃣ PREPARE SLOT OPTIONS
-  ============================================================ */
+      2️⃣ PREPARE SLOT OPTIONS
+    ============================================================ */
 
   const candidateGears = options?.candidateGears ?? customGears;
   const optimizeSlots =

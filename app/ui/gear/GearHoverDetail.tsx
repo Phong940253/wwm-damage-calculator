@@ -10,7 +10,7 @@ import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
-import { computeIncludedInStatsGearBonusDelta } from "@/app/domain/skill/includedInStatsImpact";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 
 interface Props {
   gear: CustomGear;
@@ -114,14 +114,13 @@ export default function GearHoverDetail({
     };
 
     const buildCtx = (gearBonus: Record<string, number>) => {
-      const includedDelta = computeIncludedInStatsGearBonusDelta(
+      const includedAbs = computeIncludedInStatsGearBonus(
         normalizedStats,
         normalizedElementStats,
         rotation,
-        baseGearBonus,
         gearBonus,
       );
-      const effectiveGearBonus = sumBonuses(gearBonus, includedDelta);
+      const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
 
       const passiveBonuses = computeRotationBonuses(
         normalizedStats,

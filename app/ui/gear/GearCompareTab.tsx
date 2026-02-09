@@ -12,7 +12,7 @@ import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
-import { computeIncludedInStatsGearBonusDelta } from "@/app/domain/skill/includedInStatsImpact";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 
 interface GearCompareTabProps {
   stats: InputStats;
@@ -249,19 +249,14 @@ export default function GearCompareTab({
                     equippedB
                   );
 
-                  // Baseline is current equipped gear, because user-input stats are assumed
-                  // to already include in-game displayed bonuses.
-                  const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
-
                   const buildCtx = (gearBonus: Record<string, number>) => {
-                    const includedDelta = computeIncludedInStatsGearBonusDelta(
+                    const includedAbs = computeIncludedInStatsGearBonus(
                       stats,
                       elementStats,
                       rotation,
-                      baseBonus,
                       gearBonus
                     );
-                    const effectiveGearBonus = sumBonuses(gearBonus, includedDelta);
+                    const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
 
                     const rotationBonuses = computeRotationBonuses(
                       stats,
