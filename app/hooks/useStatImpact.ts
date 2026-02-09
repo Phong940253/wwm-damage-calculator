@@ -9,7 +9,7 @@ import {
   computeRotationBonuses,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
-import { applyIncludedInStatsPassiveImpact } from "@/app/domain/skill/includedInStatsImpact";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
 
 type ElementStatKey = Exclude<keyof ElementStats, "selected" | "martialArtsId">;
@@ -77,16 +77,25 @@ export function useStatImpact(
           ),
         } as ElementStats;
 
+        const includedInStatsBonus = computeIncludedInStatsGearBonus(
+          s,
+          es,
+          rotation,
+          gearBonus,
+        );
+
+        const effectiveGearBonus = sumBonuses(gearBonus, includedInStatsBonus);
+
         const passiveBonuses = computeRotationBonuses(
           s,
           es,
-          gearBonus,
+          effectiveGearBonus,
           rotation,
         );
         return buildDamageContext(
           s,
           es,
-          sumBonuses(gearBonus, passiveBonuses),
+          sumBonuses(effectiveGearBonus, passiveBonuses),
           undefined,
           levelContext,
         );
@@ -104,10 +113,6 @@ export function useStatImpact(
 
       const testStats = structuredClone(baseStats);
       testStats[key].current = Number(testStats[key].current) + inc;
-
-      // Some passives are already reflected in the in-game displayed stats that users input.
-      // They must NOT change normal base/final stats, but they DO affect marginal impact.
-      applyIncludedInStatsPassiveImpact(baseStats, testStats, rotation);
 
       const normal = calcNormal(buildCtx(testStats, baseElements));
       const diff = ((normal - baseValue) / baseValue) * 100;

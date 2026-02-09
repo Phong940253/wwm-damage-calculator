@@ -12,6 +12,7 @@ import {
   computeRotationBonusesWithBreakdown,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 
 export function useDamage(
   stats: InputStats,
@@ -21,6 +22,15 @@ export function useDamage(
   levelContext?: LevelContext,
 ): DamageResult {
   return useMemo(() => {
+    const includedInStatsBonus = computeIncludedInStatsGearBonus(
+      stats,
+      elementStats,
+      rotation,
+      gearBonus,
+    );
+
+    const effectiveGearBonus = sumBonuses(gearBonus, includedInStatsBonus);
+
     /* ---------- BASE (NO increase) ---------- */
 
     const baseStats: InputStats = Object.fromEntries(
@@ -46,13 +56,13 @@ export function useDamage(
     const passiveBreakdownBase = computeRotationBonusesWithBreakdown(
       baseStats,
       baseElementStats,
-      gearBonus,
+      effectiveGearBonus,
       rotation,
     );
     const passiveBreakdownFinal = computeRotationBonusesWithBreakdown(
       stats,
       elementStats,
-      gearBonus,
+      effectiveGearBonus,
       rotation,
     );
 
@@ -63,9 +73,9 @@ export function useDamage(
     const baseCtxWithModifiers = buildDamageContext(
       baseStats,
       baseElementStats,
-      sumBonuses(gearBonus, passiveBonusesBase),
+      sumBonuses(effectiveGearBonus, passiveBonusesBase),
       {
-        gear: gearBonus,
+        gear: effectiveGearBonus,
         passives: Object.fromEntries(
           Object.entries(passiveBreakdownBase.byPassive).map(([id, bonus]) => [
             id,
@@ -92,9 +102,9 @@ export function useDamage(
     const finalCtxWithModifiers = buildDamageContext(
       stats,
       elementStats,
-      sumBonuses(gearBonus, passiveBonusesFinal),
+      sumBonuses(effectiveGearBonus, passiveBonusesFinal),
       {
-        gear: gearBonus,
+        gear: effectiveGearBonus,
         passives: Object.fromEntries(
           Object.entries(passiveBreakdownFinal.byPassive).map(([id, bonus]) => [
             id,

@@ -9,6 +9,8 @@ import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
 import StatCard from "./StatCard";
 import { SUPPORTED_LEVELS } from "@/app/domain/level/levelSettings";
+import type { Rotation } from "@/app/types";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 
 /* =======================
    Types
@@ -21,6 +23,7 @@ interface Props {
   stats: InputStats;
   elementStats: ElementStats;
   gearBonus: Record<string, number>;
+  rotation?: Rotation;
   statImpact?: Partial<Record<string, number>>; // ✅ optional
   levelContext?: { playerLevel: number; enemyLevel: number };
   setPlayerLevel?: (level: number) => void;
@@ -66,6 +69,7 @@ export default function StatsPanel({
   stats,
   elementStats,
   gearBonus,
+  rotation,
   statImpact = {},
   levelContext,
   setPlayerLevel,
@@ -94,6 +98,11 @@ export default function StatsPanel({
   const derived = useMemo(
     () => getDerivedFromAttributes(stats, gearBonus),
     [stats, gearBonus]
+  );
+
+  const includedInStatsBonus = useMemo(
+    () => computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus),
+    [stats, elementStats, rotation, gearBonus]
   );
 
   const handleStatChange = useCallback(
@@ -128,12 +137,15 @@ export default function StatsPanel({
       } else {
         const gear = gearBonus[key] || 0;
         const derivedValue = derived[key as keyof typeof derived] || 0;
+        const passiveValue = includedInStatsBonus[key] || 0;
         const nextBase =
-          Math.round((Number(value) - gear - derivedValue) * 100000) / 100000;
+          Math.round(
+            (Number(value) - gear - derivedValue - passiveValue) * 100000
+          ) / 100000;
         handleStatChange(key, "current", String(nextBase));
       }
     },
-    [gearBonus, derived, handleStatChange]
+    [gearBonus, derived, includedInStatsBonus, handleStatChange]
   );
 
   // Helper for blur logic
@@ -309,9 +321,11 @@ export default function StatsPanel({
                 const impact = statImpact[k] ?? 0;
                 const gear = gearBonus[k] || 0;
                 const derivedValue = derived[k as keyof typeof derived] || 0;
+                const passiveValue = includedInStatsBonus[k] || 0;
                 const base = Number(stat.current || 0);
                 const total =
-                  Math.round((base + gear + derivedValue) * 100000) / 100000;
+                  Math.round((base + gear + derivedValue + passiveValue) * 100000) /
+                  100000;
 
                 return (
                   <StatCard
@@ -321,6 +335,7 @@ export default function StatsPanel({
                     impact={impact}
                     gear={gear}
                     derivedValue={derivedValue}
+                    passiveValue={passiveValue}
                     base={base}
                     total={total}
                     increase={stat.increase}

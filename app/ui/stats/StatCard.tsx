@@ -13,6 +13,7 @@ interface StatCardProps {
   impact: number;
   gear: number;
   derivedValue: number;
+  passiveValue: number;
   base: number;
   total: number;
   increase: number | "";
@@ -30,6 +31,7 @@ export default function StatCard({
   impact,
   gear,
   derivedValue,
+  passiveValue,
   base,
   total,
   increase,
@@ -99,7 +101,7 @@ export default function StatCard({
           </div>
         </div>
 
-        {(base !== 0 || gear !== 0 || derivedValue !== 0) && (
+        {(base !== 0 || gear !== 0 || derivedValue !== 0 || passiveValue !== 0) && (
           <div className="flex flex-wrap gap-2 pt-1">
             {base !== 0 && (
               <Badge className="bg-gray-500/15 text-gray-300 border border-gray-500/25">
@@ -116,6 +118,12 @@ export default function StatCard({
               <Badge className="bg-purple-500/15 text-purple-300 border border-purple-500/25">
                 Attr {derivedValue > 0 ? "+" : ""}
                 {derivedValue.toFixed(2)}
+              </Badge>
+            )}
+            {passiveValue !== 0 && (
+              <Badge className="bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                Passive {passiveValue > 0 ? "+" : ""}
+                {passiveValue.toFixed(2)}
               </Badge>
             )}
           </div>

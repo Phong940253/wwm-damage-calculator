@@ -139,6 +139,71 @@ function computeScaleAddWithGear(
 }
 
 /**
+ * Compute the absolute bonus record contributed by `includedInStats` passives.
+ *
+ * This is used when the user inputs TOTAL in-game stats (already includes these passives),
+ * but we still want the calculator to update the passive value automatically when gear changes.
+ *
+ * To avoid double-counting, the UI should subtract these bonuses when converting Total -> Base.
+ */
+export function computeIncludedInStatsGearBonus(
+  stats: InputStats,
+  elementStats: ElementStats,
+  rotation: Rotation | undefined,
+  gearBonus: Record<string, number>,
+): Record<string, number> {
+  if (!rotation) return {};
+
+  const includedPassives = rotation.activePassiveSkills
+    .map((id) => PASSIVE_SKILLS.find((p) => p.id === id))
+    .filter((p) => !!p?.includedInStats) as Array<
+    NonNullable<(typeof PASSIVE_SKILLS)[number]>
+  >;
+
+  if (includedPassives.length === 0) return {};
+
+  const out: Record<string, number> = {};
+
+  const needsDerived = includedPassives.some((p) =>
+    p.modifiers.some(
+      (m) =>
+        m.type === "scale" &&
+        (String(m.sourceStat) === "MinPhysicalAttack" ||
+          String(m.sourceStat) === "MaxPhysicalAttack"),
+    ),
+  );
+
+  const derivedForScale = needsDerived
+    ? computeDerivedForScaleWithGear(stats, gearBonus)
+    : { minAtk: 0, maxAtk: 0, critRate: 0, affinityRate: 0 };
+
+  for (const passive of includedPassives) {
+    for (const modifier of passive.modifiers) {
+      if (modifier.type === "flat") {
+        const targetKey = String(modifier.stat);
+        const add = clamp(modifier.value, modifier.min, modifier.max);
+        if (add !== 0) out[targetKey] = (out[targetKey] || 0) + add;
+        continue;
+      }
+
+      if (modifier.type !== "scale") continue;
+      const add = computeScaleAddWithGear(
+        stats,
+        elementStats,
+        gearBonus,
+        modifier,
+        derivedForScale,
+      );
+      if (add === 0) continue;
+      const targetKey = String(modifier.stat);
+      out[targetKey] = (out[targetKey] || 0) + add;
+    }
+  }
+
+  return out;
+}
+
+/**
  * Compute the delta bonus record for `includedInStats` passives when gearBonus changes.
  *
  * We return ONLY (test - base) so that baseline input stats are not double-counted.

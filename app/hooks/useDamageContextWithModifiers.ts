@@ -8,6 +8,7 @@ import {
   computeRotationBonusesWithBreakdown,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
 
 /**
@@ -22,25 +23,36 @@ export function useDamageContextWithModifiers(
   rotation?: Rotation,
   levelContext?: LevelContext,
 ): DamageContext {
+  const includedInStatsBonus = useMemo(
+    () =>
+      computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus),
+    [stats, elementStats, rotation, gearBonus],
+  );
+
+  const effectiveGearBonus = useMemo(
+    () => sumBonuses(gearBonus, includedInStatsBonus),
+    [gearBonus, includedInStatsBonus],
+  );
+
   const breakdown = useMemo(
     () =>
       computeRotationBonusesWithBreakdown(
         stats,
         elementStats,
-        gearBonus,
+        effectiveGearBonus,
         rotation,
       ),
-    [stats, elementStats, gearBonus, rotation],
+    [stats, elementStats, effectiveGearBonus, rotation],
   );
 
-  const combinedBonus = sumBonuses(gearBonus, breakdown.total);
+  const combinedBonus = sumBonuses(effectiveGearBonus, breakdown.total);
 
   return buildDamageContext(
     stats,
     elementStats,
     combinedBonus,
     {
-      gear: gearBonus,
+      gear: effectiveGearBonus,
       passives: Object.fromEntries(
         Object.entries(breakdown.byPassive).map(([id, bonus]) => [
           id,

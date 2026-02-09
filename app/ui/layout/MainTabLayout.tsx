@@ -165,6 +165,7 @@ export default function MainTabLayout() {
                 stats={stats}
                 elementStats={elementStats}
                 gearBonus={gearBonus}
+                rotation={selectedRotation}
                 statImpact={statImpact}
                 levelContext={levelContext}
                 setPlayerLevel={setPlayerLevel}
@@ -259,6 +260,7 @@ export default function MainTabLayout() {
                 stats={stats}
                 elementStats={elementStats}
                 gearBonus={gearBonus}
+                rotation={selectedRotation}
                 statImpact={statImpact}
                 levelContext={levelContext}
                 setPlayerLevel={setPlayerLevel}
