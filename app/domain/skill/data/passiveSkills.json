@@ -26,6 +26,7 @@
         "name": "Physical Attack UP (Agility, included in stats)",
         "description": "Increases Min Physical Attack based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
         "includedInStats": true,
+        "martialArtId": "silkbind_jade",
         "modifiers": [
             {
                 "stat": "MinPhysicalAttack",
@@ -42,6 +43,7 @@
         "name": "Critical Rate UP (Agility, included in stats)",
         "description": "Increases Critical Rate based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
         "includedInStats": true,
+        "martialArtId": "silkbind_jade",
         "modifiers": [
             {
                 "stat": "CriticalRate",
