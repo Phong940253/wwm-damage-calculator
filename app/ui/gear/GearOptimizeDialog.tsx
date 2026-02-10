@@ -39,6 +39,8 @@ interface Props {
   rotation?: Rotation;
   maxDisplay: number;
   setMaxDisplay: (v: number) => void;
+  perSlotCap: number;
+  setPerSlotCap: (v: number) => void;
   onRecalculate: () => void;
   onApply: (s: OptimizeResult["selection"]) => void;
   equipped?: Partial<Record<GearSlot, string>>;
@@ -58,6 +60,8 @@ export default function GearOptimizeDialog({
   rotation,
   maxDisplay,
   setMaxDisplay,
+  perSlotCap,
+  setPerSlotCap,
   onRecalculate,
   onApply,
   equipped = {},
@@ -161,6 +165,17 @@ export default function GearOptimizeDialog({
                           className="h-9 w-24"
                           onChange={(e) => setMaxDisplay(Number(e.target.value) || 1)}
                           min={1}
+                        />
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Items/slot cap</span>
+                        <Input
+                          type="number"
+                          value={perSlotCap}
+                          className="h-9 w-24"
+                          onChange={(e) => setPerSlotCap(Math.max(0, Number(e.target.value) || 0))}
+                          min={0}
+                          title="0 = auto (no fixed per-slot cap)"
                         />
                       </label>
                       <Button size="sm" onClick={onRecalculate}>

@@ -213,12 +213,15 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
     return list;
   }, [customGears, slotFilter, statFilter]);
 
+  const [perSlotCap, setPerSlotCap] = useState<number>(0);
+
   const optimizeOptions = useMemo(() => {
     return {
       candidateGears: filteredGears,
       slotsToOptimize: slotFilter.size > 0 ? Array.from(slotFilter) : undefined,
+      reducePerSlotCap: perSlotCap,
     };
-  }, [filteredGears, slotFilter]);
+  }, [filteredGears, slotFilter, perSlotCap]);
 
   const opt = useGearOptimize(
     stats,
@@ -605,6 +608,8 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         rotation={rotation}
         maxDisplay={maxDisplay}
         setMaxDisplay={setMaxDisplay}
+        perSlotCap={perSlotCap}
+        setPerSlotCap={setPerSlotCap}
         onRecalculate={() => opt.run(maxDisplay)}
         onApply={apply}
         equipped={equipped}
