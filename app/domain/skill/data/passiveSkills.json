@@ -22,6 +22,23 @@
         "notes": "Condition: targets with lower Qi% than you or below 40% Qi. Lasts 8s; triggers once every 12s."
     },
     {
+        "id": "ps_universal_food_buff_physical_attack",
+        "name": "Food Buff (Physical Attack)",
+        "description": "Food buff: increases Min Physical Attack by 50 and Max Physical Attack by 100.",
+        "modifiers": [
+            {
+                "stat": "MinPhysicalAttack",
+                "type": "flat",
+                "value": 50
+            },
+            {
+                "stat": "MaxPhysicalAttack",
+                "type": "flat",
+                "value": 100
+            }
+        ]
+    },
+    {
         "id": "ps_universal_hawkwing_set_4",
         "name": "Hawkwing Set (4/4)",
         "description": "When any of your damage triggers Affinity, gain Hawkwing: increases Physical Attack by 2% for 5s, stacking up to 5 times (conditional)",
