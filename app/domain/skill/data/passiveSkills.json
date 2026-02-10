@@ -22,7 +22,7 @@
         "notes": "Condition: targets with lower Qi% than you or below 40% Qi. Lasts 8s; triggers once every 12s."
     },
     {
-        "id": "ps_universal_included_physical_attack_up_agility",
+        "id": "ps_silkbind_jade_included_physical_attack_up_agility",
         "name": "Physical Attack UP (Agility, included in stats)",
         "description": "Increases Min Physical Attack based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
         "includedInStats": true,
