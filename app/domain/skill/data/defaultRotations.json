@@ -164,6 +164,8 @@
     "activePassiveSkills": [
       "ps_bellstrike_splendor_1",
       "ps_bellstrike_splendor_2",
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum",
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum",
       "ps_universal_jadeware"
     ],
     "activeInnerWays": [
@@ -177,7 +179,9 @@
     "passiveUptimes": {
       "ps_universal_jadeware": 100,
       "ps_bellstrike_splendor_1": 60,
-      "ps_bellstrike_splendor_2": 100
+      "ps_bellstrike_splendor_2": 100,
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum": 100,
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum": 100
     }
   },
   {
@@ -375,7 +379,9 @@
     "activePassiveSkills": [
       "ps_universal_jadeware",
       "ps_bellstrike_splendor_1",
-      "ps_bellstrike_splendor_2"
+      "ps_bellstrike_splendor_2",
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum",
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum"
     ],
     "activeInnerWays": [
       "iw_universal_battle_anthem_t4",
@@ -388,7 +394,9 @@
     "passiveUptimes": {
       "ps_universal_jadeware": 100,
       "ps_bellstrike_splendor_1": 60,
-      "ps_bellstrike_splendor_2": 100
+      "ps_bellstrike_splendor_2": 100,
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum": 100,
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum": 100
     }
   },
   {
@@ -592,6 +600,9 @@
     "activePassiveSkills": [
       "ps_bellstrike_splendor_1",
       "ps_bellstrike_splendor_2",
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum",
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum",
+      "ps_universal_jadeware",
       "ps_silkbind_jade_jadebreak",
       "ps_silkbind_jade_trajectory_calculation_enhancement",
       "ps_silkbind_jade_heavy_attack_pursuit_enhancement",
@@ -612,6 +623,8 @@
       "ps_universal_jadeware": 100,
       "ps_bellstrike_splendor_1": 60,
       "ps_bellstrike_splendor_2": 100,
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum": 100,
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum": 100,
       "ps_silkbind_jade_jadebreak": 100,
       "ps_silkbind_jade_spring_shock": 100,
       "ps_silkbind_jade_trajectory_calculation_enhancement": 100,

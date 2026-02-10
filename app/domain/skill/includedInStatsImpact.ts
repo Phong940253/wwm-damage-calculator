@@ -38,16 +38,13 @@ function applyScaleDelta(
   const baseSource = readCurrent(baseStats, sourceKey);
   const testSource = readCurrent(testStats, sourceKey);
 
-  const baseAdd = clamp(
-    baseSource * modifier.ratio,
-    modifier.min,
-    modifier.max,
-  );
-  const testAdd = clamp(
-    testSource * modifier.ratio,
-    modifier.min,
-    modifier.max,
-  );
+  // For `includedInStats` passives, `max` represents a cap on the SOURCE stat.
+  // This matches the data modeling in passiveSkills.json (e.g. min(Momentum, 175) * ratio).
+  const baseCappedSource = clamp(baseSource, modifier.min, modifier.max);
+  const testCappedSource = clamp(testSource, modifier.min, modifier.max);
+
+  const baseAdd = baseCappedSource * modifier.ratio;
+  const testAdd = testCappedSource * modifier.ratio;
 
   const delta = testAdd - baseAdd;
   if (delta === 0) return;
@@ -134,8 +131,9 @@ function computeScaleAddWithGear(
     derivedForScale,
   );
 
-  const addRaw = sourceValue * modifier.ratio;
-  return clamp(addRaw, modifier.min, modifier.max);
+  // For `includedInStats` passives, `max` represents a cap on the SOURCE stat.
+  const cappedSourceValue = clamp(sourceValue, modifier.min, modifier.max);
+  return cappedSourceValue * modifier.ratio;
 }
 
 /**
