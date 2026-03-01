@@ -145,6 +145,8 @@ const GUIDES: Record<GuideId, GuideDefinition> = {
     },
 };
 
+const FEEDBACK_URL = "https://github.com/Phong940253/wwm-damage-calculator/issues/new";
+
 export function InteractiveGuideOverlay() {
     const [activeGuideId, setActiveGuideId] = useState<GuideId | null>(null);
     const [isActive, setIsActive] = useState(false);
@@ -298,6 +300,15 @@ export function InteractiveGuideOverlay() {
     if (!isActive || !currentStep || !activeGuide) {
         return (
             <div className="fixed bottom-6 right-6 z-[110] flex flex-col gap-2">
+                <a
+                    href={FEEDBACK_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-white/15 bg-background/90 px-4 py-2 text-xs text-foreground shadow-lg backdrop-blur hover:bg-background"
+                >
+                    Send Feedback
+                </a>
+
                 <button
                     type="button"
                     onClick={() => {
@@ -493,6 +504,15 @@ export function InteractiveGuideOverlay() {
                         {stepIndex >= currentSteps.length - 1 ? "Finish" : "Next"}
                     </button>
                 </div>
+
+                <a
+                    href={FEEDBACK_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex w-full items-center justify-center rounded-md border border-white/15 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                    Send Feedback
+                </a>
             </div>
         </>
     );
