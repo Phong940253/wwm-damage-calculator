@@ -17,6 +17,7 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { ElementStats, Rotation } from "@/app/types";
 import { SkillDamagePanel } from "./SkillDamagePanel";
 import { Skill } from "@/app/domain/skill/types";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 interface Props {
   ctx: DamageContext;
@@ -40,6 +41,27 @@ export default function DamagePanel({
   rotation,
   warnings = [],
 }: Props) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      stats: "Chỉ số",
+      damageOutput: "Kết quả sát thương",
+      averageDamageComposition: "Thành phần sát thương trung bình",
+      rotationDamageBreakdown: "Phân rã sát thương rotation",
+      hideFormula: "Ẩn công thức",
+      showFormula: "Hiện công thức",
+      autoUpdate: "Tự động cập nhật · Công thức Min–Max",
+    }
+    : {
+      stats: "Stats",
+      damageOutput: "Damage output",
+      averageDamageComposition: "Average Damage Composition",
+      rotationDamageBreakdown: "Rotation Damage Breakdown",
+      hideFormula: "Hide Formula",
+      showFormula: "Show Formula",
+      autoUpdate: "Auto update · Min–Max formula",
+    };
+
   const finalStats = buildFinalStatSections(ctx);
   const selectedMartialArtId = elementStats?.martialArtsId;
 
@@ -82,12 +104,12 @@ export default function DamagePanel({
   ];
 
   const categoryLabels: Record<Skill["category"], string> = {
-    "martial-art-skill": "Martial Art Skill",
-    "special-skill": "Special Skill",
-    "dual-weapon-skill": "Dual-Weapon Skill",
-    basic: "Basic",
-    ultimate: "Ultimate",
-    "mystic-skill": "Mystic Skill",
+    "martial-art-skill": language === "vi" ? "Kỹ năng võ học" : "Martial Art Skill",
+    "special-skill": language === "vi" ? "Kỹ năng đặc biệt" : "Special Skill",
+    "dual-weapon-skill": language === "vi" ? "Kỹ năng song vũ khí" : "Dual-Weapon Skill",
+    basic: language === "vi" ? "Cơ bản" : "Basic",
+    ultimate: language === "vi" ? "Tối thượng" : "Ultimate",
+    "mystic-skill": language === "vi" ? "Kỹ năng huyền thuật" : "Mystic Skill",
   };
 
   const groupedSkillDamages = categoryOrder
@@ -112,12 +134,12 @@ export default function DamagePanel({
         "
       >
         <div className="flex flex-col">
-          <div className="pb-3 text-base font-bold sm:pb-4 sm:text-lg">Stats</div>
+          <div className="pb-3 text-base font-bold sm:pb-4 sm:text-lg">{text.stats}</div>
 
           <FinalStatPanel sections={finalStats} ctx={ctx} />
 
           <div className="flex flex-row gap-x-2 pt-3 text-base font-bold sm:pt-4 sm:text-lg">
-            <Zap className="text-yellow-500" /> Damage output
+            <Zap className="text-yellow-500" /> {text.damageOutput}
           </div>
 
           {groupedSkillDamages.map((group) => (
@@ -143,7 +165,7 @@ export default function DamagePanel({
           {result.averageBreakdown && (
             <div className="flex flex-1 flex-col mt-6">
               <div className="text-lg font-bold mb-2 text-foreground align-center">
-                Average Damage Composition
+                {text.averageDamageComposition}
               </div>
               <AverageDamagePie data={result.averageBreakdown} />
             </div>
@@ -152,7 +174,7 @@ export default function DamagePanel({
           {rotation && rotation.skills.length > 0 && (
             <div className="flex flex-1 flex-col mt-6">
               <div className="text-lg font-bold mb-2 text-foreground align-center">
-                Rotation Damage Breakdown
+                {text.rotationDamageBreakdown}
               </div>
               <RotationDamagePie rotation={rotation} ctx={ctx} />
             </div>
@@ -170,7 +192,7 @@ export default function DamagePanel({
             hover:bg-secondary/80
           "
         >
-          {showFormula ? "Hide Formula" : "Show Formula"}
+          {showFormula ? text.hideFormula : text.showFormula}
         </button>
 
         {showFormula && formulaSlot}
@@ -186,7 +208,7 @@ export default function DamagePanel({
 
         <div className="text-xs text-muted-foreground flex items-center gap-1">
           <ArrowUpRight size={14} />
-          Auto update · Min–Max formula
+          {text.autoUpdate}
         </div>
       </CardContent>
     </Card>

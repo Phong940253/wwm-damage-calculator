@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 import {
   exportToClipboard,
@@ -25,6 +26,77 @@ type StatusState =
   | null;
 
 export default function ImportExportTab() {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      clearConfirm:
+        "Thao tác này sẽ xóa toàn bộ dữ liệu đã lưu (chỉ số, trang bị, rotation) trên trình duyệt này. Tiếp tục?",
+      cleared: "Đã xóa dữ liệu local. Tải lại để áp dụng.",
+      clearFailed: "Xóa thất bại",
+      exported: "Đã xuất vào clipboard",
+      exportFailed: "Xuất thất bại",
+      importedMerged: "Đã nhập (đã gộp trang bị). Tải lại để áp dụng.",
+      imported: "Đã nhập. Tải lại để áp dụng.",
+      invalidClipboard: "Dữ liệu clipboard không hợp lệ",
+      title: "Nhập / Xuất dữ liệu",
+      export: "Xuất",
+      exportDesc: "Chọn phần dữ liệu cần đưa vào payload clipboard.",
+      stats: "Chỉ số",
+      statsExportDesc: "Chỉ số hiện tại + chỉ số nguyên tố",
+      gear: "Trang bị",
+      gearExportDesc: "Trang bị custom + ô đang trang bị",
+      rotations: "Rotations",
+      rotationsExportDesc: "Rotation đã lưu + rotation đang chọn",
+      exportClipboard: "Xuất vào Clipboard",
+      import: "Nhập",
+      importDesc: "Dán payload từ clipboard và chọn mục muốn áp dụng.",
+      statsImportDesc: "Ghi đè chỉ số local",
+      gearImportDesc: "Ghi đè hoặc gộp (bên dưới)",
+      rotationsImportDesc: "Ghi đè rotation đã lưu",
+      mergeGear: "Gộp trang bị",
+      mergeGearDesc: "Giữ item local; chỉ thêm item còn thiếu",
+      importClipboard: "Nhập từ Clipboard",
+      reload: "Tải lại",
+      dangerZone: "Vùng nguy hiểm",
+      dangerDesc: "Xóa vĩnh viễn toàn bộ dữ liệu đã lưu trong trình duyệt này.",
+      clearData: "Xóa dữ liệu",
+      overwriteSavedRotations: "Ghi đè rotation đã lưu",
+    }
+    : {
+      clearConfirm:
+        "This will clear all saved calculator data (stats, gear, rotations) from this browser. Continue?",
+      cleared: "Cleared local data. Reload to apply.",
+      clearFailed: "Clear failed",
+      exported: "Exported to clipboard",
+      exportFailed: "Export failed",
+      importedMerged: "Imported (gear merged). Reload to apply.",
+      imported: "Imported. Reload to apply.",
+      invalidClipboard: "Invalid clipboard data",
+      title: "Import / Export Data",
+      export: "Export",
+      exportDesc: "Choose what to include in the clipboard payload.",
+      stats: "Stats",
+      statsExportDesc: "Current stats + element stats",
+      gear: "Gear",
+      gearExportDesc: "Custom gear + equipped slots",
+      rotations: "Rotations",
+      rotationsExportDesc: "Saved rotations + selected rotation",
+      exportClipboard: "Export to Clipboard",
+      import: "Import",
+      importDesc: "Paste a payload from clipboard and choose which sections to apply.",
+      statsImportDesc: "Overwrite local stats",
+      gearImportDesc: "Overwrite or merge (below)",
+      rotationsImportDesc: "Overwrite saved rotations",
+      mergeGear: "Merge gear",
+      mergeGearDesc: "Keep local items; only add missing",
+      importClipboard: "Import from Clipboard",
+      reload: "Reload",
+      dangerZone: "Danger zone",
+      dangerDesc: "Permanently deletes all saved data in this browser.",
+      clearData: "Clear Data",
+      overwriteSavedRotations: "Overwrite saved rotations",
+    };
+
   const [exportStats, setExportStats] = useState(true);
   const [exportGear, setExportGear] = useState(true);
   const [exportRotations, setExportRotations] = useState(true);
@@ -41,9 +113,7 @@ export default function ImportExportTab() {
   ======================= */
 
   const handleClearData = () => {
-    const ok = window.confirm(
-      "This will clear all saved calculator data (stats, gear, rotations) from this browser. Continue?"
-    );
+    const ok = window.confirm(text.clearConfirm);
     if (!ok) return;
 
     try {
@@ -54,9 +124,9 @@ export default function ImportExportTab() {
         localStorage.removeItem(key);
       }
 
-      setStatus({ variant: "secondary", text: "Cleared local data. Reload to apply." });
+      setStatus({ variant: "secondary", text: text.cleared });
     } catch {
-      setStatus({ variant: "destructive", text: "Clear failed" });
+      setStatus({ variant: "destructive", text: text.clearFailed });
     }
   };
 
@@ -109,9 +179,9 @@ export default function ImportExportTab() {
       }
 
       await exportToClipboard(payload);
-      setStatus({ variant: "default", text: "Exported to clipboard" });
+      setStatus({ variant: "default", text: text.exported });
     } catch {
-      setStatus({ variant: "destructive", text: "Export failed" });
+      setStatus({ variant: "destructive", text: text.exportFailed });
     }
   };
 
@@ -182,11 +252,11 @@ export default function ImportExportTab() {
         variant: "default",
         text:
           importGear && mergeGear
-            ? "Imported (gear merged). Reload to apply."
-            : "Imported. Reload to apply.",
+            ? text.importedMerged
+            : text.imported,
       });
     } catch {
-      setStatus({ variant: "destructive", text: "Invalid clipboard data" });
+      setStatus({ variant: "destructive", text: text.invalidClipboard });
     }
   };
 
@@ -198,7 +268,7 @@ export default function ImportExportTab() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle>Import / Export Data</CardTitle>
+          <CardTitle>{text.title}</CardTitle>
           {status && (
             <Badge variant={status.variant} className="shrink-0">
               {status.text}
@@ -211,9 +281,9 @@ export default function ImportExportTab() {
         {/* Export */}
         <div className="space-y-3">
           <div className="space-y-1">
-            <div className="text-sm font-medium">Export</div>
+            <div className="text-sm font-medium">{text.export}</div>
             <div className="text-xs text-muted-foreground">
-              Choose what to include in the clipboard payload.
+              {text.exportDesc}
             </div>
           </div>
 
@@ -224,9 +294,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setExportStats(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">Stats</div>
+                <div className="text-sm">{text.stats}</div>
                 <div className="text-xs text-muted-foreground">
-                  Current stats + element stats
+                  {text.statsExportDesc}
                 </div>
               </div>
             </label>
@@ -237,9 +307,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setExportGear(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">Gear</div>
+                <div className="text-sm">{text.gear}</div>
                 <div className="text-xs text-muted-foreground">
-                  Custom gear + equipped slots
+                  {text.gearExportDesc}
                 </div>
               </div>
             </label>
@@ -250,16 +320,16 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setExportRotations(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">Rotations</div>
+                <div className="text-sm">{text.rotations}</div>
                 <div className="text-xs text-muted-foreground">
-                  Saved rotations + selected rotation
+                  {text.rotationsExportDesc}
                 </div>
               </div>
             </label>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleExport}>Export to Clipboard</Button>
+            <Button onClick={handleExport}>{text.exportClipboard}</Button>
           </div>
         </div>
 
@@ -268,9 +338,9 @@ export default function ImportExportTab() {
         {/* Import */}
         <div className="space-y-3">
           <div className="space-y-1">
-            <div className="text-sm font-medium">Import</div>
+            <div className="text-sm font-medium">{text.import}</div>
             <div className="text-xs text-muted-foreground">
-              Paste a payload from clipboard and choose which sections to apply.
+              {text.importDesc}
             </div>
           </div>
 
@@ -281,9 +351,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setImportStats(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">Stats</div>
+                <div className="text-sm">{text.stats}</div>
                 <div className="text-xs text-muted-foreground">
-                  Overwrite local stats
+                  {text.statsImportDesc}
                 </div>
               </div>
             </label>
@@ -294,9 +364,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setImportGear(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">Gear</div>
+                <div className="text-sm">{text.gear}</div>
                 <div className="text-xs text-muted-foreground">
-                  Overwrite or merge (below)
+                  {text.gearImportDesc}
                 </div>
               </div>
             </label>
@@ -307,9 +377,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setImportRotations(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">Rotations</div>
+                <div className="text-sm">{text.rotations}</div>
                 <div className="text-xs text-muted-foreground">
-                  Overwrite saved rotations
+                  {text.overwriteSavedRotations}
                 </div>
               </div>
             </label>
@@ -321,9 +391,9 @@ export default function ImportExportTab() {
                 disabled={!importGear}
               />
               <div className="leading-tight">
-                <div className="text-sm">Merge gear</div>
+                <div className="text-sm">{text.mergeGear}</div>
                 <div className="text-xs text-muted-foreground">
-                  Keep local items; only add missing
+                  {text.mergeGearDesc}
                 </div>
               </div>
             </label>
@@ -331,14 +401,14 @@ export default function ImportExportTab() {
 
           <div className="flex flex-wrap gap-2">
             <Button data-tour="import-gear-button" variant="outline" onClick={handleImport}>
-              Import from Clipboard
+              {text.importClipboard}
             </Button>
             <Button
               variant="secondary"
               onClick={() => window.location.reload()}
               type="button"
             >
-              Reload
+              {text.reload}
             </Button>
           </div>
         </div>
@@ -349,23 +419,23 @@ export default function ImportExportTab() {
         <div className="space-y-3">
           <div className="space-y-1">
             <div className="text-sm font-medium text-destructive">
-              Danger zone
+              {text.dangerZone}
             </div>
             <div className="text-xs text-muted-foreground">
-              Permanently deletes all saved data in this browser.
+              {text.dangerDesc}
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button variant="destructive" onClick={handleClearData} type="button">
-              Clear Data
+              {text.clearData}
             </Button>
             <Button
               variant="secondary"
               onClick={() => window.location.reload()}
               type="button"
             >
-              Reload
+              {text.reload}
             </Button>
           </div>
         </div>
