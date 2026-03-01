@@ -11,6 +11,7 @@ import StatCard from "./StatCard";
 import { SUPPORTED_LEVELS } from "@/app/domain/level/levelSettings";
 import type { Rotation } from "@/app/types";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 /* =======================
    Types
@@ -79,6 +80,31 @@ export default function StatsPanel({
   onApplyIncrease,
   onSaveCurrent,
 }: Props) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      levels: "Cấp độ",
+      playerLevel: "Cấp nhân vật",
+      enemyLevel: "Cấp kẻ địch",
+      elements: "Nguyên tố",
+      martialArt: "Võ học",
+      autoSync: "Tự đồng bộ nguyên tố chính",
+      actions: "Hành động",
+      applyIncrease: "Áp dụng tăng vào hiện tại",
+      saveCurrent: "Lưu hiện tại",
+    }
+    : {
+      levels: "Levels",
+      playerLevel: "Player level",
+      enemyLevel: "Enemy level",
+      elements: "Elements",
+      martialArt: "Martial Art",
+      autoSync: "Auto-syncs main element",
+      actions: "Actions",
+      applyIncrease: "Apply Increase → Current",
+      saveCurrent: "Save Current",
+    };
+
   const safeLevelContext = levelContext ?? { playerLevel: 81, enemyLevel: 81 };
   const safeSetPlayerLevel = setPlayerLevel ?? (() => { });
   const safeSetEnemyLevel = setEnemyLevel ?? (() => { });
@@ -228,13 +254,13 @@ export default function StatsPanel({
         {/* Level Selection */}
         <section className="space-y-5">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">Levels</h2>
+            <h2 className="text-lg font-semibold">{text.levels}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
             <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Player level</label>
+              <label className="text-xs text-muted-foreground">{text.playerLevel}</label>
               <select
                 data-tour="player-level"
                 className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
@@ -250,7 +276,7 @@ export default function StatsPanel({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Enemy level</label>
+              <label className="text-xs text-muted-foreground">{text.enemyLevel}</label>
               <select
                 className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
                 value={safeLevelContext.enemyLevel}
@@ -269,14 +295,14 @@ export default function StatsPanel({
         {/* Element Selection */}
         <section className="space-y-5">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">Elements</h2>
+            <h2 className="text-lg font-semibold">{text.elements}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
           <div className="space-y-2">
             <div className="flex items-baseline justify-between gap-3">
-              <label className="text-xs text-muted-foreground">Martial Art</label>
+              <label className="text-xs text-muted-foreground">{text.martialArt}</label>
               <span className="text-[11px] text-muted-foreground">
-                Auto-syncs main element
+                {text.autoSync}
               </span>
             </div>
             <select
@@ -360,7 +386,7 @@ export default function StatsPanel({
 
         <section className="space-y-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">Actions</h2>
+            <h2 className="text-lg font-semibold">{text.actions}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
@@ -371,7 +397,7 @@ export default function StatsPanel({
               variant="secondary"
               type="button"
             >
-              Apply Increase → Current
+              {text.applyIncrease}
             </Button>
 
             <Button
@@ -380,7 +406,7 @@ export default function StatsPanel({
               variant="secondary"
               type="button"
             >
-              Save Current
+              {text.saveCurrent}
             </Button>
           </div>
         </section>

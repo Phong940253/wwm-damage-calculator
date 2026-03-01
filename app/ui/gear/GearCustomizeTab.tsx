@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useGearOptimize } from "../../hooks/useGearOptimize";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 /* =======================
    Helpers
@@ -93,6 +94,45 @@ interface Props {
 ======================= */
 
 export default function GearCustomizeTab({ stats, elementStats, rotation }: Props) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      customGear: "Trang bị tùy chỉnh",
+      optimize: "Tối ưu",
+      addGear: "+ Thêm trang bị",
+      deleteAll: "Xóa tất cả",
+      slot: "Vị trí",
+      stat: "Chỉ số",
+      searchStat: "Tìm chỉ số...",
+      clearFilter: "Xóa bộ lọc",
+      sort: "Sắp xếp",
+      noSorting: "Không sắp xếp",
+      desc: "↓ Giảm dần",
+      asc: "↑ Tăng dần",
+      clearSort: "Xóa sắp xếp",
+      loadingMoreGear: "Đang tải thêm trang bị",
+      editGear: "Sửa trang bị",
+      addNewGear: "Thêm trang bị mới",
+    }
+    : {
+      customGear: "Custom Gear",
+      optimize: "Optimize",
+      addGear: "+ Add Gear",
+      deleteAll: "Delete All",
+      slot: "Slot",
+      stat: "Stat",
+      searchStat: "Search stat...",
+      clearFilter: "Clear Filter",
+      sort: "Sort",
+      noSorting: "No sorting",
+      desc: "↓ Desc",
+      asc: "↑ Asc",
+      clearSort: "Clear Sort",
+      loadingMoreGear: "Loading more gear",
+      editGear: "Edit Gear",
+      addNewGear: "Add New Gear",
+    };
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -354,10 +394,10 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold">Custom Gear</h3>
+        <h3 className="text-lg font-semibold">{text.customGear}</h3>
         <div className="flex flex-wrap gap-2">
           <Button data-tour="gear-optimize-open" variant="outline" onClick={() => setOptOpen(true)}>
-            Optimize
+            {text.optimize}
           </Button>
           <Button
             data-tour="gear-add-open"
@@ -366,11 +406,11 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
               setOpen(true);
             }}
           >
-            + Add Gear
+            {text.addGear}
           </Button>
           {/* Button delete all */}
           <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setCustomGears([])}>
-            Delete All
+            {text.deleteAll}
           </Button>
         </div>
       </div>
@@ -385,7 +425,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             variant={slotFilter.size > 0 ? "default" : "outline"}
             onClick={() => setPinSlot((p) => !p)}
           >
-            Slot
+            {text.slot}
             {slotFilter.size > 0 && ` (${slotFilter.size})`}
             {pinSlot && " 📌"}
           </Button>
@@ -425,7 +465,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             variant={statFilter.size > 0 ? "default" : "outline"}
             onClick={() => setPinStat((p) => !p)}
           >
-            Stat
+            {text.stat}
             {statFilter.size > 0 && ` (${statFilter.size})`}
             {pinStat && " 📌"}
           </Button>
@@ -442,7 +482,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           >
             <input
               className="w-full mb-2 px-2 py-1 rounded border bg-background text-xs"
-              placeholder="Search stat..."
+              placeholder={text.searchStat}
               value={statSearch}
               onChange={(e) => setStatSearch(e.target.value)}
             />
@@ -477,7 +517,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
               setStatSearch("");
             }}
           >
-            Clear Filter
+            {text.clearFilter}
           </Button>
         )}
 
@@ -487,7 +527,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             variant={sortStat !== "none" ? "default" : "outline"}
             onClick={() => setPinSort((p) => !p)}
           >
-            Sort
+            {text.sort}
             {sortStat !== "none" && ` (${sortStat})`}
             {pinSort && " 📌"}
           </Button>
@@ -509,7 +549,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
               value={sortStat}
               onChange={(e) => setSortStat(e.target.value)}
             >
-              <option value="none">No sorting</option>
+              <option value="none">{text.noSorting}</option>
               {statOptions.map((stat) => (
                 <option key={stat} value={stat}>
                   {getStatLabel(stat, elementStats)}
@@ -525,7 +565,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                 onClick={() => setSortDir("desc")}
                 className="flex-1"
               >
-                ↓ Desc
+                {text.desc}
               </Button>
               <Button
                 size="sm"
@@ -533,7 +573,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                 onClick={() => setSortDir("asc")}
                 className="flex-1"
               >
-                ↑ Asc
+                {text.asc}
               </Button>
             </div>
 
@@ -548,7 +588,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                   setSortDir("desc");
                 }}
               >
-                Clear Sort
+                {text.clearSort}
               </Button>
             )}
           </div>
@@ -578,7 +618,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           <div
             ref={loadMoreRef}
             className="h-10 w-full"
-            aria-label="Loading more gear"
+            aria-label={text.loadingMoreGear}
           />
         </div>
       )}
@@ -589,7 +629,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90dvh] w-[95vw] max-w-xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit Gear" : "Add New Gear"}</DialogTitle>
+            <DialogTitle>{editing ? text.editGear : text.addNewGear}</DialogTitle>
           </DialogHeader>
           <GearForm initialGear={editing} onSuccess={() => setOpen(false)} />
         </DialogContent>

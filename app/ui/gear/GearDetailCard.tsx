@@ -6,6 +6,7 @@ import { getStatLabel } from "@/app/utils/statLabel";
 import { CustomGear, ElementStats } from "@/app/types";
 import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 interface Props {
   gear: CustomGear;
@@ -25,6 +26,11 @@ export default function GearDetailCard({
   impactPctByStat,
   impactPctByLineKey,
 }: Props) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? { main: "Chính", mainStats: "Chỉ số chính", subStats: "Chỉ số phụ", bonus: "Thưởng" }
+    : { main: "Main", mainStats: "Main Stats", subStats: "Sub Stats", bonus: "Bonus" };
+
   return (
     <Card className="p-3 space-y-2 border border-white/10 bg-card/70">
       {/* Gear name */}
@@ -36,7 +42,7 @@ export default function GearDetailCard({
       {/* Main stat (single) */}
       {gear.main && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Main</p>
+          <p className="text-xs text-muted-foreground mb-1">{text.main}</p>
           <StatLine
             stat={String(gear.main.stat)}
             value={gear.main.value}
@@ -53,7 +59,7 @@ export default function GearDetailCard({
       {/* Main stats (multi-main support) */}
       {gear.mains.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Main Stats</p>
+          <p className="text-xs text-muted-foreground mb-1">{text.mainStats}</p>
           <div className="space-y-1">
             {gear.mains.map((m, i) => (
               <StatLine
@@ -75,7 +81,7 @@ export default function GearDetailCard({
       {/* Sub stats */}
       {gear.subs.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Sub Stats</p>
+          <p className="text-xs text-muted-foreground mb-1">{text.subStats}</p>
           <div className="space-y-1">
             {gear.subs.map((s, i) => (
               <StatLine
@@ -97,7 +103,7 @@ export default function GearDetailCard({
       {/* Bonus / Addition */}
       {gear.addition && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Bonus</p>
+          <p className="text-xs text-muted-foreground mb-1">{text.bonus}</p>
           <StatLine
             stat={String(gear.addition.stat)}
             value={gear.addition.value}

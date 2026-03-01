@@ -11,6 +11,7 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 interface Props {
   gear: CustomGear;
@@ -48,6 +49,27 @@ export default function GearHoverDetail({
   baseGearBonus,
   baseDamage,
 }: Props) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      newBadge: "Mới",
+      newCol: "Mới",
+      equipped: "Đang trang bị",
+      stat: "Chỉ số",
+      old: "Cũ",
+      topContrib: "Top contributor được đánh dấu bằng chấm; mức ảnh hưởng được ước tính bằng cách áp riêng từng thay đổi chỉ số.",
+      dmg: "sát thương",
+    }
+    : {
+      newBadge: "New",
+      newCol: "New",
+      equipped: "Equipped",
+      stat: "Stat",
+      old: "Old",
+      topContrib: "Top contributors are marked with a dot; impact is estimated by applying each stat delta alone.",
+      dmg: "dmg",
+    };
+
   const newTotals = getGearStatTotals(gear);
   const oldTotals = getGearStatTotals(oldGear);
 
@@ -167,7 +189,7 @@ export default function GearHoverDetail({
           <div className="text-sm font-semibold truncate">{gear.name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             <Badge className="bg-emerald-500/15 text-emerald-700" variant="outline">
-              New
+              {text.newBadge}
             </Badge>
             <Badge variant="secondary">{gear.slot}</Badge>
             {gear.rarity && <Badge variant="secondary">{gear.rarity}</Badge>}
@@ -184,7 +206,7 @@ export default function GearHoverDetail({
         <>
           <Separator className="my-3" />
           <div className="text-xs text-muted-foreground">
-            Equipped: <span className="font-medium text-foreground">{oldGear.name}</span>
+            {text.equipped}: <span className="font-medium text-foreground">{oldGear.name}</span>
           </div>
         </>
       )}
@@ -192,9 +214,9 @@ export default function GearHoverDetail({
       <Separator className="my-3" />
 
       <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-xs">
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Stat</div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">New</div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">Old</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{text.stat}</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{text.newCol}</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{text.old}</div>
         <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">Δ</div>
 
         {rows.map((r) => {
@@ -210,7 +232,7 @@ export default function GearHoverDetail({
           const impactLabel =
             impactPct === undefined
               ? null
-              : `${impactPct >= 0 ? "+" : ""}${impactPct.toFixed(2)}% dmg`;
+              : `${impactPct >= 0 ? "+" : ""}${impactPct.toFixed(2)}% ${text.dmg}`;
 
           return (
             <div key={r.statKey} className="contents">
@@ -257,7 +279,7 @@ export default function GearHoverDetail({
       </div>
 
       <div className="mt-3 text-[11px] text-muted-foreground">
-        Top contributors are marked with a dot; impact is estimated by applying each stat delta alone.
+        {text.topContrib}
       </div>
     </div>
   );

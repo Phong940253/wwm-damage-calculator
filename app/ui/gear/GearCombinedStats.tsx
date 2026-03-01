@@ -6,12 +6,26 @@ import { STAT_LABELS } from "@/app/constants";
 
 import { Button } from "@/components/ui/button";
 import { exportElementToPNG } from "@/app/utils/exportPng";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 interface Props {
   bonus: Record<string, number>;
 }
 
 export default function GearCombinedStats({ bonus }: Props) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      title: "⚙️ Thưởng trang bị (Tổng hợp)",
+      stats: "chỉ số",
+      exportPng: "📸 Xuất PNG",
+    }
+    : {
+      title: "⚙️ Gear Bonus (Combined)",
+      stats: "stats",
+      exportPng: "📸 Export PNG",
+    };
+
   const entries = Object.entries(bonus).filter(([, v]) => v !== 0);
 
   if (entries.length === 0) return null;
@@ -26,8 +40,8 @@ export default function GearCombinedStats({ bonus }: Props) {
       "
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">⚙️ Gear Bonus (Combined)</h3>
-        <Badge variant="secondary">{entries.length} stats</Badge>
+        <h3 className="text-sm font-semibold">{text.title}</h3>
+        <Badge variant="secondary">{entries.length} {text.stats}</Badge>
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
         {entries.map(([stat, value]) => (
@@ -47,7 +61,7 @@ export default function GearCombinedStats({ bonus }: Props) {
         variant="secondary"
         onClick={() => exportElementToPNG("gear-combined-stats")}
       >
-        📸 Export PNG
+        {text.exportPng}
       </Button>
     </Card>
   );

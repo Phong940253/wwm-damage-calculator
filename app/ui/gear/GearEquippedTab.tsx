@@ -22,6 +22,7 @@ import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
 import type { CustomGear } from "@/app/types";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 const LEFT_SLOT_ORDER: GearSlot[] = ["weapon_1", "weapon_2", "disc", "pendant"];
 const RIGHT_SLOT_ORDER: GearSlot[] = ["head", "chest", "leg", "hand"];
@@ -112,6 +113,35 @@ function calcRotationAwareNormalDamage(
 }
 
 export default function GearEquippedTab() {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      impactTitle: "📈 Tác động sát thương của trang bị",
+      impactDesc: "Hiển thị mức tăng khi so với việc để trống ô đó (có tính rotation).",
+      avgDamage: "Sát thương TB",
+      equipped: "đang trang bị",
+      empty: "Trống",
+      noMain: "Không-main",
+      worst: "Yếu nhất",
+      withoutSlot: "Không có ô này",
+      withCurrentGear: "Với trang bị hiện tại",
+      deltaFromSlot: "Δ từ ô này",
+      emptyOption: "Trống",
+    }
+    : {
+      impactTitle: "📈 Gear DMG Impact",
+      impactDesc: "Shows gain vs leaving that slot empty (rotation-aware).",
+      avgDamage: "Avg DMG",
+      equipped: "equipped",
+      empty: "Empty",
+      noMain: "No-main",
+      worst: "Worst",
+      withoutSlot: "Without this slot",
+      withCurrentGear: "With current gear",
+      deltaFromSlot: "Δ from this slot",
+      emptyOption: "Empty",
+    };
+
   const { customGears, equipped, setEquipped } = useGear();
 
   // Pull the same saved Stats/Element/Rotation that drive the rest of the app
@@ -246,19 +276,19 @@ export default function GearEquippedTab() {
       <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-0.5">
-            <div className="text-sm font-semibold">📈 Gear DMG Impact</div>
+            <div className="text-sm font-semibold">{text.impactTitle}</div>
             <div className="text-xs text-muted-foreground">
-              Shows gain vs leaving that slot empty (rotation-aware).
+              {text.impactDesc}
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">
-              Avg DMG: {Math.round(fullDamage).toLocaleString()}
+              {text.avgDamage}: {Math.round(fullDamage).toLocaleString()}
             </Badge>
             <Badge variant="outline" className="text-muted-foreground">
               {slotsWithImpact.rows.filter((r) => r.equippedGear).length}/
-              {GEAR_SLOTS.length} equipped
+              {GEAR_SLOTS.length} {text.equipped}
             </Badge>
           </div>
         </div>
@@ -299,7 +329,7 @@ export default function GearEquippedTab() {
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">{row.label}</p>
                       <p className="text-sm font-semibold truncate">
-                        {row.equippedGear?.name ?? "Empty"}
+                        {row.equippedGear?.name ?? text.empty}
                       </p>
                     </div>
 
@@ -321,28 +351,28 @@ export default function GearEquippedTab() {
                             className="border-amber-400/30 bg-amber-500/10 text-amber-700"
                             title="Gear impact excluding main stats (subs + bonus only)"
                           >
-                            No-main {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
+                            {text.noMain} {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
                             {row.perStat.impactPctNoMain.toFixed(2)}%
                           </Badge>
                         )}
                       {isWorst && (
                         <Badge className="bg-amber-500/15 text-amber-700" variant="outline">
-                          Worst
+                          {text.worst}
                         </Badge>
                       )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                    <div className="text-muted-foreground">Without this slot</div>
+                    <div className="text-muted-foreground">{text.withoutSlot}</div>
                     <div className="text-right">
                       {Math.round(row.damageWithoutSlot).toLocaleString()}
                     </div>
-                    <div className="text-muted-foreground">With current gear</div>
+                    <div className="text-muted-foreground">{text.withCurrentGear}</div>
                     <div className="text-right">
                       {Math.round(fullDamage).toLocaleString()}
                     </div>
-                    <div className="text-muted-foreground">Δ from this slot</div>
+                    <div className="text-muted-foreground">{text.deltaFromSlot}</div>
                     <div className={cn("text-right font-medium", diffTone)}>
                       {row.diff > 0 ? "+" : ""}
                       {Math.round(row.diff).toLocaleString()}
@@ -370,7 +400,7 @@ export default function GearEquippedTab() {
                       "border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
                     )}
                   >
-                    <option value="">Empty</option>
+                    <option value="">{text.emptyOption}</option>
                     {available.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.name}

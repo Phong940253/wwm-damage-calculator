@@ -15,6 +15,7 @@ import { GearOcrResult } from "../../domain/gear/gearOcrSchema";
 import { GripVertical, Loader2 } from "lucide-react";
 import { GearStatSelect } from "./GearStatSelect";
 import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } from "./useGearStatDnD";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 
 /* =======================
@@ -36,6 +37,49 @@ const ARMOR_SLOTS: GearSlot[] = ["head", "chest", "hand", "leg"];
 ======================= */
 
 export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      ocrFailed: "OCR thất bại. Vui lòng thử lại hoặc nhập thủ công.",
+      enterName: "Vui lòng nhập tên trang bị",
+      addMainRequired: "Vui lòng thêm ít nhất một thuộc tính chính",
+      saveFailed: "Lưu trang bị thất bại. Vui lòng thử lại.",
+      gearName: "Tên trang bị",
+      slot: "Vị trí",
+      rarity: "Độ hiếm",
+      rarityPlaceholder: "ví dụ: Common, Rare, Epic, Legendary",
+      mainAttributes: "Thuộc tính chính",
+      subAttributes: "Thuộc tính phụ",
+      additionalAttribute: "Thuộc tính bổ sung",
+      addAdditionalAttribute: "+ Thêm thuộc tính bổ sung",
+      add: "+ Thêm",
+      dragToReorder: "Kéo để sắp xếp",
+      dragToMove: "Kéo để di chuyển",
+      saveChanges: "Lưu thay đổi",
+      addGear: "Thêm trang bị",
+      processing: "Đang xử lý...",
+    }
+    : {
+      ocrFailed: "OCR failed. Please try again or enter manually.",
+      enterName: "Please enter a gear name",
+      addMainRequired: "Please add at least one main attribute",
+      saveFailed: "Failed to save gear. Please try again.",
+      gearName: "Gear Name",
+      slot: "Slot",
+      rarity: "Rarity",
+      rarityPlaceholder: "e.g. Common, Rare, Epic, Legendary",
+      mainAttributes: "Main Attributes",
+      subAttributes: "Sub Attributes",
+      additionalAttribute: "Additional Attribute",
+      addAdditionalAttribute: "+ Add Additional Attribute",
+      add: "+ Add",
+      dragToReorder: "Drag to reorder",
+      dragToMove: "Drag to move",
+      saveChanges: "Save Changes",
+      addGear: "Add Gear",
+      processing: "Processing...",
+    };
+
   const { setCustomGears, setEquipped } = useGear();
 
   const [name, setName] = useState("");
@@ -135,7 +179,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
     } catch (error) {
       console.error("OCR failed:", error);
-      alert("OCR failed. Please try again or enter manually.");
+      alert(text.ocrFailed);
     } finally {
       setOcrLoading(false);
     }
@@ -163,7 +207,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const submit = () => {
     // Validate name
     if (!name.trim()) {
-      alert("Please enter a gear name");
+      alert(text.enterName);
       return;
     }
 
@@ -172,7 +216,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
     // Validate mains for non-armor slots
     if (!isArmor && mains.length === 0) {
-      alert("Please add at least one main attribute");
+      alert(text.addMainRequired);
       return;
     }
 
@@ -209,7 +253,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       onSuccess?.();
     } catch (error) {
       console.error("Failed to save gear:", error);
-      alert("Failed to save gear. Please try again.");
+      alert(text.saveFailed);
     }
   };
 
@@ -236,12 +280,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Basic info */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="text-xs">Gear Name</label>
+          <label className="text-xs">{text.gearName}</label>
           <Input value={name} onChange={e => setName(e.target.value)} />
         </div>
 
         <div>
-          <label className="text-xs">Slot</label>
+          <label className="text-xs">{text.slot}</label>
           <select
             className="w-full border rounded px-2 py-2"
             value={slot}
@@ -256,11 +300,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="text-xs">Rarity</label>
+          <label className="text-xs">{text.rarity}</label>
           <Input
             value={rarity}
             onChange={(e) => setRarity(e.target.value)}
-            placeholder="e.g. Common, Rare, Epic, Legendary"
+            placeholder={text.rarityPlaceholder}
             list="gear-rarity-options"
           />
           <datalist id="gear-rarity-options">
@@ -277,9 +321,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       <div className="border rounded p-3 space-y-2">
         <div className="flex justify-between items-center">
-          <p className="text-sm font-medium">Main Attributes</p>
+          <p className="text-sm font-medium">{text.mainAttributes}</p>
           <Button size="sm" variant="secondary" onClick={addMain}>
-            + Add
+            {text.add}
           </Button>
         </div>
 
@@ -326,7 +370,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   onDragEnd={() => {
                     dnd.endDrag();
                   }}
-                  title="Drag to reorder"
+                  title={text.dragToReorder}
                 >
                   <GripVertical className="w-4 h-4" />
                 </div>
@@ -369,9 +413,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Sub attributes */}
       <div className="border rounded p-3 space-y-2">
         <div className="flex justify-between items-center">
-          <p className="text-sm font-medium">Sub Attributes</p>
+          <p className="text-sm font-medium">{text.subAttributes}</p>
           <Button size="sm" variant="secondary" onClick={addSub}>
-            + Add
+            {text.add}
           </Button>
         </div>
 
@@ -418,7 +462,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   onDragEnd={() => {
                     dnd.endDrag();
                   }}
-                  title="Drag to reorder"
+                  title={text.dragToReorder}
                 >
                   <GripVertical className="w-4 h-4" />
                 </div>
@@ -466,7 +510,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         onDragLeave={() => dnd.setDragOver(prev => (prev?.zone === "addition" ? null : prev))}
         onDrop={dnd.dropOnAddition()}
       >
-        <p className="text-sm font-medium">Additional Attribute</p>
+        <p className="text-sm font-medium">{text.additionalAttribute}</p>
 
         {addition ? (
           <div className="flex flex-wrap gap-2 sm:flex-nowrap">
@@ -477,7 +521,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
               onDragEnd={() => {
                 dnd.endDrag();
               }}
-              title="Drag to move"
+              title={text.dragToMove}
             >
               <GripVertical className="w-4 h-4" />
             </div>
@@ -508,7 +552,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
               setAddition({ id: crypto.randomUUID(), stat: "CriticalRate", value: 0 })
             }
           >
-            + Add Additional Attribute
+            {text.addAdditionalAttribute}
           </Button>
         )}
       </div>
@@ -516,7 +560,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Actions */}
       <div className="flex flex-wrap justify-between gap-2 pt-2">
         <Button data-tour={!initialGear ? "gear-add-submit" : undefined} onClick={submit}>
-          {initialGear ? "Save Changes" : "Add Gear"}
+          {initialGear ? text.saveChanges : text.addGear}
         </Button>
         <Button
           data-tour="gear-ocr"
@@ -527,7 +571,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
           {ocrLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Processing...
+              {text.processing}
             </>
           ) : (
             "OCR"

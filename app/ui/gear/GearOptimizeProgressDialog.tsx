@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 interface Props {
   open: boolean;
@@ -18,6 +19,21 @@ export default function GearOptimizeProgressDialog({
   progress,
   onCancel,
 }: Props) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      title: "Đang tính tối ưu trang bị",
+      checking: "Đang kiểm tra",
+      gearCombinations: "tổ hợp trang bị",
+      pleaseWait: "Vui lòng chờ...",
+    }
+    : {
+      title: "Calculating Gear Optimization",
+      checking: "Checking",
+      gearCombinations: "gear combinations",
+      pleaseWait: "Please wait...",
+    };
+
   const percent =
     progress.total > 0 ? Math.min((progress.current / progress.total) * 100, 100) : 0;
 
@@ -35,12 +51,12 @@ export default function GearOptimizeProgressDialog({
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Calculating Gear Optimization</DialogTitle>
+          <DialogTitle>{text.title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground text-center">
-            Checking {progress.current.toLocaleString()} / {progress.total.toLocaleString()} gear combinations
+            {text.checking} {progress.current.toLocaleString()} / {progress.total.toLocaleString()} {text.gearCombinations}
           </p>
 
           {/* Progress bar */}
@@ -54,7 +70,7 @@ export default function GearOptimizeProgressDialog({
           <p className="text-sm font-semibold text-center">{Math.round(percent)}%</p>
 
           <p className="text-xs text-muted-foreground text-center">
-            Please wait...
+            {text.pleaseWait}
           </p>
         </div>
       </DialogContent>
