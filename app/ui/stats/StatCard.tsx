@@ -73,6 +73,7 @@ export default function StatCard({
           <div className="col-span-2 space-y-1">
             <div className="text-[11px] text-muted-foreground">Total</div>
             <Input
+              data-tour={statKey === "Agility" ? "stat-input" : undefined}
               type="number"
               value={localValue !== undefined ? localValue : total === 0 ? "" : total}
               onChange={(e) => onTotalChange(e.target.value)}

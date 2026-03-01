@@ -3,6 +3,7 @@
 import { Swords } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatusBar } from "./ui/layout/StatusBar";
+import { InteractiveGuideOverlay } from "./ui/layout/InteractiveGuideOverlay";
 import { MainContent } from "./ui/layout/MainContent";
 
 export default function DMGOptimizerClient() {
@@ -24,6 +25,8 @@ export default function DMGOptimizerClient() {
         {/* CONTENT */}
         <MainContent />
       </div>
+
+      <InteractiveGuideOverlay />
     </div>
   );
 }

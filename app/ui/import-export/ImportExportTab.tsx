@@ -330,7 +330,7 @@ export default function ImportExportTab() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={handleImport}>
+            <Button data-tour="import-gear-button" variant="outline" onClick={handleImport}>
               Import from Clipboard
             </Button>
             <Button

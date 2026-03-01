@@ -236,6 +236,7 @@ export default function StatsPanel({
             <div className="space-y-2">
               <label className="text-xs text-muted-foreground">Player level</label>
               <select
+                data-tour="player-level"
                 className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
                 value={safeLevelContext.playerLevel}
                 onChange={(e) => safeSetPlayerLevel(Number(e.target.value))}
@@ -279,6 +280,7 @@ export default function StatsPanel({
               </span>
             </div>
             <select
+              data-tour="martial-art"
               className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
               value={elementStats.martialArtsId}
               onChange={(e) => {

@@ -60,6 +60,7 @@ export function StatusBar() {
               active={tab === "stats"}
               onClick={() => set("main", "stats")}
               title="Stats"
+              data-tour="tab-stats"
             >
               <BarChart3 size={18} />
             </TabButton>
@@ -68,6 +69,7 @@ export function StatusBar() {
               active={tab === "rotation"}
               onClick={() => set("main", "rotation")}
               title="Rotation"
+              data-tour="tab-rotation"
             >
               <Zap size={18} />
             </TabButton>
@@ -76,6 +78,7 @@ export function StatusBar() {
               active={tab === "import"}
               onClick={() => set("main", "import")}
               title="Import / Export"
+              data-tour="tab-import"
             >
               <ArrowLeftRight size={18} />
             </TabButton>
