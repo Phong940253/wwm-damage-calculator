@@ -14,44 +14,56 @@ const TOUR_DONE_KEY = "wwm_interactive_guide_done";
 const STEPS: Step[] = [
     {
         selector: "[data-tour='player-level']",
-        title: "Bước 1: Chọn Level",
-        description: "Chọn Player level phù hợp trước khi tối ưu damage.",
+        title: "Step 1: Choose Level",
+        description: "Select your Player level before optimizing damage.",
         listenEvents: ["change", "click"],
     },
     {
         selector: "[data-tour='martial-art']",
-        title: "Bước 2: Chọn Martial Art",
-        description: "Chọn Martial Art để đồng bộ element chính.",
+        title: "Step 2: Choose Martial Art",
+        description: "Pick your Martial Art to sync the main element.",
         listenEvents: ["change", "click"],
     },
     {
         selector: "[data-tour='tab-rotation']",
-        title: "Bước 3: Mở Rotation",
-        description: "Nhấn tab Rotation để thiết lập chuỗi kỹ năng.",
+        title: "Step 3: Open Rotation",
+        description: "Click the Rotation tab to set up your skill sequence.",
         listenEvents: ["click"],
     },
     {
-        selector: "[data-tour='tab-import']",
-        title: "Bước 4: Mở Import / Export",
-        description: "Nhấn tab Import / Export để sang bước import gear.",
+        selector: "[data-tour='tab-gear-root']",
+        title: "Step 4: Open Gear",
+        description: "Click the Gear root tab to manage gear.",
         listenEvents: ["click"],
     },
     {
-        selector: "[data-tour='import-gear-button']",
-        title: "Bước 5: Import Gear",
-        description: "Nhấn Import from Clipboard để nạp gear đã copy.",
+        selector: "[data-tour='gear-add-open']",
+        title: "Step 5: Open Add Gear",
+        description: "Click + Add Gear to open the gear form.",
+        listenEvents: ["click"],
+    },
+    {
+        selector: "[data-tour='gear-ocr']",
+        title: "Step 6: Use OCR",
+        description: "Click OCR and pick a gear image to auto-fill fields.",
+        listenEvents: ["click"],
+    },
+    {
+        selector: "[data-tour='gear-add-submit']",
+        title: "Step 7: Add Gear",
+        description: "Click Add Gear to save the item.",
         listenEvents: ["click"],
     },
     {
         selector: "[data-tour='tab-stats']",
-        title: "Bước 6: Quay lại Stats",
-        description: "Nhấn tab Stats để nhập stat sau khi import gear.",
+        title: "Step 8: Back to Stats",
+        description: "Click the Stats tab to continue with stat inputs.",
         listenEvents: ["click"],
     },
     {
         selector: "[data-tour='stat-input']",
-        title: "Bước 7: Nhập Stat",
-        description: "Nhập chỉ số vào ô Total để hoàn tất quy trình.",
+        title: "Step 9: Enter Stat",
+        description: "Enter values in a Total field to complete the flow.",
         listenEvents: ["input", "change", "click"],
     },
 ];
@@ -148,7 +160,7 @@ export function InteractiveGuideOverlay() {
                 }}
                 className="fixed bottom-6 right-6 z-[110] rounded-full border border-emerald-500/30 bg-background/90 px-4 py-2 text-xs text-emerald-300 shadow-lg backdrop-blur"
             >
-                Hướng dẫn thao tác
+                Start Guide
             </button>
         );
     }
@@ -198,7 +210,7 @@ export function InteractiveGuideOverlay() {
 
                 {!rect && (
                     <p className="mt-2 text-[11px] text-amber-300">
-                        Chưa thấy mục tiêu trên màn hình, hãy chuyển đúng tab để tiếp tục.
+                        Target is not visible yet. Switch to the required tab and continue.
                     </p>
                 )}
 
@@ -211,7 +223,7 @@ export function InteractiveGuideOverlay() {
                         }}
                         className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
                     >
-                        Bỏ qua
+                        Skip
                     </button>
 
                     <button
@@ -226,7 +238,7 @@ export function InteractiveGuideOverlay() {
                         }}
                         className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/20"
                     >
-                        {stepIndex >= STEPS.length - 1 ? "Hoàn tất" : "Tiếp"}
+                        {stepIndex >= STEPS.length - 1 ? "Finish" : "Next"}
                     </button>
                 </div>
             </div>

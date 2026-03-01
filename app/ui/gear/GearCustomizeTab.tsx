@@ -359,6 +359,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             Optimize
           </Button>
           <Button
+            data-tour="gear-add-open"
             onClick={() => {
               setEditing(null);
               setOpen(true);

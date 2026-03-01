@@ -47,6 +47,7 @@ export function StatusBar() {
           active={root === "gear"}
           onClick={() => set("gear", "custom")}
           title="Gear"
+          data-tour="tab-gear-root"
         >
           <Shield size={18} />
         </TabButton>

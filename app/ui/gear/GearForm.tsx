@@ -509,10 +509,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       {/* Actions */}
       <div className="flex justify-between pt-2">
-        <Button onClick={submit}>
+        <Button data-tour={!initialGear ? "gear-add-submit" : undefined} onClick={submit}>
           {initialGear ? "Save Changes" : "Add Gear"}
         </Button>
         <Button
+          data-tour="gear-ocr"
           variant="outline"
           onClick={() => fileRef.current?.click()}
           disabled={ocrLoading}
