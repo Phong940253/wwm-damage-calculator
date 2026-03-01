@@ -30,6 +30,7 @@ export default function GearOptimizeProgressDialog({
       }}
     >
       <DialogContent
+        data-tour="gear-optimize-progress"
         className="max-w-sm"
         onInteractOutside={(e) => e.preventDefault()}
       >

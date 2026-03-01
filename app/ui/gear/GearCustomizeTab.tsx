@@ -355,7 +355,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       <div className="flex justify-between">
         <h3 className="text-lg font-semibold">Custom Gear</h3>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setOptOpen(true)}>
+          <Button data-tour="gear-optimize-open" variant="outline" onClick={() => setOptOpen(true)}>
             Optimize
           </Button>
           <Button

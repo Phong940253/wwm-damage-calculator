@@ -7,11 +7,22 @@ type Step = {
     title: string;
     description: string;
     listenEvents: Array<"click" | "change" | "input">;
+    advanceDelayMs?: number;
+    waitForSelector?: string;
+    waitForSelectorCycle?: string;
+    waitTimeoutMs?: number;
 };
 
-const TOUR_DONE_KEY = "wwm_interactive_guide_done";
+type GuideId = "setup" | "optimize";
 
-const STEPS: Step[] = [
+type GuideDefinition = {
+    id: GuideId;
+    doneKey: string;
+    startLabel: string;
+    steps: Step[];
+};
+
+const SETUP_STEPS: Step[] = [
     {
         selector: "[data-tour='player-level']",
         title: "Step 1: Choose Level",
@@ -74,14 +85,78 @@ const STEPS: Step[] = [
     },
 ];
 
+const OPTIMIZE_STEPS: Step[] = [
+    {
+        selector: "[data-tour='tab-gear-root']",
+        title: "Step 1: Open Gear",
+        description: "Click the Gear root tab.",
+        listenEvents: ["click"],
+    },
+    {
+        selector: "[data-tour='gear-optimize-open']",
+        title: "Step 2: Open Optimize",
+        description: "Click Optimize to open the optimizer dialog.",
+        listenEvents: ["click"],
+        advanceDelayMs: 250,
+        waitForSelector: "[data-tour='gear-optimize-recalculate']",
+        waitTimeoutMs: 120000,
+    },
+    {
+        selector: "[data-tour='gear-optimize-recalculate']",
+        title: "Step 3: Recalculate",
+        description: "Adjust limits if needed, then click Recalculate.",
+        listenEvents: ["click"],
+        advanceDelayMs: 300,
+        waitForSelectorCycle: "[data-tour='gear-optimize-progress']",
+        waitTimeoutMs: 120000,
+    },
+    {
+        selector: "[data-tour='gear-optimize-equip']",
+        title: "Step 4: Equip Result",
+        description: "Click Equip on the result you want to apply.",
+        listenEvents: ["click"],
+    },
+    {
+        selector: "[data-tour='tab-main-root']",
+        title: "Step 5: Back to Main",
+        description: "Click the Main root tab to return.",
+        listenEvents: ["click"],
+    },
+    {
+        selector: "[data-tour='tab-stats']",
+        title: "Step 6: Open Stats",
+        description: "Click Stats to review updated values.",
+        listenEvents: ["click"],
+    },
+];
+
+const GUIDES: Record<GuideId, GuideDefinition> = {
+    setup: {
+        id: "setup",
+        doneKey: "wwm_interactive_guide_done",
+        startLabel: "Start Setup Guide",
+        steps: SETUP_STEPS,
+    },
+    optimize: {
+        id: "optimize",
+        doneKey: "wwm_interactive_optimize_guide_done",
+        startLabel: "Start Optimize Guide",
+        steps: OPTIMIZE_STEPS,
+    },
+};
+
 export function InteractiveGuideOverlay() {
+    const [activeGuideId, setActiveGuideId] = useState<GuideId | null>(null);
     const [isActive, setIsActive] = useState(false);
     const [stepIndex, setStepIndex] = useState(0);
     const [rect, setRect] = useState<DOMRect | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
+    const isAdvancingRef = useRef(false);
     const [tooltipHeight, setTooltipHeight] = useState(170);
 
-    const currentStep = STEPS[stepIndex];
+    const activeGuide = activeGuideId ? GUIDES[activeGuideId] : null;
+    const currentSteps = activeGuide?.steps ?? [];
+    const currentStep = currentSteps[stepIndex];
 
     const currentElement = useMemo(() => {
         if (!isActive || !currentStep) return null;
@@ -89,8 +164,9 @@ export function InteractiveGuideOverlay() {
     }, [isActive, currentStep]);
 
     useEffect(() => {
-        const alreadyDone = localStorage.getItem(TOUR_DONE_KEY) === "1";
+        const alreadyDone = localStorage.getItem(GUIDES.setup.doneKey) === "1";
         if (!alreadyDone) {
+            setActiveGuideId("setup");
             setIsActive(true);
             setStepIndex(0);
         }
@@ -125,10 +201,42 @@ export function InteractiveGuideOverlay() {
     useEffect(() => {
         if (!isActive || !currentElement || !currentStep) return;
 
+        isAdvancingRef.current = false;
+
+        const waitForSelectorCycle = async (selector: string, timeoutMs: number) => {
+            const start = Date.now();
+            let seen = false;
+
+            while (Date.now() - start < timeoutMs) {
+                const found = Boolean(document.querySelector(selector));
+
+                if (found) {
+                    seen = true;
+                } else if (seen) {
+                    return;
+                }
+
+                await new Promise((resolve) => window.setTimeout(resolve, 120));
+            }
+        };
+
+        const waitForSelector = async (selector: string, timeoutMs: number) => {
+            const start = Date.now();
+
+            while (Date.now() - start < timeoutMs) {
+                if (document.querySelector(selector)) {
+                    return;
+                }
+                await new Promise((resolve) => window.setTimeout(resolve, 120));
+            }
+        };
+
         const advance = () => {
             setStepIndex((prev) => {
-                if (prev >= STEPS.length - 1) {
-                    localStorage.setItem(TOUR_DONE_KEY, "1");
+                if (prev >= currentSteps.length - 1) {
+                    if (activeGuide) {
+                        localStorage.setItem(activeGuide.doneKey, "1");
+                    }
                     setIsActive(false);
                     return prev;
                 }
@@ -136,8 +244,37 @@ export function InteractiveGuideOverlay() {
             });
         };
 
-        const onEvent = () => {
-            window.setTimeout(advance, 150);
+        let canceled = false;
+
+        const onEvent = async () => {
+            if (isAdvancingRef.current) return;
+            isAdvancingRef.current = true;
+
+            const delay = currentStep.advanceDelayMs ?? 150;
+            await new Promise((resolve) => window.setTimeout(resolve, delay));
+
+            if (canceled) return;
+
+            if (currentStep.waitForSelector) {
+                await waitForSelector(
+                    currentStep.waitForSelector,
+                    currentStep.waitTimeoutMs ?? 15000
+                );
+            }
+
+            if (canceled) return;
+
+            if (currentStep.waitForSelectorCycle) {
+                await waitForSelectorCycle(
+                    currentStep.waitForSelectorCycle,
+                    currentStep.waitTimeoutMs ?? 15000
+                );
+            }
+
+            if (canceled) return;
+
+            advance();
+            isAdvancingRef.current = false;
         };
 
         currentStep.listenEvents.forEach((eventName) => {
@@ -145,6 +282,8 @@ export function InteractiveGuideOverlay() {
         });
 
         return () => {
+            canceled = true;
+            isAdvancingRef.current = false;
             currentStep.listenEvents.forEach((eventName) => {
                 currentElement.removeEventListener(eventName, onEvent);
             });
@@ -156,18 +295,33 @@ export function InteractiveGuideOverlay() {
         setTooltipHeight(tooltipRef.current.getBoundingClientRect().height || 170);
     }, [stepIndex, isActive, rect]);
 
-    if (!isActive || !currentStep) {
+    if (!isActive || !currentStep || !activeGuide) {
         return (
-            <button
-                type="button"
-                onClick={() => {
-                    setStepIndex(0);
-                    setIsActive(true);
-                }}
-                className="fixed bottom-6 right-6 z-[110] rounded-full border border-emerald-500/30 bg-background/90 px-4 py-2 text-xs text-emerald-300 shadow-lg backdrop-blur"
-            >
-                Start Guide
-            </button>
+            <div className="fixed bottom-6 right-6 z-[110] flex flex-col gap-2">
+                <button
+                    type="button"
+                    onClick={() => {
+                        setActiveGuideId("setup");
+                        setStepIndex(0);
+                        setIsActive(true);
+                    }}
+                    className="rounded-full border border-emerald-500/30 bg-background/90 px-4 py-2 text-xs text-emerald-300 shadow-lg backdrop-blur"
+                >
+                    {GUIDES.setup.startLabel}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => {
+                        setActiveGuideId("optimize");
+                        setStepIndex(0);
+                        setIsActive(true);
+                    }}
+                    className="rounded-full border border-blue-500/30 bg-background/90 px-4 py-2 text-xs text-blue-300 shadow-lg backdrop-blur"
+                >
+                    {GUIDES.optimize.startLabel}
+                </button>
+            </div>
         );
     }
 
@@ -301,7 +455,7 @@ export function InteractiveGuideOverlay() {
                 style={{ top: tooltipTop, left: tooltipLeft, width: tooltipWidth }}
             >
                 <div className="mb-1 text-xs text-muted-foreground">
-                    {stepIndex + 1}/{STEPS.length}
+                    {stepIndex + 1}/{currentSteps.length}
                 </div>
                 <div className="text-sm font-semibold">{currentStep.title}</div>
                 <p className="mt-1 text-xs text-muted-foreground">{currentStep.description}</p>
@@ -316,7 +470,7 @@ export function InteractiveGuideOverlay() {
                     <button
                         type="button"
                         onClick={() => {
-                            localStorage.setItem(TOUR_DONE_KEY, "1");
+                            localStorage.setItem(activeGuide.doneKey, "1");
                             setIsActive(false);
                         }}
                         className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
@@ -327,8 +481,8 @@ export function InteractiveGuideOverlay() {
                     <button
                         type="button"
                         onClick={() => {
-                            if (stepIndex >= STEPS.length - 1) {
-                                localStorage.setItem(TOUR_DONE_KEY, "1");
+                            if (stepIndex >= currentSteps.length - 1) {
+                                localStorage.setItem(activeGuide.doneKey, "1");
                                 setIsActive(false);
                                 return;
                             }
@@ -336,7 +490,7 @@ export function InteractiveGuideOverlay() {
                         }}
                         className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/20"
                     >
-                        {stepIndex >= STEPS.length - 1 ? "Finish" : "Next"}
+                        {stepIndex >= currentSteps.length - 1 ? "Finish" : "Next"}
                     </button>
                 </div>
             </div>

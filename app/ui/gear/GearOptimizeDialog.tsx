@@ -178,7 +178,7 @@ export default function GearOptimizeDialog({
                           title="0 = auto (no fixed per-slot cap)"
                         />
                       </label>
-                      <Button size="sm" onClick={onRecalculate}>
+                      <Button data-tour="gear-optimize-recalculate" size="sm" onClick={onRecalculate}>
                         Recalculate
                       </Button>
                     </div>
@@ -349,6 +349,7 @@ export default function GearOptimizeDialog({
                                 })}
                                 <td className="p-3 text-center">
                                   <Button
+                                    data-tour="gear-optimize-equip"
                                     size="sm"
                                     onClick={() => onApply(r.selection)}
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
