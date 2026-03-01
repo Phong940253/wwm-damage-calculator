@@ -106,6 +106,70 @@
   }
 }
 
+/* ================================
+   LIGHT THEME READABILITY BRIDGE
+   (keep dark mode untouched)
+================================ */
+
+@layer utilities {
+  html:not(.dark) .text-zinc-100,
+  html:not(.dark) .text-zinc-200,
+  html:not(.dark) .text-zinc-300,
+  html:not(.dark) .text-slate-200,
+  html:not(.dark) .text-gray-300 {
+    color: hsl(var(--foreground));
+  }
+
+  html:not(.dark) .text-zinc-400,
+  html:not(.dark) .text-zinc-500 {
+    color: hsl(var(--muted-foreground));
+  }
+
+  html:not(.dark) .bg-zinc-800,
+  html:not(.dark) .bg-zinc-700,
+  html:not(.dark) .bg-black\/40,
+  html:not(.dark) .bg-black\/30,
+  html:not(.dark) .bg-black\/20,
+  html:not(.dark) .bg-black\/10 {
+    background-color: hsl(var(--muted));
+  }
+
+  html:not(.dark) .bg-zinc-800\/50,
+  html:not(.dark) .bg-zinc-800\/30,
+  html:not(.dark) .bg-zinc-700\/30,
+  html:not(.dark) .bg-zinc-700\/25,
+  html:not(.dark) .bg-zinc-500\/20,
+  html:not(.dark) .bg-zinc-500\/10,
+  html:not(.dark) .bg-white\/5 {
+    background-color: hsl(var(--muted) / 0.65);
+  }
+
+  html:not(.dark) .border-zinc-800,
+  html:not(.dark) .border-zinc-700,
+  html:not(.dark) .border-zinc-600,
+  html:not(.dark) .border-white\/10,
+  html:not(.dark) .border-white\/15 {
+    border-color: hsl(var(--border));
+  }
+
+  html:not(.dark) .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+    border-color: hsl(var(--border));
+  }
+
+  html:not(.dark) .hover\:bg-zinc-800:hover,
+  html:not(.dark) .hover\:bg-zinc-700:hover,
+  html:not(.dark) .hover\:bg-zinc-700\/30:hover,
+  html:not(.dark) .hover\:bg-zinc-700\/25:hover,
+  html:not(.dark) .hover\:bg-zinc-500\/20:hover,
+  html:not(.dark) .hover\:bg-white\/10:hover {
+    background-color: hsl(var(--accent));
+  }
+
+  html:not(.dark) .ring-white\/5 {
+    --tw-ring-color: hsl(var(--ring) / 0.16);
+  }
+}
+
 /* ===== Modern Thin Scrollbar ===== */
 
 /* Firefox */

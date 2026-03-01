@@ -122,7 +122,7 @@ export default function DamagePanel({
 
           {groupedSkillDamages.map((group) => (
             <div key={group.category}>
-              <div className="text-lg pt-6 px-2 font-semibold text-muted-foreground tracking-wide capitalize text-white">
+              <div className="text-lg pt-6 px-2 font-semibold text-foreground tracking-wide capitalize">
                 {categoryLabels[group.category]}
               </div>
 
@@ -142,7 +142,7 @@ export default function DamagePanel({
 
           {result.averageBreakdown && (
             <div className="flex flex-1 flex-col mt-6">
-              <div className="text-lg font-bold mb-2 text-muted-foreground align-center text-white">
+              <div className="text-lg font-bold mb-2 text-foreground align-center">
                 Average Damage Composition
               </div>
               <AverageDamagePie data={result.averageBreakdown} />
@@ -151,7 +151,7 @@ export default function DamagePanel({
 
           {rotation && rotation.skills.length > 0 && (
             <div className="flex flex-1 flex-col mt-6">
-              <div className="text-lg font-bold mb-2 text-muted-foreground align-center text-white">
+              <div className="text-lg font-bold mb-2 text-foreground align-center">
                 Rotation Damage Breakdown
               </div>
               <RotationDamagePie rotation={rotation} ctx={ctx} />
@@ -165,9 +165,9 @@ export default function DamagePanel({
           onClick={toggleFormula}
           className="
             w-full rounded-xl px-3 py-2 text-sm font-medium
-            bg-zinc-500/10 text-zinc-300
-            border border-white/10
-            hover:bg-zinc-500/20
+            bg-secondary text-secondary-foreground
+            border border-border
+            hover:bg-secondary/80
           "
         >
           {showFormula ? "Hide Formula" : "Show Formula"}

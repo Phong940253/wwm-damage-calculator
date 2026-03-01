@@ -110,7 +110,7 @@ export default function RootLayout({
         <GearProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
+            defaultTheme="light"
             enableSystem
             disableTransitionOnChange
           >

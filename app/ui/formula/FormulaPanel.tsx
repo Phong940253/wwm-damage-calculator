@@ -117,8 +117,8 @@ M_{max}
           <div
             className="
               rounded-xl p-4
-              bg-black/40
-              border border-white/10
+              bg-muted/70
+              border border-border
               overflow-x-auto
               space-y-3
             "

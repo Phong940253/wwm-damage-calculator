@@ -14,8 +14,8 @@ export function MathFormula({
       <div
         className="
           rounded-xl p-4
-          bg-black/40
-          border border-white/10
+          bg-muted/70
+          border border-border
           overflow-x-auto
         "
       >
@@ -36,9 +36,9 @@ export function FormulaLegend() {
       <div
         className="
           rounded-xl p-4
-          bg-black/30
-          border border-white/10
-          text-xs text-zinc-300
+          bg-muted/60
+          border border-border
+          text-xs text-foreground
           space-y-2
         "
       >
@@ -97,7 +97,7 @@ export function LegendRow({
 }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="font-mono text-zinc-100">{symbol}</span>
+      <span className="font-mono text-foreground">{symbol}</span>
       <span className="text-right text-muted-foreground">{desc}</span>
     </div>
   );
