@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { GearProvider } from "@/app/providers/GearContext";
 import GearTabLayout from "./GearTabLayout";
 import MainTabLayout from "./MainTabLayout";
 
@@ -10,11 +9,7 @@ export function MainContent() {
   const root = search.get("root") ?? "main";
 
   if (root === "gear") {
-    return (
-      <GearProvider>
-        <GearTabLayout />
-      </GearProvider>
-    );
+    return <GearTabLayout />;
   }
 
   return <MainTabLayout />;
