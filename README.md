@@ -111,12 +111,12 @@ Characteristics:
 
 ## Quick Extension Guide
 
-| New feature               | Files to update                                                                                 |
-| ------------------------- | ----------------------------------------------------------------------------------------------- |
-| Add a new stat            | `app/constants.ts`, `app/types.ts` (`InputStats`)                                              |
-| Add a new damage formula  | `app/domain/damage/damageFormula.ts`, then wire it in `app/domain/damage/damageCalculator.ts` |
-| Add a new skill           | `app/domain/skill/skills.ts` (+ `skillContext.ts` / `skillDamage.ts` for multi-hit)           |
-| Add passive/inner way     | `app/domain/skill/passiveSkills.ts`, `app/domain/skill/innerWays.ts`, `modifierEngine.ts`     |
+| New feature              | Files to update                                                                               |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Add a new stat           | `app/constants.ts`, `app/types.ts` (`InputStats`)                                             |
+| Add a new damage formula | `app/domain/damage/damageFormula.ts`, then wire it in `app/domain/damage/damageCalculator.ts` |
+| Add a new skill          | `app/domain/skill/skills.ts` (+ `skillContext.ts` / `skillDamage.ts` for multi-hit)           |
+| Add passive/inner way    | `app/domain/skill/passiveSkills.ts`, `app/domain/skill/innerWays.ts`, `modifierEngine.ts`     |
 
 ## Development Conventions
 
