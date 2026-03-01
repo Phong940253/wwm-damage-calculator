@@ -55,14 +55,20 @@ const STEPS: Step[] = [
         listenEvents: ["click"],
     },
     {
+        selector: "[data-tour='tab-main-root']",
+        title: "Step 8: Open Main",
+        description: "Click the Main root tab to return to the main calculator.",
+        listenEvents: ["click"],
+    },
+    {
         selector: "[data-tour='tab-stats']",
-        title: "Step 8: Back to Stats",
+        title: "Step 9: Back to Stats",
         description: "Click the Stats tab to continue with stat inputs.",
         listenEvents: ["click"],
     },
     {
         selector: "[data-tour='stat-input']",
-        title: "Step 9: Enter Stat",
+        title: "Step 10: Enter Stat",
         description: "Enter values in a Total field to complete the flow.",
         listenEvents: ["input", "change", "click"],
     },
@@ -166,8 +172,11 @@ export function InteractiveGuideOverlay() {
     }
 
     const padding = 8;
+    const viewportPadding = 16;
+    const gap = 12;
     const viewportW = window.innerWidth;
     const viewportH = window.innerHeight;
+    const tooltipWidth = Math.min(340, Math.max(220, viewportW - viewportPadding * 2));
 
     const highlightStyle = rect
         ? {
@@ -178,13 +187,102 @@ export function InteractiveGuideOverlay() {
         }
         : null;
 
-    const baseTooltipTop = rect ? rect.bottom + 12 : 24;
-    const fallbackTop = rect ? Math.max(16, rect.top - tooltipHeight - 12) : 24;
-    const tooltipTop =
-        baseTooltipTop + tooltipHeight + 16 <= viewportH ? baseTooltipTop : fallbackTop;
-    const tooltipLeft = rect
-        ? Math.min(Math.max(16, rect.left), Math.max(16, viewportW - 360))
-        : 16;
+    const clamp = (value: number, min: number, max: number) =>
+        Math.min(Math.max(value, min), max);
+
+    const bounds = rect
+        ? {
+            left: Math.max(0, rect.left - padding),
+            right: Math.min(viewportW, rect.right + padding),
+            top: Math.max(0, rect.top - padding),
+            bottom: Math.min(viewportH, rect.bottom + padding),
+        }
+        : null;
+
+    const defaultTop = rect ? rect.bottom + gap : viewportPadding;
+    const defaultLeft = rect ? rect.left : viewportPadding;
+
+    let tooltipTop = clamp(
+        defaultTop,
+        viewportPadding,
+        Math.max(viewportPadding, viewportH - tooltipHeight - viewportPadding)
+    );
+    let tooltipLeft = clamp(
+        defaultLeft,
+        viewportPadding,
+        Math.max(viewportPadding, viewportW - tooltipWidth - viewportPadding)
+    );
+
+    if (bounds) {
+        const overlaps = (left: number, top: number) => {
+            const right = left + tooltipWidth;
+            const bottom = top + tooltipHeight;
+            return !(
+                right <= bounds.left ||
+                left >= bounds.right ||
+                bottom <= bounds.top ||
+                top >= bounds.bottom
+            );
+        };
+
+        const candidates = [
+            {
+                top: clamp(
+                    bounds.top - tooltipHeight - gap,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportH - tooltipHeight - viewportPadding)
+                ),
+                left: clamp(
+                    bounds.left,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportW - tooltipWidth - viewportPadding)
+                ),
+            },
+            {
+                top: clamp(
+                    bounds.bottom + gap,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportH - tooltipHeight - viewportPadding)
+                ),
+                left: clamp(
+                    bounds.left,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportW - tooltipWidth - viewportPadding)
+                ),
+            },
+            {
+                top: clamp(
+                    bounds.top,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportH - tooltipHeight - viewportPadding)
+                ),
+                left: clamp(
+                    bounds.right + gap,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportW - tooltipWidth - viewportPadding)
+                ),
+            },
+            {
+                top: clamp(
+                    bounds.top,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportH - tooltipHeight - viewportPadding)
+                ),
+                left: clamp(
+                    bounds.left - tooltipWidth - gap,
+                    viewportPadding,
+                    Math.max(viewportPadding, viewportW - tooltipWidth - viewportPadding)
+                ),
+            },
+        ];
+
+        const best = candidates.find((candidate) => !overlaps(candidate.left, candidate.top));
+
+        if (best) {
+            tooltipTop = best.top;
+            tooltipLeft = best.left;
+        }
+    }
 
     return (
         <>
@@ -199,8 +297,8 @@ export function InteractiveGuideOverlay() {
 
             <div
                 ref={tooltipRef}
-                className="fixed z-[102] w-[min(340px,calc(100vw-32px))] rounded-xl border border-white/15 bg-background/95 p-4 shadow-2xl backdrop-blur"
-                style={{ top: tooltipTop, left: tooltipLeft }}
+                className="fixed z-[102] rounded-xl border border-white/15 bg-background/95 p-4 shadow-2xl backdrop-blur"
+                style={{ top: tooltipTop, left: tooltipLeft, width: tooltipWidth }}
             >
                 <div className="mb-1 text-xs text-muted-foreground">
                     {stepIndex + 1}/{STEPS.length}

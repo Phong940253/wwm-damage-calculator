@@ -39,6 +39,7 @@ export function StatusBar() {
           active={root === "main"}
           onClick={() => set("main", "stats")}
           title="Main"
+          data-tour="tab-main-root"
         >
           <LayoutDashboard size={18} />
         </TabButton>
