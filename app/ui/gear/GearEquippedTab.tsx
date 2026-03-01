@@ -23,6 +23,9 @@ import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInSt
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
 import type { CustomGear } from "@/app/types";
 
+const LEFT_SLOT_ORDER: GearSlot[] = ["weapon_1", "weapon_2", "disc", "pendant"];
+const RIGHT_SLOT_ORDER: GearSlot[] = ["head", "chest", "leg", "hand"];
+
 function getGearStatLines(gear?: CustomGear | null): Array<{
   lineKey: string;
   statKey: string;
@@ -218,6 +221,24 @@ export default function GearEquippedTab() {
     return { rows, worstKey: worst };
   }, [customGears, equipped, stats, elementStats, selectedRotation, fullDamage]);
 
+  const rowsByKey = useMemo(() => {
+    const map = new Map<GearSlot, (typeof slotsWithImpact.rows)[number]>();
+    for (const row of slotsWithImpact.rows) {
+      map.set(row.key, row);
+    }
+    return map;
+  }, [slotsWithImpact]);
+
+  const leftRows = useMemo(
+    () => LEFT_SLOT_ORDER.map((k) => rowsByKey.get(k)).filter(Boolean),
+    [rowsByKey]
+  );
+
+  const rightRows = useMemo(
+    () => RIGHT_SLOT_ORDER.map((k) => rowsByKey.get(k)).filter(Boolean),
+    [rowsByKey]
+  );
+
   return (
     <div className="space-y-4" id="gear-combined-stats">
       {/* Combined result */}
@@ -243,131 +264,136 @@ export default function GearEquippedTab() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {slotsWithImpact.rows.map((row) => {
-          const available = customGears.filter((g) => g.slot === row.key);
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {[leftRows, rightRows].map((regionRows, regionIndex) => (
+          <div key={regionIndex} className="grid grid-cols-2 gap-4">
+            {regionRows.map((row) => {
+              if (!row) return null;
+              const available = customGears.filter((g) => g.slot === row.key);
 
-          const pctText =
-            row.equippedGear && row.damageWithoutSlot > 0
-              ? `${row.percent >= 0 ? "+" : ""}${row.percent.toFixed(2)}%`
-              : "0.00%";
+              const pctText =
+                row.equippedGear && row.damageWithoutSlot > 0
+                  ? `${row.percent >= 0 ? "+" : ""}${row.percent.toFixed(2)}%`
+                  : "0.00%";
 
-          const isWorst =
-            !!row.equippedGear && row.key === slotsWithImpact.worstKey;
+              const isWorst =
+                !!row.equippedGear && row.key === slotsWithImpact.worstKey;
 
-          const diffTone =
-            row.diff > 0
-              ? "text-emerald-600"
-              : row.diff < 0
-                ? "text-red-600"
-                : "text-muted-foreground";
+              const diffTone =
+                row.diff > 0
+                  ? "text-emerald-600"
+                  : row.diff < 0
+                    ? "text-red-600"
+                    : "text-muted-foreground";
 
-          return (
-            <Card
-              key={row.key}
-              className={cn(
-                "p-3 space-y-3 border shadow-sm bg-card/50",
-                "border-white/10",
-                isWorst && "ring-1 ring-amber-400/40"
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">{row.label}</p>
-                  <p className="text-sm font-semibold truncate">
-                    {row.equippedGear?.name ?? "Empty"}
-                  </p>
-                </div>
+              return (
+                <Card
+                  key={row.key}
+                  className={cn(
+                    "p-3 space-y-3 border shadow-sm bg-card/50",
+                    "border-white/10",
+                    isWorst && "ring-1 ring-amber-400/40"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">{row.label}</p>
+                      <p className="text-sm font-semibold truncate">
+                        {row.equippedGear?.name ?? "Empty"}
+                      </p>
+                    </div>
 
-                <div className="flex flex-col items-end gap-1">
-                  <Badge
-                    variant={row.diff >= 0 ? "secondary" : "outline"}
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge
+                        variant={row.diff >= 0 ? "secondary" : "outline"}
+                        className={cn(
+                          row.diff > 0 && "bg-emerald-500/15 text-emerald-700",
+                          row.diff < 0 && "bg-red-500/10 text-red-700"
+                        )}
+                      >
+                        {pctText}
+                      </Badge>
+                      {typeof row.perStat.impactPctNoMain === "number" &&
+                        Number.isFinite(row.perStat.impactPctNoMain) &&
+                        Math.abs(row.perStat.impactPctNoMain) >= 0.01 && (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-400/30 bg-amber-500/10 text-amber-700"
+                            title="Gear impact excluding main stats (subs + bonus only)"
+                          >
+                            No-main {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
+                            {row.perStat.impactPctNoMain.toFixed(2)}%
+                          </Badge>
+                        )}
+                      {isWorst && (
+                        <Badge className="bg-amber-500/15 text-amber-700" variant="outline">
+                          Worst
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <div className="text-muted-foreground">Without this slot</div>
+                    <div className="text-right">
+                      {Math.round(row.damageWithoutSlot).toLocaleString()}
+                    </div>
+                    <div className="text-muted-foreground">With current gear</div>
+                    <div className="text-right">
+                      {Math.round(fullDamage).toLocaleString()}
+                    </div>
+                    <div className="text-muted-foreground">Δ from this slot</div>
+                    <div className={cn("text-right font-medium", diffTone)}>
+                      {row.diff > 0 ? "+" : ""}
+                      {Math.round(row.diff).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <Separator className="bg-white/5" />
+
+                  <select
+                    value={row.equippedId || ""}
+                    onChange={(e) =>
+                      setEquipped((prev) => {
+                        const next = { ...prev };
+                        const v = e.target.value;
+                        if (!v) {
+                          delete next[row.key];
+                        } else {
+                          next[row.key] = v;
+                        }
+                        return next;
+                      })
+                    }
                     className={cn(
-                      row.diff > 0 && "bg-emerald-500/15 text-emerald-700",
-                      row.diff < 0 && "bg-red-500/10 text-red-700"
+                      "w-full rounded-md border bg-background px-2 py-2 text-sm",
+                      "border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
                     )}
                   >
-                    {pctText}
-                  </Badge>
-                  {typeof row.perStat.impactPctNoMain === "number" &&
-                    Number.isFinite(row.perStat.impactPctNoMain) &&
-                    Math.abs(row.perStat.impactPctNoMain) >= 0.01 && (
-                      <Badge
-                        variant="outline"
-                        className="border-amber-400/30 bg-amber-500/10 text-amber-700"
-                        title="Gear impact excluding main stats (subs + bonus only)"
-                      >
-                        No-main {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
-                        {row.perStat.impactPctNoMain.toFixed(2)}%
-                      </Badge>
-                    )}
-                  {isWorst && (
-                    <Badge className="bg-amber-500/15 text-amber-700" variant="outline">
-                      Worst
-                    </Badge>
+                    <option value="">Empty</option>
+                    {available.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {row.equippedGear ? (
+                    <GearDetailCard
+                      gear={row.equippedGear}
+                      elementStats={elementStats}
+                      impactPctByLineKey={row.perStat.impactPctByLineKey}
+                    />
+                  ) : (
+                    <div className="h-36 rounded bg-muted/40 flex items-center justify-center text-xs text-muted-foreground">
+                      {row.label}
+                    </div>
                   )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                <div className="text-muted-foreground">Without this slot</div>
-                <div className="text-right">
-                  {Math.round(row.damageWithoutSlot).toLocaleString()}
-                </div>
-                <div className="text-muted-foreground">With current gear</div>
-                <div className="text-right">
-                  {Math.round(fullDamage).toLocaleString()}
-                </div>
-                <div className="text-muted-foreground">Δ from this slot</div>
-                <div className={cn("text-right font-medium", diffTone)}>
-                  {row.diff > 0 ? "+" : ""}
-                  {Math.round(row.diff).toLocaleString()}
-                </div>
-              </div>
-
-              <Separator className="bg-white/5" />
-
-              <select
-                value={row.equippedId || ""}
-                onChange={(e) =>
-                  setEquipped((prev) => {
-                    const next = { ...prev };
-                    const v = e.target.value;
-                    if (!v) {
-                      delete next[row.key];
-                    } else {
-                      next[row.key] = v;
-                    }
-                    return next;
-                  })
-                }
-                className={cn(
-                  "w-full rounded-md border bg-background px-2 py-2 text-sm",
-                  "border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
-                )}
-              >
-                <option value="">Empty</option>
-                {available.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-
-              {row.equippedGear ? (
-                <GearDetailCard
-                  gear={row.equippedGear}
-                  elementStats={elementStats}
-                  impactPctByLineKey={row.perStat.impactPctByLineKey}
-                />
-              ) : (
-                <div className="h-36 rounded bg-muted/40 flex items-center justify-center text-xs text-muted-foreground">
-                  {row.label}
-                </div>
-              )}
-            </Card>
-          );
-        })}
+                </Card>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
