@@ -510,7 +510,6 @@ export default function RotationPanel({
           {/* ========== PASSIVE SKILLS ========== */}
           <div className="mb-4 pb-4 border-b border-zinc-700">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">Passive Skills</h3>
               <h3 className="text-sm font-semibold">{text.passiveSkills}</h3>
               <Button
                 onClick={() => setShowPassiveSkills(!showPassiveSkills)}
