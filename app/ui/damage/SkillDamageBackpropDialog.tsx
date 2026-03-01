@@ -20,6 +20,7 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { getStatLabel } from "@/app/utils/statLabel";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 function fmt(n: number, digits = 4) {
     if (!Number.isFinite(n)) return "NaN";
@@ -167,28 +168,44 @@ function ExprRow({ children }: { children: React.ReactNode }) {
     );
 }
 
-function Legend() {
+function Legend({
+    title,
+    add,
+    multiply,
+    divide,
+    assign,
+    takeMax,
+    clamp,
+}: {
+    title: string;
+    add: string;
+    multiply: string;
+    divide: string;
+    assign: string;
+    takeMax: string;
+    clamp: string;
+}) {
     return (
         <div className="text-xs text-muted-foreground space-y-1">
-            <div className="font-medium text-zinc-300">Operator legend</div>
+            <div className="font-medium text-zinc-300">{title}</div>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
                 <span className="font-mono">
-                    <span className="text-emerald-300">+</span> add
+                    <span className="text-emerald-300">+</span> {add}
                 </span>
                 <span className="font-mono">
-                    <span className="text-sky-300">×</span> multiply
+                    <span className="text-sky-300">×</span> {multiply}
                 </span>
                 <span className="font-mono">
-                    <span className="text-fuchsia-300">÷</span> divide
+                    <span className="text-fuchsia-300">÷</span> {divide}
                 </span>
                 <span className="font-mono">
-                    <span className="text-zinc-400">=</span> assign/result
+                    <span className="text-zinc-400">=</span> {assign}
                 </span>
                 <span className="font-mono">
-                    <span className="text-amber-300">max(·)</span> take max
+                    <span className="text-amber-300">max(·)</span> {takeMax}
                 </span>
                 <span className="font-mono">
-                    <span className="text-zinc-300">clamp01(x)</span> clamp to [0,1]
+                    <span className="text-zinc-300">clamp01(x)</span> {clamp}
                 </span>
             </div>
         </div>
@@ -206,6 +223,59 @@ export function SkillDamageBackpropDialog({
     skill: Skill;
     ctx: DamageContext;
 }) {
+    const { language } = useI18n();
+    const text = language === "vi"
+        ? {
+            dialogDescription:
+                "Truy vết sát thương (từ [app/domain/damage/damageFormula.ts]) — hiển thị dưới dạng phép tính dễ đọc (không dùng KaTeX)",
+            operatorLegend: "Chú giải toán tử",
+            add: "cộng",
+            multiply: "nhân",
+            divide: "chia",
+            assign: "gán/kết quả",
+            takeMax: "lấy giá trị lớn nhất",
+            clamp: "giới hạn về [0,1]",
+            hitGroup: "Nhóm hit",
+            repeats: "lặp",
+            min: "thấp nhất",
+            avg: "trung bình",
+            crit: "chí mạng",
+            aff: "affinity",
+            baseStats: "Chỉ số gốc (di chuột để xem tên chỉ số)",
+            substitutedNumbers: "Thay số (dạng số)",
+            expectedNumbers: "Kỳ vọng (dạng số)",
+            baseWhenPrecision: "Base (dùng khi có Precision)",
+            substitutedMultipliers: "Hệ số thay số",
+            probabilities: "Xác suất (clamp + chuẩn hóa)",
+            expectedFromFormula: "Sát thương kỳ vọng (từ damageFormula)",
+            perHitGroupNote: "Đây là Expected Normal (trung bình) cho mỗi nhóm hit trước khi nhân số hit.",
+        }
+        : {
+            dialogDescription:
+                "Damage backprop (from [app/domain/damage/damageFormula.ts]) — shown as readable arithmetic (no KaTeX)",
+            operatorLegend: "Operator legend",
+            add: "add",
+            multiply: "multiply",
+            divide: "divide",
+            assign: "assign/result",
+            takeMax: "take max",
+            clamp: "clamp to [0,1]",
+            hitGroup: "Hit group",
+            repeats: "repeats",
+            min: "min",
+            avg: "avg",
+            crit: "crit",
+            aff: "aff",
+            baseStats: "Base stats (hover for stat name)",
+            substitutedNumbers: "Substituted (numbers)",
+            expectedNumbers: "Expected (numbers)",
+            baseWhenPrecision: "Base (used when Precision)",
+            substitutedMultipliers: "Substituted multipliers",
+            probabilities: "Probabilities (clamp + normalize)",
+            expectedFromFormula: "Expected damage (from damageFormula)",
+            perHitGroupNote: "This is the per-hit-group Expected Normal (avg) before hit count.",
+        };
+
     const hitExplains = useMemo(() => {
         const damageSkillTypes = skill.damageSkillType ?? ["normal"];
 
@@ -252,17 +322,22 @@ export function SkillDamageBackpropDialog({
                     <div className="p-5 pb-3">
                         <DialogHeader className="text-left">
                             <DialogTitle>{skill.name}</DialogTitle>
-                            <DialogDescription>
-                                Damage backprop (from [app/domain/damage/damageFormula.ts]) — shown as
-                                readable arithmetic (no KaTeX)
-                            </DialogDescription>
+                            <DialogDescription>{text.dialogDescription}</DialogDescription>
                         </DialogHeader>
                     </div>
 
                     <Separator className="bg-white/10" />
 
                     <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
-                        <Legend />
+                        <Legend
+                            title={text.operatorLegend}
+                            add={text.add}
+                            multiply={text.multiply}
+                            divide={text.divide}
+                            assign={text.assign}
+                            takeMax={text.takeMax}
+                            clamp={text.clamp}
+                        />
 
                         {hitExplains.map(({ hitIndex, hitCount, hit, damage, steps }) => {
                             const physAtkMult = steps.cache.physAtkMult / 100;
@@ -304,25 +379,25 @@ export function SkillDamageBackpropDialog({
                                 >
                                     <div className="flex items-baseline justify-between gap-3">
                                         <div>
-                                            <div className="text-sm font-semibold">Hit group {hitIndex + 1}</div>
+                                            <div className="text-sm font-semibold">{text.hitGroup} {hitIndex + 1}</div>
                                             <div className="text-xs text-muted-foreground">
-                                                repeats: {hitCount} · physMult: {fmt(hit.physicalMultiplier)} ·
+                                                {text.repeats}: {hitCount} · physMult: {fmt(hit.physicalMultiplier)} ·
                                                 elemMult: {fmt(hit.elementMultiplier)}
                                             </div>
                                         </div>
 
                                         <div className="text-right text-xs text-muted-foreground">
                                             <div>
-                                                min <span className="text-zinc-100">{fmt(damage.min, 1)}</span>
+                                                {text.min} <span className="text-zinc-100">{fmt(damage.min, 1)}</span>
                                             </div>
                                             <div>
-                                                avg <span className="text-zinc-100">{fmt(damage.normal, 1)}</span>
+                                                {text.avg} <span className="text-zinc-100">{fmt(damage.normal, 1)}</span>
                                             </div>
                                             <div>
-                                                crit <span className="text-zinc-100">{fmt(damage.critical, 1)}</span>
+                                                {text.crit} <span className="text-zinc-100">{fmt(damage.critical, 1)}</span>
                                             </div>
                                             <div>
-                                                aff <span className="text-zinc-100">{fmt(damage.affinity, 1)}</span>
+                                                {text.aff} <span className="text-zinc-100">{fmt(damage.affinity, 1)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -331,7 +406,7 @@ export function SkillDamageBackpropDialog({
 
                                     <div className="space-y-2">
                                         <div className="text-xs font-medium text-zinc-300">
-                                            Base stats (hover for stat name)
+                                            {text.baseStats}
                                         </div>
 
                                         <div className="flex flex-wrap gap-1.5">
@@ -416,7 +491,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">Substituted (numbers)</div>
+                                        <div className="text-xs font-medium text-zinc-300">{text.substitutedNumbers}</div>
 
                                         <ExprRow>
                                             <Name>Base</Name>
@@ -596,7 +671,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">Expected (numbers)</div>
+                                        <div className="text-xs font-medium text-zinc-300">{text.expectedNumbers}</div>
 
                                         <ExprRow>
                                             <Name>P</Name>
@@ -652,7 +727,7 @@ export function SkillDamageBackpropDialog({
 
                                     <div className="space-y-2">
                                         <div className="text-xs font-medium text-zinc-300">
-                                            Base (used when Precision)
+                                            {text.baseWhenPrecision}
                                         </div>
 
                                         <ExprRow>
@@ -696,14 +771,14 @@ export function SkillDamageBackpropDialog({
                                         </ExprRow>
 
                                         <div className="text-xs text-muted-foreground">
-                                            Substituted multipliers: physAtkMult={fmt(physAtkMult)} ·
+                                            {text.substitutedMultipliers}: physAtkMult={fmt(physAtkMult)} ·
                                             elemMult={fmt(elemMult)}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <div className="text-xs font-medium text-zinc-300">
-                                            Probabilities (clamp + normalize)
+                                            {text.probabilities}
                                         </div>
 
                                         <ExprRow>
@@ -783,7 +858,7 @@ export function SkillDamageBackpropDialog({
 
                                     <div className="space-y-2">
                                         <div className="text-xs font-medium text-zinc-300">
-                                            Expected damage (from damageFormula)
+                                            {text.expectedFromFormula}
                                         </div>
 
                                         <ExprRow>
@@ -862,7 +937,7 @@ export function SkillDamageBackpropDialog({
                                         </ExprRow>
 
                                         <div className="text-xs text-muted-foreground">
-                                            This is the per-hit-group Expected Normal (avg) before hit count.
+                                            {text.perHitGroupNote}
                                         </div>
                                     </div>
                                 </div>

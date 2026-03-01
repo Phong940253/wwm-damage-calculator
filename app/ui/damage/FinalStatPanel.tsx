@@ -24,6 +24,7 @@ import type {
   StatExplanation,
   StatSourceKind,
 } from "@/app/domain/damage/damageContext";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 export default function FinalStatPanel({
   sections,
@@ -32,6 +33,53 @@ export default function FinalStatPanel({
   sections: FinalStatSection[];
   ctx: DamageContext;
 }) {
+  const { language } = useI18n();
+  const text = language === "vi"
+    ? {
+      title: "Truy vết chỉ số",
+      noExplanation: "Không có dữ liệu giải thích cho ngữ cảnh này.",
+      noBreakdown: "Không có phân rã.",
+      legend: "Chú giải",
+      base: "Gốc",
+      baseNote: "Giá trị chỉ số đã lưu/gốc",
+      increase: "Tăng thêm",
+      increaseNote: "Giá trị tăng tạm thời",
+      gear: "Trang bị",
+      gearNote: "Thưởng từ trang bị (raw)",
+      passive: "Nội tại",
+      passiveNote: "Đóng góp từ kỹ năng nội tại",
+      innerWay: "Nội công",
+      innerWayNote: "Đóng góp từ nội công",
+      derived: "Suy ra",
+      derivedNote: "Được tính từ thuộc tính",
+      otherElements: "Nguyên tố khác",
+      otherElementsNote: "Tổng từ các nguyên tố không chọn",
+      bestEffort: "Giá trị được ước tính tốt nhất có thể và cộng dồn khi khả thi.",
+      showBreakdown: "Xem phân rã",
+    }
+    : {
+      title: "Stat backpropagation",
+      noExplanation: "No explanation data available for this context.",
+      noBreakdown: "No breakdown.",
+      legend: "Legend",
+      base: "Base",
+      baseNote: "Your saved/base stat value",
+      increase: "Increase",
+      increaseNote: "Temporary increase inputs",
+      gear: "Gear",
+      gearNote: "Gear bonus (raw)",
+      passive: "Passive",
+      passiveNote: "Passive skill contribution",
+      innerWay: "Inner Way",
+      innerWayNote: "Inner way contribution",
+      derived: "Derived",
+      derivedNote: "Computed from attributes",
+      otherElements: "Other elements",
+      otherElementsNote: "Summed from non-selected elements",
+      bestEffort: "Values are best-effort and additive where possible.",
+      showBreakdown: "Show breakdown",
+    };
+
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<{
     sectionTitle: string;
@@ -69,7 +117,7 @@ export default function FinalStatPanel({
             <DialogHeader className="px-5 pt-5">
               <DialogTitle className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-emerald-400" />
-                Stat backpropagation
+                {text.title}
               </DialogTitle>
               <DialogDescription className="text-xs">
                 {selected ? (
@@ -87,7 +135,7 @@ export default function FinalStatPanel({
             <div className="flex-1 overflow-y-auto px-5 pb-5 pt-4 space-y-4">
               {!ctx.explain && (
                 <div className="rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-muted-foreground">
-                  No explanation data available for this context.
+                  {text.noExplanation}
                 </div>
               )}
 
@@ -113,7 +161,7 @@ export default function FinalStatPanel({
 
                   <div className="px-4 pb-4 space-y-2">
                     {ex.lines.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">No breakdown.</div>
+                      <div className="text-sm text-muted-foreground">{text.noBreakdown}</div>
                     ) : (
                       ex.lines.map((line, idx) => (
                         <div
@@ -149,22 +197,22 @@ export default function FinalStatPanel({
 
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <Layers className="h-4 w-4 text-muted-foreground" /> Legend
+                  <Layers className="h-4 w-4 text-muted-foreground" /> {text.legend}
                 </div>
                 <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-                  <LegendRow kind="base" label="Base" note="Your saved/base stat value" />
-                  <LegendRow kind="increase" label="Increase" note="Temporary increase inputs" />
-                  <LegendRow kind="gear" label="Gear" note="Gear bonus (raw)" />
-                  <LegendRow kind="passive" label="Passive" note="Passive skill contribution" />
-                  <LegendRow kind="inner-way" label="Inner Way" note="Inner way contribution" />
-                  <LegendRow kind="derived" label="Derived" note="Computed from attributes" />
-                  <LegendRow kind="element-other" label="Other elements" note="Summed from non-selected elements" />
+                  <LegendRow kind="base" label={text.base} note={text.baseNote} />
+                  <LegendRow kind="increase" label={text.increase} note={text.increaseNote} />
+                  <LegendRow kind="gear" label={text.gear} note={text.gearNote} />
+                  <LegendRow kind="passive" label={text.passive} note={text.passiveNote} />
+                  <LegendRow kind="inner-way" label={text.innerWay} note={text.innerWayNote} />
+                  <LegendRow kind="derived" label={text.derived} note={text.derivedNote} />
+                  <LegendRow kind="element-other" label={text.otherElements} note={text.otherElementsNote} />
                 </div>
               </div>
 
               <div className="text-[11px] text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-3.5 w-3.5" />
-                Values are best-effort and additive where possible.
+                {text.bestEffort}
               </div>
             </div>
           </div>
@@ -181,6 +229,8 @@ function Section({
   section: FinalStatSection;
   onOpenDetails: (rowLabel: string, keys: string[]) => void;
 }) {
+  const { language } = useI18n();
+  const showBreakdownLabel = language === "vi" ? "Xem phân rã" : "Show breakdown";
   const [open, setOpen] = useState(true);
 
   return (
@@ -223,7 +273,7 @@ function Section({
                         size="icon"
                         className="h-7 w-7 shrink-0 text-muted-foreground hover:bg-white/10 hover:text-foreground opacity-0 pointer-events-none transition-opacity group-hover/row:opacity-100 group-hover/row:pointer-events-auto group-focus-within/row:opacity-100 group-focus-within/row:pointer-events-auto"
                         onClick={() => onOpenDetails(row.label, row.ctxKeys!)}
-                        title="Show breakdown"
+                        title={showBreakdownLabel}
                       >
                         <Info className="h-3.5 w-3.5" />
                       </Button>

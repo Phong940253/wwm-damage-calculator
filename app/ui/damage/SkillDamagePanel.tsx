@@ -6,6 +6,7 @@ import { SkillDamageResult } from "@/app/domain/damage/type";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import React, { useState } from "react";
 import { SkillDamageBackpropDialog } from "./SkillDamageBackpropDialog";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 interface Props {
     skill: Skill;
@@ -16,6 +17,21 @@ interface Props {
 }
 
 export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEven = false }: Props) {
+    const { language } = useI18n();
+    const text = language === "vi"
+        ? {
+            abrasion: "Mức tối thiểu",
+            average: "Trung bình",
+            critical: "Chí mạng",
+            affinity: "Affinity",
+        }
+        : {
+            abrasion: "Abrasion",
+            average: "Average",
+            critical: "Critical",
+            affinity: "Affinity",
+        };
+
     const [open, setOpen] = useState(false);
     const total = result.total;
     const formatList = (values: number[]) => values.map(Math.round).join(" + ");
@@ -28,10 +44,10 @@ export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEve
     const perHitAffinity = result.perHit.map((hit) => hit.affinity.value);
 
     const hitsTooltip = [
-        `Abrasion: ${formatList(perHitMin)}`,
-        `Average: ${formatList(perHitNormal)}`,
-        `Critical: ${formatList(perHitCritical)}`,
-        `Affinity: ${formatList(perHitAffinity)}`,
+        `${text.abrasion}: ${formatList(perHitMin)}`,
+        `${text.average}: ${formatList(perHitNormal)}`,
+        `${text.critical}: ${formatList(perHitCritical)}`,
+        `${text.affinity}: ${formatList(perHitAffinity)}`,
     ].join("\n");
 
     const hitTooltipByType = {
@@ -53,10 +69,10 @@ export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEve
                     `}
                 >
                     <div className="col-span-2 md:col-span-1 lg:col-span-1"></div>
-                    <div className="text-right">Abrasion</div>
-                    <div className="text-right">Average</div>
-                    <div className="text-right">Critical</div>
-                    <div className="text-right">Affinity</div>
+                    <div className="text-right">{text.abrasion}</div>
+                    <div className="text-right">{text.average}</div>
+                    <div className="text-right">{text.critical}</div>
+                    <div className="text-right">{text.affinity}</div>
                 </div>
             )}
 
