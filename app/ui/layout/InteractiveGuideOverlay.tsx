@@ -290,7 +290,7 @@ export function InteractiveGuideOverlay() {
                 currentElement.removeEventListener(eventName, onEvent);
             });
         };
-    }, [isActive, currentElement, currentStep]);
+    }, [isActive, currentElement, currentStep, activeGuide, currentSteps.length]);
 
     useEffect(() => {
         if (!tooltipRef.current) return;

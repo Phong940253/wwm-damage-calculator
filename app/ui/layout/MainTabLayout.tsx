@@ -21,12 +21,20 @@ export default function MainTabLayout() {
 
   // On sm + md: stack panels (two rows). On lg+: show two columns.
   const [isStacked, setIsStacked] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
+    const mobileMq = window.matchMedia("(max-width: 767px)");
     const apply = () => setIsStacked(!mq.matches);
+    const applyMobile = () => setIsMobile(mobileMq.matches);
     apply();
+    applyMobile();
     mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
+    mobileMq.addEventListener("change", applyMobile);
+    return () => {
+      mq.removeEventListener("change", apply);
+      mobileMq.removeEventListener("change", applyMobile);
+    };
   }, []);
 
   // Vertical resizer state (only used in stacked mode)
@@ -38,7 +46,7 @@ export default function MainTabLayout() {
   const dragStartTopPxRef = useRef(0);
 
   const HANDLE_HEIGHT = 10;
-  const MIN_PANE_PX = 180;
+  const MIN_PANE_PX = isMobile ? 132 : 180;
 
   useEffect(() => {
     if (!isStacked) return;
@@ -58,7 +66,7 @@ export default function MainTabLayout() {
     const maxTop = Math.max(MIN_PANE_PX, available - MIN_PANE_PX);
     const raw = splitRatio * available;
     return clamp(raw, MIN_PANE_PX, maxTop);
-  }, [containerHeight, splitRatio]);
+  }, [containerHeight, splitRatio, MIN_PANE_PX]);
 
   const {
     rotations,
@@ -152,12 +160,12 @@ export default function MainTabLayout() {
   };
 
   return (
-    <div className="h-[calc(100vh-180px)]">
+    <div className="h-[calc(100dvh-150px)] sm:h-[calc(100dvh-165px)] lg:h-[calc(100dvh-180px)]">
       {isStacked ? (
         <div ref={containerRef} className="flex h-full flex-col">
           {/* TOP (LEFT PANEL) */}
           <div
-            className="overflow-y-auto px-2 scrollbar-thin scrollbar-thumb-zinc-600/40"
+            className="overflow-y-auto px-1.5 sm:px-2 scrollbar-thin scrollbar-thumb-zinc-600/40"
             style={{ height: topPaneHeightPx }}
           >
             {tab === "stats" && (
@@ -208,6 +216,7 @@ export default function MainTabLayout() {
             aria-orientation="horizontal"
             className="h-[10px] cursor-row-resize bg-muted active:bg-muted/80"
             onPointerDown={(e) => {
+              if (isMobile) return;
               if (!containerRef.current) return;
               const available = Math.max(0, containerHeight - HANDLE_HEIGHT);
               const currentTopPx = clamp(
@@ -222,6 +231,7 @@ export default function MainTabLayout() {
               (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
             }}
             onPointerMove={(e) => {
+              if (isMobile) return;
               if (!draggingRef.current) return;
               const available = Math.max(0, containerHeight - HANDLE_HEIGHT);
               const maxTop = Math.max(MIN_PANE_PX, available - MIN_PANE_PX);
@@ -238,7 +248,7 @@ export default function MainTabLayout() {
           />
 
           {/* BOTTOM (RIGHT PANEL) */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
+          <div className="min-h-0 flex-1 overflow-y-auto px-1.5 sm:px-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
             <DamagePanel
               ctx={ctx}
               result={damage}
@@ -252,9 +262,9 @@ export default function MainTabLayout() {
           </div>
         </div>
       ) : (
-        <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid h-full grid-cols-1 gap-3 xl:grid-cols-2 xl:gap-6">
           {/* LEFT PANEL */}
-          <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
+          <div className="overflow-y-auto pr-1 lg:pr-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
             {tab === "stats" && (
               <StatsPanel
                 stats={stats}
@@ -298,7 +308,7 @@ export default function MainTabLayout() {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="overflow-y-auto pl-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
+          <div className="overflow-y-auto pl-1 lg:pl-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
             <DamagePanel
               ctx={ctx}
               result={damage}

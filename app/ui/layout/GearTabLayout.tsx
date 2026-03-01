@@ -23,8 +23,11 @@ export default function GearTabLayout() {
   return (
     <div
       className="
-        h-[calc(100vh-180px)]
+        h-[calc(100dvh-150px)]
+        sm:h-[calc(100dvh-165px)]
+        lg:h-[calc(100dvh-180px)]
         overflow-y-auto
+        px-1.5 sm:px-2
         scrollbar-thin scrollbar-thumb-zinc-600/40
       "
     >

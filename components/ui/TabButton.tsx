@@ -20,7 +20,7 @@ export function TabButton({
       {...props}
       aria-pressed={active}
       className={cn(
-        "flex items-center justify-center w-9 h-9 rounded-md transition",
+        "flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-md transition sm:h-10 sm:w-10",
         active
           ? "bg-background border shadow-sm text-foreground"
           : "text-muted-foreground hover:text-foreground",

@@ -224,7 +224,7 @@ export default function StatsPanel({
         ring-1 ring-white/5
       "
     >
-      <CardContent className="p-6 space-y-10">
+      <CardContent className="space-y-6 p-3 sm:space-y-8 sm:p-4 lg:space-y-10 lg:p-6">
         {/* Level Selection */}
         <section className="space-y-5">
           <div className="flex items-center gap-3">
@@ -232,7 +232,7 @@ export default function StatsPanel({
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
             <div className="space-y-2">
               <label className="text-xs text-muted-foreground">Player level</label>
               <select
@@ -313,7 +313,7 @@ export default function StatsPanel({
             </div>
 
             {/* ---------- Stats Grid ---------- */}
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
               {(keys as (StatKey | ElementStatKey)[]).map((k) => {
                 const stat = isElementKey(k)
                   ? elementStats[k]

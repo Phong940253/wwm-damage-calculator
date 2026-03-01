@@ -271,11 +271,11 @@ export default function RotationPanel({
   // console.log(rotations, selectedRotationId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Create New Rotation */}
-      <Card className="p-4">
+      <Card className="p-3 sm:p-4">
         <h3 className="text-sm font-semibold mb-3">New Rotation</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             placeholder="Rotation name..."
             value={newRotationName}

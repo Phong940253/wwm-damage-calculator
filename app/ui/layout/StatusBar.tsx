@@ -28,13 +28,14 @@ export function StatusBar() {
   return (
     <div
       className="
-        grid grid-cols-[1fr_auto_1fr]
-        items-center
+        flex flex-col gap-2
         border-b pb-3
+        sm:grid sm:grid-cols-[1fr_auto_1fr]
+        sm:items-center
       "
     >
       {/* LEFT — ROOT */}
-      <div className="flex gap-1 justify-start">
+      <div className="flex justify-start gap-1 overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0">
         <TabButton
           active={root === "main"}
           onClick={() => set("main", "stats")}
@@ -55,7 +56,7 @@ export function StatusBar() {
       </div>
 
       {/* CENTER — SUB */}
-      <div className="flex justify-center gap-1">
+      <div className="flex justify-start gap-1 overflow-x-auto pb-0.5 sm:justify-center sm:overflow-visible sm:pb-0">
         {root === "main" && (
           <>
             <TabButton
@@ -117,7 +118,7 @@ export function StatusBar() {
       </div>
 
       {/* RIGHT — balancing */}
-      <div className="flex justify-end">
+      <div className="flex justify-start sm:justify-end">
         <ThemeToggle />
       </div>
     </div>

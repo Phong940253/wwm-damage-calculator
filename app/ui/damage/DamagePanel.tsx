@@ -107,16 +107,16 @@ export default function DamagePanel({
     >
       <CardContent
         className="
-          flex-1 overflow-y-auto space-y-6 pr-2
+          flex-1 overflow-y-auto space-y-4 p-3 sm:space-y-6 sm:p-4 lg:p-5
           scrollbar-thin scrollbar-thumb-zinc-600/40
         "
       >
         <div className="flex flex-col">
-          <div className="text-lg pb-4 font-bold">Stats</div>
+          <div className="pb-3 text-base font-bold sm:pb-4 sm:text-lg">Stats</div>
 
           <FinalStatPanel sections={finalStats} ctx={ctx} />
 
-          <div className="flex flex-row gap-x-2 text-lg pt-4 font-bold">
+          <div className="flex flex-row gap-x-2 pt-3 text-base font-bold sm:pt-4 sm:text-lg">
             <Zap className="text-yellow-500" /> Damage output
           </div>
 

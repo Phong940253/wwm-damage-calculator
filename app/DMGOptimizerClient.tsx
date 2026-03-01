@@ -8,15 +8,15 @@ import { MainContent } from "./ui/layout/MainContent";
 
 export default function DMGOptimizerClient() {
   return (
-    <div className="min-h-screen p-6" suppressHydrationWarning>
-      <div className="space-y-6">
+    <div className="min-h-screen p-3 sm:p-4 lg:p-6" suppressHydrationWarning>
+      <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
         {/* HEADER */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-start gap-2 sm:items-center sm:gap-3">
           <Swords className="text-emerald-500" />
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-base font-bold leading-tight sm:text-xl lg:text-2xl">
             Where Winds Meet – DMG Optimizer
           </h1>
-          <Badge>Realtime</Badge>
+          <Badge className="text-[10px] sm:text-xs">Realtime</Badge>
         </div>
 
         {/* STATUS BAR */}
