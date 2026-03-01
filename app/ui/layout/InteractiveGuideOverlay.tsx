@@ -151,6 +151,7 @@ export function InteractiveGuideOverlay() {
     const [activeGuideId, setActiveGuideId] = useState<GuideId | null>(null);
     const [isActive, setIsActive] = useState(false);
     const [stepIndex, setStepIndex] = useState(0);
+    const [mobileLauncherOpen, setMobileLauncherOpen] = useState(false);
     const [rect, setRect] = useState<DOMRect | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
     const isAdvancingRef = useRef(false);
@@ -299,39 +300,93 @@ export function InteractiveGuideOverlay() {
 
     if (!isActive || !currentStep || !activeGuide) {
         return (
-            <div className="fixed bottom-6 right-6 z-[110] flex flex-col gap-2">
-                <a
-                    href={FEEDBACK_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border border-white/15 bg-background/90 px-4 py-2 text-xs text-foreground shadow-lg backdrop-blur hover:bg-background"
-                >
-                    Send Feedback
-                </a>
+            <div className="fixed bottom-4 right-4 z-[110] sm:bottom-6 sm:right-6">
+                <div className="hidden flex-col gap-2 sm:flex">
+                    <a
+                        href={FEEDBACK_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-white/15 bg-background/90 px-4 py-2 text-xs text-foreground shadow-lg backdrop-blur hover:bg-background"
+                    >
+                        Send Feedback
+                    </a>
 
-                <button
-                    type="button"
-                    onClick={() => {
-                        setActiveGuideId("setup");
-                        setStepIndex(0);
-                        setIsActive(true);
-                    }}
-                    className="rounded-full border border-emerald-500/30 bg-background/90 px-4 py-2 text-xs text-emerald-300 shadow-lg backdrop-blur"
-                >
-                    {GUIDES.setup.startLabel}
-                </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setActiveGuideId("setup");
+                            setStepIndex(0);
+                            setIsActive(true);
+                        }}
+                        className="rounded-full border border-emerald-500/30 bg-background/90 px-4 py-2 text-xs text-emerald-300 shadow-lg backdrop-blur"
+                    >
+                        {GUIDES.setup.startLabel}
+                    </button>
 
-                <button
-                    type="button"
-                    onClick={() => {
-                        setActiveGuideId("optimize");
-                        setStepIndex(0);
-                        setIsActive(true);
-                    }}
-                    className="rounded-full border border-blue-500/30 bg-background/90 px-4 py-2 text-xs text-blue-300 shadow-lg backdrop-blur"
-                >
-                    {GUIDES.optimize.startLabel}
-                </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setActiveGuideId("optimize");
+                            setStepIndex(0);
+                            setIsActive(true);
+                        }}
+                        className="rounded-full border border-blue-500/30 bg-background/90 px-4 py-2 text-xs text-blue-300 shadow-lg backdrop-blur"
+                    >
+                        {GUIDES.optimize.startLabel}
+                    </button>
+                </div>
+
+                <div className="flex flex-col items-end gap-2 sm:hidden">
+                    {mobileLauncherOpen && (
+                        <div className="flex flex-col items-end gap-2">
+                            <a
+                                href={FEEDBACK_URL}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={() => setMobileLauncherOpen(false)}
+                                className="rounded-full border border-white/15 bg-background/90 px-3 py-1.5 text-[11px] text-foreground shadow-lg backdrop-blur"
+                            >
+                                Feedback
+                            </a>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setActiveGuideId("setup");
+                                    setStepIndex(0);
+                                    setIsActive(true);
+                                    setMobileLauncherOpen(false);
+                                }}
+                                className="rounded-full border border-emerald-500/30 bg-background/90 px-3 py-1.5 text-[11px] text-emerald-300 shadow-lg backdrop-blur"
+                            >
+                                Setup Guide
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setActiveGuideId("optimize");
+                                    setStepIndex(0);
+                                    setIsActive(true);
+                                    setMobileLauncherOpen(false);
+                                }}
+                                className="rounded-full border border-blue-500/30 bg-background/90 px-3 py-1.5 text-[11px] text-blue-300 shadow-lg backdrop-blur"
+                            >
+                                Optimize Guide
+                            </button>
+                        </div>
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={() => setMobileLauncherOpen((prev) => !prev)}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-background/90 text-xs font-semibold text-foreground shadow-lg backdrop-blur"
+                        aria-label="Open help actions"
+                        aria-expanded={mobileLauncherOpen}
+                    >
+                        {mobileLauncherOpen ? "×" : "?"}
+                    </button>
+                </div>
             </div>
         );
     }
