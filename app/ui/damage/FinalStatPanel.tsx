@@ -74,9 +74,9 @@ export default function FinalStatPanel({
               <DialogDescription className="text-xs">
                 {selected ? (
                   <span>
-                    <span className="text-zinc-200">{selected.sectionTitle}</span>
+                    <span className="text-foreground">{selected.sectionTitle}</span>
                     <span className="text-muted-foreground"> · </span>
-                    <span className="text-zinc-200">{selected.rowLabel}</span>
+                    <span className="text-foreground">{selected.rowLabel}</span>
                   </span>
                 ) : (
                   ""
@@ -137,7 +137,7 @@ export default function FinalStatPanel({
                             )}
                           </div>
 
-                          <div className="text-sm font-mono text-zinc-200 shrink-0">
+                          <div className="text-sm font-mono text-foreground shrink-0">
                             {formatSigned(line.value)}
                           </div>
                         </div>
@@ -149,7 +149,7 @@ export default function FinalStatPanel({
 
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <Layers className="h-4 w-4 text-zinc-400" /> Legend
+                  <Layers className="h-4 w-4 text-muted-foreground" /> Legend
                 </div>
                 <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
                   <LegendRow kind="base" label="Base" note="Your saved/base stat value" />
@@ -190,7 +190,7 @@ function Section({
         className="
           w-full flex items-center justify-between
           px-4 py-2.5 text-sm font-medium
-          text-zinc-200
+          text-foreground
           hover:bg-white/[0.06]
         "
       >
@@ -221,7 +221,7 @@ function Section({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 shrink-0 text-zinc-300 hover:bg-white/10 hover:text-zinc-100 opacity-0 pointer-events-none transition-opacity group-hover/row:opacity-100 group-hover/row:pointer-events-auto group-focus-within/row:opacity-100 group-focus-within/row:pointer-events-auto"
+                        className="h-7 w-7 shrink-0 text-muted-foreground hover:bg-white/10 hover:text-foreground opacity-0 pointer-events-none transition-opacity group-hover/row:opacity-100 group-hover/row:pointer-events-auto group-focus-within/row:opacity-100 group-focus-within/row:pointer-events-auto"
                         onClick={() => onOpenDetails(row.label, row.ctxKeys!)}
                         title="Show breakdown"
                       >
@@ -231,7 +231,7 @@ function Section({
                       <span className="h-7 w-7 shrink-0" aria-hidden />
                     )}
 
-                    <span className="text-zinc-200/70 truncate">
+                    <span className="text-foreground/85 truncate">
                       {row.label}
                     </span>
                   </div>
@@ -240,7 +240,7 @@ function Section({
                     className={
                       row.highlight
                         ? "text-yellow-300 font-semibold tabular-nums min-w-[88px] text-right"
-                        : "text-zinc-100 tabular-nums min-w-[88px] text-right"
+                        : "text-foreground tabular-nums min-w-[88px] text-right"
                     }
                   >
                     {row.value}
@@ -295,7 +295,7 @@ function LegendRow({
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         <span className={"h-2 w-2 rounded-full " + kindToDotClass(kind)} />
-        <span className="text-zinc-200">{label}</span>
+        <span className="text-foreground">{label}</span>
       </div>
       <span className="truncate">{note}</span>
     </div>
