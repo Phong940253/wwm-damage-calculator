@@ -12,6 +12,7 @@ import {
   PackageCheck,
   GitCompare,
   Zap,
+  Settings,
 } from "lucide-react";
 
 export function StatusBar() {
@@ -84,6 +85,14 @@ export function StatusBar() {
               data-tour="tab-import"
             >
               <ArrowLeftRight size={18} />
+            </TabButton>
+
+            <TabButton
+              active={tab === "settings"}
+              onClick={() => set("main", "settings")}
+              title="Settings"
+            >
+              <Settings size={18} />
             </TabButton>
           </>
         )}

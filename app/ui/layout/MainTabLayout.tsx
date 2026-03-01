@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import StatsPanel from "../stats/StatsPanel";
 import ImportExportTab from "../import-export/ImportExportTab";
 import RotationPanel from "../rotation/RotationPanel";
+import SettingsTab from "../settings/SettingsTab";
 import DamagePanel from "../damage/DamagePanel";
 import FormulaPanel from "../formula/FormulaPanel";
 import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
@@ -158,6 +159,14 @@ export default function MainTabLayout() {
     );
     alert("Stats saved!");
   };
+
+  if (tab === "settings") {
+    return (
+      <div className="h-[calc(100dvh-150px)] sm:h-[calc(100dvh-165px)] lg:h-[calc(100dvh-180px)] overflow-y-auto px-1.5 sm:px-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
+        <SettingsTab />
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100dvh-150px)] sm:h-[calc(100dvh-165px)] lg:h-[calc(100dvh-180px)]">
