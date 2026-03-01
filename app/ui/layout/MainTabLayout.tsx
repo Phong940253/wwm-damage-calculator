@@ -13,12 +13,14 @@ import { useDamageContextWithModifiers } from "@/app/hooks/useDamageContextWithM
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ElementStats } from "@/app/types";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 export default function MainTabLayout() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") ?? "stats";
+  const { t } = useI18n();
 
   // On sm + md: stack panels (two rows). On lg+: show two columns.
   const [isStacked, setIsStacked] = useState(true);
@@ -147,7 +149,7 @@ export default function MainTabLayout() {
   };
 
   const onSaveCurrent = () => {
-    if (!confirm("Save current stats?")) return;
+    if (!confirm(t("mainTab.saveCurrentConfirm"))) return;
 
     localStorage.setItem(
       "wwm_dmg_current_stats",
@@ -157,7 +159,7 @@ export default function MainTabLayout() {
         )
       )
     );
-    alert("Stats saved!");
+    alert(t("mainTab.saveSuccess"));
   };
 
   if (tab === "settings") {

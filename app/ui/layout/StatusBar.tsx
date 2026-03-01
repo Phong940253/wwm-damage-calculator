@@ -14,10 +14,12 @@ import {
   Zap,
   Settings,
 } from "lucide-react";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 export function StatusBar() {
   const router = useRouter();
   const search = useSearchParams();
+  const { t } = useI18n();
 
   const root = search.get("root") ?? "main";
   const tab = search.get("tab") ?? (root === "main" ? "stats" : "custom");
@@ -40,7 +42,7 @@ export function StatusBar() {
         <TabButton
           active={root === "main"}
           onClick={() => set("main", "stats")}
-          title="Main"
+          title={t("status.main")}
           data-tour="tab-main-root"
         >
           <LayoutDashboard size={18} />
@@ -49,7 +51,7 @@ export function StatusBar() {
         <TabButton
           active={root === "gear"}
           onClick={() => set("gear", "custom")}
-          title="Gear"
+          title={t("status.gear")}
           data-tour="tab-gear-root"
         >
           <Shield size={18} />
@@ -63,7 +65,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "stats"}
               onClick={() => set("main", "stats")}
-              title="Stats"
+              title={t("status.stats")}
               data-tour="tab-stats"
             >
               <BarChart3 size={18} />
@@ -72,7 +74,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "rotation"}
               onClick={() => set("main", "rotation")}
-              title="Rotation"
+              title={t("status.rotation")}
               data-tour="tab-rotation"
             >
               <Zap size={18} />
@@ -81,7 +83,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "import"}
               onClick={() => set("main", "import")}
-              title="Import / Export"
+              title={t("status.importExport")}
               data-tour="tab-import"
             >
               <ArrowLeftRight size={18} />
@@ -90,7 +92,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "settings"}
               onClick={() => set("main", "settings")}
-              title="Settings"
+              title={t("status.settings")}
             >
               <Settings size={18} />
             </TabButton>
@@ -102,7 +104,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "custom"}
               onClick={() => set("gear", "custom")}
-              title="Customize Gear"
+              title={t("status.customizeGear")}
             >
               <SlidersHorizontal size={18} />
             </TabButton>
@@ -110,7 +112,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "equipped"}
               onClick={() => set("gear", "equipped")}
-              title="Equipped Gear"
+              title={t("status.equippedGear")}
             >
               <PackageCheck size={18} />
             </TabButton>
@@ -118,7 +120,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "compare"}
               onClick={() => set("gear", "compare")}
-              title="Compare Gear"
+              title={t("status.compareGear")}
             >
               <GitCompare size={18} />
             </TabButton>

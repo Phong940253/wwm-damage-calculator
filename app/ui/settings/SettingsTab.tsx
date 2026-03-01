@@ -11,69 +11,7 @@ import {
   getStoredGeminiSettings,
   saveGeminiSettings,
 } from "@/app/utils/geminiSettings";
-
-type UILanguage = "en" | "vi";
-
-const LANGUAGE_STORAGE_KEY = "wwm_ui_language";
-
-const COPY: Record<
-  UILanguage,
-  {
-    language: string;
-    english: string;
-    vietnamese: string;
-    settingsTitle: string;
-    settingsDescription: string;
-    apiKeyLabel: string;
-    hideApiKey: string;
-    showApiKey: string;
-    apiKeyStored: string;
-    apiKeyFallback: string;
-    apiKeyMissing: string;
-    modelLabel: string;
-    modelDescription: string;
-    saveSettings: string;
-    resetDefaults: string;
-    saved: string;
-  }
-> = {
-  en: {
-    language: "Language",
-    english: "English",
-    vietnamese: "Vietnamese",
-    settingsTitle: "Gemini Settings",
-    settingsDescription: "Configure Gemini OCR runtime settings. Values are stored in the current browser.",
-    apiKeyLabel: "Gemini API Key",
-    hideApiKey: "Hide API key",
-    showApiKey: "Show API key",
-    apiKeyStored: "Using the locally stored API key.",
-    apiKeyFallback: "No local key found, falling back to NEXT_PUBLIC_GEMINI_API_KEY.",
-    apiKeyMissing: "No API key configured. OCR will fail unless a valid key is provided.",
-    modelLabel: "Gemini Model",
-    modelDescription: "Model used for the generateContent endpoint (for example: gemini-2.5-flash).",
-    saveSettings: "Save Settings",
-    resetDefaults: "Reset to Env Defaults",
-    saved: "Saved",
-  },
-  vi: {
-    language: "Ngôn ngữ",
-    english: "Tiếng Anh",
-    vietnamese: "Tiếng Việt",
-    settingsTitle: "Cài đặt Gemini",
-    settingsDescription: "Cấu hình OCR runtime cho Gemini. Giá trị được lưu trong trình duyệt hiện tại.",
-    apiKeyLabel: "Gemini API Key",
-    hideApiKey: "Ẩn API key",
-    showApiKey: "Hiện API key",
-    apiKeyStored: "Đang dùng API key đã lưu local.",
-    apiKeyFallback: "Chưa có key local, đang fallback sang NEXT_PUBLIC_GEMINI_API_KEY.",
-    apiKeyMissing: "Chưa có API key. OCR sẽ lỗi nếu không nhập key hợp lệ.",
-    modelLabel: "Gemini Model",
-    modelDescription: "Model dùng cho endpoint generateContent (ví dụ: gemini-2.5-flash).",
-    saveSettings: "Lưu cài đặt",
-    resetDefaults: "Khôi phục mặc định từ biến môi trường",
-    saved: "Đã lưu",
-  },
-};
+import { useI18n } from "@/app/providers/I18nProvider";
 
 const MODEL_SUGGESTIONS = [
   "gemini-2.5-flash",
@@ -85,9 +23,9 @@ const MODEL_SUGGESTIONS = [
 export default function SettingsTab() {
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
-  const [language, setLanguage] = useState<UILanguage>("en");
   const [saved, setSaved] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const { language, setLanguage, t } = useI18n();
 
   const envInfo = useMemo(() => {
     const runtime = getGeminiRuntimeSettings();
@@ -100,24 +38,12 @@ export default function SettingsTab() {
   }, []);
 
   useEffect(() => {
-    const rawLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    if (rawLanguage === "vi" || rawLanguage === "en") {
-      setLanguage(rawLanguage);
-    }
-
     const runtime = getGeminiRuntimeSettings();
     const stored = getStoredGeminiSettings();
 
     setApiKey(stored.apiKey ?? runtime.apiKey ?? "");
     setModel(stored.model ?? runtime.model ?? DEFAULT_GEMINI_MODEL);
   }, []);
-
-  const text = COPY[language];
-
-  const handleLanguageChange = (nextLanguage: UILanguage) => {
-    setLanguage(nextLanguage);
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
-  };
 
   const handleSave = () => {
     const nextModel = model.trim() || DEFAULT_GEMINI_MODEL;
@@ -148,34 +74,34 @@ export default function SettingsTab() {
     <div className="space-y-4 pb-3">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{text.settingsTitle}</CardTitle>
+          <CardTitle className="text-base">{t("settings.settingsTitle")}</CardTitle>
           <p className="text-xs text-muted-foreground">
-            {text.settingsDescription}
+            {t("settings.settingsDescription")}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">{text.language}</label>
+            <label className="text-sm font-medium">{t("settings.language")}</label>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant={language === "en" ? "default" : "outline"}
-                onClick={() => handleLanguageChange("en")}
+                onClick={() => setLanguage("en")}
               >
-                {text.english}
+                {t("settings.english")}
               </Button>
               <Button
                 type="button"
                 variant={language === "vi" ? "default" : "outline"}
-                onClick={() => handleLanguageChange("vi")}
+                onClick={() => setLanguage("vi")}
               >
-                {text.vietnamese}
+                {t("settings.vietnamese")}
               </Button>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">{text.apiKeyLabel}</label>
+            <label className="text-sm font-medium">{t("settings.apiKeyLabel")}</label>
             <div className="relative">
               <Input
                 type={showApiKey ? "text" : "password"}
@@ -191,23 +117,23 @@ export default function SettingsTab() {
                 size="icon"
                 onClick={() => setShowApiKey((v) => !v)}
                 className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                title={showApiKey ? text.hideApiKey : text.showApiKey}
-                aria-label={showApiKey ? text.hideApiKey : text.showApiKey}
+                title={showApiKey ? t("settings.hideApiKey") : t("settings.showApiKey")}
+                aria-label={showApiKey ? t("settings.hideApiKey") : t("settings.showApiKey")}
               >
                 {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               {envInfo.usingStoredApiKey
-                ? text.apiKeyStored
+                ? t("settings.apiKeyStored")
                 : envInfo.hasFallbackEnvApiKey
-                  ? text.apiKeyFallback
-                  : text.apiKeyMissing}
+                  ? t("settings.apiKeyFallback")
+                  : t("settings.apiKeyMissing")}
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">{text.modelLabel}</label>
+            <label className="text-sm font-medium">{t("settings.modelLabel")}</label>
             <Input
               value={model}
               onChange={(e) => setModel(e.target.value)}
@@ -220,16 +146,16 @@ export default function SettingsTab() {
               ))}
             </datalist>
             <p className="text-xs text-muted-foreground">
-              {text.modelDescription}
+              {t("settings.modelDescription")}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleSave}>{text.saveSettings}</Button>
+            <Button onClick={handleSave}>{t("settings.saveSettings")}</Button>
             <Button variant="secondary" onClick={resetToDefaults}>
-              {text.resetDefaults}
+              {t("settings.resetDefaults")}
             </Button>
-            {saved && <span className="text-xs text-emerald-500 self-center">{text.saved}</span>}
+            {saved && <span className="text-xs text-emerald-500 self-center">{t("settings.saved")}</span>}
           </div>
         </CardContent>
       </Card>

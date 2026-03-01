@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useI18n } from "@/app/providers/I18nProvider";
 
 type Step = {
     selector: string;
@@ -148,6 +149,7 @@ const GUIDES: Record<GuideId, GuideDefinition> = {
 const FEEDBACK_URL = "https://github.com/Phong940253/wwm-damage-calculator/issues/new";
 
 export function InteractiveGuideOverlay() {
+    const { t } = useI18n();
     const [activeGuideId, setActiveGuideId] = useState<GuideId | null>(null);
     const [isActive, setIsActive] = useState(false);
     const [stepIndex, setStepIndex] = useState(0);
@@ -308,7 +310,7 @@ export function InteractiveGuideOverlay() {
                         rel="noreferrer"
                         className="rounded-full border border-white/15 bg-background/90 px-4 py-2 text-xs text-foreground shadow-lg backdrop-blur hover:bg-background"
                     >
-                        Send Feedback
+                        {t("guide.sendFeedback")}
                     </a>
 
                     <button
@@ -320,7 +322,7 @@ export function InteractiveGuideOverlay() {
                         }}
                         className="rounded-full border border-emerald-500/30 bg-background/90 px-4 py-2 text-xs text-emerald-300 shadow-lg backdrop-blur"
                     >
-                        {GUIDES.setup.startLabel}
+                        {t("guide.startSetupGuide")}
                     </button>
 
                     <button
@@ -332,7 +334,7 @@ export function InteractiveGuideOverlay() {
                         }}
                         className="rounded-full border border-blue-500/30 bg-background/90 px-4 py-2 text-xs text-blue-300 shadow-lg backdrop-blur"
                     >
-                        {GUIDES.optimize.startLabel}
+                        {t("guide.startOptimizeGuide")}
                     </button>
                 </div>
 
@@ -346,7 +348,7 @@ export function InteractiveGuideOverlay() {
                                 onClick={() => setMobileLauncherOpen(false)}
                                 className="rounded-full border border-white/15 bg-background/90 px-3 py-1.5 text-[11px] text-foreground shadow-lg backdrop-blur"
                             >
-                                Feedback
+                                {t("guide.feedback")}
                             </a>
 
                             <button
@@ -359,7 +361,7 @@ export function InteractiveGuideOverlay() {
                                 }}
                                 className="rounded-full border border-emerald-500/30 bg-background/90 px-3 py-1.5 text-[11px] text-emerald-300 shadow-lg backdrop-blur"
                             >
-                                Setup Guide
+                                {t("guide.setupGuide")}
                             </button>
 
                             <button
@@ -372,7 +374,7 @@ export function InteractiveGuideOverlay() {
                                 }}
                                 className="rounded-full border border-blue-500/30 bg-background/90 px-3 py-1.5 text-[11px] text-blue-300 shadow-lg backdrop-blur"
                             >
-                                Optimize Guide
+                                {t("guide.optimizeGuide")}
                             </button>
                         </div>
                     )}
@@ -381,7 +383,7 @@ export function InteractiveGuideOverlay() {
                         type="button"
                         onClick={() => setMobileLauncherOpen((prev) => !prev)}
                         className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-background/90 text-xs font-semibold text-foreground shadow-lg backdrop-blur"
-                        aria-label="Open help actions"
+                        aria-label={t("guide.openHelpActions")}
                         aria-expanded={mobileLauncherOpen}
                     >
                         {mobileLauncherOpen ? "×" : "?"}
