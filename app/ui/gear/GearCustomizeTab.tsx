@@ -111,6 +111,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
 
   const [pinSlot, setPinSlot] = useState(false);
   const [pinStat, setPinStat] = useState(false);
+  const [pinSort, setPinSort] = useState(false);
 
   const [statSearch, setStatSearch] = useState("");
 
@@ -350,11 +351,11 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   }, [displayGears, visibleCount]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold">Custom Gear</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button data-tour="gear-optimize-open" variant="outline" onClick={() => setOptOpen(true)}>
             Optimize
           </Button>
@@ -394,7 +395,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
 
           <div
             className={`
-      absolute z-50 top-full left-0 mt-2 w-48
+          absolute z-50 top-full left-0 mt-2 w-56 max-w-[85vw]
       rounded-lg border bg-card shadow-lg
       p-2 space-y-1
       ${pinSlot ? "block" : "hidden group-hover:block"}
@@ -433,7 +434,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
 
           <div
             className={`
-    absolute z-50 top-full left-0 mt-2 w-48
+    absolute z-50 top-full left-0 mt-2 w-64 max-w-[85vw]
     rounded-lg border bg-card shadow-lg
     p-2 space-y-1
     ${pinStat ? "block" : "hidden group-hover:block"}
@@ -482,21 +483,25 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
 
         {/* SORT */}
         <div className="relative group inline-block">
-          <Button variant={sortStat !== "none" ? "default" : "outline"}>
+          <Button
+            variant={sortStat !== "none" ? "default" : "outline"}
+            onClick={() => setPinSort((p) => !p)}
+          >
             Sort
             {sortStat !== "none" && ` (${sortStat})`}
+            {pinSort && " 📌"}
           </Button>
 
           {/* Hover buffer */}
           <div className="absolute left-0 top-full h-3 w-full" />
 
           <div
-            className="
+            className={`
       absolute z-50 top-full left-0 mt-2 w-56
       rounded-lg border bg-card shadow-lg
       p-2 space-y-2
-      hidden group-hover:block
-    "
+          ${pinSort ? "block" : "hidden group-hover:block"}
+            `}
           >
             {/* Sort stat */}
             <select
@@ -553,7 +558,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       {/* =======================
           GEAR LIST
       ======================= */}
-      <div className="grid items-stretch sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid items-stretch grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
         {visibleGears.map((g) => (
           <GearCard
             key={g.id}
@@ -582,7 +587,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           DIALOGS
       ======================= */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-h-[90dvh] w-[95vw] max-w-xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Gear" : "Add New Gear"}</DialogTitle>
           </DialogHeader>

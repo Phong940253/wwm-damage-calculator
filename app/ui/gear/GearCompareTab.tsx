@@ -52,9 +52,9 @@ export default function GearCompareTab({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Gear Comparison</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg font-semibold sm:text-xl">Gear Comparison</h2>
         <Button
           variant="outline"
           size="sm"
@@ -66,8 +66,8 @@ export default function GearCompareTab({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="border rounded-lg p-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+        <div className="rounded-lg border p-3 sm:p-4">
           <label className="block text-sm font-medium mb-2 text-emerald-500">
             Gear A
           </label>
@@ -85,7 +85,7 @@ export default function GearCompareTab({
           </select>
         </div>
 
-        <div className="border rounded-lg p-4">
+        <div className="rounded-lg border p-3 sm:p-4">
           <label className="block text-sm font-medium mb-2 text-blue-500">
             Gear B
           </label>
@@ -108,11 +108,63 @@ export default function GearCompareTab({
         <div className="space-y-4">
           {(selectedGearA.mains.length > 0 ||
             selectedGearB.mains.length > 0) && (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="overflow-hidden rounded-lg border">
                 <div className="bg-muted/50 px-4 py-2">
                   <h3 className="font-medium">Main Attributes</h3>
                 </div>
-                <table className="w-full">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px]">
+                    <thead className="bg-muted/30">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-sm">Stat</th>
+                        <th className="px-4 py-2 text-right text-sm text-emerald-500">
+                          Gear A
+                        </th>
+                        <th className="px-4 py-2 text-right text-sm text-blue-500">
+                          Gear B
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {Array.from(
+                        new Set([
+                          ...selectedGearA.mains.map((m) => m.stat),
+                          ...selectedGearB.mains.map((m) => m.stat),
+                        ])
+                      ).map((stat) => {
+                        const valueA = selectedGearA.mains.find(
+                          (m) => m.stat === stat
+                        )?.value;
+                        const valueB = selectedGearB.mains.find(
+                          (m) => m.stat === stat
+                        )?.value;
+                        return (
+                          <tr key={stat}>
+                            <td className="px-4 py-2 text-sm font-medium">
+                              {stat}
+                            </td>
+                            <td className="px-4 py-2 text-right text-sm">
+                              {valueA !== undefined ? valueA : "-"}
+                            </td>
+                            <td className="px-4 py-2 text-right text-sm">
+                              {valueB !== undefined ? valueB : "-"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          {(selectedGearA.subs.length > 0 || selectedGearB.subs.length > 0) && (
+            <div className="overflow-hidden rounded-lg border">
+              <div className="bg-muted/50 px-4 py-2">
+                <h3 className="font-medium">Sub Attributes</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px]">
                   <thead className="bg-muted/30">
                     <tr>
                       <th className="px-4 py-2 text-left text-sm">Stat</th>
@@ -127,15 +179,15 @@ export default function GearCompareTab({
                   <tbody className="divide-y">
                     {Array.from(
                       new Set([
-                        ...selectedGearA.mains.map((m) => m.stat),
-                        ...selectedGearB.mains.map((m) => m.stat),
+                        ...selectedGearA.subs.map((s) => s.stat),
+                        ...selectedGearB.subs.map((s) => s.stat),
                       ])
                     ).map((stat) => {
-                      const valueA = selectedGearA.mains.find(
-                        (m) => m.stat === stat
+                      const valueA = selectedGearA.subs.find(
+                        (s) => s.stat === stat
                       )?.value;
-                      const valueB = selectedGearB.mains.find(
-                        (m) => m.stat === stat
+                      const valueB = selectedGearB.subs.find(
+                        (s) => s.stat === stat
                       )?.value;
                       return (
                         <tr key={stat}>
@@ -154,254 +206,208 @@ export default function GearCompareTab({
                   </tbody>
                 </table>
               </div>
-            )}
+            </div>
+          )}
 
-          {(selectedGearA.subs.length > 0 || selectedGearB.subs.length > 0) && (
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-muted/50 px-4 py-2">
-                <h3 className="font-medium">Sub Attributes</h3>
-              </div>
-              <table className="w-full">
+          {/* Damage Comparison */}
+          <div className="overflow-hidden rounded-lg border">
+            <div className="bg-muted/50 px-4 py-2">
+              <h3 className="font-medium">Damage Comparison</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px]">
                 <thead className="bg-muted/30">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm">Stat</th>
+                    <th className="px-4 py-2 text-left text-sm">Damage Type</th>
                     <th className="px-4 py-2 text-right text-sm text-emerald-500">
                       Gear A
                     </th>
                     <th className="px-4 py-2 text-right text-sm text-blue-500">
                       Gear B
                     </th>
+                    <th className="px-4 py-2 text-right text-sm">Difference</th>
+                    <th className="px-4 py-2 text-right text-sm">Change %</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {Array.from(
-                    new Set([
-                      ...selectedGearA.subs.map((s) => s.stat),
-                      ...selectedGearB.subs.map((s) => s.stat),
-                    ])
-                  ).map((stat) => {
-                    const valueA = selectedGearA.subs.find(
-                      (s) => s.stat === stat
-                    )?.value;
-                    const valueB = selectedGearB.subs.find(
-                      (s) => s.stat === stat
-                    )?.value;
-                    return (
-                      <tr key={stat}>
-                        <td className="px-4 py-2 text-sm font-medium">
-                          {stat}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm">
-                          {valueA !== undefined ? valueA : "-"}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm">
-                          {valueB !== undefined ? valueB : "-"}
-                        </td>
-                      </tr>
+                  {(() => {
+                    // Build equipped sets
+                    const equippedA = buildEquippedWithOverride(
+                      equipped,
+                      selectedGearA.id,
+                      selectedGearA.slot
                     );
-                  })}
+
+                    const equippedB = buildEquippedWithOverride(
+                      equipped,
+                      selectedGearB.id,
+                      selectedGearB.slot
+                    );
+
+                    // Aggregate full gear bonus
+                    const bonusA = aggregateEquippedGearBonus(
+                      customGears,
+                      equippedA
+                    );
+                    const bonusB = aggregateEquippedGearBonus(
+                      customGears,
+                      equippedB
+                    );
+
+                    const buildCtx = (gearBonus: Record<string, number>) => {
+                      const includedAbs = computeIncludedInStatsGearBonus(
+                        stats,
+                        elementStats,
+                        rotation,
+                        gearBonus
+                      );
+                      const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
+
+                      const rotationBonuses = computeRotationBonuses(
+                        stats,
+                        elementStats,
+                        effectiveGearBonus,
+                        rotation
+                      );
+
+                      return buildDamageContext(
+                        stats,
+                        elementStats,
+                        sumBonuses(effectiveGearBonus, rotationBonuses)
+                      );
+                    };
+
+                    // Build contexts
+                    const ctxA = buildCtx(bonusA);
+                    const ctxB = buildCtx(bonusB);
+
+                    // Calculate damage - rotation-aware
+                    let damageA: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };
+                    let damageB: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };
+
+                    if (rotation && rotation.skills.length > 0) {
+                      // Rotation-based damage
+                      let totalMinA = 0,
+                        totalNormalA = 0,
+                        totalAffinityA = 0;
+                      let totalMinB = 0,
+                        totalNormalB = 0,
+                        totalAffinityB = 0;
+
+                      for (const rotSkill of rotation.skills) {
+                        const skill = SKILLS.find((s) => s.id === rotSkill.id);
+                        if (!skill) continue;
+
+                        const skillDmgA = calculateSkillDamage(ctxA, skill, {
+                          params: rotSkill.params,
+                        });
+                        totalMinA +=
+                          skillDmgA.total.min.value * rotSkill.count;
+                        totalNormalA +=
+                          skillDmgA.total.normal.value * rotSkill.count;
+                        totalAffinityA +=
+                          skillDmgA.total.affinity.value * rotSkill.count;
+
+                        const skillDmgB = calculateSkillDamage(ctxB, skill, {
+                          params: rotSkill.params,
+                        });
+                        totalMinB +=
+                          skillDmgB.total.min.value * rotSkill.count;
+                        totalNormalB +=
+                          skillDmgB.total.normal.value * rotSkill.count;
+                        totalAffinityB +=
+                          skillDmgB.total.affinity.value * rotSkill.count;
+                      }
+
+                      damageA = {
+                        min: totalMinA,
+                        normal: totalNormalA,
+                        affinity: totalAffinityA,
+                      };
+                      damageB = {
+                        min: totalMinB,
+                        normal: totalNormalB,
+                        affinity: totalAffinityB,
+                      };
+                    } else {
+                      // Single-hit damage
+                      damageA = calculateDamage(ctxA);
+                      damageB = calculateDamage(ctxB);
+                    }
+
+                    const rows = [
+                      {
+                        label: "Min Damage",
+                        valueA: damageA.min,
+                        valueB: damageB.min,
+                      },
+                      {
+                        label: "Average Damage",
+                        valueA: damageA.normal,
+                        valueB: damageB.normal,
+                      },
+                      {
+                        label: "Affinity Damage",
+                        valueA: damageA.affinity,
+                        valueB: damageB.affinity,
+                      },
+                    ];
+
+                    return rows.map((row) => {
+                      const diff = row.valueB - row.valueA;
+                      const percent =
+                        row.valueA === 0 ? 0 : (diff / row.valueA) * 100;
+                      const isPositive = diff > 0;
+                      const isNegative = diff < 0;
+
+                      return (
+                        <tr key={row.label}>
+                          <td className="px-4 py-2 text-sm font-medium">
+                            {row.label}
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {row.valueA.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {row.valueB.toLocaleString()}
+                          </td>
+                          <td
+                            className={`px-4 py-2 text-right text-sm font-medium ${isPositive
+                              ? "text-green-500"
+                              : isNegative
+                                ? "text-red-500"
+                                : ""
+                              }`}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              {isPositive && <TrendingUp className="w-4 h-4" />}
+                              {isNegative && <TrendingDown className="w-4 h-4" />}
+                              {diff > 0 ? "+" : ""}
+                              {diff.toLocaleString()}
+                            </div>
+                          </td>
+                          <td
+                            className={`px-4 py-2 text-right text-sm font-medium ${isPositive
+                              ? "text-green-500"
+                              : isNegative
+                                ? "text-red-500"
+                                : ""
+                              }`}
+                          >
+                            {percent > 0 ? "+" : ""}
+                            {percent.toFixed(2)}%
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
-          )}
-
-          {/* Damage Comparison */}
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-muted/50 px-4 py-2">
-              <h3 className="font-medium">Damage Comparison</h3>
-            </div>
-            <table className="w-full">
-              <thead className="bg-muted/30">
-                <tr>
-                  <th className="px-4 py-2 text-left text-sm">Damage Type</th>
-                  <th className="px-4 py-2 text-right text-sm text-emerald-500">
-                    Gear A
-                  </th>
-                  <th className="px-4 py-2 text-right text-sm text-blue-500">
-                    Gear B
-                  </th>
-                  <th className="px-4 py-2 text-right text-sm">Difference</th>
-                  <th className="px-4 py-2 text-right text-sm">Change %</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {(() => {
-                  // Build equipped sets
-                  const equippedA = buildEquippedWithOverride(
-                    equipped,
-                    selectedGearA.id,
-                    selectedGearA.slot
-                  );
-
-                  const equippedB = buildEquippedWithOverride(
-                    equipped,
-                    selectedGearB.id,
-                    selectedGearB.slot
-                  );
-
-                  // Aggregate full gear bonus
-                  const bonusA = aggregateEquippedGearBonus(
-                    customGears,
-                    equippedA
-                  );
-                  const bonusB = aggregateEquippedGearBonus(
-                    customGears,
-                    equippedB
-                  );
-
-                  const buildCtx = (gearBonus: Record<string, number>) => {
-                    const includedAbs = computeIncludedInStatsGearBonus(
-                      stats,
-                      elementStats,
-                      rotation,
-                      gearBonus
-                    );
-                    const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
-
-                    const rotationBonuses = computeRotationBonuses(
-                      stats,
-                      elementStats,
-                      effectiveGearBonus,
-                      rotation
-                    );
-
-                    return buildDamageContext(
-                      stats,
-                      elementStats,
-                      sumBonuses(effectiveGearBonus, rotationBonuses)
-                    );
-                  };
-
-                  // Build contexts
-                  const ctxA = buildCtx(bonusA);
-                  const ctxB = buildCtx(bonusB);
-
-                  // Calculate damage - rotation-aware
-                  let damageA: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };
-                  let damageB: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };
-
-                  if (rotation && rotation.skills.length > 0) {
-                    // Rotation-based damage
-                    let totalMinA = 0,
-                      totalNormalA = 0,
-                      totalAffinityA = 0;
-                    let totalMinB = 0,
-                      totalNormalB = 0,
-                      totalAffinityB = 0;
-
-                    for (const rotSkill of rotation.skills) {
-                      const skill = SKILLS.find((s) => s.id === rotSkill.id);
-                      if (!skill) continue;
-
-                      const skillDmgA = calculateSkillDamage(ctxA, skill, {
-                        params: rotSkill.params,
-                      });
-                      totalMinA +=
-                        skillDmgA.total.min.value * rotSkill.count;
-                      totalNormalA +=
-                        skillDmgA.total.normal.value * rotSkill.count;
-                      totalAffinityA +=
-                        skillDmgA.total.affinity.value * rotSkill.count;
-
-                      const skillDmgB = calculateSkillDamage(ctxB, skill, {
-                        params: rotSkill.params,
-                      });
-                      totalMinB +=
-                        skillDmgB.total.min.value * rotSkill.count;
-                      totalNormalB +=
-                        skillDmgB.total.normal.value * rotSkill.count;
-                      totalAffinityB +=
-                        skillDmgB.total.affinity.value * rotSkill.count;
-                    }
-
-                    damageA = {
-                      min: totalMinA,
-                      normal: totalNormalA,
-                      affinity: totalAffinityA,
-                    };
-                    damageB = {
-                      min: totalMinB,
-                      normal: totalNormalB,
-                      affinity: totalAffinityB,
-                    };
-                  } else {
-                    // Single-hit damage
-                    damageA = calculateDamage(ctxA);
-                    damageB = calculateDamage(ctxB);
-                  }
-
-                  const rows = [
-                    {
-                      label: "Min Damage",
-                      valueA: damageA.min,
-                      valueB: damageB.min,
-                    },
-                    {
-                      label: "Average Damage",
-                      valueA: damageA.normal,
-                      valueB: damageB.normal,
-                    },
-                    {
-                      label: "Affinity Damage",
-                      valueA: damageA.affinity,
-                      valueB: damageB.affinity,
-                    },
-                  ];
-
-                  return rows.map((row) => {
-                    const diff = row.valueB - row.valueA;
-                    const percent =
-                      row.valueA === 0 ? 0 : (diff / row.valueA) * 100;
-                    const isPositive = diff > 0;
-                    const isNegative = diff < 0;
-
-                    return (
-                      <tr key={row.label}>
-                        <td className="px-4 py-2 text-sm font-medium">
-                          {row.label}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm">
-                          {row.valueA.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm">
-                          {row.valueB.toLocaleString()}
-                        </td>
-                        <td
-                          className={`px-4 py-2 text-right text-sm font-medium ${isPositive
-                            ? "text-green-500"
-                            : isNegative
-                              ? "text-red-500"
-                              : ""
-                            }`}
-                        >
-                          <div className="flex items-center justify-end gap-1">
-                            {isPositive && <TrendingUp className="w-4 h-4" />}
-                            {isNegative && <TrendingDown className="w-4 h-4" />}
-                            {diff > 0 ? "+" : ""}
-                            {diff.toLocaleString()}
-                          </div>
-                        </td>
-                        <td
-                          className={`px-4 py-2 text-right text-sm font-medium ${isPositive
-                            ? "text-green-500"
-                            : isNegative
-                              ? "text-red-500"
-                              : ""
-                            }`}
-                        >
-                          {percent > 0 ? "+" : ""}
-                          {percent.toFixed(2)}%
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-              </tbody>
-            </table>
           </div>
         </div>
       ) : (
-        <div className="border rounded-lg p-8 text-center text-muted-foreground">
+        <div className="rounded-lg border p-6 text-center text-muted-foreground sm:p-8">
           Select two gears to compare their stats
         </div>
       )}

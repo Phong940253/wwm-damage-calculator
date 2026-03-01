@@ -243,7 +243,7 @@ export default function GearEquippedTab() {
     <div className="space-y-4" id="gear-combined-stats">
       {/* Combined result */}
       <GearCombinedStats bonus={bonus} />
-      <Card className="p-4 border border-white/10 bg-card/60 shadow-lg">
+      <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-0.5">
             <div className="text-sm font-semibold">📈 Gear DMG Impact</div>
@@ -264,9 +264,9 @@ export default function GearEquippedTab() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-2">
         {[leftRows, rightRows].map((regionRows, regionIndex) => (
-          <div key={regionIndex} className="grid grid-cols-2 gap-4">
+          <div key={regionIndex} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4">
             {regionRows.map((row) => {
               if (!row) return null;
               const available = customGears.filter((g) => g.slot === row.key);
@@ -290,7 +290,7 @@ export default function GearEquippedTab() {
                 <Card
                   key={row.key}
                   className={cn(
-                    "p-3 space-y-3 border shadow-sm bg-card/50",
+                    "space-y-3 border bg-card/50 p-2.5 shadow-sm sm:p-3",
                     "border-white/10",
                     isWorst && "ring-1 ring-amber-400/40"
                   )}
