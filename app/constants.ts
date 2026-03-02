@@ -52,6 +52,52 @@ export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
   ],
 };
 
+export type StatHeatmapKey =
+  | "MinPhysicalAttack"
+  | "MaxPhysicalAttack"
+  | "bellstrikeMin"
+  | "bellstrikeMax"
+  | "stonesplitMin"
+  | "stonesplitMax"
+  | "silkbindMin"
+  | "silkbindMax"
+  | "bamboocutMin"
+  | "bamboocutMax"
+  | "bellstrikePenetration"
+  | "stonesplitPenetration"
+  | "silkbindPenetration"
+  | "bamboocutPenetration"
+  | "PhysicalPenetration"
+  | "PhysicalResistance"
+  | "CriticalRate"
+  | "Power"
+  | "Agility";
+
+export const STAT_HEATMAP_AFFIX_LIMITS: Record<
+  StatHeatmapKey,
+  { minPerLine: number; maxPerLine: number }
+> = {
+  MinPhysicalAttack: { minPerLine: 23.5, maxPerLine: 47.0 },
+  MaxPhysicalAttack: { minPerLine: 23.5, maxPerLine: 47.0 },
+  bellstrikeMin: { minPerLine: 13.3, maxPerLine: 26.6 },
+  bellstrikeMax: { minPerLine: 13.3, maxPerLine: 26.6 },
+  stonesplitMin: { minPerLine: 13.3, maxPerLine: 26.6 },
+  stonesplitMax: { minPerLine: 13.3, maxPerLine: 26.6 },
+  silkbindMin: { minPerLine: 13.3, maxPerLine: 26.6 },
+  silkbindMax: { minPerLine: 13.3, maxPerLine: 26.6 },
+  bamboocutMin: { minPerLine: 13.3, maxPerLine: 26.6 },
+  bamboocutMax: { minPerLine: 13.3, maxPerLine: 26.6 },
+  bellstrikePenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
+  stonesplitPenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
+  silkbindPenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
+  bamboocutPenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
+  PhysicalPenetration: { minPerLine: 4.0, maxPerLine: 6.6 },
+  PhysicalResistance: { minPerLine: 4.0, maxPerLine: 6.6 },
+  CriticalRate: { minPerLine: 2.7, maxPerLine: 5.4 },
+  Power: { minPerLine: 14.9, maxPerLine: 29.8 },
+  Agility: { minPerLine: 14.9, maxPerLine: 29.8 },
+};
+
 /* =======================
    Gear slots
 ======================= */

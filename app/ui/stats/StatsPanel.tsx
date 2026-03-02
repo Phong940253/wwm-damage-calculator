@@ -4,6 +4,8 @@ import React, { useMemo, useRef, useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { STAT_GROUPS } from "../../constants";
 import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
@@ -12,6 +14,8 @@ import { SUPPORTED_LEVELS } from "@/app/domain/level/levelSettings";
 import type { Rotation } from "@/app/types";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
+import { useStatHeatmap } from "@/app/hooks/useStatHeatmap";
+import { getStatLabel } from "@/app/utils/statLabel";
 
 /* =======================
    Types
@@ -92,6 +96,12 @@ export default function StatsPanel({
       actions: "Hành động",
       applyIncrease: "Áp dụng tăng vào hiện tại",
       saveCurrent: "Lưu hiện tại",
+      heatmap: "Ưu tiên stat (Heatmap)",
+      lineCount: "Số dòng affix (n)",
+      gainRange: "Mức tăng DMG",
+      affixGain: "Affix cộng",
+      noHeatmap: "Chưa đủ dữ liệu để tính heatmap",
+      rankHint: "Ưu tiên farm từ trên xuống",
     }
     : {
       levels: "Levels",
@@ -103,6 +113,12 @@ export default function StatsPanel({
       actions: "Actions",
       applyIncrease: "Apply Increase → Current",
       saveCurrent: "Save Current",
+      heatmap: "Stat Priority Heatmap",
+      lineCount: "Affix line count (n)",
+      gainRange: "DMG gain",
+      affixGain: "Affix gain",
+      noHeatmap: "Not enough data to compute heatmap",
+      rankHint: "Farm priority from top to bottom",
     };
 
   const safeLevelContext = levelContext ?? { playerLevel: 81, enemyLevel: 81 };
@@ -110,6 +126,7 @@ export default function StatsPanel({
   const safeSetEnemyLevel = setEnemyLevel ?? (() => { });
   // Track local input values for instant UI feedback
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
+  const [heatmapLines, setHeatmapLines] = useState(1);
 
   // Debounce timers
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
@@ -130,6 +147,20 @@ export default function StatsPanel({
     () => computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus),
     [stats, elementStats, rotation, gearBonus]
   );
+
+  const statHeatmap = useStatHeatmap(
+    stats,
+    elementStats,
+    gearBonus,
+    rotation,
+    levelContext,
+    heatmapLines,
+  );
+
+  const topHeatmapImpact = useMemo(() => {
+    if (statHeatmap.length === 0) return 0;
+    return Math.max(...statHeatmap.map((row) => Math.abs(row.bestImpactPct)));
+  }, [statHeatmap]);
 
   const handleStatChange = useCallback(
     (
@@ -328,6 +359,90 @@ export default function StatsPanel({
               ))}
             </select>
           </div>
+        </section>
+
+        <section className="space-y-5">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">{text.heatmap}</h2>
+            <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">{text.lineCount}</label>
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                step={1}
+                value={heatmapLines}
+                onChange={(e) => {
+                  const next = Math.floor(Number(e.target.value) || 1);
+                  setHeatmapLines(Math.max(1, Math.min(20, next)));
+                }}
+                className="h-10 w-44 bg-background/50 border-white/10 focus-visible:ring-emerald-500/25 focus-visible:border-emerald-500/30"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground">{text.rankHint}</span>
+          </div>
+
+          {statHeatmap.length === 0 ? (
+            <div className="rounded-xl border border-white/10 bg-background/30 px-4 py-3 text-sm text-muted-foreground">
+              {text.noHeatmap}
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
+              {statHeatmap.map((row) => {
+                const barWidth =
+                  topHeatmapImpact > 0
+                    ? Math.max(
+                      8,
+                      (Math.abs(row.bestImpactPct) / topHeatmapImpact) * 100,
+                    )
+                    : 0;
+
+                const label = getStatLabel(row.key, elementStats);
+                const impactClass =
+                  row.bestImpactPct >= 0
+                    ? "bg-emerald-500/20 border-emerald-500/25"
+                    : "bg-red-500/20 border-red-500/25";
+                const impactTextClass =
+                  row.bestImpactPct >= 0 ? "text-emerald-300" : "text-red-300";
+
+                return (
+                  <div
+                    key={row.key}
+                    className="rounded-xl border border-white/10 bg-card/50 p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">{label}</div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {row.key}
+                        </div>
+                      </div>
+                      <Badge className={`${impactClass} ${impactTextClass} border`}>
+                        {text.gainRange} {row.minImpactPct >= 0 ? "+" : ""}
+                        {row.minImpactPct.toFixed(2)}% → {row.maxImpactPct >= 0 ? "+" : ""}
+                        {row.maxImpactPct.toFixed(2)}%
+                      </Badge>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground">
+                      {text.affixGain}: +{row.minDelta.toFixed(1)} ~ +{row.maxDelta.toFixed(1)}
+                    </div>
+
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
+                      <div
+                        className={`h-full rounded-full ${row.bestImpactPct >= 0 ? "bg-emerald-400/80" : "bg-red-400/80"}`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {Object.entries(STAT_GROUPS).map(([group, keys]) => (
