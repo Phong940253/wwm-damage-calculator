@@ -639,59 +639,88 @@ export default function GearEquippedTab() {
                 {groupedTuneAdvice.map((group) => (
                   <div
                     key={`${group.slotLabel}-${group.gearName}`}
-                    className="rounded-md border border-white/10 bg-background/30 p-2"
+                    className="rounded-lg border border-white/10 bg-background/30 p-3"
                   >
-                    <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <Badge variant="outline" className="border-white/15">
                         {text.gear}: {group.slotLabel} - {group.gearName}
                       </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="bg-emerald-500/10 text-emerald-700"
+                      >
+                        {text.expected} {group.items[0].expectedGainPct >= 0 ? "+" : ""}
+                        {group.items[0].expectedGainPct.toFixed(2)}%
+                      </Badge>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-1 px-1 text-[11px] text-muted-foreground">
-                      <div>{text.line}</div>
-                      <div>{text.current}</div>
-                      <div>{text.availableStat}</div>
-                      <div className="text-right">{text.expected}</div>
-                      <div className="text-right">{text.bestCase}</div>
-                    </div>
-
-                    <div className="mt-1 space-y-1">
+                    <div className="space-y-1.5">
                       {group.items.map((item) => (
                         <div
                           key={`${item.slot}-${item.gearName}-${item.subIndex}`}
                           className={cn(
-                            "grid grid-cols-5 items-center gap-1 rounded-md border border-white/10 bg-card/40 px-2 py-1.5 text-xs",
+                            "rounded-md border border-white/10 bg-card/40 px-2.5 py-2 text-xs",
                             item.rank === 1 && "border-emerald-400/30 bg-emerald-500/5"
                           )}
                         >
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-muted-foreground">#{item.subIndex + 1}</span>
-                            {item.rank === 1 && (
-                              <Badge className="h-5 bg-emerald-500/15 px-1.5 text-[10px] text-emerald-700" variant="secondary">
-                                {text.recommend}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="text-muted-foreground">
+                                {text.line} #{item.subIndex + 1}
+                              </span>
+                              <span className="mx-1 text-muted-foreground">•</span>
+                              <span
+                                className="truncate"
+                                title={`${getStatLabel(item.currentStat, elementStats)} +${item.currentValue.toFixed(1)}`}
+                              >
+                                {getStatLabel(item.currentStat, elementStats)} +
+                                {item.currentValue.toFixed(1)}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {item.rank === 1 && (
+                                <Badge className="h-5 bg-emerald-500/15 px-1.5 text-[10px] text-emerald-700" variant="secondary">
+                                  {text.recommend}
+                                </Badge>
+                              )}
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "border-white/15",
+                                  item.expectedGainPct >= 0
+                                    ? "text-emerald-700"
+                                    : "text-red-700"
+                                )}
+                              >
+                                {text.expected} {item.expectedGainPct >= 0 ? "+" : ""}
+                                {item.expectedGainPct.toFixed(2)}%
                               </Badge>
-                            )}
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "border-white/15",
+                                  item.bestCaseGainPct >= 0
+                                    ? "text-emerald-700"
+                                    : "text-red-700"
+                                )}
+                              >
+                                {text.bestCase} {item.bestCaseGainPct >= 0 ? "+" : ""}
+                                {item.bestCaseGainPct.toFixed(2)}%
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="truncate" title={`${getStatLabel(item.currentStat, elementStats)} +${item.currentValue.toFixed(1)}`}>
-                            {getStatLabel(item.currentStat, elementStats)} +{item.currentValue.toFixed(1)}
-                          </div>
+
                           <div
-                            className="truncate"
+                            className="mt-1 truncate text-[11px] text-muted-foreground"
                             title={item.outcomes
                               .map((outcome) => getStatLabel(outcome.targetStat, elementStats))
                               .join(", ")}
                           >
+                            {text.availableStat}: {" "}
                             {item.outcomes
                               .map((outcome) => getStatLabel(outcome.targetStat, elementStats))
                               .join(", ")}
-                          </div>
-                          <div className="text-right">
-                            {item.expectedGainPct >= 0 ? "+" : ""}
-                            {item.expectedGainPct.toFixed(2)}%
-                          </div>
-                          <div className="text-right">
-                            {item.bestCaseGainPct >= 0 ? "+" : ""}
-                            {item.bestCaseGainPct.toFixed(2)}%
                           </div>
                         </div>
                       ))}
