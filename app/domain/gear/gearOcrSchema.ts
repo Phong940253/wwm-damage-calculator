@@ -94,16 +94,65 @@ Element attacks (SUB ONLY, NO RANGES):
   → bellstrikeDMGBonus = 1.6
 
 
-# ELEMENT PENETRATION (ADDITION ONLY)
+# ADDITION STAT RULES (STRICT)
 
-Rules:
-- ONLY ONE stat
-- MUST be element penetration
-- MUST appear ONLY in "addition"
+Only ONE stat is allowed in "addition".
 
-Examples:
-- "Bellstrike Penetration 3.1"
-  → addition: bellstrikePenetration = 3.1
+For LEFT slots only:
+- weapon_1
+- weapon_2
+- disc
+- pendant
+
+Allowed addition keys:
+- PhysicalPenetration
+- PhysicalResistance
+- bellstrikePenetration
+- stonesplitPenetration
+- silkbindPenetration
+- bamboocutPenetration
+
+For RIGHT slots only:
+- head
+- chest
+- hand
+- leg
+
+Allowed addition keys:
+- NamelessSwordMartialArtSkillDMGBoost
+- NamelessSwordChargedSkillDMGBoost
+- NamelessSwordSpecialSkillDMGBoost
+- NamelessSpearMartialArtSkillDMGBoost
+- NamelessSpearChargedSkillDMGBoost
+- NamelessSpearSpecialSkillDMGBoost
+- VernalUmbrellaMartialArtSkillDMGBoost
+- VernalUmbrellaChargedSkillDMGBoost
+- VernalUmbrellaSpecialSkillDMGBoost
+- InkwellFanMartialArtSkillDMGBoost
+- InkwellFanChargedSkillDMGBoost
+- InkwellFanSpecialAndPursuitSkillDMGBoost
+- InfernalTwinbladesMartialArtSkillDMGBoost
+- InfernalTwinbladesSpecialSkillDMGBoost
+- InfernalTwinbladesEmpoweredLightAttackDMGBoost
+- MortalRopeDartMartialArtSkillDMGBoost
+- MortalRopeDartChargedSkillDMGBoost
+- MortalRopeDartRodentDMGBoost
+- StrategicSwordMartialArtSkillDMGBoost
+- StrategicSwordChargedSkillDMGBoost
+- StrategicSwordSpecialSkillDMGBoost
+- HeavenquakerSpearMartialArtSkillDMGBoost
+- HeavenquakerSpearChargedSkillDMGBoost
+- HeavenquakerSpearSpecialSkillDMGBoost
+- ThundercryBladeChargedSkillDMGBoost
+- ThundercryBladeSpecialSkillDMGBoost
+- StormbreakerSpearMartialArtSkillDMGBoost
+- StormbreakerSpearChargedSkillDMGBoost
+- StormbreakerSpearSpecialSkillDMGBoost
+- PanaceaFanMartialArtSkillHealingBoost
+- PanaceaFanSpecialSkillHealingBoost
+- SoulshadeUmbrellaMartialArtSkillHealingBoost
+- SoulshadeUmbrellaSpecialSkillHealingBoost
+- SoulshadeUmbrellaChargedSkillDMGBoost
 
 # DEFENSE STATS
 
@@ -198,6 +247,42 @@ Element Penetration (ADDITION ONLY):
 - stonesplitPenetration
 - silkbindPenetration
 - bamboocutPenetration
+
+Right-slot Attune Additions (ADDITION ONLY for head/chest/hand/leg):
+- NamelessSwordMartialArtSkillDMGBoost
+- NamelessSwordChargedSkillDMGBoost
+- NamelessSwordSpecialSkillDMGBoost
+- NamelessSpearMartialArtSkillDMGBoost
+- NamelessSpearChargedSkillDMGBoost
+- NamelessSpearSpecialSkillDMGBoost
+- VernalUmbrellaMartialArtSkillDMGBoost
+- VernalUmbrellaChargedSkillDMGBoost
+- VernalUmbrellaSpecialSkillDMGBoost
+- InkwellFanMartialArtSkillDMGBoost
+- InkwellFanChargedSkillDMGBoost
+- InkwellFanSpecialAndPursuitSkillDMGBoost
+- InfernalTwinbladesMartialArtSkillDMGBoost
+- InfernalTwinbladesSpecialSkillDMGBoost
+- InfernalTwinbladesEmpoweredLightAttackDMGBoost
+- MortalRopeDartMartialArtSkillDMGBoost
+- MortalRopeDartChargedSkillDMGBoost
+- MortalRopeDartRodentDMGBoost
+- StrategicSwordMartialArtSkillDMGBoost
+- StrategicSwordChargedSkillDMGBoost
+- StrategicSwordSpecialSkillDMGBoost
+- HeavenquakerSpearMartialArtSkillDMGBoost
+- HeavenquakerSpearChargedSkillDMGBoost
+- HeavenquakerSpearSpecialSkillDMGBoost
+- ThundercryBladeChargedSkillDMGBoost
+- ThundercryBladeSpecialSkillDMGBoost
+- StormbreakerSpearMartialArtSkillDMGBoost
+- StormbreakerSpearChargedSkillDMGBoost
+- StormbreakerSpearSpecialSkillDMGBoost
+- PanaceaFanMartialArtSkillHealingBoost
+- PanaceaFanSpecialSkillHealingBoost
+- SoulshadeUmbrellaMartialArtSkillHealingBoost
+- SoulshadeUmbrellaSpecialSkillHealingBoost
+- SoulshadeUmbrellaChargedSkillDMGBoost
 
 ====================
 OUTPUT SCHEMA

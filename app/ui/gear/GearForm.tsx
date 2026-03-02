@@ -12,6 +12,10 @@ import { normalizeStatKey } from "@/lib/normalizeStat";
 import { fileToBase64 } from "@/lib/utils";
 import { GEAR_OCR_PROMPT } from "../../domain/gear/gearOcrSchema";
 import { GearOcrResult } from "../../domain/gear/gearOcrSchema";
+import {
+  getAdditionStatsBySlot,
+  isValidAdditionStatForSlot,
+} from "@/app/domain/gear/additionRules";
 import { GripVertical, Loader2 } from "lucide-react";
 import { GearStatSelect } from "./GearStatSelect";
 import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } from "./useGearStatDnD";
@@ -133,6 +137,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   });
 
   const [ocrLoading, setOcrLoading] = useState(false);
+  const additionOptions = getAdditionStatsBySlot(slot);
+  const defaultAdditionStat = additionOptions[0] ?? "PhysicalPenetration";
+
   const handleOcr = async (file: File) => {
     console.log("OCR start", file.name, file.size);
     setOcrLoading(true);
@@ -145,7 +152,8 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       ) as GearOcrResult;
 
       if (result.name) setName(result.name);
-      if (result.slot) setSlot(result.slot as GearSlot);
+      const nextSlot = (result.slot as GearSlot) || slot;
+      if (result.slot) setSlot(nextSlot);
       if (result.rarity) setRarity(String(result.rarity));
 
       if (result.mains) {
@@ -184,12 +192,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       if (result.addition) {
         const stat = normalizeStatKey(result.addition.stat);
-        if (stat) {
+        if (stat && isValidAdditionStatForSlot(nextSlot, stat)) {
           setAddition({
             id: crypto.randomUUID(),
             stat,
             value: result.addition.value,
           });
+        } else {
+          setAddition(null);
         }
       }
 
@@ -227,11 +237,22 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     }
 
     setAddition(
-      initialGear.addition
+      initialGear.addition &&
+        isValidAdditionStatForSlot(initialGear.slot, String(initialGear.addition.stat))
         ? { id: crypto.randomUUID(), ...initialGear.addition }
         : null
     );
   }, [initialGear]);
+
+  useEffect(() => {
+    if (!addition) return;
+    if (isValidAdditionStatForSlot(slot, String(addition.stat))) return;
+
+    setAddition({
+      ...addition,
+      stat: defaultAdditionStat,
+    });
+  }, [slot, addition, defaultAdditionStat]);
 
   useEffect(() => {
     if (!tunedSubRowId) return;
@@ -266,7 +287,10 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         slot,
         mains: mains.map(({ stat, value }) => ({ stat, value })),
         subs: subs.map(({ stat, value }) => ({ stat, value })),
-        addition: addition ? { stat: addition.stat, value: addition.value } : undefined,
+        addition:
+          addition && isValidAdditionStatForSlot(slot, String(addition.stat))
+            ? { stat: addition.stat, value: addition.value }
+            : undefined,
         tunedSubIndex:
           tunedSubRowId === null
             ? null
@@ -590,6 +614,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 className="order-1 h-8 w-full border rounded px-2 text-sm sm:order-none sm:min-w-0 sm:flex-1"
                 value={addition.stat}
                 onChange={nextStat => setAddition({ ...addition, stat: nextStat })}
+                options={additionOptions}
               />
 
               <Input
@@ -612,7 +637,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             size="sm"
             variant="secondary"
             onClick={() =>
-              setAddition({ id: crypto.randomUUID(), stat: "CriticalRate", value: 0 })
+              setAddition({ id: crypto.randomUUID(), stat: defaultAdditionStat, value: 0 })
             }
           >
             {text.addAdditionalAttribute}

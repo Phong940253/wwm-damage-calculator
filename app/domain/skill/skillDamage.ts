@@ -131,6 +131,7 @@ export function calculateSkillDamage(
   for (const hit of effectiveHits) {
     const hitCtx = createSkillContext(ctx, {
       skillId: skill.id,
+      category: skill.category,
       physicalMultiplier: hit.physicalMultiplier,
       elementMultiplier: hit.elementMultiplier,
       flatPhysical: hit.flatPhysical,

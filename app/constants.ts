@@ -169,6 +169,62 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   ArtOfMoBladeDMGBoost: "Art of Mo Blade DMG Boost",
   ArtOfDualBladesDMGBoost: "Art of Dual Blades DMG Boost",
   ArtOfRopeDartDMGBoost: "Art of Rope Dart DMG Boost",
+  NamelessSwordMartialArtSkillDMGBoost:
+    "Nameless Sword Martial Art Skill DMG Boost",
+  NamelessSwordChargedSkillDMGBoost: "Nameless Sword Charged Skill DMG Boost",
+  NamelessSwordSpecialSkillDMGBoost: "Nameless Sword Special Skill DMG Boost",
+  NamelessSpearMartialArtSkillDMGBoost:
+    "Nameless Spear Martial Art Skill DMG Boost",
+  NamelessSpearChargedSkillDMGBoost: "Nameless Spear Charged Skill DMG Boost",
+  NamelessSpearSpecialSkillDMGBoost: "Nameless Spear Special Skill DMG Boost",
+  VernalUmbrellaMartialArtSkillDMGBoost:
+    "Vernal Umbrella Martial Art Skill DMG Boost",
+  VernalUmbrellaChargedSkillDMGBoost: "Vernal Umbrella Charged Skill DMG Boost",
+  VernalUmbrellaSpecialSkillDMGBoost: "Vernal Umbrella Special Skill DMG Boost",
+  InkwellFanMartialArtSkillDMGBoost: "Inkwell Fan Martial Art Skill DMG Boost",
+  InkwellFanChargedSkillDMGBoost: "Inkwell Fan Charged Skill DMG Boost",
+  InkwellFanSpecialAndPursuitSkillDMGBoost:
+    "Inkwell Fan Special & Pursuit Skill DMG Boost",
+  InfernalTwinbladesMartialArtSkillDMGBoost:
+    "Infernal Twinblades Martial Art Skill DMG Boost",
+  InfernalTwinbladesSpecialSkillDMGBoost:
+    "Infernal Twinblades Special Skill DMG Boost",
+  InfernalTwinbladesEmpoweredLightAttackDMGBoost:
+    "Infernal Twinblades Empowered Light Attack DMG Boost",
+  MortalRopeDartMartialArtSkillDMGBoost:
+    "Mortal Rope Dart Martial Art Skill DMG Boost",
+  MortalRopeDartChargedSkillDMGBoost:
+    "Mortal Rope Dart Charged Skill DMG Boost",
+  MortalRopeDartRodentDMGBoost: "Mortal Rope Dart Rodent DMG Boost",
+  StrategicSwordMartialArtSkillDMGBoost:
+    "Strategic Sword Martial Art Skill DMG Boost",
+  StrategicSwordChargedSkillDMGBoost: "Strategic Sword Charged Skill DMG Boost",
+  StrategicSwordSpecialSkillDMGBoost: "Strategic Sword Special Skill DMG Boost",
+  HeavenquakerSpearMartialArtSkillDMGBoost:
+    "Heavenquaker Spear Martial Art Skill DMG Boost",
+  HeavenquakerSpearChargedSkillDMGBoost:
+    "Heavenquaker Spear Charged Skill DMG Boost",
+  HeavenquakerSpearSpecialSkillDMGBoost:
+    "Heavenquaker Spear Special Skill DMG Boost",
+  ThundercryBladeChargedSkillDMGBoost:
+    "Thundercry Blade Charged Skill DMG Boost",
+  ThundercryBladeSpecialSkillDMGBoost:
+    "Thundercry Blade Special Skill DMG Boost",
+  StormbreakerSpearMartialArtSkillDMGBoost:
+    "Stormbreaker Spear Martial Art Skill DMG Boost",
+  StormbreakerSpearChargedSkillDMGBoost:
+    "Stormbreaker Spear Charged Skill DMG Boost",
+  StormbreakerSpearSpecialSkillDMGBoost:
+    "Stormbreaker Spear Special Skill DMG Boost",
+  PanaceaFanMartialArtSkillHealingBoost:
+    "Panacea Fan Martial Art Skill Healing Boost",
+  PanaceaFanSpecialSkillHealingBoost: "Panacea Fan Special Skill Healing Boost",
+  SoulshadeUmbrellaMartialArtSkillHealingBoost:
+    "Soulshade Umbrella Martial Art Skill Healing Boost",
+  SoulshadeUmbrellaSpecialSkillHealingBoost:
+    "Soulshade Umbrella Special Skill Healing Boost",
+  SoulshadeUmbrellaChargedSkillDMGBoost:
+    "Soulshade Umbrella Charged Skill DMG Boost",
   MainElementMultiplier: "Main Element Multiplier",
 };
 

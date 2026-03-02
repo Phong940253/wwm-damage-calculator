@@ -1,6 +1,6 @@
 // app/domain/skill/skillContext.ts
 import { DamageContext } from "../damage/damageContext";
-import { DamageSkillType, WeaponType } from "./types";
+import { CategorySkill, DamageSkillType, WeaponType } from "./types";
 
 const MOONLIT_SHATTER_SPRING_SKILL_IDS = new Set([
   "inkwell_moonlit_shatter_spring",
@@ -8,6 +8,143 @@ const MOONLIT_SHATTER_SPRING_SKILL_IDS = new Set([
 ]);
 
 const SPRING_AWAY_SKILL_IDS = new Set(["vernal_umbrella_light_spring_away"]);
+
+function skillStartsWith(skillId: string | undefined, prefix: string): boolean {
+  return !!skillId && skillId.startsWith(`${prefix}_`);
+}
+
+function isSpecialCategory(category?: CategorySkill): boolean {
+  return category === "special-skill";
+}
+
+function isMartialCategory(category?: CategorySkill): boolean {
+  return category === "martial-art-skill";
+}
+
+function getFamilySpecificDamageBoost(
+  baseCtx: DamageContext,
+  opts: {
+    skillId?: string;
+    weaponType?: WeaponType;
+    category?: CategorySkill;
+    isChargedSkill: boolean;
+    isPursuitSkill: boolean;
+  },
+): number {
+  const { skillId, weaponType, category, isChargedSkill, isPursuitSkill } =
+    opts;
+  let value = 0;
+
+  if (skillStartsWith(skillId, "nameless") && weaponType === "Sword") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("NamelessSwordMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill)
+      value += baseCtx.get("NamelessSwordChargedSkillDMGBoost");
+    if (isSpecialCategory(category))
+      value += baseCtx.get("NamelessSwordSpecialSkillDMGBoost");
+  }
+
+  if (skillStartsWith(skillId, "nameless") && weaponType === "Spear") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("NamelessSpearMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill)
+      value += baseCtx.get("NamelessSpearChargedSkillDMGBoost");
+    if (isSpecialCategory(category))
+      value += baseCtx.get("NamelessSpearSpecialSkillDMGBoost");
+  }
+
+  if (skillStartsWith(skillId, "vernal") && weaponType === "Umbrella") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("VernalUmbrellaMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill)
+      value += baseCtx.get("VernalUmbrellaChargedSkillDMGBoost");
+    if (isSpecialCategory(category))
+      value += baseCtx.get("VernalUmbrellaSpecialSkillDMGBoost");
+  }
+
+  if (skillStartsWith(skillId, "inkwell") && weaponType === "Fan") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("InkwellFanMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill) value += baseCtx.get("InkwellFanChargedSkillDMGBoost");
+    if (isSpecialCategory(category) || isPursuitSkill) {
+      value += baseCtx.get("InkwellFanSpecialAndPursuitSkillDMGBoost");
+    }
+  }
+
+  if (skillStartsWith(skillId, "infernal") && weaponType === "Dual Blades") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("InfernalTwinbladesMartialArtSkillDMGBoost");
+    }
+    if (isSpecialCategory(category)) {
+      value += baseCtx.get("InfernalTwinbladesSpecialSkillDMGBoost");
+    }
+    if (skillId && /infernal_.*light_attack/.test(skillId)) {
+      value += baseCtx.get("InfernalTwinbladesEmpoweredLightAttackDMGBoost");
+    }
+  }
+
+  if (skillStartsWith(skillId, "mortal") && weaponType === "Rope Dart") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("MortalRopeDartMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill)
+      value += baseCtx.get("MortalRopeDartChargedSkillDMGBoost");
+    if (skillId && skillId.includes("rodent")) {
+      value += baseCtx.get("MortalRopeDartRodentDMGBoost");
+    }
+  }
+
+  if (skillStartsWith(skillId, "strategic") && weaponType === "Sword") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("StrategicSwordMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill)
+      value += baseCtx.get("StrategicSwordChargedSkillDMGBoost");
+    if (isSpecialCategory(category))
+      value += baseCtx.get("StrategicSwordSpecialSkillDMGBoost");
+  }
+
+  if (skillStartsWith(skillId, "heavenquaker") && weaponType === "Spear") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("HeavenquakerSpearMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill)
+      value += baseCtx.get("HeavenquakerSpearChargedSkillDMGBoost");
+    if (isSpecialCategory(category))
+      value += baseCtx.get("HeavenquakerSpearSpecialSkillDMGBoost");
+  }
+
+  if (skillStartsWith(skillId, "thundercry") && weaponType === "Mo Blade") {
+    if (isChargedSkill)
+      value += baseCtx.get("ThundercryBladeChargedSkillDMGBoost");
+    if (isSpecialCategory(category)) {
+      value += baseCtx.get("ThundercryBladeSpecialSkillDMGBoost");
+    }
+  }
+
+  if (skillStartsWith(skillId, "stormbreaker") && weaponType === "Spear") {
+    if (isMartialCategory(category)) {
+      value += baseCtx.get("StormbreakerSpearMartialArtSkillDMGBoost");
+    }
+    if (isChargedSkill)
+      value += baseCtx.get("StormbreakerSpearChargedSkillDMGBoost");
+    if (isSpecialCategory(category)) {
+      value += baseCtx.get("StormbreakerSpearSpecialSkillDMGBoost");
+    }
+  }
+
+  if (skillStartsWith(skillId, "soulshade") && weaponType === "Umbrella") {
+    if (isChargedSkill) {
+      value += baseCtx.get("SoulshadeUmbrellaChargedSkillDMGBoost");
+    }
+  }
+
+  return value;
+}
 
 function weaponArtDamageBoostKey(weaponType: WeaponType): string {
   switch (weaponType) {
@@ -40,6 +177,7 @@ export function createSkillContext(
     damageSkillTypes?: DamageSkillType[];
     weaponType?: WeaponType;
     skillId?: string;
+    category?: CategorySkill;
   },
 ): DamageContext {
   // Pre-calculate combined flat damage outside getter to avoid recalculation
@@ -75,6 +213,13 @@ export function createSkillContext(
       if (isBallisticSkill) value += baseCtx.get("BallisticSkillDamageBoost");
       if (isPursuitSkill) value += baseCtx.get("PursuitSkillDamageBoost");
       if (weaponArtKey) value += baseCtx.get(weaponArtKey);
+      value += getFamilySpecificDamageBoost(baseCtx, {
+        skillId: opts.skillId,
+        weaponType: opts.weaponType,
+        category: opts.category,
+        isChargedSkill,
+        isPursuitSkill,
+      });
 
       // Conditional: Spring Away damage boost (e.g. Inner Ways)
       if (opts.skillId && SPRING_AWAY_SKILL_IDS.has(opts.skillId)) {
