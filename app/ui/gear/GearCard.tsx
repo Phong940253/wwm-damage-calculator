@@ -14,7 +14,11 @@ import {
 import { getStatLabel } from "@/app/utils/statLabel";
 import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
-import { GEAR_SLOTS } from "@/app/constants";
+import {
+  GEAR_SLOTS,
+  STAT_HEATMAP_AFFIX_LIMITS,
+  type StatHeatmapKey,
+} from "@/app/constants";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
@@ -23,6 +27,7 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
+import { getTuneSystemStatPool } from "@/app/domain/gear/tuneAdvisor";
 
 function calcRotationAwareNormalDamage(
   stats: InputStats,
@@ -119,6 +124,11 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       main: "Chính",
       sub: "Phụ",
       bonus: "Thưởng",
+      showTune: "Show tune",
+      hideTune: "Ẩn tune",
+      availableStat: "Stat có thể ra",
+      expected: "Kỳ vọng",
+      noTuneLine: "Không có dòng phụ hợp lệ để tune.",
     }
     : {
       equipped: "Equipped",
@@ -130,6 +140,11 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       main: "Main",
       sub: "Sub",
       bonus: "Bonus",
+      showTune: "Show tune",
+      hideTune: "Hide tune",
+      availableStat: "Available stat",
+      expected: "Expected",
+      noTuneLine: "No valid sub-line to tune.",
     };
 
   const { customGears, equipped, setEquipped } = useGear();
@@ -139,6 +154,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
   // Defer until the card is near viewport and the browser is idle.
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [impactEnabled, setImpactEnabled] = useState(false);
+  const [tuneEnabled, setTuneEnabled] = useState(false);
 
   useEffect(() => {
     if (impactEnabled) return;
@@ -358,6 +374,94 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     return ((dmg - base) / base) * 100;
   }, [baseline, elementStats, gear.subs, gear.addition, mains, stats, rotation]);
 
+  const tuneStatPool = useMemo(
+    () => (elementStats ? getTuneSystemStatPool(elementStats.selected) : []),
+    [elementStats]
+  );
+
+  const tuneRows = useMemo(() => {
+    if (!tuneEnabled || !baseline || baseline.base <= 0 || !elementStats) return [] as Array<{
+      subIndex: number;
+      currentStat: string;
+      currentValue: number;
+      expectedGainPct: number;
+      availableStats: string[];
+    }>;
+
+    const rows: Array<{
+      subIndex: number;
+      currentStat: string;
+      currentValue: number;
+      expectedGainPct: number;
+      availableStats: string[];
+    }> = [];
+
+    const baseDamage = baseline.base;
+    const baseBonusWithoutSlot = baseline.bonusWithoutSlot;
+
+    (gear.subs ?? []).forEach((s, subIndex) => {
+      const currentStat = String(s.stat);
+      const currentValue = Number(s.value ?? 0);
+      if (!Number.isFinite(currentValue) || currentValue === 0) return;
+
+      const bonusWithoutLine = { ...baseBonusWithoutSlot };
+      bonusWithoutLine[currentStat] =
+        (bonusWithoutLine[currentStat] ?? 0) - currentValue;
+
+      const outcomes: Array<{ targetStat: StatHeatmapKey; expectedGainPct: number }> = [];
+
+      for (const targetStat of tuneStatPool) {
+        if (targetStat === currentStat) continue;
+
+        const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
+        if (!range) continue;
+
+        const expectedValue = (range.minPerLine + range.maxPerLine) / 2;
+        const testBonus = { ...bonusWithoutLine };
+        testBonus[targetStat] = (testBonus[targetStat] ?? 0) + expectedValue;
+
+        const dmg = calcRotationAwareNormalDamage(
+          stats,
+          elementStats,
+          testBonus,
+          rotation
+        );
+
+        outcomes.push({
+          targetStat,
+          expectedGainPct: ((dmg - baseDamage) / baseDamage) * 100,
+        });
+      }
+
+      if (outcomes.length === 0) return;
+
+      const expectedGainPct =
+        outcomes.reduce((sum, x) => sum + x.expectedGainPct, 0) / outcomes.length;
+
+      const availableStats = outcomes
+        .sort((a, b) => b.expectedGainPct - a.expectedGainPct)
+        .map((x) => getStatLabel(x.targetStat, elementStats));
+
+      rows.push({
+        subIndex,
+        currentStat,
+        currentValue,
+        expectedGainPct,
+        availableStats,
+      });
+    });
+
+    return rows.sort((a, b) => b.expectedGainPct - a.expectedGainPct);
+  }, [
+    tuneEnabled,
+    baseline,
+    elementStats,
+    gear.subs,
+    rotation,
+    stats,
+    tuneStatPool,
+  ]);
+
   return (
     <div ref={rootRef} className="h-full">
       <Card
@@ -468,6 +572,20 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
         {/* Stats */}
         <div className="mt-4 flex flex-1 flex-col gap-3">
+          {tuneStatPool.length > 0 && (gear.subs?.length ?? 0) > 0 && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 border-white/15 bg-background/40 px-2 text-[11px]"
+                onClick={() => setTuneEnabled((prev) => !prev)}
+              >
+                {tuneEnabled ? text.hideTune : text.showTune}
+              </Button>
+            </div>
+          )}
+
           {mains.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -520,6 +638,38 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                 elementStats={elementStats}
                 impactPct={impactPctByLineKey["addition:0"]}
               />
+            </div>
+          )}
+
+          {tuneEnabled && (
+            <div className="space-y-1.5 pt-1">
+              {tuneRows.length === 0 ? (
+                <div className="rounded-md border border-white/10 bg-background/30 px-2 py-1.5 text-[11px] text-muted-foreground">
+                  {text.noTuneLine}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {tuneRows.map((row) => (
+                    <div
+                      key={`tune-subs-${row.subIndex}`}
+                      className="rounded-md border border-white/10 bg-background/30 px-2 py-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="text-muted-foreground">
+                          #{row.subIndex + 1} {getStatLabel(row.currentStat, elementStats)} +{row.currentValue.toFixed(1)}
+                        </span>
+                        <span className="font-medium text-emerald-300">
+                          {text.expected} {row.expectedGainPct >= 0 ? "+" : ""}
+                          {row.expectedGainPct.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {text.availableStat}: {row.availableStats.join(", ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
