@@ -6,6 +6,12 @@ import { useGear } from "../../providers/GearContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -127,8 +133,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       main: "Chính",
       sub: "Phụ",
       bonus: "Thưởng",
-      showTune: "Show tune",
-      hideTune: "Ẩn tune",
+      showTune: "Tune",
+      tuneTitle: "Tune Preview",
       availableStat: "Stat có thể ra",
       expected: "Kỳ vọng",
       noTuneLine: "Không có dòng phụ hợp lệ để tune.",
@@ -143,8 +149,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       main: "Main",
       sub: "Sub",
       bonus: "Bonus",
-      showTune: "Show tune",
-      hideTune: "Hide tune",
+      showTune: "Tune",
+      tuneTitle: "Tune Preview",
       availableStat: "Available stat",
       expected: "Expected",
       noTuneLine: "No valid sub-line to tune.",
@@ -157,7 +163,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
   // Defer until the card is near viewport and the browser is idle.
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [impactEnabled, setImpactEnabled] = useState(false);
-  const [tuneEnabled, setTuneEnabled] = useState(false);
+  const [tuneDialogOpen, setTuneDialogOpen] = useState(false);
 
   useEffect(() => {
     if (impactEnabled) return;
@@ -383,7 +389,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
   );
 
   const tuneRows = useMemo(() => {
-    if (!tuneEnabled || !baseline || baseline.base <= 0 || !elementStats) return [] as Array<{
+    if (!tuneDialogOpen || !baseline || baseline.base <= 0 || !elementStats) return [] as Array<{
       subIndex: number;
       currentStat: string;
       currentValue: number;
@@ -460,7 +466,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
     return rows.sort((a, b) => b.expectedGainPct - a.expectedGainPct);
   }, [
-    tuneEnabled,
+    tuneDialogOpen,
     baseline,
     elementStats,
     gear.subs,
@@ -586,9 +592,9 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                 size="sm"
                 variant="outline"
                 className="h-7 border-white/15 bg-background/40 px-2 text-[11px]"
-                onClick={() => setTuneEnabled((prev) => !prev)}
+                onClick={() => setTuneDialogOpen(true)}
               >
-                {tuneEnabled ? text.hideTune : text.showTune}
+                {text.showTune}
               </Button>
             </div>
           )}
@@ -649,39 +655,47 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
             </div>
           )}
 
-          {tuneEnabled && (
-            <div className="space-y-1.5 pt-1">
-              {tuneRows.length === 0 ? (
-                <div className="rounded-md border border-white/10 bg-background/30 px-2 py-1.5 text-[11px] text-muted-foreground">
-                  {text.noTuneLine}
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {tuneRows.map((row) => (
-                    <div
-                      key={`tune-subs-${row.subIndex}`}
-                      className="rounded-md border border-white/10 bg-background/30 px-2 py-1.5"
-                    >
-                      <div className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="text-muted-foreground">
-                          #{row.subIndex + 1} {getStatLabel(row.currentStat, elementStats)} +{row.currentValue.toFixed(1)}
-                        </span>
-                        <span className="font-medium text-emerald-300">
-                          {text.expected} {row.expectedGainPct >= 0 ? "+" : ""}
-                          {row.expectedGainPct.toFixed(2)}%
-                        </span>
-                      </div>
-                      <div className="mt-1 text-[11px] text-muted-foreground">
-                        {text.availableStat}: {row.availableStats.join(", ")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </Card>
+
+      <Dialog open={tuneDialogOpen} onOpenChange={setTuneDialogOpen}>
+        <DialogContent className="max-h-[86dvh] w-[95vw] max-w-xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {text.tuneTitle} • {gear.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {tuneRows.length === 0 ? (
+            <div className="rounded-md border border-white/10 bg-background/30 px-3 py-2 text-sm text-muted-foreground">
+              {text.noTuneLine}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {tuneRows.map((row) => (
+                <div
+                  key={`tune-dialog-subs-${row.subIndex}`}
+                  className="rounded-md border border-white/10 bg-background/30 px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      #{row.subIndex + 1} {getStatLabel(row.currentStat, elementStats)} +
+                      {row.currentValue.toFixed(1)}
+                    </span>
+                    <span className="font-medium text-emerald-300">
+                      {text.expected} {row.expectedGainPct >= 0 ? "+" : ""}
+                      {row.expectedGainPct.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {text.availableStat}: {row.availableStats.join(", ")}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
