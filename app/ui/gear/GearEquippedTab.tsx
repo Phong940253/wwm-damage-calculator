@@ -466,7 +466,7 @@ export default function GearEquippedTab() {
   }, [tuneAdvice]);
 
   return (
-    <div className="space-y-4" id="gear-combined-stats">
+    <div className="space-y-4">
       {/* Combined result */}
       <GearCombinedStats bonus={bonus} />
       <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
@@ -490,7 +490,7 @@ export default function GearEquippedTab() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-2" id="gear-combined-stats">
         {[leftRows, rightRows].map((regionRows, regionIndex) => (
           <div key={regionIndex} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4">
             {regionRows.map((row) => {
