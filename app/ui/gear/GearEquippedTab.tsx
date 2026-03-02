@@ -711,16 +711,21 @@ export default function GearEquippedTab() {
                             </div>
                           </div>
 
-                          <div
-                            className="mt-1 truncate text-[11px] text-muted-foreground"
-                            title={item.outcomes
-                              .map((outcome) => getStatLabel(outcome.targetStat, elementStats))
-                              .join(", ")}
-                          >
-                            {text.availableStat}: {" "}
-                            {item.outcomes
-                              .map((outcome) => getStatLabel(outcome.targetStat, elementStats))
-                              .join(", ")}
+                          <div className="mt-1.5 space-y-1">
+                            <div className="text-[11px] text-muted-foreground">
+                              {text.availableStat}
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {item.outcomes.map((outcome) => (
+                                <Badge
+                                  key={`${item.slot}-${item.subIndex}-${outcome.targetStat}`}
+                                  variant="outline"
+                                  className="h-5 border-white/15 bg-background/40 px-1.5 text-[10px]"
+                                >
+                                  {getStatLabel(outcome.targetStat, elementStats)}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
