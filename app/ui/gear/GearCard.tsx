@@ -450,7 +450,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
         if (!range) continue;
 
-        const expectedValue = (range.minPerLine + range.maxPerLine) / 2;
+        const expectedValue = range.maxPerLine;
         const testBonus = { ...bonusWithoutLine };
         testBonus[targetStat] = (testBonus[targetStat] ?? 0) + expectedValue;
 

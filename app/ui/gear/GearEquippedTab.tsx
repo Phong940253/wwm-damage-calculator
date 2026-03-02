@@ -385,7 +385,7 @@ export default function GearEquippedTab() {
           const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
           if (!range) continue;
 
-          const expectedValue = (range.minPerLine + range.maxPerLine) / 2;
+          const expectedValue = range.maxPerLine;
           const expectedBonus = { ...bonusWithoutLine };
           expectedBonus[targetStat] = (expectedBonus[targetStat] ?? 0) + expectedValue;
           const expectedDamage = calcWithBonus(expectedBonus);
