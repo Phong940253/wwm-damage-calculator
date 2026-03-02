@@ -5,6 +5,8 @@ import { CustomGear, ElementStats, InputStats, Rotation } from "../../types";
 import { useGear } from "../../providers/GearContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -137,6 +139,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       tuneTitle: "Tune Preview",
       availableStat: "Stat có thể ra",
       expected: "Kỳ vọng",
+      bestCase: "Best-case",
       noTuneLine: "Không có dòng phụ hợp lệ để tune.",
     }
     : {
@@ -153,6 +156,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       tuneTitle: "Tune Preview",
       availableStat: "Available stat",
       expected: "Expected",
+      bestCase: "Best-case",
       noTuneLine: "No valid sub-line to tune.",
     };
 
@@ -394,7 +398,12 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       currentStat: string;
       currentValue: number;
       expectedGainPct: number;
-      availableStats: string[];
+      bestCaseGainPct: number;
+      outcomes: Array<{
+        targetStat: StatHeatmapKey;
+        expectedGainPct: number;
+        bestCaseGainPct: number;
+      }>;
     }>;
 
     const rows: Array<{
@@ -402,7 +411,12 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       currentStat: string;
       currentValue: number;
       expectedGainPct: number;
-      availableStats: string[];
+      bestCaseGainPct: number;
+      outcomes: Array<{
+        targetStat: StatHeatmapKey;
+        expectedGainPct: number;
+        bestCaseGainPct: number;
+      }>;
     }> = [];
 
     const baseDamage = baseline.base;
@@ -418,7 +432,11 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       bonusWithoutLine[currentStat] =
         (bonusWithoutLine[currentStat] ?? 0) - currentValue;
 
-      const outcomes: Array<{ targetStat: StatHeatmapKey; expectedGainPct: number }> = [];
+      const outcomes: Array<{
+        targetStat: StatHeatmapKey;
+        expectedGainPct: number;
+        bestCaseGainPct: number;
+      }> = [];
 
       for (const targetStat of tuneStatPool) {
         if (targetStat === currentStat) continue;
@@ -433,16 +451,26 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         const testBonus = { ...bonusWithoutLine };
         testBonus[targetStat] = (testBonus[targetStat] ?? 0) + expectedValue;
 
-        const dmg = calcRotationAwareNormalDamage(
+        const expectedDamage = calcRotationAwareNormalDamage(
           stats,
           elementStats,
           testBonus,
           rotation
         );
 
+        const bestCaseBonus = { ...bonusWithoutLine };
+        bestCaseBonus[targetStat] = (bestCaseBonus[targetStat] ?? 0) + range.maxPerLine;
+        const bestCaseDamage = calcRotationAwareNormalDamage(
+          stats,
+          elementStats,
+          bestCaseBonus,
+          rotation
+        );
+
         outcomes.push({
           targetStat,
-          expectedGainPct: ((dmg - baseDamage) / baseDamage) * 100,
+          expectedGainPct: ((expectedDamage - baseDamage) / baseDamage) * 100,
+          bestCaseGainPct: ((bestCaseDamage - baseDamage) / baseDamage) * 100,
         });
       }
 
@@ -451,16 +479,17 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       const expectedGainPct =
         outcomes.reduce((sum, x) => sum + x.expectedGainPct, 0) / outcomes.length;
 
-      const availableStats = outcomes
-        .sort((a, b) => b.expectedGainPct - a.expectedGainPct)
-        .map((x) => getStatLabel(x.targetStat, elementStats));
+      const bestCaseGainPct = Math.max(
+        ...outcomes.map((outcome) => outcome.bestCaseGainPct)
+      );
 
       rows.push({
         subIndex,
         currentStat,
         currentValue,
         expectedGainPct,
-        availableStats,
+        bestCaseGainPct,
+        outcomes: outcomes.sort((a, b) => b.expectedGainPct - a.expectedGainPct),
       });
     });
 
@@ -682,13 +711,72 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                       #{row.subIndex + 1} {getStatLabel(row.currentStat, elementStats)} +
                       {row.currentValue.toFixed(1)}
                     </span>
-                    <span className="font-medium text-emerald-300">
-                      {text.expected} {row.expectedGainPct >= 0 ? "+" : ""}
-                      {row.expectedGainPct.toFixed(2)}%
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "border-white/15",
+                          row.expectedGainPct >= 0 ? "text-emerald-300" : "text-red-300"
+                        )}
+                      >
+                        {text.expected} {row.expectedGainPct >= 0 ? "+" : ""}
+                        {row.expectedGainPct.toFixed(2)}%
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "border-white/15",
+                          row.bestCaseGainPct >= 0 ? "text-emerald-300" : "text-red-300"
+                        )}
+                      >
+                        {text.bestCase} {row.bestCaseGainPct >= 0 ? "+" : ""}
+                        {row.bestCaseGainPct.toFixed(2)}%
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {text.availableStat}: {row.availableStats.join(", ")}
+
+                  <div className="mt-1.5 space-y-1">
+                    <div className="text-[11px] text-muted-foreground">{text.availableStat}</div>
+                    <div className="flex flex-wrap gap-1">
+                      {(() => {
+                        const maxPositive = Math.max(
+                          0,
+                          ...row.outcomes.map((outcome) => outcome.expectedGainPct)
+                        );
+
+                        const getImpactBadgeClass = (expectedGainPct: number) => {
+                          if (expectedGainPct < 0) {
+                            return "border-red-400/25 bg-red-500/10 text-red-200";
+                          }
+
+                          const ratio = maxPositive > 0 ? expectedGainPct / maxPositive : 0;
+                          if (ratio >= 0.8) {
+                            return "border-emerald-300/50 bg-emerald-500/35 text-emerald-100";
+                          }
+                          if (ratio >= 0.55) {
+                            return "border-emerald-300/40 bg-emerald-500/25 text-emerald-100";
+                          }
+                          if (ratio >= 0.3) {
+                            return "border-emerald-300/30 bg-emerald-500/18 text-emerald-200";
+                          }
+                          return "border-emerald-300/20 bg-emerald-500/10 text-emerald-200";
+                        };
+
+                        return row.outcomes.map((outcome) => (
+                          <Badge
+                            key={`tune-outcome-${row.subIndex}-${outcome.targetStat}`}
+                            variant="outline"
+                            className={cn(
+                              "h-5 px-1.5 text-[10px]",
+                              getImpactBadgeClass(outcome.expectedGainPct)
+                            )}
+                            title={`${outcome.expectedGainPct >= 0 ? "+" : ""}${outcome.expectedGainPct.toFixed(2)}%`}
+                          >
+                            {getStatLabel(outcome.targetStat, elementStats)}
+                          </Badge>
+                        ));
+                      })()}
+                    </div>
                   </div>
                 </div>
               ))}
