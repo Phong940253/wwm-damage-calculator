@@ -716,15 +716,47 @@ export default function GearEquippedTab() {
                               {text.availableStat}
                             </div>
                             <div className="flex flex-wrap gap-1">
-                              {item.outcomes.map((outcome) => (
-                                <Badge
-                                  key={`${item.slot}-${item.subIndex}-${outcome.targetStat}`}
-                                  variant="outline"
-                                  className="h-5 border-white/15 bg-background/40 px-1.5 text-[10px]"
-                                >
-                                  {getStatLabel(outcome.targetStat, elementStats)}
-                                </Badge>
-                              ))}
+                              {(() => {
+                                const outcomesByImpact = [...item.outcomes].sort(
+                                  (a, b) => b.expectedGainPct - a.expectedGainPct
+                                );
+                                const maxPositive = Math.max(
+                                  0,
+                                  ...outcomesByImpact.map((outcome) => outcome.expectedGainPct)
+                                );
+
+                                const getImpactBadgeClass = (expectedGainPct: number) => {
+                                  if (expectedGainPct < 0) {
+                                    return "border-red-400/25 bg-red-500/10 text-red-200";
+                                  }
+
+                                  const ratio = maxPositive > 0 ? expectedGainPct / maxPositive : 0;
+                                  if (ratio >= 0.8) {
+                                    return "border-emerald-300/50 bg-emerald-500/35 text-emerald-100";
+                                  }
+                                  if (ratio >= 0.55) {
+                                    return "border-emerald-300/40 bg-emerald-500/25 text-emerald-100";
+                                  }
+                                  if (ratio >= 0.3) {
+                                    return "border-emerald-300/30 bg-emerald-500/18 text-emerald-200";
+                                  }
+                                  return "border-emerald-300/20 bg-emerald-500/10 text-emerald-200";
+                                };
+
+                                return outcomesByImpact.map((outcome) => (
+                                  <Badge
+                                    key={`${item.slot}-${item.subIndex}-${outcome.targetStat}`}
+                                    variant="outline"
+                                    className={cn(
+                                      "h-5 px-1.5 text-[10px]",
+                                      getImpactBadgeClass(outcome.expectedGainPct)
+                                    )}
+                                    title={`${outcome.expectedGainPct >= 0 ? "+" : ""}${outcome.expectedGainPct.toFixed(2)}%`}
+                                  >
+                                    {getStatLabel(outcome.targetStat, elementStats)}
+                                  </Badge>
+                                ));
+                              })()}
                             </div>
                           </div>
                         </div>
