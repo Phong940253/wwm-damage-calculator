@@ -36,7 +36,7 @@ export function GearStatSelect(props: {
 }) {
     return (
         <select
-            className={props.className ?? "flex-1 border rounded px-2 py-1"}
+            className={props.className ?? "flex-1 h-8 border rounded px-2 text-sm"}
             value={props.value}
             onChange={e => props.onChange(e.target.value as GearStatKey)}
         >

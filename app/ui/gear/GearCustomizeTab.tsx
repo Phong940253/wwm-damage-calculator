@@ -627,7 +627,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           DIALOGS
       ======================= */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90dvh] w-[95vw] max-w-xl overflow-y-auto">
+        <DialogContent className="max-h-[92dvh] w-[98vw] max-w-[98vw] p-4 sm:max-h-[90dvh] sm:w-[96vw] sm:max-w-2xl sm:p-6 overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? text.editGear : text.addNewGear}</DialogTitle>
           </DialogHeader>

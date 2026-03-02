@@ -56,7 +56,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       dragToReorder: "Kéo để sắp xếp",
       dragToMove: "Kéo để di chuyển",
       tunedLine: "Dòng đã tune",
-      markTuned: "Đánh dấu tune",
+      markTuned: "Tune",
       tuned: "Đã tune",
       saveChanges: "Lưu thay đổi",
       addGear: "Thêm trang bị",
@@ -79,7 +79,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       dragToReorder: "Drag to reorder",
       dragToMove: "Drag to move",
       tunedLine: "Tuned line",
-      markTuned: "Mark tune",
+      markTuned: "Tune",
       tuned: "Tuned",
       saveChanges: "Save Changes",
       addGear: "Add Gear",
@@ -356,7 +356,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* 🔥 Main attributes */}
 
       <div className="border rounded p-3 space-y-2">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium">{text.mainAttributes}</p>
           <Button size="sm" variant="secondary" onClick={addMain}>
             {text.add}
@@ -385,7 +385,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 <div className="h-0.5 bg-sky-500/80 rounded" />
               )}
               <div
-                className="flex flex-wrap gap-2 rounded sm:flex-nowrap"
+                className="flex flex-wrap items-center gap-1.5 rounded sm:flex-nowrap"
                 onDragOver={e => {
                   const el = e.currentTarget as HTMLElement;
                   dnd.allowDrop(e);
@@ -411,7 +411,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   <GripVertical className="w-4 h-4" />
                 </div>
                 <GearStatSelect
-                  className="min-w-[170px] flex-1 border rounded px-2 py-1"
+                  className="order-1 h-8 w-full border rounded px-2 text-sm sm:order-none sm:min-w-0 sm:flex-1"
                   value={m.stat}
                   onChange={nextStat =>
                     setMains(prev =>
@@ -421,7 +421,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 />
 
                 <Input
-                  className="w-[120px] sm:w-[132px]"
+                  className="w-[7rem] shrink-0 sm:w-28"
                   type="number"
                   value={m.value}
                   onChange={e => {
@@ -433,7 +433,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 />
 
                 {mains.length > 1 && (
-                  <Button size="icon" variant="ghost" onClick={() => removeMain(m.id)}>
+                  <Button className="shrink-0" size="icon" variant="ghost" onClick={() => removeMain(m.id)}>
                     ✕
                   </Button>
                 )}
@@ -448,11 +448,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       {/* Sub attributes */}
       <div className="border rounded p-3 space-y-2">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium">{text.subAttributes}</p>
           <div className="flex items-center gap-2">
             {tunedSubRowId && (
-              <span className="text-xs text-red-400">{text.tunedLine}</span>
+              <span className="hidden text-xs text-red-400 sm:inline">{text.tunedLine}</span>
             )}
             <Button size="sm" variant="secondary" onClick={addSub}>
               {text.add}
@@ -482,7 +482,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 <div className="h-0.5 bg-sky-500/80 rounded" />
               )}
               <div
-                className="flex flex-wrap gap-2 rounded sm:flex-nowrap"
+                className="flex flex-wrap items-center gap-1.5 rounded sm:flex-nowrap"
                 onDragOver={e => {
                   const el = e.currentTarget as HTMLElement;
                   dnd.allowDrop(e);
@@ -508,7 +508,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   <GripVertical className="w-4 h-4" />
                 </div>
                 <GearStatSelect
-                  className="min-w-[170px] flex-1 border rounded px-2 py-1"
+                  className="order-1 h-8 w-full border rounded px-2 text-sm sm:order-none sm:min-w-0 sm:flex-1"
                   value={s.stat}
                   onChange={nextStat =>
                     setSubs(prev =>
@@ -518,7 +518,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 />
 
                 <Input
-                  className="w-[120px] sm:w-[132px]"
+                  className="w-[7rem] shrink-0 sm:w-28"
                   type="number"
                   value={s.value}
                   onChange={e => {
@@ -533,7 +533,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   ✕
                 </Button>
                 <Button
-                  className="shrink-0"
+                  className="w-full shrink-0 whitespace-nowrap px-2 text-xs sm:w-auto"
                   size="sm"
                   variant={tunedSubRowId === s.id ? "destructive" : "outline"}
                   onClick={() =>
@@ -565,39 +565,42 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         <p className="text-sm font-medium">{text.additionalAttribute}</p>
 
         {addition ? (
-          <div className="flex flex-wrap gap-2 sm:flex-nowrap">
-            <div
-              className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
-              draggable
-              onDragStart={dnd.startDrag({ source: "addition" })}
-              onDragEnd={() => {
-                dnd.endDrag();
-              }}
-              title={text.dragToMove}
-            >
-              <GripVertical className="w-4 h-4" />
+          <div>
+            <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
+              <div
+                className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
+                draggable
+                onDragStart={dnd.startDrag({ source: "addition" })}
+                onDragEnd={() => {
+                  dnd.endDrag();
+                }}
+                title={text.dragToMove}
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
+              <GearStatSelect
+                className="order-1 h-8 w-full border rounded px-2 text-sm sm:order-none sm:min-w-0 sm:flex-1"
+                value={addition.stat}
+                onChange={nextStat => setAddition({ ...addition, stat: nextStat })}
+              />
+
+              <Input
+                className="w-[7rem] shrink-0 sm:w-28"
+                type="number"
+                value={addition.value}
+                onChange={e =>
+                  setAddition({ ...addition, value: Number(e.target.value) })
+                }
+              />
+
+              <Button className="shrink-0" size="icon" variant="ghost" onClick={() => setAddition(null)}>
+                ✕
+              </Button>
             </div>
-            <GearStatSelect
-              className="min-w-[170px] flex-1 border rounded px-2 py-1"
-              value={addition.stat}
-              onChange={nextStat => setAddition({ ...addition, stat: nextStat })}
-            />
-
-            <Input
-              className="w-[120px] sm:w-[132px]"
-              type="number"
-              value={addition.value}
-              onChange={e =>
-                setAddition({ ...addition, value: Number(e.target.value) })
-              }
-            />
-
-            <Button className="shrink-0" size="icon" variant="ghost" onClick={() => setAddition(null)}>
-              ✕
-            </Button>
           </div>
         ) : (
           <Button
+            className="w-full sm:w-auto"
             size="sm"
             variant="secondary"
             onClick={() =>
@@ -610,11 +613,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap justify-between gap-2 pt-2">
-        <Button data-tour={!initialGear ? "gear-add-submit" : undefined} onClick={submit}>
+      <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap sm:justify-between">
+        <Button className="w-full sm:w-auto" data-tour={!initialGear ? "gear-add-submit" : undefined} onClick={submit}>
           {initialGear ? text.saveChanges : text.addGear}
         </Button>
         <Button
+          className="w-full sm:w-auto"
           data-tour="gear-ocr"
           variant="outline"
           onClick={() => fileRef.current?.click()}
