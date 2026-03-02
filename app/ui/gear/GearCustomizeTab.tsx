@@ -14,6 +14,8 @@ import { getStatLabel } from "@/app/utils/statLabel";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -101,6 +103,10 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       optimize: "Tối ưu",
       addGear: "+ Thêm trang bị",
       deleteAll: "Xóa tất cả",
+      confirmDeleteAllTitle: "Xóa toàn bộ trang bị?",
+      confirmDeleteAllDesc: "Hành động này sẽ xóa toàn bộ trang bị tùy chỉnh và không thể hoàn tác.",
+      cancel: "Hủy",
+      confirmDelete: "Xóa",
       slot: "Vị trí",
       stat: "Chỉ số",
       searchStat: "Tìm chỉ số...",
@@ -119,6 +125,10 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       optimize: "Optimize",
       addGear: "+ Add Gear",
       deleteAll: "Delete All",
+      confirmDeleteAllTitle: "Delete all gear?",
+      confirmDeleteAllDesc: "This action will remove all custom gear and cannot be undone.",
+      cancel: "Cancel",
+      confirmDelete: "Delete",
       slot: "Slot",
       stat: "Stat",
       searchStat: "Search stat...",
@@ -142,6 +152,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CustomGear | null>(null);
   const [optOpen, setOptOpen] = useState(false);
+  const [confirmDeleteAllOpen, setConfirmDeleteAllOpen] = useState(false);
   const [maxDisplay, setMaxDisplay] = useState(200);
 
   /* ===== Filter state ===== */
@@ -409,7 +420,11 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             {text.addGear}
           </Button>
           {/* Button delete all */}
-          <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setCustomGears([])}>
+          <Button
+            className="bg-red-600 hover:bg-red-700 text-white"
+            onClick={() => setConfirmDeleteAllOpen(true)}
+            disabled={customGears.length === 0}
+          >
             {text.deleteAll}
           </Button>
         </div>
@@ -632,6 +647,29 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             <DialogTitle>{editing ? text.editGear : text.addNewGear}</DialogTitle>
           </DialogHeader>
           <GearForm initialGear={editing} onSuccess={() => setOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteAllOpen} onOpenChange={setConfirmDeleteAllOpen}>
+        <DialogContent className="w-[92vw] max-w-md">
+          <DialogHeader>
+            <DialogTitle>{text.confirmDeleteAllTitle}</DialogTitle>
+            <DialogDescription>{text.confirmDeleteAllDesc}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteAllOpen(false)}>
+              {text.cancel}
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                setCustomGears([]);
+                setConfirmDeleteAllOpen(false);
+              }}
+            >
+              {text.confirmDelete}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -27,7 +27,10 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
-import { getTuneSystemStatPool } from "@/app/domain/gear/tuneAdvisor";
+import {
+  getTuneSystemStatPool,
+  isTuneTargetAllowedBySubRules,
+} from "@/app/domain/gear/tuneAdvisor";
 
 function calcRotationAwareNormalDamage(
   stats: InputStats,
@@ -398,6 +401,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
     const baseDamage = baseline.base;
     const baseBonusWithoutSlot = baseline.bonusWithoutSlot;
+    const subStats = (gear.subs ?? []).map((line) => String(line.stat));
 
     (gear.subs ?? []).forEach((s, subIndex) => {
       const currentStat = String(s.stat);
@@ -412,6 +416,9 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
       for (const targetStat of tuneStatPool) {
         if (targetStat === currentStat) continue;
+        if (!isTuneTargetAllowedBySubRules(subStats, subIndex, targetStat)) {
+          continue;
+        }
 
         const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
         if (!range) continue;

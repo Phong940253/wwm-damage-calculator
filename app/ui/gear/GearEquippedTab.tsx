@@ -28,7 +28,10 @@ import {
   type StatHeatmapKey,
 } from "@/app/constants";
 import { getStatLabel } from "@/app/utils/statLabel";
-import { getTuneSystemStatPool } from "@/app/domain/gear/tuneAdvisor";
+import {
+  getTuneSystemStatPool,
+  isTuneTargetAllowedBySubRules,
+} from "@/app/domain/gear/tuneAdvisor";
 
 const LEFT_SLOT_ORDER: GearSlot[] = ["weapon_1", "weapon_2", "disc", "pendant"];
 const RIGHT_SLOT_ORDER: GearSlot[] = ["head", "chest", "leg", "hand"];
@@ -359,6 +362,7 @@ export default function GearEquippedTab() {
         const currentStat = String(sub.stat);
         const currentValue = Number(sub.value ?? 0);
         if (!Number.isFinite(currentValue) || currentValue === 0) continue;
+        const subStats = equippedGear.subs.map((line) => String(line.stat));
 
         const bonusWithoutLine = { ...bonus };
         bonusWithoutLine[currentStat] = (bonusWithoutLine[currentStat] ?? 0) - currentValue;
@@ -371,6 +375,9 @@ export default function GearEquippedTab() {
 
         for (const targetStat of tuneStatPool) {
           if (targetStat === currentStat) continue;
+          if (!isTuneTargetAllowedBySubRules(subStats, subIndex, targetStat)) {
+            continue;
+          }
           const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
           if (!range) continue;
 
