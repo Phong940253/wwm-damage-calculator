@@ -49,3 +49,9 @@ export function isTuneTargetAllowedBySubRules(
 
   return true;
 }
+
+export function hasUsedTune(
+  gear?: { tunedSubIndex?: number | null } | null,
+): boolean {
+  return typeof gear?.tunedSubIndex === "number" && gear.tunedSubIndex >= 0;
+}

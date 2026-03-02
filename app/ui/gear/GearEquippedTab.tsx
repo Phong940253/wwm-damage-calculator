@@ -30,6 +30,7 @@ import {
 import { getStatLabel } from "@/app/utils/statLabel";
 import {
   getTuneSystemStatPool,
+  hasUsedTune,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
 
@@ -147,7 +148,7 @@ export default function GearEquippedTab() {
       targetPool: "Pool hệ",
       currentLine: "Dòng hiện tại",
       toStat: "Có thể ra",
-      noSubLine: "Không có dòng phụ hợp lệ để tune.",
+      noSubLine: "Không có dòng phụ hợp lệ để tune (hoặc trang bị đã tune).",
       line: "Dòng",
       allLines: "Tất cả dòng có thể tune",
       gear: "Trang bị",
@@ -177,7 +178,7 @@ export default function GearEquippedTab() {
       targetPool: "System pool",
       currentLine: "Current line",
       toStat: "Possible outcomes",
-      noSubLine: "No valid sub-line available to tune.",
+      noSubLine: "No valid sub-line available to tune (or gear already tuned).",
       line: "Line",
       allLines: "All tunable lines",
       gear: "Gear",
@@ -354,6 +355,9 @@ export default function GearEquippedTab() {
       const equippedId = equipped[slot];
       const equippedGear = customGears.find((g) => g.id === equippedId);
       if (!equippedGear || !equippedGear.subs || equippedGear.subs.length === 0) {
+        continue;
+      }
+      if (hasUsedTune(equippedGear)) {
         continue;
       }
 
