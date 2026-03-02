@@ -61,6 +61,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       saveChanges: "Lưu thay đổi",
       addGear: "Thêm trang bị",
       processing: "Đang xử lý...",
+      ocr: "OCR",
     }
     : {
       ocrFailed: "OCR failed. Please try again or enter manually.",
@@ -84,7 +85,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       saveChanges: "Save Changes",
       addGear: "Add Gear",
       processing: "Processing...",
+      ocr: "OCR",
     };
+
+  const sectionClass = "rounded-md border p-3 space-y-2";
+  const labelClass = "mb-1 block text-xs font-medium text-muted-foreground";
+  const slotSelectClass = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
+  const compactInputClass = "h-8 w-[6.5rem] shrink-0 text-sm sm:w-28";
+  const iconButtonClass = "h-8 w-8 shrink-0";
 
   const { setCustomGears, setEquipped } = useGear();
 
@@ -316,14 +324,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Basic info */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="text-xs">{text.gearName}</label>
+          <label className={labelClass}>{text.gearName}</label>
           <Input value={name} onChange={e => setName(e.target.value)} />
         </div>
 
         <div>
-          <label className="text-xs">{text.slot}</label>
+          <label className={labelClass}>{text.slot}</label>
           <select
-            className="w-full border rounded px-2 py-2"
+            className={slotSelectClass}
             value={slot}
             onChange={e => setSlot(e.target.value as GearSlot)}
           >
@@ -336,7 +344,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="text-xs">{text.rarity}</label>
+          <label className={labelClass}>{text.rarity}</label>
           <Input
             value={rarity}
             onChange={(e) => setRarity(e.target.value)}
@@ -355,10 +363,10 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       {/* 🔥 Main attributes */}
 
-      <div className="border rounded p-3 space-y-2">
+      <div className={sectionClass}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium">{text.mainAttributes}</p>
-          <Button size="sm" variant="secondary" onClick={addMain}>
+          <Button className="h-8" size="sm" variant="secondary" onClick={addMain}>
             {text.add}
           </Button>
         </div>
@@ -421,7 +429,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 />
 
                 <Input
-                  className="w-[7rem] shrink-0 sm:w-28"
+                  className={compactInputClass}
                   type="number"
                   value={m.value}
                   onChange={e => {
@@ -433,7 +441,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 />
 
                 {mains.length > 1 && (
-                  <Button className="shrink-0" size="icon" variant="ghost" onClick={() => removeMain(m.id)}>
+                  <Button className={iconButtonClass} size="icon" variant="ghost" onClick={() => removeMain(m.id)}>
                     ✕
                   </Button>
                 )}
@@ -447,14 +455,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       </div>
 
       {/* Sub attributes */}
-      <div className="border rounded p-3 space-y-2">
+      <div className={sectionClass}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium">{text.subAttributes}</p>
           <div className="flex items-center gap-2">
             {tunedSubRowId && (
               <span className="hidden text-xs text-red-400 sm:inline">{text.tunedLine}</span>
             )}
-            <Button size="sm" variant="secondary" onClick={addSub}>
+            <Button className="h-8" size="sm" variant="secondary" onClick={addSub}>
               {text.add}
             </Button>
           </div>
@@ -518,7 +526,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 />
 
                 <Input
-                  className="w-[7rem] shrink-0 sm:w-28"
+                  className={compactInputClass}
                   type="number"
                   value={s.value}
                   onChange={e => {
@@ -529,11 +537,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   }}
                 />
 
-                <Button className="shrink-0" size="icon" variant="ghost" onClick={() => removeSub(s.id)}>
+                <Button className={iconButtonClass} size="icon" variant="ghost" onClick={() => removeSub(s.id)}>
                   ✕
                 </Button>
                 <Button
-                  className="w-full shrink-0 whitespace-nowrap px-2 text-xs sm:w-auto"
+                  className="h-8 w-full shrink-0 whitespace-nowrap px-2 text-xs sm:w-auto"
                   size="sm"
                   variant={tunedSubRowId === s.id ? "destructive" : "outline"}
                   onClick={() =>
@@ -554,7 +562,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       {/* Addition */}
       <div
-        className={`border rounded p-3 space-y-2 ${dragOver?.zone === "addition" ? "ring-1 ring-slate-300" : ""}`}
+        className={`${sectionClass} ${dragOver?.zone === "addition" ? "ring-1 ring-slate-300" : ""}`}
         onDragOver={e => {
           dnd.allowDrop(e);
           dnd.setDragOver({ zone: "addition" });
@@ -585,7 +593,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
               />
 
               <Input
-                className="w-[7rem] shrink-0 sm:w-28"
+                className={compactInputClass}
                 type="number"
                 value={addition.value}
                 onChange={e =>
@@ -593,7 +601,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 }
               />
 
-              <Button className="shrink-0" size="icon" variant="ghost" onClick={() => setAddition(null)}>
+              <Button className={iconButtonClass} size="icon" variant="ghost" onClick={() => setAddition(null)}>
                 ✕
               </Button>
             </div>
@@ -614,11 +622,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       {/* Actions */}
       <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap sm:justify-between">
-        <Button className="w-full sm:w-auto" data-tour={!initialGear ? "gear-add-submit" : undefined} onClick={submit}>
+        <Button className="h-9 w-full sm:w-auto" data-tour={!initialGear ? "gear-add-submit" : undefined} onClick={submit}>
           {initialGear ? text.saveChanges : text.addGear}
         </Button>
         <Button
-          className="w-full sm:w-auto"
+          className="h-9 w-full sm:w-auto"
           data-tour="gear-ocr"
           variant="outline"
           onClick={() => fileRef.current?.click()}
@@ -630,7 +638,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
               {text.processing}
             </>
           ) : (
-            "OCR"
+            text.ocr
           )}
         </Button>
 
