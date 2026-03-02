@@ -34,7 +34,28 @@ export function GearStatSelect(props: {
     onChange: (value: GearStatKey) => void;
     className?: string;
     options?: readonly GearStatKey[];
+    optionGroups?: ReadonlyArray<{ label: string; options: readonly GearStatKey[] }>;
 }) {
+    if (props.optionGroups && props.optionGroups.length > 0) {
+        return (
+            <select
+                className={props.className ?? "flex-1 h-8 border rounded px-2 text-sm"}
+                value={props.value}
+                onChange={e => props.onChange(e.target.value as GearStatKey)}
+            >
+                {props.optionGroups.map(group => (
+                    <optgroup key={group.label} label={group.label}>
+                        {Array.from(new Set(group.options)).map(statKey => (
+                            <option key={String(statKey)} value={String(statKey)}>
+                                {getStatLabel(String(statKey))}
+                            </option>
+                        ))}
+                    </optgroup>
+                ))}
+            </select>
+        );
+    }
+
     if (props.options && props.options.length > 0) {
         return (
             <select

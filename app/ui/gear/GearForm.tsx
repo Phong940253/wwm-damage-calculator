@@ -13,6 +13,7 @@ import { fileToBase64 } from "@/lib/utils";
 import { GEAR_OCR_PROMPT } from "../../domain/gear/gearOcrSchema";
 import { GearOcrResult } from "../../domain/gear/gearOcrSchema";
 import {
+  getAdditionStatGroupsBySlot,
   getAdditionStatsBySlot,
   isValidAdditionStatForSlot,
 } from "@/app/domain/gear/additionRules";
@@ -138,6 +139,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   const [ocrLoading, setOcrLoading] = useState(false);
   const additionOptions = getAdditionStatsBySlot(slot);
+  const additionOptionGroups = getAdditionStatGroupsBySlot(slot);
   const defaultAdditionStat = additionOptions[0] ?? "PhysicalPenetration";
 
   const handleOcr = async (file: File) => {
@@ -192,7 +194,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       if (result.addition) {
         const stat = normalizeStatKey(result.addition.stat);
-        if (stat && isValidAdditionStatForSlot(nextSlot, stat)) {
+        if (stat && isValidAdditionStatForSlot(nextSlot, String(stat))) {
           setAddition({
             id: crypto.randomUUID(),
             stat,
@@ -614,7 +616,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                 className="order-1 h-8 w-full border rounded px-2 text-sm sm:order-none sm:min-w-0 sm:flex-1"
                 value={addition.stat}
                 onChange={nextStat => setAddition({ ...addition, stat: nextStat })}
-                options={additionOptions}
+                optionGroups={additionOptionGroups}
               />
 
               <Input
