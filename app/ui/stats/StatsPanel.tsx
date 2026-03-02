@@ -13,6 +13,7 @@ import StatCard from "./StatCard";
 import { SUPPORTED_LEVELS } from "@/app/domain/level/levelSettings";
 import type { Rotation } from "@/app/types";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
+import { computeDerivedStats } from "@/app/domain/stats/derivedStats";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { useStatHeatmap } from "@/app/hooks/useStatHeatmap";
 import { getStatLabel } from "@/app/utils/statLabel";
@@ -46,25 +47,6 @@ interface Props {
   onApplyIncrease: () => void;
   onSaveCurrent: () => void;
 }
-
-const getDerivedFromAttributes = (
-  stats: InputStats,
-  gearBonus: Record<string, number>
-) => {
-  const v = (k: keyof InputStats) =>
-    Number(stats[k]?.current || 0) + (gearBonus[k] || 0);
-
-  const agility = v("Agility");
-  const momentum = v("Momentum");
-  const power = v("Power");
-
-  return {
-    MinPhysicalAttack: agility * 1 + power * 0.246,
-    MaxPhysicalAttack: momentum * 0.9 + power * 1.315,
-    CriticalRate: agility * 0.075,
-    AffinityRate: momentum * 0.04,
-  };
-};
 
 /* =======================
    Component
@@ -138,10 +120,15 @@ export default function StatsPanel({
   );
 
   // Memoize derived stats to prevent recalculation on every keystroke
-  const derived = useMemo(
-    () => getDerivedFromAttributes(stats, gearBonus),
-    [stats, gearBonus]
-  );
+  const derived = useMemo(() => {
+    const d = computeDerivedStats(stats, gearBonus);
+    return {
+      MinPhysicalAttack: d.minAtk,
+      MaxPhysicalAttack: d.maxAtk,
+      CriticalRate: d.critRate,
+      AffinityRate: d.affinityRate,
+    };
+  }, [stats, gearBonus]);
 
   const includedInStatsBonus = useMemo(
     () => computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus),

@@ -5,7 +5,10 @@ import {
   ElementStatSuffix,
 } from "@/app/types";
 import { ELEMENT_TYPES, ElementKey } from "@/app/constants";
-import { computeDerivedStats } from "../stats/derivedStats";
+import {
+  computeDerivedStats,
+  DERIVED_COEFFICIENTS,
+} from "../stats/derivedStats";
 import {
   getBossResistancePct,
   getPlayerDirectPrecisionPct,
@@ -508,11 +511,19 @@ export function buildDamageContext(
       return {
         key: k,
         total,
-        formula: "Agility×1 + Power×0.246",
+        formula: `Agility×${DERIVED_COEFFICIENTS.minAtk.agility} + Power×${DERIVED_COEFFICIENTS.minAtk.power}`,
         lines: [
           ...explainInputStat("MinPhysicalAttack"),
-          makeLine("derived", "From Agility", agility * 1),
-          makeLine("derived", "From Power", power * 0.246),
+          makeLine(
+            "derived",
+            "From Agility",
+            agility * DERIVED_COEFFICIENTS.minAtk.agility,
+          ),
+          makeLine(
+            "derived",
+            "From Power",
+            power * DERIVED_COEFFICIENTS.minAtk.power,
+          ),
         ].filter((x) => x.value !== 0),
       };
     }
@@ -524,11 +535,19 @@ export function buildDamageContext(
       return {
         key: k,
         total,
-        formula: "Momentum×0.9 + Power×1.315",
+        formula: `Momentum×${DERIVED_COEFFICIENTS.maxAtk.momentum} + Power×${DERIVED_COEFFICIENTS.maxAtk.power}`,
         lines: [
           ...explainInputStat("MaxPhysicalAttack"),
-          makeLine("derived", "From Momentum", momentum * 0.9),
-          makeLine("derived", "From Power", power * 1.315),
+          makeLine(
+            "derived",
+            "From Momentum",
+            momentum * DERIVED_COEFFICIENTS.maxAtk.momentum,
+          ),
+          makeLine(
+            "derived",
+            "From Power",
+            power * DERIVED_COEFFICIENTS.maxAtk.power,
+          ),
         ].filter((x) => x.value !== 0),
       };
     }
@@ -538,10 +557,14 @@ export function buildDamageContext(
       return {
         key: k,
         total,
-        formula: "Agility×0.075",
+        formula: `Agility×${DERIVED_COEFFICIENTS.critRate.agility}`,
         lines: [
           ...explainInputStat("CriticalRate"),
-          makeLine("derived", "From Agility", agility * 0.075),
+          makeLine(
+            "derived",
+            "From Agility",
+            agility * DERIVED_COEFFICIENTS.critRate.agility,
+          ),
         ].filter((x) => x.value !== 0),
       };
     }
@@ -551,10 +574,14 @@ export function buildDamageContext(
       return {
         key: k,
         total,
-        formula: "Momentum×0.04",
+        formula: `Momentum×${DERIVED_COEFFICIENTS.affinityRate.momentum}`,
         lines: [
           ...explainInputStat("AffinityRate"),
-          makeLine("derived", "From Momentum", momentum * 0.04),
+          makeLine(
+            "derived",
+            "From Momentum",
+            momentum * DERIVED_COEFFICIENTS.affinityRate.momentum,
+          ),
         ].filter((x) => x.value !== 0),
       };
     }
