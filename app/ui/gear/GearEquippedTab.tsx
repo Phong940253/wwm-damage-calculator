@@ -23,6 +23,12 @@ import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInSt
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
 import type { CustomGear } from "@/app/types";
 import { useI18n } from "@/app/providers/I18nProvider";
+import {
+  STAT_HEATMAP_AFFIX_LIMITS,
+  type StatHeatmapKey,
+} from "@/app/constants";
+import { getStatLabel } from "@/app/utils/statLabel";
+import { getTuneSystemStatPool } from "@/app/domain/gear/tuneAdvisor";
 
 const LEFT_SLOT_ORDER: GearSlot[] = ["weapon_1", "weapon_2", "disc", "pendant"];
 const RIGHT_SLOT_ORDER: GearSlot[] = ["head", "chest", "leg", "hand"];
@@ -127,6 +133,23 @@ export default function GearEquippedTab() {
       withCurrentGear: "Với trang bị hiện tại",
       deltaFromSlot: "Δ từ ô này",
       emptyOption: "Trống",
+      tuneTitle: "🎲 Tune advisor",
+      tuneDesc:
+        "Gợi ý dòng phụ đáng roll nhất (chỉ tune 1 dòng, random trong hệ hiện tại).",
+      tuneUnsupported:
+        "Hệ Bellstrike chưa mở rule tune trong tool (đợi game cập nhật).",
+      expected: "Kỳ vọng",
+      bestCase: "Best-case",
+      recommend: "Nên roll",
+      targetPool: "Pool hệ",
+      currentLine: "Dòng hiện tại",
+      toStat: "Có thể ra",
+      noSubLine: "Không có dòng phụ hợp lệ để tune.",
+      line: "Dòng",
+      allLines: "Tất cả dòng có thể tune",
+      gear: "Trang bị",
+      current: "Hiện tại",
+      availableStat: "Stat có thể ra",
     }
     : {
       impactTitle: "📈 Gear DMG Impact",
@@ -140,6 +163,23 @@ export default function GearEquippedTab() {
       withCurrentGear: "With current gear",
       deltaFromSlot: "Δ from this slot",
       emptyOption: "Empty",
+      tuneTitle: "🎲 Tune advisor",
+      tuneDesc:
+        "Suggests the best sub-line to reroll (single line tune, random within current system).",
+      tuneUnsupported:
+        "Bellstrike tune rules are not available yet in this tool (waiting game update).",
+      expected: "Expected",
+      bestCase: "Best-case",
+      recommend: "Recommended",
+      targetPool: "System pool",
+      currentLine: "Current line",
+      toStat: "Possible outcomes",
+      noSubLine: "No valid sub-line available to tune.",
+      line: "Line",
+      allLines: "All tunable lines",
+      gear: "Gear",
+      current: "Current",
+      availableStat: "Available stat",
     };
 
   const { customGears, equipped, setEquipped } = useGear();
@@ -268,6 +308,151 @@ export default function GearEquippedTab() {
     () => RIGHT_SLOT_ORDER.map((k) => rowsByKey.get(k)).filter(Boolean),
     [rowsByKey]
   );
+
+  const tuneStatPool = useMemo(
+    () => getTuneSystemStatPool(elementStats.selected),
+    [elementStats.selected]
+  );
+
+  const tuneAdvice = useMemo(() => {
+    const baseline = fullDamage;
+    if (baseline <= 0 || tuneStatPool.length === 0) return [] as Array<{
+      slot: GearSlot;
+      slotLabel: string;
+      gearName: string;
+      subIndex: number;
+      currentStat: string;
+      currentValue: number;
+      expectedGainPct: number;
+      bestCaseGainPct: number;
+      bestTargetStat: StatHeatmapKey;
+      bestTargetValue: number;
+      outcomes: Array<{ targetStat: StatHeatmapKey; expectedGainPct: number; bestCaseGainPct: number }>;
+    }>;
+
+    const calcWithBonus = (nextBonus: Record<string, number>) =>
+      calcRotationAwareNormalDamage(stats, elementStats, nextBonus, selectedRotation);
+
+    const candidates: Array<{
+      slot: GearSlot;
+      slotLabel: string;
+      gearName: string;
+      subIndex: number;
+      currentStat: string;
+      currentValue: number;
+      expectedGainPct: number;
+      bestCaseGainPct: number;
+      bestTargetStat: StatHeatmapKey;
+      bestTargetValue: number;
+      outcomes: Array<{ targetStat: StatHeatmapKey; expectedGainPct: number; bestCaseGainPct: number }>;
+    }> = [];
+
+    for (const { key: slot, label: slotLabel } of GEAR_SLOTS) {
+      const equippedId = equipped[slot];
+      const equippedGear = customGears.find((g) => g.id === equippedId);
+      if (!equippedGear || !equippedGear.subs || equippedGear.subs.length === 0) {
+        continue;
+      }
+
+      for (let subIndex = 0; subIndex < equippedGear.subs.length; subIndex += 1) {
+        const sub = equippedGear.subs[subIndex];
+        const currentStat = String(sub.stat);
+        const currentValue = Number(sub.value ?? 0);
+        if (!Number.isFinite(currentValue) || currentValue === 0) continue;
+
+        const bonusWithoutLine = { ...bonus };
+        bonusWithoutLine[currentStat] = (bonusWithoutLine[currentStat] ?? 0) - currentValue;
+
+        const outcomes: Array<{
+          targetStat: StatHeatmapKey;
+          expectedGainPct: number;
+          bestCaseGainPct: number;
+        }> = [];
+
+        for (const targetStat of tuneStatPool) {
+          if (targetStat === currentStat) continue;
+          const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
+          if (!range) continue;
+
+          const expectedValue = (range.minPerLine + range.maxPerLine) / 2;
+          const expectedBonus = { ...bonusWithoutLine };
+          expectedBonus[targetStat] = (expectedBonus[targetStat] ?? 0) + expectedValue;
+          const expectedDamage = calcWithBonus(expectedBonus);
+          const expectedGainPct = ((expectedDamage - baseline) / baseline) * 100;
+
+          const bestCaseBonus = { ...bonusWithoutLine };
+          bestCaseBonus[targetStat] =
+            (bestCaseBonus[targetStat] ?? 0) + range.maxPerLine;
+          const bestCaseDamage = calcWithBonus(bestCaseBonus);
+          const bestCaseGainPct = ((bestCaseDamage - baseline) / baseline) * 100;
+
+          outcomes.push({ targetStat, expectedGainPct, bestCaseGainPct });
+        }
+
+        if (outcomes.length === 0) continue;
+
+        const expectedGainPct =
+          outcomes.reduce((sum, row) => sum + row.expectedGainPct, 0) / outcomes.length;
+
+        const bestOutcome = outcomes.reduce((best, row) =>
+          row.bestCaseGainPct > best.bestCaseGainPct ? row : best
+        );
+
+        candidates.push({
+          slot,
+          slotLabel,
+          gearName: equippedGear.name,
+          subIndex,
+          currentStat,
+          currentValue,
+          expectedGainPct,
+          bestCaseGainPct: bestOutcome.bestCaseGainPct,
+          bestTargetStat: bestOutcome.targetStat,
+          bestTargetValue: STAT_HEATMAP_AFFIX_LIMITS[bestOutcome.targetStat].maxPerLine,
+          outcomes,
+        });
+      }
+    }
+
+    return candidates.sort((a, b) => b.expectedGainPct - a.expectedGainPct);
+  }, [
+    bonus,
+    customGears,
+    elementStats,
+    equipped,
+    fullDamage,
+    selectedRotation,
+    stats,
+    tuneStatPool,
+  ]);
+
+  const groupedTuneAdvice = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        slotLabel: string;
+        gearName: string;
+        items: Array<(typeof tuneAdvice)[number] & { rank: number }>;
+      }
+    >();
+
+    tuneAdvice.forEach((item, index) => {
+      const key = `${item.slot}-${item.gearName}`;
+      const group = groups.get(key);
+      if (!group) {
+        groups.set(key, {
+          slotLabel: item.slotLabel,
+          gearName: item.gearName,
+          items: [{ ...item, rank: index + 1 }],
+        });
+        return;
+      }
+
+      group.items.push({ ...item, rank: index + 1 });
+    });
+
+    return Array.from(groups.values());
+  }, [tuneAdvice]);
 
   return (
     <div className="space-y-4" id="gear-combined-stats">
@@ -425,6 +610,96 @@ export default function GearEquippedTab() {
           </div>
         ))}
       </div>
+
+      <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
+        <div className="space-y-3">
+          <div className="space-y-0.5">
+            <div className="text-sm font-semibold">{text.tuneTitle}</div>
+            <div className="text-xs text-muted-foreground">{text.tuneDesc}</div>
+          </div>
+
+          {tuneStatPool.length === 0 ? (
+            <div className="rounded-md border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              {text.tuneUnsupported}
+            </div>
+          ) : groupedTuneAdvice.length > 0 ? (
+            <div className="space-y-3">
+              <div className="text-[11px] text-muted-foreground">
+                {text.targetPool}: {tuneStatPool.map((k) => getStatLabel(k, elementStats)).join(", ")}
+              </div>
+
+              <div className="space-y-2">
+                {groupedTuneAdvice.map((group) => (
+                  <div
+                    key={`${group.slotLabel}-${group.gearName}`}
+                    className="rounded-md border border-white/10 bg-background/30 p-2"
+                  >
+                    <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+                      <Badge variant="outline" className="border-white/15">
+                        {text.gear}: {group.slotLabel} - {group.gearName}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1 px-1 text-[11px] text-muted-foreground">
+                      <div>{text.line}</div>
+                      <div>{text.current}</div>
+                      <div>{text.availableStat}</div>
+                      <div className="text-right">{text.expected}</div>
+                      <div className="text-right">{text.bestCase}</div>
+                    </div>
+
+                    <div className="mt-1 space-y-1">
+                      {group.items.map((item) => (
+                        <div
+                          key={`${item.slot}-${item.gearName}-${item.subIndex}`}
+                          className={cn(
+                            "grid grid-cols-5 items-center gap-1 rounded-md border border-white/10 bg-card/40 px-2 py-1.5 text-xs",
+                            item.rank === 1 && "border-emerald-400/30 bg-emerald-500/5"
+                          )}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-muted-foreground">#{item.subIndex + 1}</span>
+                            {item.rank === 1 && (
+                              <Badge className="h-5 bg-emerald-500/15 px-1.5 text-[10px] text-emerald-700" variant="secondary">
+                                {text.recommend}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="truncate" title={`${getStatLabel(item.currentStat, elementStats)} +${item.currentValue.toFixed(1)}`}>
+                            {getStatLabel(item.currentStat, elementStats)} +{item.currentValue.toFixed(1)}
+                          </div>
+                          <div
+                            className="truncate"
+                            title={item.outcomes
+                              .map((outcome) => getStatLabel(outcome.targetStat, elementStats))
+                              .join(", ")}
+                          >
+                            {item.outcomes
+                              .map((outcome) => getStatLabel(outcome.targetStat, elementStats))
+                              .join(", ")}
+                          </div>
+                          <div className="text-right">
+                            {item.expectedGainPct >= 0 ? "+" : ""}
+                            {item.expectedGainPct.toFixed(2)}%
+                          </div>
+                          <div className="text-right">
+                            {item.bestCaseGainPct >= 0 ? "+" : ""}
+                            {item.bestCaseGainPct.toFixed(2)}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-white/10 bg-background/30 px-3 py-2 text-xs text-muted-foreground">
+              {text.noSubLine}
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
