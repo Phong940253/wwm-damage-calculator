@@ -622,6 +622,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                     type="sub"
                     elementStats={elementStats}
                     impactPct={impactPctByLineKey[`subs:${i}`]}
+                    isTuned={gear.tunedSubIndex === i}
                   />
                 ))}
               </div>
@@ -688,12 +689,14 @@ function StatLine({
   type,
   elementStats,
   impactPct,
+  isTuned,
 }: {
   stat: string;
   value: number;
   type: StatType;
   elementStats?: ElementStats;
   impactPct?: number;
+  isTuned?: boolean;
 }) {
   const key = String(stat);
   const showPct =
@@ -718,6 +721,7 @@ function StatLine({
         border
         text-xs
         ${STAT_BG[type]}
+        ${isTuned ? "border-red-400/40 bg-red-500/15" : ""}
       `}
     >
       <span className="min-w-0 truncate text-muted-foreground">

@@ -55,6 +55,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       add: "+ Thêm",
       dragToReorder: "Kéo để sắp xếp",
       dragToMove: "Kéo để di chuyển",
+      tunedLine: "Dòng đã tune",
+      markTuned: "Đánh dấu tune",
+      tuned: "Đã tune",
       saveChanges: "Lưu thay đổi",
       addGear: "Thêm trang bị",
       processing: "Đang xử lý...",
@@ -75,6 +78,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       add: "+ Add",
       dragToReorder: "Drag to reorder",
       dragToMove: "Drag to move",
+      tunedLine: "Tuned line",
+      markTuned: "Mark tune",
+      tuned: "Tuned",
       saveChanges: "Save Changes",
       addGear: "Add Gear",
       processing: "Processing...",
@@ -96,6 +102,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const [subs, setSubs] = useState<
     GearStatRow[]
   >([]);
+  const [tunedSubRowId, setTunedSubRowId] = useState<string | null>(null);
 
   const [addition, setAddition] = useState<
     GearStatRow | null
@@ -163,6 +170,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             );
 
         setSubs(parsedSubs);
+        setTunedSubRowId(null);
       }
 
 
@@ -195,13 +203,34 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
     setMains(initialGear.mains.map(m => ({ id: crypto.randomUUID(), ...m })));
 
-    setSubs((initialGear.subs ?? []).map(s => ({ id: crypto.randomUUID(), ...s })));
+    const mappedSubs = (initialGear.subs ?? []).map(s => ({
+      id: crypto.randomUUID(),
+      ...s,
+    }));
+    setSubs(mappedSubs);
+    if (
+      typeof initialGear.tunedSubIndex === "number" &&
+      initialGear.tunedSubIndex >= 0 &&
+      initialGear.tunedSubIndex < mappedSubs.length
+    ) {
+      setTunedSubRowId(mappedSubs[initialGear.tunedSubIndex].id);
+    } else {
+      setTunedSubRowId(null);
+    }
+
     setAddition(
       initialGear.addition
         ? { id: crypto.randomUUID(), ...initialGear.addition }
         : null
     );
   }, [initialGear]);
+
+  useEffect(() => {
+    if (!tunedSubRowId) return;
+    if (!subs.some((s) => s.id === tunedSubRowId)) {
+      setTunedSubRowId(null);
+    }
+  }, [subs, tunedSubRowId]);
 
   /* -------------------- submit -------------------- */
   const submit = () => {
@@ -230,6 +259,13 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         mains: mains.map(({ stat, value }) => ({ stat, value })),
         subs: subs.map(({ stat, value }) => ({ stat, value })),
         addition: addition ? { stat: addition.stat, value: addition.value } : undefined,
+        tunedSubIndex:
+          tunedSubRowId === null
+            ? null
+            : (() => {
+              const idx = subs.findIndex((s) => s.id === tunedSubRowId);
+              return idx >= 0 ? idx : null;
+            })(),
         rarity: rarity.trim() ? rarity.trim() : undefined,
       };
 
@@ -414,9 +450,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       <div className="border rounded p-3 space-y-2">
         <div className="flex justify-between items-center">
           <p className="text-sm font-medium">{text.subAttributes}</p>
-          <Button size="sm" variant="secondary" onClick={addSub}>
-            {text.add}
-          </Button>
+          <div className="flex items-center gap-2">
+            {tunedSubRowId && (
+              <span className="text-xs text-red-400">{text.tunedLine}</span>
+            )}
+            <Button size="sm" variant="secondary" onClick={addSub}>
+              {text.add}
+            </Button>
+          </div>
         </div>
 
         <div
@@ -490,6 +531,17 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
                 <Button className="shrink-0" size="icon" variant="ghost" onClick={() => removeSub(s.id)}>
                   ✕
+                </Button>
+                <Button
+                  className="shrink-0"
+                  size="sm"
+                  variant={tunedSubRowId === s.id ? "destructive" : "outline"}
+                  onClick={() =>
+                    setTunedSubRowId((prev) => (prev === s.id ? null : s.id))
+                  }
+                  title={text.markTuned}
+                >
+                  {tunedSubRowId === s.id ? text.tuned : text.markTuned}
                 </Button>
               </div>
             </div>

@@ -94,6 +94,7 @@ export default function GearDetailCard({
                   impactPctByLineKey?.[`subs:${i}`] ??
                   impactPctByStat?.[String(s.stat)]
                 }
+                isTuned={gear.tunedSubIndex === i}
               />
             ))}
           </div>
@@ -130,12 +131,14 @@ function StatLine({
   type,
   elementStats,
   impactPct,
+  isTuned,
 }: {
   stat: string;
   value: number;
   type: StatType;
   elementStats?: ElementStats;
   impactPct?: number;
+  isTuned?: boolean;
 }) {
   const key = String(stat);
   const pct = impactPct;
@@ -158,6 +161,7 @@ function StatLine({
         border
         text-xs
         ${STAT_BG[type]}
+        ${isTuned ? "border-red-400/40 bg-red-500/15" : ""}
       `}
     >
       <span className="text-muted-foreground truncate">

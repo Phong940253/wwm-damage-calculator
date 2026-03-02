@@ -99,6 +99,9 @@ export interface CustomGear {
   /** optional */
   addition?: GearAttribute;
 
+  /** optional: index of the tuned sub line (0-based) */
+  tunedSubIndex?: number | null;
+
   rarity?: string;
 }
 
