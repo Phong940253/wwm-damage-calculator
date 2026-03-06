@@ -86,6 +86,25 @@ B
       />
 
       <MathFormula
+        title="Base Damage (B)"
+        formula={`
+    B=
+    \\Big[
+    M_{avg}
+    \\cdot (1 + \\frac{P_{pen}}{200})
+    \\cdot (1 + B_{phys})
+    + A_{other}^{avg}
+    \\Big]
+    \\cdot M_{atk}
+    + D_{flat}
+    + A_{your}^{avg}
+    \\cdot M_{elem}
+    \\cdot
+    \\Big(1 + \\frac{P_{elem}}{200} + B_{elem}\\Big)
+    `}
+      />
+
+      <MathFormula
         title="Affinity Damage"
         formula={`
 DMG_{aff} =

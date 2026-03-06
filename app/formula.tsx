@@ -45,6 +45,7 @@ export function FormulaLegend() {
         <LegendRow symbol="DMG_min" desc="Minimum damage (abrasion / lowest roll)" />
         <LegendRow symbol="DMG_avg" desc="Expected average damage per hit" />
         <LegendRow symbol="DMG_aff" desc="Damage when Affinity is triggered" />
+        <LegendRow symbol="B" desc="Base damage used in expected damage formula" />
 
         <LegendRow symbol="M_min / M_max" desc="Minimum / Maximum Physical Attack" />
         <LegendRow symbol="M_atk" desc="Physical Attack Multiplier" />

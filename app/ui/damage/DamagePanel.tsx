@@ -18,6 +18,7 @@ import { ElementStats, Rotation } from "@/app/types";
 import { SkillDamagePanel } from "./SkillDamagePanel";
 import { Skill } from "@/app/domain/skill/types";
 import { useI18n } from "@/app/providers/I18nProvider";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface Props {
   ctx: DamageContext;
@@ -195,7 +196,11 @@ export default function DamagePanel({
           {showFormula ? text.hideFormula : text.showFormula}
         </button>
 
-        {showFormula && formulaSlot}
+        <Dialog open={showFormula} onOpenChange={() => toggleFormula()}>
+          <DialogContent className="w-auto max-w-[95vw] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+            {formulaSlot}
+          </DialogContent>
+        </Dialog>
 
         {warnings.map((w, i) => (
           <Badge
