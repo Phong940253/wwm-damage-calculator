@@ -85,7 +85,8 @@ export type MartialArtId =
   | "silkbind_deluge"
   | "silkbind_jade"
   | "stonesplit_might"
-  | "bamboocut_wind";
+  | "bamboocut_wind"
+  | "bamboocut_dust";
 
 export interface MartialArt {
   id: MartialArtId;
@@ -128,6 +129,12 @@ export const LIST_MARTIAL_ARTS: MartialArt[] = [
   {
     id: "bamboocut_wind",
     name: "Bamboocut – Wind",
+    element: "bamboocut",
+    role: "dps",
+  },
+  {
+    id: "bamboocut_dust",
+    name: "Bamboocut – Dust",
     element: "bamboocut",
     role: "dps",
   },

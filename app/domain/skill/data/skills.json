@@ -1223,6 +1223,132 @@
     "notes": "Placeholder multipliers"
   },
   {
+    "id": "bamboocut_dust_rope_burn_and_bury",
+    "name": "Burn and Bury",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Rope Dart",
+    "category": "special-skill",
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "bamboocut_dust_rope_soul_sweep",
+    "name": "Soul Sweep",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Rope Dart",
+    "category": "martial-art-skill",
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "bamboocut_dust_rope_piercing_dart_charging_stance",
+    "name": "Piercing Dart (Charging Stance)",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Rope Dart",
+    "category": "ultimate",
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "bamboocut_dust_rope_piercing_dart_charged",
+    "name": "Piercing Dart (Charged Skill)",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Rope Dart",
+    "category": "ultimate",
+    "damageSkillType": [
+      "charged"
+    ],
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "bamboocut_dust_umbrella_cyclone_waltz",
+    "name": "Cyclone Waltz",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Umbrella",
+    "category": "special-skill",
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "bamboocut_dust_umbrella_scarlet_spin",
+    "name": "Scarlet Spin",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Umbrella",
+    "category": "martial-art-skill",
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "bamboocut_dust_umbrella_dreamwrought_bubbles",
+    "name": "Dreamwrought Bubbles (Charged Skill)",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Umbrella",
+    "category": "ultimate",
+    "damageSkillType": [
+      "charged"
+    ],
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "bamboocut_dust_umbrella_heavy_attack",
+    "name": "Umbrella - Heavy Attack",
+    "martialArtId": "bamboocut_dust",
+    "weaponType": "Umbrella",
+    "category": "ultimate",
+    "hits": [
+      {
+        "physicalMultiplier": 1,
+        "elementMultiplier": 1,
+        "hits": 1
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
     "id": "mystic_leaping_toad",
     "name": "Leaping Toad",
     "category": "mystic-skill",
