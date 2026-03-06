@@ -6,9 +6,58 @@ import { createSkillContext } from "./skillContext";
 import { DamageResult, SkillDamageResult } from "../damage/type";
 import { calcExpectedNormalBreakdown } from "../damage/damageFormula";
 
+export const SCARLET_SPIN_SKILL_ID = "bamboocut_dust_umbrella_scarlet_spin";
+export const PHANTOM_RALLY_T0_INNER_WAY_ID =
+  "iw_bamboocut_dust_umbrella_phantom_rally_t0";
+export const PHANTOM_RALLY_T6_INNER_WAY_ID =
+  "iw_bamboocut_dust_umbrella_phantom_rally_t6";
+
 export interface SkillDamageOptions {
   /** Optional per-skill parameters (typically sourced from RotationSkill.params). */
   params?: Record<string, number>;
+
+  /** Active inner ways from the current rotation (for conditional skill logic). */
+  activeInnerWays?: string[];
+
+  /** Total number of times this skill is used in the current rotation. */
+  skillUseCountInRotation?: number;
+}
+
+export function getScarletSpinResonanceHitCount(
+  activeInnerWays: string[] | undefined,
+  scarletSpinUseCount: number,
+): number {
+  const uses = Math.max(0, Math.floor(Number(scarletSpinUseCount) || 0));
+  if (uses <= 0) return 0;
+
+  const active = new Set(activeInnerWays ?? []);
+
+  if (active.has(PHANTOM_RALLY_T6_INNER_WAY_ID)) {
+    return Math.max(0, 2 * uses - 1);
+  }
+
+  if (active.has(PHANTOM_RALLY_T0_INNER_WAY_ID)) {
+    return Math.max(0, uses - 1);
+  }
+
+  return 0;
+}
+
+function getScarletSpinResonanceScaleFactor(opts?: SkillDamageOptions): number {
+  const uses = Math.max(
+    0,
+    Math.floor(Number(opts?.skillUseCountInRotation) || 0),
+  );
+  if (uses <= 0) return 1;
+
+  const resonanceHits = getScarletSpinResonanceHitCount(
+    opts?.activeInnerWays,
+    uses,
+  );
+  if (resonanceHits <= 0) return 1;
+
+  // Each resonance is modeled as 1/4 of one Scarlet Spin cast's coefficients.
+  return 1 + resonanceHits / (4 * uses);
 }
 
 function scaleDamageResult(dmg: DamageResult, scale: number): DamageResult {
@@ -183,6 +232,16 @@ export function calculateSkillDamage(
       total.averageBreakdown.affinity += h.averageBreakdown.affinity;
       total.averageBreakdown.critical += h.averageBreakdown.critical;
       total.averageBreakdown.normal += h.averageBreakdown.normal;
+    }
+  }
+
+  if (skill.id === SCARLET_SPIN_SKILL_ID) {
+    const resonanceScale = getScarletSpinResonanceScaleFactor(opts);
+    if (resonanceScale !== 1) {
+      return {
+        total: scaleDamageResult(total, resonanceScale),
+        perHit: perHit.map((h) => scaleDamageResult(h, resonanceScale)),
+      };
     }
   }
 

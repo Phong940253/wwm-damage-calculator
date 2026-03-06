@@ -15,7 +15,11 @@ import {
 import { Rotation } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { DamageContext } from "@/app/domain/damage/damageContext";
-import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import {
+  calculateSkillDamage,
+  getScarletSpinResonanceHitCount,
+  SCARLET_SPIN_SKILL_ID,
+} from "@/app/domain/skill/skillDamage";
 import { Button } from "@/components/ui/button";
 
 interface RotationDamagePieProps {
@@ -24,6 +28,8 @@ interface RotationDamagePieProps {
 }
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+const SCARLET_SPIN_RESONANCE_KEY = `${SCARLET_SPIN_SKILL_ID}__resonance`;
+const SCARLET_SPIN_RESONANCE_NAME = "Scarlet Spin - Resonance";
 
 const DEFAULT_ROTATION_SECONDS = 60;
 
@@ -82,6 +88,16 @@ export default function RotationDamagePie({
     { name: string; value: number; skillId: string; count: number; totalHits: number }
   >();
 
+  const scarletSpinUseCount = rotation.skills.reduce(
+    (sum, s) =>
+      s.id === SCARLET_SPIN_SKILL_ID ? sum + Math.max(0, Number(s.count) || 0) : sum,
+    0,
+  );
+  const totalScarletResonanceHits = getScarletSpinResonanceHitCount(
+    rotation.activeInnerWays,
+    scarletSpinUseCount,
+  );
+
   rotation.skills.forEach((rotSkill) => {
     const skill = SKILLS.find((s) => s.id === rotSkill.id);
     if (!skill) return;
@@ -90,20 +106,34 @@ export default function RotationDamagePie({
     const groupKey = isGroupedView ? (group?.id ?? skill.id) : skill.id;
     const displayName = isGroupedView ? (group?.name ?? skill.name) : skill.name;
 
-    const skillDamage = calculateSkillDamage(ctx, skill, { params: rotSkill.params });
+    const skillDamage = calculateSkillDamage(ctx, skill, {
+      params: rotSkill.params,
+      activeInnerWays: rotation.activeInnerWays,
+      skillUseCountInRotation:
+        rotSkill.id === SCARLET_SPIN_SKILL_ID ? scarletSpinUseCount : 0,
+    });
     if (!skillDamage) return;
 
+    const baseSkillDamage =
+      rotSkill.id === SCARLET_SPIN_SKILL_ID
+        ? calculateSkillDamage(ctx, skill, { params: rotSkill.params })
+        : skillDamage;
+
     // Total hits for ONE usage/cast of the skill (supports scaled skills)
-    const baseHitsPerCast = skillDamage.perHit.length;
+    const baseHitsPerCast = baseSkillDamage.perHit.length;
     const duration =
       skill.id === "vernal_umbrella_light_spring_away"
         ? Math.max(0, Number(rotSkill.params?.duration ?? 1))
         : 1;
     const hitsPerCast = baseHitsPerCast * duration;
+    const resonanceHits =
+      rotSkill.id === SCARLET_SPIN_SKILL_ID && scarletSpinUseCount > 0
+        ? (totalScarletResonanceHits * rotSkill.count) / scarletSpinUseCount
+        : 0;
     const totalHits = hitsPerCast * rotSkill.count;
 
     // Average damage = normal damage nhân với count
-    const avgDamage = skillDamage.total.normal.value * rotSkill.count;
+    const avgDamage = baseSkillDamage.total.normal.value * rotSkill.count;
 
     // Merge by groupKey (or skillId when ungrouped)
     const existing = skillDamageMap.get(groupKey);
@@ -123,6 +153,28 @@ export default function RotationDamagePie({
         count: rotSkill.count,
         totalHits,
       });
+    }
+
+    // Split Scarlet Spin resonance as its own breakdown row/slice.
+    if (rotSkill.id === SCARLET_SPIN_SKILL_ID && scarletSpinUseCount > 0) {
+      const resonancePerCast =
+        skillDamage.total.normal.value - baseSkillDamage.total.normal.value;
+      const resonanceDamage = Math.max(0, resonancePerCast) * rotSkill.count;
+      if (resonanceDamage > 0 || resonanceHits > 0) {
+        const resonanceExisting = skillDamageMap.get(SCARLET_SPIN_RESONANCE_KEY);
+        const nextResonanceHits =
+          (resonanceExisting?.totalHits ?? 0) + resonanceHits;
+        const nextResonanceDamage =
+          (resonanceExisting?.value ?? 0) + resonanceDamage;
+
+        skillDamageMap.set(SCARLET_SPIN_RESONANCE_KEY, {
+          name: `${SCARLET_SPIN_RESONANCE_NAME} x${formatHitCount(nextResonanceHits)}`,
+          value: nextResonanceDamage,
+          skillId: SCARLET_SPIN_RESONANCE_KEY,
+          count: (resonanceExisting?.count ?? 0) + rotSkill.count,
+          totalHits: nextResonanceHits,
+        });
+      }
     }
   });
 

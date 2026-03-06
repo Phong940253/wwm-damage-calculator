@@ -4,7 +4,10 @@ import { InputStats, ElementStats, Rotation } from "@/app/types";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { SKILLS } from "@/app/domain/skill/skills";
-import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import {
+  calculateSkillDamage,
+  SCARLET_SPIN_SKILL_ID,
+} from "@/app/domain/skill/skillDamage";
 import {
   computeRotationBonuses,
   sumBonuses,
@@ -32,12 +35,23 @@ export function useStatImpact(
 
     const calcNormal = (ctx: ReturnType<typeof buildDamageContext>): number => {
       if (rotation && rotation.skills.length > 0) {
+        const scarletSpinUseCount = rotation.skills.reduce(
+          (sum, s) =>
+            s.id === SCARLET_SPIN_SKILL_ID
+              ? sum + Math.max(0, Number(s.count) || 0)
+              : sum,
+          0,
+        );
+
         let totalNormal = 0;
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
           const dmg = calculateSkillDamage(ctx, skill, {
             params: rotSkill.params,
+            activeInnerWays: rotation.activeInnerWays,
+            skillUseCountInRotation:
+              rotSkill.id === SCARLET_SPIN_SKILL_ID ? scarletSpinUseCount : 0,
           });
           totalNormal += dmg.total.normal.value * rotSkill.count;
         }

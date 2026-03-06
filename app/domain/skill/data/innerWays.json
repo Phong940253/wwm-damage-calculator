@@ -322,5 +322,25 @@
         ],
         "level": 4,
         "notes": "Tier 4: Damage boost increased from 5% to 8%."
+    },
+    {
+        "id": "iw_bamboocut_dust_umbrella_phantom_rally_t0",
+        "name": "Phantom Rally (Tier 0)",
+        "description": "Scarlet Spin summons Phantom Umbrellas. Resonance damage is modeled as additional Scarlet Spin damage in rotation.",
+        "tierGroupId": "iw_bamboocut_dust_umbrella_phantom_rally",
+        "applicableToMartialArtId": "bamboocut_dust",
+        "modifiers": [],
+        "level": 0,
+        "notes": "Modeling: resonance count = Scarlet Spin uses - 1. Each resonance deals 1/4 Scarlet Spin coefficients (physical/element/flat)."
+    },
+    {
+        "id": "iw_bamboocut_dust_umbrella_phantom_rally_t6",
+        "name": "Phantom Rally (Tier 6)",
+        "description": "Enhanced Phantom Rally. Resonance damage is modeled as additional Scarlet Spin damage in rotation.",
+        "tierGroupId": "iw_bamboocut_dust_umbrella_phantom_rally",
+        "applicableToMartialArtId": "bamboocut_dust",
+        "modifiers": [],
+        "level": 6,
+        "notes": "Modeling: resonance count = 2 * Scarlet Spin uses - 1. Each resonance deals 1/4 Scarlet Spin coefficients (physical/element/flat)."
     }
 ]

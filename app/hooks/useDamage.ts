@@ -6,7 +6,10 @@ import { InputStats, ElementStats, Rotation } from "@/app/types";
 import { DamageResult } from "../domain/damage/type";
 import { calcExpectedNormalBreakdown } from "../domain/damage/damageFormula";
 import { SKILLS } from "@/app/domain/skill/skills";
-import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import {
+  calculateSkillDamage,
+  SCARLET_SPIN_SKILL_ID,
+} from "@/app/domain/skill/skillDamage";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
 import {
   computeRotationBonusesWithBreakdown,
@@ -146,6 +149,14 @@ export function useDamage(
     let breakdown: ReturnType<typeof calcExpectedNormalBreakdown> | undefined;
 
     if (rotation && rotation.skills.length > 0) {
+      const scarletSpinUseCount = rotation.skills.reduce(
+        (sum, s) =>
+          s.id === SCARLET_SPIN_SKILL_ID
+            ? sum + Math.max(0, s.count || 0)
+            : sum,
+        0,
+      );
+
       // Calculate rotation-based damage
       let baseMinTotal = 0;
       let baseNormalTotal = 0;
@@ -171,7 +182,12 @@ export function useDamage(
         const baseSkillDamage = calculateSkillDamage(
           baseCtxWithModifiers,
           skill,
-          { params: rotSkill.params },
+          {
+            params: rotSkill.params,
+            activeInnerWays: rotation.activeInnerWays,
+            skillUseCountInRotation:
+              rotSkill.id === SCARLET_SPIN_SKILL_ID ? scarletSpinUseCount : 0,
+          },
         );
         baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
         baseNormalTotal += baseSkillDamage.total.normal.value * rotSkill.count;
@@ -186,7 +202,12 @@ export function useDamage(
         const finalSkillDamage = calculateSkillDamage(
           finalCtxWithModifiers,
           skill,
-          { params: rotSkill.params },
+          {
+            params: rotSkill.params,
+            activeInnerWays: rotation.activeInnerWays,
+            skillUseCountInRotation:
+              rotSkill.id === SCARLET_SPIN_SKILL_ID ? scarletSpinUseCount : 0,
+          },
         );
         const skillNormalDamage =
           finalSkillDamage.total.normal.value * rotSkill.count;

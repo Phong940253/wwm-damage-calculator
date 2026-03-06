@@ -10,7 +10,10 @@ import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { SKILLS } from "@/app/domain/skill/skills";
-import { calculateSkillDamage } from "@/app/domain/skill/skillDamage";
+import {
+  calculateSkillDamage,
+  SCARLET_SPIN_SKILL_ID,
+} from "@/app/domain/skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
@@ -326,6 +329,14 @@ export default function GearCompareTab({
                     let damageB: ReturnType<typeof calculateDamage> | { min: number; normal: number; affinity: number };
 
                     if (rotation && rotation.skills.length > 0) {
+                      const scarletSpinUseCount = rotation.skills.reduce(
+                        (sum, s) =>
+                          s.id === SCARLET_SPIN_SKILL_ID
+                            ? sum + Math.max(0, Number(s.count) || 0)
+                            : sum,
+                        0,
+                      );
+
                       // Rotation-based damage
                       let totalMinA = 0,
                         totalNormalA = 0,
@@ -340,6 +351,11 @@ export default function GearCompareTab({
 
                         const skillDmgA = calculateSkillDamage(ctxA, skill, {
                           params: rotSkill.params,
+                          activeInnerWays: rotation.activeInnerWays,
+                          skillUseCountInRotation:
+                            rotSkill.id === SCARLET_SPIN_SKILL_ID
+                              ? scarletSpinUseCount
+                              : 0,
                         });
                         totalMinA +=
                           skillDmgA.total.min.value * rotSkill.count;
@@ -350,6 +366,11 @@ export default function GearCompareTab({
 
                         const skillDmgB = calculateSkillDamage(ctxB, skill, {
                           params: rotSkill.params,
+                          activeInnerWays: rotation.activeInnerWays,
+                          skillUseCountInRotation:
+                            rotSkill.id === SCARLET_SPIN_SKILL_ID
+                              ? scarletSpinUseCount
+                              : 0,
                         });
                         totalMinB +=
                           skillDmgB.total.min.value * rotSkill.count;
