@@ -50,13 +50,17 @@ export function buildRotationSkillDamageOptions(
   params: Record<string, number> | undefined,
   activeInnerWays: string[] | undefined,
   skillUseCountsInRotation: Record<string, number> | undefined,
+  currentEntryUseCount?: number,
 ): SkillDamageOptions {
+  const entryCount = Math.max(0, Number(currentEntryUseCount) || 0);
   return {
     params,
     activeInnerWays,
     skillUseCountsInRotation,
-    // Backward-compatible field for older code paths.
-    skillUseCountInRotation: skillUseCountsInRotation?.[skillId] ?? 0,
+    // Per-entry usage count is preferred for effects that are scoped to each
+    // rotation entry (column), while map stays available for cross-skill rules.
+    skillUseCountInRotation:
+      entryCount || (skillUseCountsInRotation?.[skillId] ?? 0),
   };
 }
 
@@ -64,15 +68,29 @@ function getSkillUseCountInRotation(
   opts: SkillDamageOptions | undefined,
   skillId: string,
 ) {
+  const direct = Math.max(
+    0,
+    Math.floor(Number(opts?.skillUseCountInRotation) || 0),
+  );
+  if (direct > 0) return direct;
+
   return Math.max(
     0,
-    Math.floor(
-      Number(
-        opts?.skillUseCountsInRotation?.[skillId] ??
-          opts?.skillUseCountInRotation,
-      ) || 0,
-    ),
+    Math.floor(Number(opts?.skillUseCountsInRotation?.[skillId]) || 0),
   );
+}
+
+interface InnerWaySkillDamageResolverCtx {
+  ctx: DamageContext;
+  skill: Skill;
+  opts?: SkillDamageOptions;
+  current: SkillDamageResult;
+  activeInnerWays: Set<string>;
+}
+
+interface InnerWaySkillDamageResolver {
+  innerWayId: string;
+  apply: (args: InnerWaySkillDamageResolverCtx) => SkillDamageResult;
 }
 
 export function getScarletSpinResonanceHitCount(
@@ -107,6 +125,76 @@ function getScarletSpinResonanceScaleFactor(opts?: SkillDamageOptions): number {
 
   // Each resonance is modeled as 1/4 of one Scarlet Spin cast's coefficients.
   return 1 + resonanceHits / (4 * uses);
+}
+
+function applyScaleToSkillDamageResult(
+  result: SkillDamageResult,
+  scale: number,
+): SkillDamageResult {
+  if (!Number.isFinite(scale) || scale === 1) return result;
+  return {
+    total: scaleDamageResult(result.total, scale),
+    perHit: result.perHit.map((h) => scaleDamageResult(h, scale)),
+  };
+}
+
+const INNER_WAY_SKILL_DAMAGE_RESOLVERS: InnerWaySkillDamageResolver[] = [
+  {
+    innerWayId: PHANTOM_RALLY_T0_INNER_WAY_ID,
+    apply: ({ skill, opts, current, activeInnerWays }) => {
+      if (skill.id !== SCARLET_SPIN_SKILL_ID) return current;
+
+      // Safety: if both tiers are active unexpectedly, tier 6 takes precedence.
+      if (activeInnerWays.has(PHANTOM_RALLY_T6_INNER_WAY_ID)) return current;
+
+      const scale = getScarletSpinResonanceScaleFactor({
+        ...opts,
+        activeInnerWays: [PHANTOM_RALLY_T0_INNER_WAY_ID],
+      });
+      return applyScaleToSkillDamageResult(current, scale);
+    },
+  },
+  {
+    innerWayId: PHANTOM_RALLY_T6_INNER_WAY_ID,
+    apply: ({ skill, opts, current }) => {
+      if (skill.id !== SCARLET_SPIN_SKILL_ID) return current;
+
+      const scale = getScarletSpinResonanceScaleFactor({
+        ...opts,
+        activeInnerWays: [PHANTOM_RALLY_T6_INNER_WAY_ID],
+      });
+      return applyScaleToSkillDamageResult(current, scale);
+    },
+  },
+];
+
+const INNER_WAY_SKILL_DAMAGE_RESOLVER_MAP = new Map(
+  INNER_WAY_SKILL_DAMAGE_RESOLVERS.map((r) => [r.innerWayId, r] as const),
+);
+
+function applyInnerWaySkillDamageResolvers(
+  ctx: DamageContext,
+  skill: Skill,
+  opts: SkillDamageOptions | undefined,
+  base: SkillDamageResult,
+): SkillDamageResult {
+  const activeIds = opts?.activeInnerWays ?? [];
+  if (activeIds.length === 0) return base;
+
+  const activeSet = new Set(activeIds);
+  let next = base;
+  for (const innerWayId of activeIds) {
+    const resolver = INNER_WAY_SKILL_DAMAGE_RESOLVER_MAP.get(innerWayId);
+    if (!resolver) continue;
+    next = resolver.apply({
+      ctx,
+      skill,
+      opts,
+      current: next,
+      activeInnerWays: activeSet,
+    });
+  }
+  return next;
 }
 
 function scaleDamageResult(dmg: DamageResult, scale: number): DamageResult {
@@ -284,15 +372,5 @@ export function calculateSkillDamage(
     }
   }
 
-  if (skill.id === SCARLET_SPIN_SKILL_ID) {
-    const resonanceScale = getScarletSpinResonanceScaleFactor(opts);
-    if (resonanceScale !== 1) {
-      return {
-        total: scaleDamageResult(total, resonanceScale),
-        perHit: perHit.map((h) => scaleDamageResult(h, resonanceScale)),
-      };
-    }
-  }
-
-  return { total, perHit };
+  return applyInnerWaySkillDamageResolvers(ctx, skill, opts, { total, perHit });
 }

@@ -336,12 +336,14 @@ export default function GearCompareTab({
                       const buildOpts = (
                         skillId: string,
                         params: Record<string, number> | undefined,
+                        currentEntryUseCount?: number,
                       ) =>
                         buildRotationSkillDamageOptions(
                           skillId,
                           params,
                           rotation.activeInnerWays,
                           skillUseCountsInRotation,
+                          currentEntryUseCount,
                         );
 
                       // Rotation-based damage
@@ -359,7 +361,7 @@ export default function GearCompareTab({
                         const skillDmgA = calculateSkillDamage(
                           ctxA,
                           skill,
-                          buildOpts(rotSkill.id, rotSkill.params),
+                          buildOpts(rotSkill.id, rotSkill.params, rotSkill.count),
                         );
                         totalMinA +=
                           skillDmgA.total.min.value * rotSkill.count;
@@ -371,7 +373,7 @@ export default function GearCompareTab({
                         const skillDmgB = calculateSkillDamage(
                           ctxB,
                           skill,
-                          buildOpts(rotSkill.id, rotSkill.params),
+                          buildOpts(rotSkill.id, rotSkill.params, rotSkill.count),
                         );
                         totalMinB +=
                           skillDmgB.total.min.value * rotSkill.count;

@@ -52,6 +52,7 @@ export function useStatImpact(
               rotSkill.params,
               rotation.activeInnerWays,
               skillUseCountsInRotation,
+              rotSkill.count,
             ),
           );
           totalNormal += dmg.total.normal.value * rotSkill.count;

@@ -93,10 +93,6 @@ export default function RotationDamagePie({
   const skillUseCountsInRotation = buildSkillUseCountsInRotation(rotation.skills);
   const scarletSpinUseCount =
     skillUseCountsInRotation[SCARLET_SPIN_SKILL_ID] ?? 0;
-  const totalScarletResonanceHits = getScarletSpinResonanceHitCount(
-    rotation.activeInnerWays,
-    scarletSpinUseCount,
-  );
 
   rotation.skills.forEach((rotSkill) => {
     const skill = SKILLS.find((s) => s.id === rotSkill.id);
@@ -114,6 +110,7 @@ export default function RotationDamagePie({
         rotSkill.params,
         rotation.activeInnerWays,
         skillUseCountsInRotation,
+        rotSkill.count,
       ),
     );
     if (!skillDamage) return;
@@ -131,8 +128,8 @@ export default function RotationDamagePie({
         : 1;
     const hitsPerCast = baseHitsPerCast * duration;
     const resonanceHits =
-      rotSkill.id === SCARLET_SPIN_SKILL_ID && scarletSpinUseCount > 0
-        ? (totalScarletResonanceHits * rotSkill.count) / scarletSpinUseCount
+      rotSkill.id === SCARLET_SPIN_SKILL_ID
+        ? getScarletSpinResonanceHitCount(rotation.activeInnerWays, rotSkill.count)
         : 0;
     const totalHits = hitsPerCast * rotSkill.count;
 
