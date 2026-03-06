@@ -6,7 +6,8 @@ import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
   calculateSkillDamage,
-  SCARLET_SPIN_SKILL_ID,
+  buildSkillUseCountsInRotation,
+  buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
 import {
   computeRotationBonuses,
@@ -35,24 +36,24 @@ export function useStatImpact(
 
     const calcNormal = (ctx: ReturnType<typeof buildDamageContext>): number => {
       if (rotation && rotation.skills.length > 0) {
-        const scarletSpinUseCount = rotation.skills.reduce(
-          (sum, s) =>
-            s.id === SCARLET_SPIN_SKILL_ID
-              ? sum + Math.max(0, Number(s.count) || 0)
-              : sum,
-          0,
+        const skillUseCountsInRotation = buildSkillUseCountsInRotation(
+          rotation.skills,
         );
 
         let totalNormal = 0;
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
-          const dmg = calculateSkillDamage(ctx, skill, {
-            params: rotSkill.params,
-            activeInnerWays: rotation.activeInnerWays,
-            skillUseCountInRotation:
-              rotSkill.id === SCARLET_SPIN_SKILL_ID ? scarletSpinUseCount : 0,
-          });
+          const dmg = calculateSkillDamage(
+            ctx,
+            skill,
+            buildRotationSkillDamageOptions(
+              rotSkill.id,
+              rotSkill.params,
+              rotation.activeInnerWays,
+              skillUseCountsInRotation,
+            ),
+          );
           totalNormal += dmg.total.normal.value * rotSkill.count;
         }
         return totalNormal;

@@ -12,7 +12,8 @@ import { calculateDamage } from "../damage/damageCalculator";
 import { SKILLS } from "../skill/skills";
 import {
   calculateSkillDamage,
-  SCARLET_SPIN_SKILL_ID,
+  buildSkillUseCountsInRotation,
+  buildRotationSkillDamageOptions,
 } from "../skill/skillDamage";
 import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
 import type { LevelContext } from "../level/levelSettings";
@@ -233,25 +234,24 @@ export async function computeOptimizeResultsAsync(
     );
 
     if (rotationPlan && rotationPlan.length > 0) {
-      const scarletSpinUseCount = rotationPlan.reduce(
-        (sum, rs) =>
-          rs.id === SCARLET_SPIN_SKILL_ID
-            ? sum + Math.max(0, Number(rs.count) || 0)
-            : sum,
-        0,
-      );
+      const skillUseCountsInRotation =
+        buildSkillUseCountsInRotation(rotationPlan);
 
       let rotationTotal = 0;
       for (const rotSkill of rotationPlan) {
         throwIfCancelled();
         const skill = rotSkill.skill;
         if (!skill) continue;
-        const skillDamage = calculateSkillDamage(ctx, skill, {
-          params: rotSkill.params,
-          activeInnerWays: rotation?.activeInnerWays,
-          skillUseCountInRotation:
-            rotSkill.id === SCARLET_SPIN_SKILL_ID ? scarletSpinUseCount : 0,
-        });
+        const skillDamage = calculateSkillDamage(
+          ctx,
+          skill,
+          buildRotationSkillDamageOptions(
+            rotSkill.id,
+            rotSkill.params,
+            rotation?.activeInnerWays,
+            skillUseCountsInRotation,
+          ),
+        );
         rotationTotal += skillDamage.total.normal.value * rotSkill.count;
       }
       return rotationTotal;

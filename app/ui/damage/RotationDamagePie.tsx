@@ -19,6 +19,8 @@ import {
   calculateSkillDamage,
   getScarletSpinResonanceHitCount,
   SCARLET_SPIN_SKILL_ID,
+  buildSkillUseCountsInRotation,
+  buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
 import { Button } from "@/components/ui/button";
 
@@ -88,11 +90,9 @@ export default function RotationDamagePie({
     { name: string; value: number; skillId: string; count: number; totalHits: number }
   >();
 
-  const scarletSpinUseCount = rotation.skills.reduce(
-    (sum, s) =>
-      s.id === SCARLET_SPIN_SKILL_ID ? sum + Math.max(0, Number(s.count) || 0) : sum,
-    0,
-  );
+  const skillUseCountsInRotation = buildSkillUseCountsInRotation(rotation.skills);
+  const scarletSpinUseCount =
+    skillUseCountsInRotation[SCARLET_SPIN_SKILL_ID] ?? 0;
   const totalScarletResonanceHits = getScarletSpinResonanceHitCount(
     rotation.activeInnerWays,
     scarletSpinUseCount,
@@ -106,12 +106,16 @@ export default function RotationDamagePie({
     const groupKey = isGroupedView ? (group?.id ?? skill.id) : skill.id;
     const displayName = isGroupedView ? (group?.name ?? skill.name) : skill.name;
 
-    const skillDamage = calculateSkillDamage(ctx, skill, {
-      params: rotSkill.params,
-      activeInnerWays: rotation.activeInnerWays,
-      skillUseCountInRotation:
-        rotSkill.id === SCARLET_SPIN_SKILL_ID ? scarletSpinUseCount : 0,
-    });
+    const skillDamage = calculateSkillDamage(
+      ctx,
+      skill,
+      buildRotationSkillDamageOptions(
+        rotSkill.id,
+        rotSkill.params,
+        rotation.activeInnerWays,
+        skillUseCountsInRotation,
+      ),
+    );
     if (!skillDamage) return;
 
     const baseSkillDamage =

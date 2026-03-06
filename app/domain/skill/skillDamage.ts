@@ -21,6 +21,58 @@ export interface SkillDamageOptions {
 
   /** Total number of times this skill is used in the current rotation. */
   skillUseCountInRotation?: number;
+
+  /** Total use count per skill id in the current rotation. */
+  skillUseCountsInRotation?: Record<string, number>;
+}
+
+export interface RotationSkillUsageLike {
+  id: string;
+  count: number;
+}
+
+export function buildSkillUseCountsInRotation(
+  skills: RotationSkillUsageLike[] | undefined,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const s of skills ?? []) {
+    const key = String(s.id || "");
+    if (!key) continue;
+    const count = Math.max(0, Number(s.count) || 0);
+    if (count <= 0) continue;
+    out[key] = (out[key] || 0) + count;
+  }
+  return out;
+}
+
+export function buildRotationSkillDamageOptions(
+  skillId: string,
+  params: Record<string, number> | undefined,
+  activeInnerWays: string[] | undefined,
+  skillUseCountsInRotation: Record<string, number> | undefined,
+): SkillDamageOptions {
+  return {
+    params,
+    activeInnerWays,
+    skillUseCountsInRotation,
+    // Backward-compatible field for older code paths.
+    skillUseCountInRotation: skillUseCountsInRotation?.[skillId] ?? 0,
+  };
+}
+
+function getSkillUseCountInRotation(
+  opts: SkillDamageOptions | undefined,
+  skillId: string,
+) {
+  return Math.max(
+    0,
+    Math.floor(
+      Number(
+        opts?.skillUseCountsInRotation?.[skillId] ??
+          opts?.skillUseCountInRotation,
+      ) || 0,
+    ),
+  );
 }
 
 export function getScarletSpinResonanceHitCount(
@@ -44,10 +96,7 @@ export function getScarletSpinResonanceHitCount(
 }
 
 function getScarletSpinResonanceScaleFactor(opts?: SkillDamageOptions): number {
-  const uses = Math.max(
-    0,
-    Math.floor(Number(opts?.skillUseCountInRotation) || 0),
-  );
+  const uses = getSkillUseCountInRotation(opts, SCARLET_SPIN_SKILL_ID);
   if (uses <= 0) return 1;
 
   const resonanceHits = getScarletSpinResonanceHitCount(
