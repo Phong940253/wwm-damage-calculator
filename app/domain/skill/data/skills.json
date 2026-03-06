@@ -1230,8 +1230,10 @@
     "category": "special-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 1.7667,
+        "elementMultiplier": 2.6501,
+        "flatPhysical": 186,
+        "flatAttribute": 107,
         "hits": 1
       }
     ],
@@ -1245,8 +1247,24 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 0.9424,
+        "elementMultiplier": 1.4136,
+        "flatPhysical": 165,
+        "flatAttribute": 95,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 1.0995,
+        "elementMultiplier": 1.6492,
+        "flatPhysical": 192,
+        "flatAttribute": 111,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 1.0995,
+        "elementMultiplier": 1.6492,
+        "flatPhysical": 192,
+        "flatAttribute": 111,
         "hits": 1
       }
     ],
@@ -1278,8 +1296,24 @@
     ],
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 1.1122,
+        "elementMultiplier": 1.6684,
+        "flatPhysical": 196,
+        "flatAttribute": 113,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 0.7824,
+        "elementMultiplier": 1.1736,
+        "flatPhysical": 138,
+        "flatAttribute": 79,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 1.7227,
+        "elementMultiplier": 2.5840,
+        "flatPhysical": 303,
+        "flatAttribute": 175,
         "hits": 1
       }
     ],
@@ -1293,8 +1327,10 @@
     "category": "special-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 2.5327,
+        "elementMultiplier": 3.7990,
+        "flatPhysical": 445,
+        "flatAttribute": 257,
         "hits": 1
       }
     ],
@@ -1308,8 +1344,17 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 1.0841,
+        "elementMultiplier": 1.6262,
+        "flatPhysical": 190,
+        "flatAttribute": 109,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 0.7228,
+        "elementMultiplier": 1.0841,
+        "flatPhysical": 126,
+        "flatAttribute": 73,
         "hits": 1
       }
     ],
@@ -1326,8 +1371,17 @@
     ],
     "hits": [
       {
-        "physicalMultiplier": 1,
-        "elementMultiplier": 1,
+        "physicalMultiplier": 1.0064,
+        "elementMultiplier": 1.5096,
+        "flatPhysical": 177,
+        "flatAttribute": 102,
+        "hits": 1
+      },
+      {
+        "physicalMultiplier": 0.6709,
+        "elementMultiplier": 1.0064,
+        "flatPhysical": 118,
+        "flatAttribute": 68,
         "hits": 1
       }
     ],
@@ -1396,6 +1450,26 @@
         "elementMultiplier": 1,
         "hits": 1,
         "flatPhysical": 350
+      }
+    ],
+    "notes": "Placeholder multipliers"
+  },
+  {
+    "id": "mystic_flute_of_the_tides",
+    "name": "Flute of the Tides",
+    "category": "mystic-skill",
+    "hits": [
+      {
+        "physicalMultiplier": 1.81,
+        "elementMultiplier": 1,
+        "hits": 1,
+        "flatPhysical": 298
+      },
+      {
+        "physicalMultiplier": 0.6787,
+        "elementMultiplier": 1,
+        "hits": 5,
+        "flatPhysical": 111
       }
     ],
     "notes": "Placeholder multipliers"
