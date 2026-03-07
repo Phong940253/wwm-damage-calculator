@@ -60,6 +60,23 @@
         "notes": "Modeling note: Hawkwing stacks up to 5x (+2% Physical Attack each, max +10%). This calculator models it as a single +10% Physical Attack boost and applies passive uptime as an averaging knob. To approximate average stacks, set uptime to (avgStacks/5)*100 (e.g. ~3 stacks avg -> 60%). Actual uptime depends on how often you trigger Affinity and the 5s buff duration."
     },
     {
+        "id": "ps_universal_stars_align_set_4",
+        "name": "Stars Align Set (4/4)",
+        "description": "When hitting at least 2 enemies simultaneously, or hitting a boss/player, gain Stars Align for 5s. Martial Art Skills deal 3% increased damage per stack, up to 5 stacks.",
+        "defaultEnabledForMartialArtIds": [
+            "bamboocut_dust"
+        ],
+        "defaultUptimePercent": 100,
+        "modifiers": [
+            {
+                "stat": "MartialArtSkillDamageBoost",
+                "type": "flat",
+                "value": 15
+            }
+        ],
+        "notes": "Modeling note: stacks are modeled at full 5 stacks (+15% Martial Art Skill damage), then weighted by passive uptime. The distance-based bonus portion from the game tooltip is not modeled."
+    },
+    {
         "id": "ps_bellstrike_splendor_1",
         "name": "Sword Qi Affinity Enhancement",
         "description": "Increases Affinity DMG based on Max Physical Attack (up to 18% at 1500 Max Physical Attack)",

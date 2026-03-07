@@ -217,6 +217,9 @@ export function createSkillContext(
     // Conditional: charged skill and/or weapon-art-specific boost
     else if (key === "DamageBoost") {
       value = baseCtx.get(key);
+      if (isMartialCategory(opts.category)) {
+        value += baseCtx.get("MartialArtSkillDamageBoost");
+      }
       if (isChargedSkill) value += baseCtx.get("ChargeSkillDamageBoost");
       if (isBallisticSkill) value += baseCtx.get("BallisticSkillDamageBoost");
       if (isPursuitSkill) value += baseCtx.get("PursuitSkillDamageBoost");

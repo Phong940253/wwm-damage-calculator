@@ -154,6 +154,7 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   Penetration: "Penetration",
   DMGBonus: "DMG Bonus",
   DamageBoost: "Damage Boost",
+  MartialArtSkillDamageBoost: "Martial Art Skill Damage Boost",
   ChargeSkillDamageBoost: "Charged Skill Damage Boost",
   BallisticSkillDamageBoost: "Projectile Skill Damage Boost",
   PursuitSkillDamageBoost: "Pursuit Skill Damage Boost",
@@ -252,6 +253,7 @@ export const INITIAL_STATS: InputStats = {
   AffinityDMGBonus: { current: 35, increase: 0 },
 
   DamageBoost: { current: 0, increase: 0 },
+  MartialArtSkillDamageBoost: { current: 0, increase: 0 },
 
   // Hidden / conditional stats (not shown in STAT_GROUPS by default)
   ChargeSkillDamageBoost: { current: 0, increase: 0 },
