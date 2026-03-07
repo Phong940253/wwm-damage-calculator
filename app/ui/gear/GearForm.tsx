@@ -331,7 +331,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         id,
         name,
         slot,
-        weaponType: isWeaponSlot(slot) ? weaponType : undefined,
+        weaponType: isWeaponSlot(slot) ? weaponType || undefined : undefined,
         mains: mains.map(({ stat, value }) => ({ stat, value })),
         subs: subs.map(({ stat, value }) => ({ stat, value })),
         addition:
