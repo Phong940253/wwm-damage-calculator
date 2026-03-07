@@ -11,6 +11,16 @@ export type WeaponType =
   | "Rope Dart"
   | "Dual Blades";
 
+export type MartialArtWeaponType =
+  | "sword"
+  | "spear"
+  | "umbrella"
+  | "fan"
+  | "horizontal_blade"
+  | "mo_blade"
+  | "rope_dart"
+  | "dual_blades";
+
 export interface SkillHitScaleTo {
   physicalMultiplier: number;
   elementMultiplier: number;
@@ -93,6 +103,8 @@ export interface MartialArt {
   name: string; // Bellstrike – Splendor
   element: ElementKey;
   role: "dps" | "support" | "tank";
+  weapon_1: MartialArtWeaponType;
+  weapon_2: MartialArtWeaponType;
 }
 
 export const LIST_MARTIAL_ARTS: MartialArt[] = [
@@ -101,42 +113,56 @@ export const LIST_MARTIAL_ARTS: MartialArt[] = [
     name: "Bellstrike – Splendor",
     element: "bellstrike",
     role: "dps",
+    weapon_1: "sword",
+    weapon_2: "spear",
   },
   {
     id: "bellstrike_umbra",
     name: "Bellstrike – Umbra",
     element: "bellstrike",
     role: "dps",
+    weapon_1: "sword",
+    weapon_2: "spear",
   },
   {
     id: "silkbind_deluge",
     name: "Silkbind – Deluge",
     element: "silkbind",
     role: "support",
+    weapon_1: "fan",
+    weapon_2: "umbrella",
   },
   {
     id: "silkbind_jade",
     name: "Silkbind – Jade",
     element: "silkbind",
     role: "dps",
+    weapon_1: "fan",
+    weapon_2: "umbrella",
   },
   {
     id: "stonesplit_might",
     name: "Stonesplit – Might",
     element: "stonesplit",
     role: "tank",
+    weapon_1: "mo_blade",
+    weapon_2: "spear",
   },
   {
     id: "bamboocut_wind",
     name: "Bamboocut – Wind",
     element: "bamboocut",
     role: "dps",
+    weapon_1: "dual_blades",
+    weapon_2: "rope_dart",
   },
   {
     id: "bamboocut_dust",
     name: "Bamboocut – Dust",
     element: "bamboocut",
     role: "dps",
+    weapon_1: "umbrella",
+    weapon_2: "rope_dart",
   },
 ];
 

@@ -20,6 +20,7 @@ import {
 import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
 import type { LevelContext } from "../level/levelSettings";
 import { computeIncludedInStatsGearBonus } from "../skill/includedInStatsImpact";
+import { LIST_MARTIAL_ARTS, MartialArtWeaponType } from "../skill/types";
 
 /* =======================
    Types
@@ -208,6 +209,32 @@ export async function computeOptimizeResultsAsync(
   };
 
   const baseBonus = aggregateEquippedGearBonus(customGears, equipped);
+  const currentMartialArt = LIST_MARTIAL_ARTS.find(
+    (m) => m.id === elementStats.martialArtsId,
+  );
+
+  const requiredWeaponBySlot: Partial<
+    Record<GearSlot, MartialArtWeaponType | undefined>
+  > = {
+    weapon_1: currentMartialArt?.weapon_1,
+    weapon_2: currentMartialArt?.weapon_2,
+  };
+
+  const filterWeaponCandidatesForSlot = (
+    slot: GearSlot,
+    items: CustomGear[],
+  ) => {
+    if (slot !== "weapon_1" && slot !== "weapon_2") return items;
+
+    const required = requiredWeaponBySlot[slot];
+    if (!required) return items;
+
+    const matched = items.filter((g) => g.weaponType === required);
+
+    // Backward-compatibility: older saved gears may not have weaponType yet.
+    // If no explicit match exists, keep original candidates instead of dropping all.
+    return matched.length > 0 ? matched : items;
+  };
 
   const computeTotalDamage = (gearBonus: Record<string, number>) => {
     // Some passives are already included in the in-game displayed stats.
@@ -340,11 +367,12 @@ export async function computeOptimizeResultsAsync(
     // Respect UI filters via candidateGears, but always allow keeping currently-equipped
     // gear (otherwise filters could accidentally force "no gear" for a slot).
     const filteredItems = candidateGears.filter((g) => g.slot === key);
+    const slotFilteredItems = filterWeaponCandidatesForSlot(key, filteredItems);
     const items = equippedGear
-      ? filteredItems.some((g) => g.id === equippedGear.id)
-        ? filteredItems
-        : [equippedGear, ...filteredItems]
-      : filteredItems;
+      ? slotFilteredItems.some((g) => g.id === equippedGear.id)
+        ? slotFilteredItems
+        : [equippedGear, ...slotFilteredItems]
+      : slotFilteredItems;
 
     return {
       slot: key,

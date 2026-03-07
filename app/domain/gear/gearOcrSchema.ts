@@ -2,6 +2,15 @@
 export interface GearOcrResult {
   name?: string;
   slot?: string;
+  weaponType?:
+    | "sword"
+    | "spear"
+    | "umbrella"
+    | "fan"
+    | "horizontal_blade"
+    | "mo_blade"
+    | "rope_dart"
+    | "dual_blades";
   rarity?: string;
 
   mains?: {
@@ -41,6 +50,31 @@ head
 chest
 hand
 leg
+
+# ALLOWED WEAPON TYPES (ONLY FOR weapon_1 / weapon_2)
+sword
+spear
+umbrella
+fan
+horizontal_blade
+mo_blade
+rope_dart
+dual_blades
+
+Weapon type mapping examples:
+- Sword -> sword
+- Spear -> spear
+- Umbrella -> umbrella
+- Fan -> fan
+- Horizontal Blade -> horizontal_blade
+- Mo Blade -> mo_blade
+- Rope Dart -> rope_dart
+- Dual Blades -> dual_blades
+
+Rules:
+- If slot is weapon_1 or weapon_2, extract "weaponType" when identifiable.
+- If slot is NOT weapon_1/weapon_2, omit "weaponType".
+- If unclear, omit "weaponType" (do not guess).
 
 # ALLOWED ELEMENTS
 Bellstrike
@@ -291,6 +325,7 @@ OUTPUT SCHEMA
 {
   "name": string,
   "slot": string,
+  "weaponType"?: "sword" | "spear" | "umbrella" | "fan" | "horizontal_blade" | "mo_blade" | "rope_dart" | "dual_blades",
   "rarity"?: "Tier <number>" | "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary",
   "mains": [{ "stat": string, "value": number }],
   "subs": [{ "stat": string, "value": number }],

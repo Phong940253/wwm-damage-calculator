@@ -8,7 +8,7 @@ export interface Stat {
 }
 
 import { ElementKey } from "./constants";
-import { MartialArtId } from "./domain/skill/types";
+import { MartialArtId, MartialArtWeaponType } from "./domain/skill/types";
 
 export interface InputStats {
   [key: string]: Stat;
@@ -88,6 +88,8 @@ export interface CustomGear {
   id: string;
   name: string;
   slot: GearSlot;
+  /** Optional weapon kind for weapon_1 / weapon_2 slots. */
+  weaponType?: MartialArtWeaponType;
 
   /** exactly 1 */
   main?: GearAttribute | null;

@@ -21,6 +21,7 @@ import { GripVertical, Loader2 } from "lucide-react";
 import { GearStatSelect } from "./GearStatSelect";
 import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } from "./useGearStatDnD";
 import { useI18n } from "@/app/providers/I18nProvider";
+import { MartialArtWeaponType } from "@/app/domain/skill/types";
 
 
 /* =======================
@@ -35,6 +36,25 @@ interface GearFormProps {
 
 /* Armor slots that should NOT have main attributes */
 const ARMOR_SLOTS: GearSlot[] = ["head", "chest", "hand", "leg"];
+const WEAPON_SLOTS: GearSlot[] = ["weapon_1", "weapon_2"];
+
+const WEAPON_TYPE_OPTIONS: Array<{
+  value: MartialArtWeaponType;
+  label: string;
+}> = [
+    { value: "sword", label: "Sword" },
+    { value: "spear", label: "Spear" },
+    { value: "umbrella", label: "Umbrella" },
+    { value: "fan", label: "Fan" },
+    { value: "horizontal_blade", label: "Horizontal Blade" },
+    { value: "mo_blade", label: "Mo Blade" },
+    { value: "rope_dart", label: "Rope Dart" },
+    { value: "dual_blades", label: "Dual Blades" },
+  ];
+
+function isWeaponSlot(slot: GearSlot): boolean {
+  return WEAPON_SLOTS.includes(slot);
+}
 
 
 /* =======================
@@ -51,6 +71,8 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       saveFailed: "Lưu trang bị thất bại. Vui lòng thử lại.",
       gearName: "Tên trang bị",
       slot: "Vị trí",
+      weaponType: "Loại vũ khí",
+      weaponTypeRequired: "Vui lòng chọn loại vũ khí cho ô Weapon",
       rarity: "Độ hiếm",
       rarityPlaceholder: "ví dụ: Common, Rare, Epic, Legendary",
       mainAttributes: "Thuộc tính chính",
@@ -75,6 +97,8 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       saveFailed: "Failed to save gear. Please try again.",
       gearName: "Gear Name",
       slot: "Slot",
+      weaponType: "Weapon Type",
+      weaponTypeRequired: "Please select a weapon type for weapon slots",
       rarity: "Rarity",
       rarityPlaceholder: "e.g. Common, Rare, Epic, Legendary",
       mainAttributes: "Main Attributes",
@@ -103,6 +127,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   const [name, setName] = useState("");
   const [slot, setSlot] = useState<GearSlot>("weapon_1");
+  const [weaponType, setWeaponType] = useState<MartialArtWeaponType | "">("sword");
   const [rarity, setRarity] = useState("");
 
   /** 🔥 MULTI MAIN */
@@ -156,6 +181,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       if (result.name) setName(result.name);
       const nextSlot = (result.slot as GearSlot) || slot;
       if (result.slot) setSlot(nextSlot);
+      if (!isWeaponSlot(nextSlot)) {
+        setWeaponType("");
+      } else if (!weaponType) {
+        setWeaponType("sword");
+      }
       if (result.rarity) setRarity(String(result.rarity));
 
       if (result.mains) {
@@ -219,6 +249,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
     setName(initialGear.name);
     setSlot(initialGear.slot);
+    setWeaponType(initialGear.weaponType ?? (isWeaponSlot(initialGear.slot) ? "sword" : ""));
     setRarity(initialGear.rarity ?? "");
 
     setMains(initialGear.mains.map(m => ({ id: crypto.randomUUID(), ...m })));
@@ -245,6 +276,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         : null
     );
   }, [initialGear]);
+
+  useEffect(() => {
+    if (isWeaponSlot(slot)) {
+      if (!weaponType) setWeaponType("sword");
+      return;
+    }
+    if (weaponType) setWeaponType("");
+  }, [slot, weaponType]);
 
   useEffect(() => {
     if (!addition) return;
@@ -280,6 +319,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       return;
     }
 
+    if (isWeaponSlot(slot) && !weaponType) {
+      alert(text.weaponTypeRequired);
+      return;
+    }
+
     try {
       const id = initialGear?.id ?? crypto.randomUUID();
 
@@ -287,6 +331,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         id,
         name,
         slot,
+        weaponType: isWeaponSlot(slot) ? weaponType : undefined,
         mains: mains.map(({ stat, value }) => ({ stat, value })),
         subs: subs.map(({ stat, value }) => ({ stat, value })),
         addition:
@@ -368,6 +413,23 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             ))}
           </select>
         </div>
+
+        {isWeaponSlot(slot) && (
+          <div>
+            <label className={labelClass}>{text.weaponType}</label>
+            <select
+              className={slotSelectClass}
+              value={weaponType}
+              onChange={(e) => setWeaponType(e.target.value as MartialArtWeaponType)}
+            >
+              {WEAPON_TYPE_OPTIONS.map((w) => (
+                <option key={w.value} value={w.value}>
+                  {w.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="sm:col-span-2">
           <label className={labelClass}>{text.rarity}</label>
