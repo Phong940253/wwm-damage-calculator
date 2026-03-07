@@ -609,7 +609,7 @@
       "ps_silkbind_jade_spring_shock",
       "ps_universal_hawkwing_set_4",
       "ps_silkbind_jade_included_physical_attack_up_agility",
-      "ps_universal_included_critical_rate_up_agility"
+      "ps_silkbind_jade_included_critical_rate_up_agility"
     ],
     "activeInnerWays": [
       "iw_universal_morale_chant_t5",
@@ -631,7 +631,7 @@
       "ps_silkbind_jade_heavy_attack_pursuit_enhancement": 100,
       "ps_universal_hawkwing_set_4": 100,
       "ps_silkbind_jade_included_physical_attack_up_agility": 100,
-      "ps_universal_included_critical_rate_up_agility": 100
+      "ps_silkbind_jade_included_critical_rate_up_agility": 100
     }
   }
 ]

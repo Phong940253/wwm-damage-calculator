@@ -396,7 +396,7 @@
         "notes": "Model: bonus = min(Agility, 175) * 0.2635714286 (cap represented via max=175 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
     },
     {
-        "id": "ps_universal_included_critical_rate_up_agility",
+        "id": "ps_silkbind_jade_included_critical_rate_up_agility",
         "name": "Critical Rate UP (Agility, included in stats)",
         "description": "Increases Critical Rate based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
         "includedInStats": true,
@@ -411,6 +411,21 @@
             }
         ],
         "notes": "Model: bonus = min(Agility, 175) * 0.03 (cap represented via max=175 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+    },
+    {
+        "id": "ps_bamboocut_dust_soul_loss_soulbreak",
+        "name": "Soul Loss/Soulbreak",
+        "description": "At 7 stacks, Soul Loss transforms into Soulbreak. Targets affected by Soulbreak take 5% more Qi damage and 5% more damage from the applier.",
+        "martialArtId": "bamboocut_dust",
+        "defaultUptimePercent": 100,
+        "modifiers": [
+            {
+                "stat": "DamageBoost",
+                "type": "flat",
+                "value": 5
+            }
+        ],
+        "notes": "Modeling note: Soulbreak target-state effect."
     },
     {
         "id": "ps_bamboocut_dust_soulbreak_critical_boost",

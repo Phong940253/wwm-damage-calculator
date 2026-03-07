@@ -15,6 +15,12 @@ const INNER_WAY_ID_ALIASES: Record<string, string> = {
   iw_star_reacher: "iw_silkbind_star_reacher",
 };
 
+const PASSIVE_ID_ALIASES: Record<string, string> = {
+  // Old id -> new id
+  ps_universal_included_critical_rate_up_agility:
+    "ps_silkbind_jade_included_critical_rate_up_agility",
+};
+
 const INNER_BY_ID = new Map(INNER_WAYS.map((iw) => [iw.id, iw] as const));
 const INNER_GROUP_IDS = (() => {
   const groupToIds = new Map<string, string[]>();
@@ -101,7 +107,9 @@ function normalizeRotation(
       params: s.params ? { ...s.params } : undefined,
     })),
     activePassiveSkills: hadActivePassiveSkillsField
-      ? [...rotation.activePassiveSkills]
+      ? [...rotation.activePassiveSkills].map(
+          (id) => PASSIVE_ID_ALIASES[id] ?? id,
+        )
       : [],
     activeInnerWays: hadActiveInnerWaysField
       ? [...rotation.activeInnerWays].map(
@@ -203,6 +211,15 @@ function normalizeRotation(
   };
 
   const passiveUptimes = (next.passiveUptimes ??= {});
+
+  // Migrate old passive ids in uptime map.
+  for (const [oldId, newId] of Object.entries(PASSIVE_ID_ALIASES)) {
+    const v = passiveUptimes[oldId];
+    if (typeof v === "number" && !Number.isNaN(v)) {
+      if (typeof passiveUptimes[newId] !== "number") passiveUptimes[newId] = v;
+      delete passiveUptimes[oldId];
+    }
+  }
 
   // Remove unknown keys
   for (const key of Object.keys(passiveUptimes)) {
