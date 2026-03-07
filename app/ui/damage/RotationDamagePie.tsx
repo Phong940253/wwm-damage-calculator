@@ -17,6 +17,8 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import {
   calculateSkillDamage,
+  createRotationSkillRuntimeState,
+  advanceRotationSkillRuntimeState,
   getScarletSpinResonanceHitCount,
   SCARLET_SPIN_SKILL_ID,
   buildSkillUseCountsInRotation,
@@ -93,6 +95,7 @@ export default function RotationDamagePie({
   const skillUseCountsInRotation = buildSkillUseCountsInRotation(rotation.skills);
   const scarletSpinUseCount =
     skillUseCountsInRotation[SCARLET_SPIN_SKILL_ID] ?? 0;
+  const runtimeState = createRotationSkillRuntimeState();
 
   rotation.skills.forEach((rotSkill) => {
     const skill = SKILLS.find((s) => s.id === rotSkill.id);
@@ -102,17 +105,20 @@ export default function RotationDamagePie({
     const groupKey = isGroupedView ? (group?.id ?? skill.id) : skill.id;
     const displayName = isGroupedView ? (group?.name ?? skill.name) : skill.name;
 
+    const entryOpts = buildRotationSkillDamageOptions(
+      rotSkill.id,
+      rotSkill.params,
+      rotation.activeInnerWays,
+      skillUseCountsInRotation,
+      rotSkill.count,
+      rotation.activePassiveSkills,
+      runtimeState.priorHitsBySkill,
+    );
+
     const skillDamage = calculateSkillDamage(
       ctx,
       skill,
-      buildRotationSkillDamageOptions(
-        rotSkill.id,
-        rotSkill.params,
-        rotation.activeInnerWays,
-        skillUseCountsInRotation,
-        rotSkill.count,
-        rotation.activePassiveSkills,
-      ),
+      entryOpts,
     );
     if (!skillDamage) return;
 
@@ -128,6 +134,7 @@ export default function RotationDamagePie({
             skillUseCountsInRotation,
             rotSkill.count,
             rotation.activePassiveSkills,
+            runtimeState.priorHitsBySkill,
           ),
         )
         : skillDamage;
@@ -188,7 +195,10 @@ export default function RotationDamagePie({
           totalHits: nextResonanceHits,
         });
       }
+
     }
+
+    advanceRotationSkillRuntimeState(runtimeState, skill, entryOpts, rotSkill.count);
   });
 
   const chartData = Array.from(skillDamageMap.values()).sort(

@@ -6,6 +6,8 @@ import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
   calculateSkillDamage,
+  createRotationSkillRuntimeState,
+  advanceRotationSkillRuntimeState,
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
@@ -41,22 +43,30 @@ export function useStatImpact(
         );
 
         let totalNormal = 0;
+        const runtimeState = createRotationSkillRuntimeState();
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
-          const dmg = calculateSkillDamage(
-            ctx,
-            skill,
-            buildRotationSkillDamageOptions(
-              rotSkill.id,
-              rotSkill.params,
-              rotation.activeInnerWays,
-              skillUseCountsInRotation,
-              rotSkill.count,
-              rotation.activePassiveSkills,
-            ),
+
+          const entryOpts = buildRotationSkillDamageOptions(
+            rotSkill.id,
+            rotSkill.params,
+            rotation.activeInnerWays,
+            skillUseCountsInRotation,
+            rotSkill.count,
+            rotation.activePassiveSkills,
+            runtimeState.priorHitsBySkill,
           );
+
+          const dmg = calculateSkillDamage(ctx, skill, entryOpts);
           totalNormal += dmg.total.normal.value * rotSkill.count;
+
+          advanceRotationSkillRuntimeState(
+            runtimeState,
+            skill,
+            entryOpts,
+            rotSkill.count,
+          );
         }
         return totalNormal;
       }

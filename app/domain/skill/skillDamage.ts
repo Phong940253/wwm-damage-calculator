@@ -29,6 +29,16 @@ export interface SkillDamageOptions {
 
   /** Total use count per skill id in the current rotation. */
   skillUseCountsInRotation?: Record<string, number>;
+
+  /**
+   * Number of hits that have already happened before this rotation entry,
+   * keyed by skill id. Supports chain-based passive effects.
+   */
+  priorHitsInRotationBySkill?: Record<string, number>;
+}
+
+export interface RotationSkillRuntimeState {
+  priorHitsBySkill: Record<string, number>;
 }
 
 export interface RotationSkillUsageLike {
@@ -57,6 +67,7 @@ export function buildRotationSkillDamageOptions(
   skillUseCountsInRotation: Record<string, number> | undefined,
   currentEntryUseCount?: number,
   activePassiveSkills?: string[],
+  priorHitsInRotationBySkill?: Record<string, number>,
 ): SkillDamageOptions {
   const entryCount = Math.max(0, Number(currentEntryUseCount) || 0);
   return {
@@ -64,11 +75,49 @@ export function buildRotationSkillDamageOptions(
     activeInnerWays,
     activePassiveSkills,
     skillUseCountsInRotation,
+    priorHitsInRotationBySkill,
     // Per-entry usage count is preferred for effects that are scoped to each
     // rotation entry (column), while map stays available for cross-skill rules.
     skillUseCountInRotation:
       entryCount || (skillUseCountsInRotation?.[skillId] ?? 0),
   };
+}
+
+export function createRotationSkillRuntimeState(): RotationSkillRuntimeState {
+  return { priorHitsBySkill: {} };
+}
+
+export function getSkillHitsPerUse(
+  skill: Skill,
+  opts?: SkillDamageOptions,
+): number {
+  const effectiveHits = getEffectiveSkillHits(skill, opts);
+  return effectiveHits.reduce(
+    (sum, hit) => sum + Math.max(0, Math.floor(Number(hit.hits) || 0)),
+    0,
+  );
+}
+
+export function advanceRotationSkillRuntimeState(
+  state: RotationSkillRuntimeState,
+  skill: Skill,
+  opts: SkillDamageOptions | undefined,
+  currentEntryUseCount?: number,
+) {
+  const uses = Math.max(
+    0,
+    Math.floor(
+      Number(currentEntryUseCount) ||
+        getSkillUseCountInRotation(opts, skill.id),
+    ),
+  );
+  if (uses <= 0) return;
+
+  const hitsPerUse = getSkillHitsPerUse(skill, opts);
+  if (hitsPerUse <= 0) return;
+
+  state.priorHitsBySkill[skill.id] =
+    (state.priorHitsBySkill[skill.id] || 0) + hitsPerUse * uses;
 }
 
 function getSkillUseCountInRotation(
@@ -204,13 +253,26 @@ function applyInnerWaySkillDamageResolvers(
   return next;
 }
 
-function getTotalSkillUseCountInRotation(
+interface PassiveSkillDamageResolverCtx {
+  ctx: DamageContext;
+  skill: Skill;
+  opts?: SkillDamageOptions;
+  current: SkillDamageResult;
+  activePassiveSkills: Set<string>;
+}
+
+interface PassiveSkillDamageResolver {
+  passiveId: string;
+  apply: (args: PassiveSkillDamageResolverCtx) => SkillDamageResult;
+}
+
+function getPriorHitsInRotation(
   opts: SkillDamageOptions | undefined,
   skillId: string,
 ) {
   return Math.max(
     0,
-    Math.floor(Number(opts?.skillUseCountsInRotation?.[skillId]) || 0),
+    Math.floor(Number(opts?.priorHitsInRotationBySkill?.[skillId]) || 0),
   );
 }
 
@@ -224,22 +286,22 @@ function applyScarletSpinChargedComboEnhancement(
   const activePassives = new Set(opts?.activePassiveSkills ?? []);
   if (!activePassives.has(CHARGED_COMBO_ENHANCEMENT_PASSIVE_ID)) return base;
 
-  const hitsPerUse = Math.max(0, base.perHit.length);
+  const hitsPerUse = getSkillHitsPerUse(skill, opts);
   if (hitsPerUse <= 0) return base;
 
-  // Use total uses across the full rotation to preserve cycle behavior
-  // even when Scarlet Spin appears in multiple rotation entries.
-  const usesInRotation =
-    getTotalSkillUseCountInRotation(opts, SCARLET_SPIN_SKILL_ID) ||
-    getSkillUseCountInRotation(opts, SCARLET_SPIN_SKILL_ID);
-  if (usesInRotation <= 0) return base;
+  // Entry-order chain model: every 4th Scarlet Spin hit is guaranteed critical.
+  const usesInEntry = getSkillUseCountInRotation(opts, SCARLET_SPIN_SKILL_ID);
+  if (usesInEntry <= 0) return base;
 
-  const totalHitsInRotation = hitsPerUse * usesInRotation;
-  const forcedCritHits = Math.floor(totalHitsInRotation / 4);
+  const priorHits = getPriorHitsInRotation(opts, SCARLET_SPIN_SKILL_ID);
+  const entryTotalHits = hitsPerUse * usesInEntry;
+
+  const forcedCritHits =
+    Math.floor((priorHits + entryTotalHits) / 4) - Math.floor(priorHits / 4);
   if (forcedCritHits <= 0) return base;
 
-  // Convert total forced-crit hits into a per-use expected value.
-  const forcedCritHitsPerUse = forcedCritHits / usesInRotation;
+  // Convert forced-crit hits in this entry into per-use expected value.
+  const forcedCritHitsPerUse = forcedCritHits / usesInEntry;
 
   // Approximate with one representative hit profile for Scarlet Spin.
   const representativeHit =
@@ -270,6 +332,43 @@ function applyScarletSpinChargedComboEnhancement(
     ...base,
     total: nextTotal,
   };
+}
+
+const PASSIVE_SKILL_DAMAGE_RESOLVERS: PassiveSkillDamageResolver[] = [
+  {
+    passiveId: CHARGED_COMBO_ENHANCEMENT_PASSIVE_ID,
+    apply: ({ skill, opts, current }) =>
+      applyScarletSpinChargedComboEnhancement(skill, opts, current),
+  },
+];
+
+const PASSIVE_SKILL_DAMAGE_RESOLVER_MAP = new Map(
+  PASSIVE_SKILL_DAMAGE_RESOLVERS.map((r) => [r.passiveId, r] as const),
+);
+
+function applyPassiveSkillDamageResolvers(
+  ctx: DamageContext,
+  skill: Skill,
+  opts: SkillDamageOptions | undefined,
+  base: SkillDamageResult,
+): SkillDamageResult {
+  const activeIds = opts?.activePassiveSkills ?? [];
+  if (activeIds.length === 0) return base;
+
+  const activeSet = new Set(activeIds);
+  let next = base;
+  for (const passiveId of activeIds) {
+    const resolver = PASSIVE_SKILL_DAMAGE_RESOLVER_MAP.get(passiveId);
+    if (!resolver) continue;
+    next = resolver.apply({
+      ctx,
+      skill,
+      opts,
+      current: next,
+      activePassiveSkills: activeSet,
+    });
+  }
+  return next;
 }
 
 function scaleDamageResult(dmg: DamageResult, scale: number): DamageResult {
@@ -447,7 +546,8 @@ export function calculateSkillDamage(
     }
   }
 
-  const withPassiveEffects = applyScarletSpinChargedComboEnhancement(
+  const withPassiveEffects = applyPassiveSkillDamageResolvers(
+    ctx,
     skill,
     opts,
     { total, perHit },

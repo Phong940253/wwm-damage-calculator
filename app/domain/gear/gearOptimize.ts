@@ -12,6 +12,8 @@ import { calculateDamage } from "../damage/damageCalculator";
 import { SKILLS } from "../skill/skills";
 import {
   calculateSkillDamage,
+  createRotationSkillRuntimeState,
+  advanceRotationSkillRuntimeState,
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "../skill/skillDamage";
@@ -238,23 +240,31 @@ export async function computeOptimizeResultsAsync(
         buildSkillUseCountsInRotation(rotationPlan);
 
       let rotationTotal = 0;
+      const runtimeState = createRotationSkillRuntimeState();
       for (const rotSkill of rotationPlan) {
         throwIfCancelled();
         const skill = rotSkill.skill;
         if (!skill) continue;
-        const skillDamage = calculateSkillDamage(
-          ctx,
-          skill,
-          buildRotationSkillDamageOptions(
-            rotSkill.id,
-            rotSkill.params,
-            rotation?.activeInnerWays,
-            skillUseCountsInRotation,
-            rotSkill.count,
-            rotation?.activePassiveSkills,
-          ),
+
+        const entryOpts = buildRotationSkillDamageOptions(
+          rotSkill.id,
+          rotSkill.params,
+          rotation?.activeInnerWays,
+          skillUseCountsInRotation,
+          rotSkill.count,
+          rotation?.activePassiveSkills,
+          runtimeState.priorHitsBySkill,
         );
+
+        const skillDamage = calculateSkillDamage(ctx, skill, entryOpts);
         rotationTotal += skillDamage.total.normal.value * rotSkill.count;
+
+        advanceRotationSkillRuntimeState(
+          runtimeState,
+          skill,
+          entryOpts,
+          rotSkill.count,
+        );
       }
       return rotationTotal;
     }

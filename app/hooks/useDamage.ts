@@ -8,6 +8,8 @@ import { calcExpectedNormalBreakdown } from "../domain/damage/damageFormula";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
   calculateSkillDamage,
+  createRotationSkillRuntimeState,
+  advanceRotationSkillRuntimeState,
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
@@ -171,22 +173,27 @@ export function useDamage(
       let weightedBreakdownAffinity = 0;
       let weightedBreakdownCritical = 0;
 
+      const runtimeState = createRotationSkillRuntimeState();
+
       for (const rotSkill of rotation.skills) {
         const skill = SKILLS.find((s) => s.id === rotSkill.id);
         if (!skill) continue;
 
         // Base damage for this skill (without increases)
+        const entryOpts = buildRotationSkillDamageOptions(
+          rotSkill.id,
+          rotSkill.params,
+          rotation.activeInnerWays,
+          skillUseCountsInRotation,
+          rotSkill.count,
+          rotation.activePassiveSkills,
+          runtimeState.priorHitsBySkill,
+        );
+
         const baseSkillDamage = calculateSkillDamage(
           baseCtxWithModifiers,
           skill,
-          buildRotationSkillDamageOptions(
-            rotSkill.id,
-            rotSkill.params,
-            rotation.activeInnerWays,
-            skillUseCountsInRotation,
-            rotSkill.count,
-            rotation.activePassiveSkills,
-          ),
+          entryOpts,
         );
         baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
         baseNormalTotal += baseSkillDamage.total.normal.value * rotSkill.count;
@@ -201,14 +208,7 @@ export function useDamage(
         const finalSkillDamage = calculateSkillDamage(
           finalCtxWithModifiers,
           skill,
-          buildRotationSkillDamageOptions(
-            rotSkill.id,
-            rotSkill.params,
-            rotation.activeInnerWays,
-            skillUseCountsInRotation,
-            rotSkill.count,
-            rotation.activePassiveSkills,
-          ),
+          entryOpts,
         );
         const skillNormalDamage =
           finalSkillDamage.total.normal.value * rotSkill.count;
@@ -228,6 +228,13 @@ export function useDamage(
         weightedBreakdownAbrasion += skillBreakdown.abrasion * rotSkill.count;
         weightedBreakdownAffinity += skillBreakdown.affinity * rotSkill.count;
         weightedBreakdownCritical += skillBreakdown.critical * rotSkill.count;
+
+        advanceRotationSkillRuntimeState(
+          runtimeState,
+          skill,
+          entryOpts,
+          rotSkill.count,
+        );
       }
 
       baseValues = {

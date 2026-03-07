@@ -12,6 +12,8 @@ import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
   calculateSkillDamage,
+  createRotationSkillRuntimeState,
+  advanceRotationSkillRuntimeState,
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
@@ -333,20 +335,6 @@ export default function GearCompareTab({
                       const skillUseCountsInRotation =
                         buildSkillUseCountsInRotation(rotation.skills);
 
-                      const buildOpts = (
-                        skillId: string,
-                        params: Record<string, number> | undefined,
-                        currentEntryUseCount?: number,
-                      ) =>
-                        buildRotationSkillDamageOptions(
-                          skillId,
-                          params,
-                          rotation.activeInnerWays,
-                          skillUseCountsInRotation,
-                          currentEntryUseCount,
-                          rotation.activePassiveSkills,
-                        );
-
                       // Rotation-based damage
                       let totalMinA = 0,
                         totalNormalA = 0,
@@ -354,15 +342,26 @@ export default function GearCompareTab({
                       let totalMinB = 0,
                         totalNormalB = 0,
                         totalAffinityB = 0;
+                      const runtimeState = createRotationSkillRuntimeState();
 
                       for (const rotSkill of rotation.skills) {
                         const skill = SKILLS.find((s) => s.id === rotSkill.id);
                         if (!skill) continue;
 
+                        const entryOpts = buildRotationSkillDamageOptions(
+                          rotSkill.id,
+                          rotSkill.params,
+                          rotation.activeInnerWays,
+                          skillUseCountsInRotation,
+                          rotSkill.count,
+                          rotation.activePassiveSkills,
+                          runtimeState.priorHitsBySkill,
+                        );
+
                         const skillDmgA = calculateSkillDamage(
                           ctxA,
                           skill,
-                          buildOpts(rotSkill.id, rotSkill.params, rotSkill.count),
+                          entryOpts,
                         );
                         totalMinA +=
                           skillDmgA.total.min.value * rotSkill.count;
@@ -374,7 +373,7 @@ export default function GearCompareTab({
                         const skillDmgB = calculateSkillDamage(
                           ctxB,
                           skill,
-                          buildOpts(rotSkill.id, rotSkill.params, rotSkill.count),
+                          entryOpts,
                         );
                         totalMinB +=
                           skillDmgB.total.min.value * rotSkill.count;
@@ -382,6 +381,13 @@ export default function GearCompareTab({
                           skillDmgB.total.normal.value * rotSkill.count;
                         totalAffinityB +=
                           skillDmgB.total.affinity.value * rotSkill.count;
+
+                        advanceRotationSkillRuntimeState(
+                          runtimeState,
+                          skill,
+                          entryOpts,
+                          rotSkill.count,
+                        );
                       }
 
                       damageA = {
