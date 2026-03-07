@@ -633,5 +633,130 @@
       "ps_silkbind_jade_included_physical_attack_up_agility": 100,
       "ps_silkbind_jade_included_critical_rate_up_agility": 100
     }
+  },
+  {
+    "id": "aki5hkyc70e",
+    "name": "Everspring Umbrella DPS Rotation",
+    "martialArtId": "bamboocut_dust",
+    "skills": [
+      {
+        "entryId": "0gtbsq3su13g",
+        "id": "bamboocut_dust_rope_soul_sweep",
+        "order": 0,
+        "count": 1
+      },
+      {
+        "entryId": "mvz1rr8bh79",
+        "id": "bamboocut_dust_rope_piercing_dart_charged",
+        "order": 1,
+        "count": 1
+      },
+      {
+        "entryId": "9k2ai7opj",
+        "id": "bamboocut_dust_rope_burn_and_bury",
+        "order": 2,
+        "count": 1
+      },
+      {
+        "entryId": "wzn98w77y2q",
+        "id": "mystic_flute_of_the_tides",
+        "order": 3,
+        "count": 1
+      },
+      {
+        "entryId": "70fs25ngj5s",
+        "id": "bamboocut_dust_umbrella_scarlet_spin",
+        "order": 4,
+        "count": 13
+      },
+      {
+        "entryId": "vab69yz01oe",
+        "id": "mystic_soaring_spin",
+        "order": 5,
+        "count": 1
+      },
+      {
+        "entryId": "u41b4ssco0o",
+        "id": "bamboocut_dust_rope_soul_sweep",
+        "order": 6,
+        "count": 1
+      },
+      {
+        "entryId": "sflf3ctr2bc",
+        "id": "bamboocut_dust_rope_piercing_dart_charged",
+        "order": 7,
+        "count": 1
+      },
+      {
+        "entryId": "j2m2vle8d7k",
+        "id": "bamboocut_dust_rope_burn_and_bury",
+        "order": 8,
+        "count": 1
+      },
+      {
+        "entryId": "qc9sklavkc",
+        "id": "mystic_flute_of_the_tides",
+        "order": 9,
+        "count": 1
+      },
+      {
+        "entryId": "fiqy35xvxxt",
+        "id": "bamboocut_dust_umbrella_scarlet_spin",
+        "order": 10,
+        "count": 13
+      },
+      {
+        "entryId": "gz1kvdsylhv",
+        "id": "mystic_soaring_spin",
+        "order": 11,
+        "count": 1
+      },
+      {
+        "entryId": "js6ned409d",
+        "id": "bamboocut_dust_rope_soul_sweep",
+        "order": 12,
+        "count": 1
+      },
+      {
+        "entryId": "t8h7ks00rv",
+        "id": "bamboocut_dust_rope_piercing_dart_charged",
+        "order": 13,
+        "count": 1
+      },
+      {
+        "entryId": "ooszn5w9m7e",
+        "id": "bamboocut_dust_umbrella_scarlet_spin",
+        "order": 14,
+        "count": 4
+      }
+    ],
+    "activePassiveSkills": [
+      "ps_universal_food_buff_physical_attack",
+      "ps_bamboocut_dust_soulbreak_critical_boost",
+      "ps_bamboocut_dust_included_physical_attack_up_agility",
+      "ps_bamboocut_dust_included_critical_rate_up_agility",
+      "ps_bamboocut_dust_returning_umbrella_dmg_up",
+      "ps_bamboocut_dust_charged_combo_enhancement",
+      "ps_bamboocut_dust_soul_loss_soulbreak",
+      "ps_universal_stars_align_set_4"
+    ],
+    "activeInnerWays": [
+      "iw_universal_morale_chant_t5",
+      "iw_universal_invigorated_warrior_t4",
+      "iw_bamboocut_dust_umbrella_phantom_rally_t6"
+    ],
+    "createdAt": 1772813486327,
+    "updatedAt": 1772864232735,
+    "passiveUptimes": {
+      "ps_universal_food_buff_physical_attack": 100,
+      "ps_bamboocut_dust_soulbreak_critical_boost": 100,
+      "ps_bamboocut_dust_included_critical_rate_up_agility": 100,
+      "ps_bamboocut_dust_included_physical_attack_up_agility": 100,
+      "ps_bamboocut_dust_returning_umbrella_dmg_up": 100,
+      "ps_universal_hawkwing_set_4": 100,
+      "ps_bamboocut_dust_charged_combo_enhancement": 100,
+      "ps_bamboocut_dust_soul_loss_soulbreak": 100,
+      "ps_universal_stars_align_set_4": 100
+    }
   }
 ]
