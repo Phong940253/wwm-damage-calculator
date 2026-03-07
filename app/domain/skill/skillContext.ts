@@ -143,6 +143,14 @@ function getFamilySpecificDamageBoost(
     }
   }
 
+  if (
+    skillId === "bamboocut_dust_umbrella_scarlet_spin" &&
+    weaponType === "Umbrella" &&
+    isMartialCategory(category)
+  ) {
+    value += baseCtx.get("SoulshadeUmbrellaSpinningUmbrellaDMGBoost");
+  }
+
   return value;
 }
 

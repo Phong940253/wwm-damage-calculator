@@ -225,6 +225,8 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
     "Soulshade Umbrella Special Skill Healing Boost",
   SoulshadeUmbrellaChargedSkillDMGBoost:
     "Soulshade Umbrella Charged Skill DMG Boost",
+  SoulshadeUmbrellaSpinningUmbrellaDMGBoost:
+    "Soulshade Umbrella Spinning Umbrella DMG Boost",
   MainElementMultiplier: "Main Element Multiplier",
 };
 
@@ -264,6 +266,7 @@ export const INITIAL_STATS: InputStats = {
   ArtOfMoBladeDMGBoost: { current: 0, increase: 0 },
   ArtOfDualBladesDMGBoost: { current: 0, increase: 0 },
   ArtOfRopeDartDMGBoost: { current: 0, increase: 0 },
+  SoulshadeUmbrellaSpinningUmbrellaDMGBoost: { current: 0, increase: 0 },
 
   PhysicalDefense: { current: 179, increase: 0 },
   PhysicalResistance: { current: 1.8, increase: 0 },

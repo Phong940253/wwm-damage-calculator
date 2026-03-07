@@ -411,5 +411,71 @@
             }
         ],
         "notes": "Model: bonus = min(Agility, 175) * 0.03 (cap represented via max=175 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+    },
+    {
+        "id": "ps_bamboocut_dust_soulbreak_critical_boost",
+        "name": "Soulbreak Critical Boost",
+        "description": "Increases Critical DMG dealt to enemies affected by Soulbreak based on Critical Rate, up to 27% increase at 60% Critical Rate.",
+        "martialArtId": "bamboocut_dust",
+        "modifiers": [
+            {
+                "stat": "CriticalDMGBonus",
+                "type": "scale",
+                "sourceStat": "CriticalRate",
+                "ratio": 0.45,
+                "max": 27
+            }
+        ],
+        "notes": "Model: bonus = min(CriticalRate * 0.45, 27). Applies to Soulbreak-affected targets."
+    },
+    {
+        "id": "ps_bamboocut_dust_included_critical_rate_up_agility",
+        "name": "Critical Rate UP (Agility, included in stats)",
+        "description": "Increases Critical Rate based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
+        "includedInStats": true,
+        "martialArtId": "bamboocut_dust",
+        "modifiers": [
+            {
+                "stat": "CriticalRate",
+                "type": "scale",
+                "sourceStat": "Agility",
+                "ratio": 0.03,
+                "max": 175
+            }
+        ],
+        "notes": "Model: bonus = min(Agility, 175) * 0.03 (cap represented via max=175 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+    },
+    {
+        "id": "ps_bamboocut_dust_included_physical_attack_up_agility",
+        "name": "Physical Attack UP (Agility, included in stats)",
+        "description": "Increases Min Physical Attack based on Agility. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
+        "includedInStats": true,
+        "martialArtId": "bamboocut_dust",
+        "modifiers": [
+            {
+                "stat": "MinPhysicalAttack",
+                "type": "scale",
+                "sourceStat": "Agility",
+                "ratio": 0.264,
+                "max": 175
+            }
+        ],
+        "notes": "Model: bonus = min(Agility, 175) * 0.264 (cap represented via max=175 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+    },
+    {
+        "id": "ps_bamboocut_dust_returning_umbrella_dmg_up",
+        "name": "Returning Umbrella DMG UP",
+        "description": "Increases the Physical Damage of Martial Art Skill's spinning umbrella based on Min Physical Attack, up to 15% increase at 750 Min Physical Attack.",
+        "martialArtId": "bamboocut_dust",
+        "modifiers": [
+            {
+                "stat": "SoulshadeUmbrellaSpinningUmbrellaDMGBoost",
+                "type": "scale",
+                "sourceStat": "MinPhysicalAttack",
+                "ratio": 0.02,
+                "max": 15
+            }
+        ],
+        "notes": "Model: bonus = min(MinPhysicalAttack * 0.02, 15)."
     }
 ]
