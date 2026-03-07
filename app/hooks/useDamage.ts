@@ -185,6 +185,7 @@ export function useDamage(
             rotation.activeInnerWays,
             skillUseCountsInRotation,
             rotSkill.count,
+            rotation.activePassiveSkills,
           ),
         );
         baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
@@ -206,6 +207,7 @@ export function useDamage(
             rotation.activeInnerWays,
             skillUseCountsInRotation,
             rotSkill.count,
+            rotation.activePassiveSkills,
           ),
         );
         const skillNormalDamage =

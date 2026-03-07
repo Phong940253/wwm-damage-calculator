@@ -344,6 +344,7 @@ export default function GearCompareTab({
                           rotation.activeInnerWays,
                           skillUseCountsInRotation,
                           currentEntryUseCount,
+                          rotation.activePassiveSkills,
                         );
 
                       // Rotation-based damage

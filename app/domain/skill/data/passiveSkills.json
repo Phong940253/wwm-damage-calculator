@@ -477,5 +477,13 @@
             }
         ],
         "notes": "Model: bonus = min(MinPhysicalAttack * 0.02, 15)."
+    },
+    {
+        "id": "ps_bamboocut_dust_charged_combo_enhancement",
+        "name": "Charged Combo Enhancement",
+        "description": "Each Token of Gratitude increases the max combo count of Piercing Dart. Modeled effect: every 4th hit of Scarlet Spin is treated as guaranteed Critical when this passive is active.",
+        "martialArtId": "bamboocut_dust",
+        "modifiers": [],
+        "notes": "Modeling approximation per request: every 3 Scarlet Spin hits, the 4th hit is auto crit (applied as an expected-value bonus across rotation hit cycles)."
     }
 ]

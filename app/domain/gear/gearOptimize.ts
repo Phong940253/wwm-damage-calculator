@@ -251,6 +251,7 @@ export async function computeOptimizeResultsAsync(
             rotation?.activeInnerWays,
             skillUseCountsInRotation,
             rotSkill.count,
+            rotation?.activePassiveSkills,
           ),
         );
         rotationTotal += skillDamage.total.normal.value * rotSkill.count;

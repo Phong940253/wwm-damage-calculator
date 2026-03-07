@@ -111,13 +111,25 @@ export default function RotationDamagePie({
         rotation.activeInnerWays,
         skillUseCountsInRotation,
         rotSkill.count,
+        rotation.activePassiveSkills,
       ),
     );
     if (!skillDamage) return;
 
     const baseSkillDamage =
       rotSkill.id === SCARLET_SPIN_SKILL_ID
-        ? calculateSkillDamage(ctx, skill, { params: rotSkill.params })
+        ? calculateSkillDamage(
+          ctx,
+          skill,
+          buildRotationSkillDamageOptions(
+            rotSkill.id,
+            rotSkill.params,
+            [],
+            skillUseCountsInRotation,
+            rotSkill.count,
+            rotation.activePassiveSkills,
+          ),
+        )
         : skillDamage;
 
     // Total hits for ONE usage/cast of the skill (supports scaled skills)

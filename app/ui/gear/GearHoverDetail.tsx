@@ -144,6 +144,7 @@ export default function GearHoverDetail({
               rotation.activeInnerWays,
               skillUseCountsInRotation,
               rotSkill.count,
+              rotation.activePassiveSkills,
             ),
           );
           totalNormal += dmg.total.normal.value * rotSkill.count;

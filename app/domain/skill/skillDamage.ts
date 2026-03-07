@@ -11,6 +11,8 @@ export const PHANTOM_RALLY_T0_INNER_WAY_ID =
   "iw_bamboocut_dust_umbrella_phantom_rally_t0";
 export const PHANTOM_RALLY_T6_INNER_WAY_ID =
   "iw_bamboocut_dust_umbrella_phantom_rally_t6";
+export const CHARGED_COMBO_ENHANCEMENT_PASSIVE_ID =
+  "ps_bamboocut_dust_charged_combo_enhancement";
 
 export interface SkillDamageOptions {
   /** Optional per-skill parameters (typically sourced from RotationSkill.params). */
@@ -18,6 +20,9 @@ export interface SkillDamageOptions {
 
   /** Active inner ways from the current rotation (for conditional skill logic). */
   activeInnerWays?: string[];
+
+  /** Active passive skills from the current rotation (for conditional skill logic). */
+  activePassiveSkills?: string[];
 
   /** Total number of times this skill is used in the current rotation. */
   skillUseCountInRotation?: number;
@@ -51,11 +56,13 @@ export function buildRotationSkillDamageOptions(
   activeInnerWays: string[] | undefined,
   skillUseCountsInRotation: Record<string, number> | undefined,
   currentEntryUseCount?: number,
+  activePassiveSkills?: string[],
 ): SkillDamageOptions {
   const entryCount = Math.max(0, Number(currentEntryUseCount) || 0);
   return {
     params,
     activeInnerWays,
+    activePassiveSkills,
     skillUseCountsInRotation,
     // Per-entry usage count is preferred for effects that are scoped to each
     // rotation entry (column), while map stays available for cross-skill rules.
@@ -195,6 +202,74 @@ function applyInnerWaySkillDamageResolvers(
     });
   }
   return next;
+}
+
+function getTotalSkillUseCountInRotation(
+  opts: SkillDamageOptions | undefined,
+  skillId: string,
+) {
+  return Math.max(
+    0,
+    Math.floor(Number(opts?.skillUseCountsInRotation?.[skillId]) || 0),
+  );
+}
+
+function applyScarletSpinChargedComboEnhancement(
+  skill: Skill,
+  opts: SkillDamageOptions | undefined,
+  base: SkillDamageResult,
+): SkillDamageResult {
+  if (skill.id !== SCARLET_SPIN_SKILL_ID) return base;
+
+  const activePassives = new Set(opts?.activePassiveSkills ?? []);
+  if (!activePassives.has(CHARGED_COMBO_ENHANCEMENT_PASSIVE_ID)) return base;
+
+  const hitsPerUse = Math.max(0, base.perHit.length);
+  if (hitsPerUse <= 0) return base;
+
+  // Use total uses across the full rotation to preserve cycle behavior
+  // even when Scarlet Spin appears in multiple rotation entries.
+  const usesInRotation =
+    getTotalSkillUseCountInRotation(opts, SCARLET_SPIN_SKILL_ID) ||
+    getSkillUseCountInRotation(opts, SCARLET_SPIN_SKILL_ID);
+  if (usesInRotation <= 0) return base;
+
+  const totalHitsInRotation = hitsPerUse * usesInRotation;
+  const forcedCritHits = Math.floor(totalHitsInRotation / 4);
+  if (forcedCritHits <= 0) return base;
+
+  // Convert total forced-crit hits into a per-use expected value.
+  const forcedCritHitsPerUse = forcedCritHits / usesInRotation;
+
+  // Approximate with one representative hit profile for Scarlet Spin.
+  const representativeHit =
+    base.perHit[base.perHit.length - 1] ?? base.perHit[0];
+  if (!representativeHit) return base;
+
+  const deltaPerHit =
+    representativeHit.critical.value - representativeHit.normal.value;
+  if (deltaPerHit <= 0) return base;
+
+  const add = forcedCritHitsPerUse * deltaPerHit;
+  const nextTotal = {
+    ...base.total,
+    normal: {
+      ...base.total.normal,
+      value: base.total.normal.value + add,
+    },
+    averageBreakdown: base.total.averageBreakdown
+      ? {
+          ...base.total.averageBreakdown,
+          normal: Math.max(0, base.total.averageBreakdown.normal - add),
+          critical: base.total.averageBreakdown.critical + add,
+        }
+      : base.total.averageBreakdown,
+  };
+
+  return {
+    ...base,
+    total: nextTotal,
+  };
 }
 
 function scaleDamageResult(dmg: DamageResult, scale: number): DamageResult {
@@ -372,5 +447,16 @@ export function calculateSkillDamage(
     }
   }
 
-  return applyInnerWaySkillDamageResolvers(ctx, skill, opts, { total, perHit });
+  const withPassiveEffects = applyScarletSpinChargedComboEnhancement(
+    skill,
+    opts,
+    { total, perHit },
+  );
+
+  return applyInnerWaySkillDamageResolvers(
+    ctx,
+    skill,
+    opts,
+    withPassiveEffects,
+  );
 }
