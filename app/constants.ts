@@ -197,6 +197,12 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
   MortalRopeDartChargedSkillDMGBoost:
     "Mortal Rope Dart Charged Skill DMG Boost",
   MortalRopeDartRodentDMGBoost: "Mortal Rope Dart Rodent DMG Boost",
+  UnfetteredRopeDartMartialArtSkillDMGBoost:
+    "Unfettered Rope Dart Martial Art Skill DMG Boost",
+  UnfetteredRopeDartChargedSkillDMGBoost:
+    "Unfettered Rope Dart Charged Skill DMG Boost",
+  UnfetteredRopeDartSpecialSkillDMGBoost:
+    "Unfettered Rope Dart Special Skill DMG Boost",
   StrategicSwordMartialArtSkillDMGBoost:
     "Strategic Sword Martial Art Skill DMG Boost",
   StrategicSwordChargedSkillDMGBoost: "Strategic Sword Charged Skill DMG Boost",
@@ -228,6 +234,12 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
     "Soulshade Umbrella Charged Skill DMG Boost",
   SoulshadeUmbrellaSpinningUmbrellaDMGBoost:
     "Soulshade Umbrella Spinning Umbrella DMG Boost",
+  EverspringUmbrellaMartialArtSkillDMGBoost:
+    "Everspring Umbrella Martial Art Skill DMG Boost",
+  EverspringUmbrellaChargedSkillDMGBoost:
+    "Everspring Umbrella Charged Skill DMG Boost",
+  EverspringUmbrellaSpecialSkillDMGBoost:
+    "Everspring Umbrella Special Skill DMG Boost",
   MainElementMultiplier: "Main Element Multiplier",
 };
 
