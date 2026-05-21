@@ -84,9 +84,9 @@ export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEve
                     w-full grid grid-cols-2 gap-2 text-xs items-center text-left
                     md:grid-cols-3
                     ${columnTemplateClass}
-                    ${isEven ? "bg-zinc-800/30" : ""}
+                    ${isEven ? "bg-muted/30" : ""}
                     rounded-md
-                    hover:bg-zinc-700/25
+                    hover:bg-accent/25
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
                     min-h-[44px]
         `}

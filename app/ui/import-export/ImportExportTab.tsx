@@ -288,7 +288,7 @@ export default function ImportExportTab() {
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="flex items-center gap-2 rounded-md border border-zinc-800 p-3">
+            <label className="flex items-center gap-2 rounded-md border border-border p-3">
               <Checkbox
                 checked={exportStats}
                 onCheckedChange={(v) => setExportStats(!!v)}
@@ -301,7 +301,7 @@ export default function ImportExportTab() {
               </div>
             </label>
 
-            <label className="flex items-center gap-2 rounded-md border border-zinc-800 p-3">
+            <label className="flex items-center gap-2 rounded-md border border-border p-3">
               <Checkbox
                 checked={exportGear}
                 onCheckedChange={(v) => setExportGear(!!v)}
@@ -314,7 +314,7 @@ export default function ImportExportTab() {
               </div>
             </label>
 
-            <label className="flex items-center gap-2 rounded-md border border-zinc-800 p-3 sm:col-span-2">
+            <label className="flex items-center gap-2 rounded-md border border-border p-3 sm:col-span-2">
               <Checkbox
                 checked={exportRotations}
                 onCheckedChange={(v) => setExportRotations(!!v)}
@@ -345,7 +345,7 @@ export default function ImportExportTab() {
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="flex items-center gap-2 rounded-md border border-zinc-800 p-3">
+            <label className="flex items-center gap-2 rounded-md border border-border p-3">
               <Checkbox
                 checked={importStats}
                 onCheckedChange={(v) => setImportStats(!!v)}
@@ -358,7 +358,7 @@ export default function ImportExportTab() {
               </div>
             </label>
 
-            <label className="flex items-center gap-2 rounded-md border border-zinc-800 p-3">
+            <label className="flex items-center gap-2 rounded-md border border-border p-3">
               <Checkbox
                 checked={importGear}
                 onCheckedChange={(v) => setImportGear(!!v)}
@@ -371,7 +371,7 @@ export default function ImportExportTab() {
               </div>
             </label>
 
-            <label className="flex items-center gap-2 rounded-md border border-zinc-800 p-3">
+            <label className="flex items-center gap-2 rounded-md border border-border p-3">
               <Checkbox
                 checked={importRotations}
                 onCheckedChange={(v) => setImportRotations(!!v)}
@@ -384,7 +384,7 @@ export default function ImportExportTab() {
               </div>
             </label>
 
-            <label className="flex items-center gap-2 rounded-md border border-zinc-800 p-3">
+            <label className="flex items-center gap-2 rounded-md border border-border p-3">
               <Checkbox
                 checked={mergeGear}
                 onCheckedChange={(v) => setMergeGear(!!v)}

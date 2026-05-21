@@ -31,7 +31,7 @@ function fmt(n: number, digits = 4) {
 
 function Num({ n }: { n: number }) {
     return (
-        <span className="font-mono text-xs text-zinc-100 tabular-nums">{fmt(n)}</span>
+        <span className="font-mono text-xs text-foreground tabular-nums">{fmt(n)}</span>
     );
 }
 
@@ -43,8 +43,8 @@ function statTone(statKey: string): string {
         return "border-amber-500/30 bg-amber-500/10 text-amber-200";
     if (k.includes("multiplier")) return "border-sky-500/30 bg-sky-500/10 text-sky-200";
     if (k.includes("attack")) return "border-cyan-500/30 bg-cyan-500/10 text-cyan-200";
-    if (k.includes("flat")) return "border-zinc-500/30 bg-zinc-500/10 text-zinc-200";
-    return "border-white/15 bg-white/5 text-zinc-200";
+    if (k.includes("flat")) return "border-border bg-muted/50 text-foreground";
+    return "border-white/15 bg-white/5 text-foreground";
 }
 
 function StatValue({
@@ -109,7 +109,7 @@ function DerivedValue({
                         inline-flex items-center
                         rounded-md border border-white/15 bg-white/5
                         px-1.5 py-0.5
-                        font-mono text-xs tabular-nums text-zinc-100
+                        font-mono text-xs tabular-nums text-foreground
                         cursor-help select-none
                     "
                     aria-label={name}
@@ -135,7 +135,7 @@ function DerivedValue({
 
 function Name({ children }: { children: React.ReactNode }) {
     return (
-        <span className="font-mono text-xs text-zinc-300 whitespace-normal break-words min-w-0">
+        <span className="font-mono text-xs text-foreground/85 whitespace-normal break-words min-w-0">
             {children}
         </span>
     );
@@ -150,10 +150,10 @@ function Op({ children, tone }: { children: React.ReactNode; tone: "add" | "mul"
                 : tone === "div"
                     ? "text-fuchsia-300"
                     : tone === "eq"
-                        ? "text-zinc-400"
+                        ? "text-muted-foreground"
                         : tone === "cmp"
                             ? "text-amber-300"
-                            : "text-zinc-500";
+                            : "text-muted-foreground";
 
     return (
         <span className={`font-mono text-xs ${cls} px-0.5`}>{children}</span>
@@ -187,7 +187,7 @@ function Legend({
 }) {
     return (
         <div className="text-xs text-muted-foreground space-y-1">
-            <div className="font-medium text-zinc-300">{title}</div>
+            <div className="font-medium text-foreground/85">{title}</div>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
                 <span className="font-mono">
                     <span className="text-emerald-300">+</span> {add}
@@ -199,13 +199,13 @@ function Legend({
                     <span className="text-fuchsia-300">÷</span> {divide}
                 </span>
                 <span className="font-mono">
-                    <span className="text-zinc-400">=</span> {assign}
+                    <span className="text-muted-foreground">=</span> {assign}
                 </span>
                 <span className="font-mono">
                     <span className="text-amber-300">max(·)</span> {takeMax}
                 </span>
                 <span className="font-mono">
-                    <span className="text-zinc-300">clamp01(x)</span> {clamp}
+                    <span className="text-foreground/85">clamp01(x)</span> {clamp}
                 </span>
             </div>
         </div>
@@ -388,16 +388,16 @@ export function SkillDamageBackpropDialog({
 
                                         <div className="text-right text-xs text-muted-foreground">
                                             <div>
-                                                {text.min} <span className="text-zinc-100">{fmt(damage.min, 1)}</span>
+                                                {text.min} <span className="text-foreground">{fmt(damage.min, 1)}</span>
                                             </div>
                                             <div>
-                                                {text.avg} <span className="text-zinc-100">{fmt(damage.normal, 1)}</span>
+                                                {text.avg} <span className="text-foreground">{fmt(damage.normal, 1)}</span>
                                             </div>
                                             <div>
-                                                {text.crit} <span className="text-zinc-100">{fmt(damage.critical, 1)}</span>
+                                                {text.crit} <span className="text-foreground">{fmt(damage.critical, 1)}</span>
                                             </div>
                                             <div>
-                                                {text.aff} <span className="text-zinc-100">{fmt(damage.affinity, 1)}</span>
+                                                {text.aff} <span className="text-foreground">{fmt(damage.affinity, 1)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -405,7 +405,7 @@ export function SkillDamageBackpropDialog({
                                     <Separator className="bg-white/10" />
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">
+                                        <div className="text-xs font-medium text-foreground/85">
                                             {text.baseStats}
                                         </div>
 
@@ -491,7 +491,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">{text.substitutedNumbers}</div>
+                                        <div className="text-xs font-medium text-foreground/85">{text.substitutedNumbers}</div>
 
                                         <ExprRow>
                                             <Name>Base</Name>
@@ -671,7 +671,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">{text.expectedNumbers}</div>
+                                        <div className="text-xs font-medium text-foreground/85">{text.expectedNumbers}</div>
 
                                         <ExprRow>
                                             <Name>P</Name>
@@ -726,7 +726,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">
+                                        <div className="text-xs font-medium text-foreground/85">
                                             {text.baseWhenPrecision}
                                         </div>
 
@@ -777,7 +777,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">
+                                        <div className="text-xs font-medium text-foreground/85">
                                             {text.probabilities}
                                         </div>
 
@@ -857,7 +857,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-zinc-300">
+                                        <div className="text-xs font-medium text-foreground/85">
                                             {text.expectedFromFormula}
                                         </div>
 

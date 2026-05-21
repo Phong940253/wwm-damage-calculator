@@ -42,6 +42,7 @@ export function StatusBar() {
         <TabButton
           active={root === "main"}
           onClick={() => set("main", "stats")}
+          label={t("status.main")}
           title={t("status.main")}
           data-tour="tab-main-root"
         >
@@ -51,6 +52,7 @@ export function StatusBar() {
         <TabButton
           active={root === "gear"}
           onClick={() => set("gear", "custom")}
+          label={t("status.gear")}
           title={t("status.gear")}
           data-tour="tab-gear-root"
         >
@@ -65,6 +67,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "stats"}
               onClick={() => set("main", "stats")}
+              label={t("status.stats")}
               title={t("status.stats")}
               data-tour="tab-stats"
             >
@@ -74,6 +77,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "rotation"}
               onClick={() => set("main", "rotation")}
+              label={t("status.rotation")}
               title={t("status.rotation")}
               data-tour="tab-rotation"
             >
@@ -83,6 +87,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "import"}
               onClick={() => set("main", "import")}
+              label={t("status.importExport")}
               title={t("status.importExport")}
               data-tour="tab-import"
             >
@@ -92,6 +97,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "settings"}
               onClick={() => set("main", "settings")}
+              label={t("status.settings")}
               title={t("status.settings")}
             >
               <Settings size={18} />
@@ -104,6 +110,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "custom"}
               onClick={() => set("gear", "custom")}
+              label={t("status.customizeGear")}
               title={t("status.customizeGear")}
             >
               <SlidersHorizontal size={18} />
@@ -112,6 +119,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "equipped"}
               onClick={() => set("gear", "equipped")}
+              label={t("status.equippedGear")}
               title={t("status.equippedGear")}
             >
               <PackageCheck size={18} />
@@ -120,6 +128,7 @@ export function StatusBar() {
             <TabButton
               active={tab === "compare"}
               onClick={() => set("gear", "compare")}
+              label={t("status.compareGear")}
               title={t("status.compareGear")}
             >
               <GitCompare size={18} />

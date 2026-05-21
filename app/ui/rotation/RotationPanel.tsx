@@ -394,7 +394,7 @@ export default function RotationPanel({
                     "flex items-center justify-between p-2 rounded border cursor-pointer transition-colors",
                     selectedRotationId === rotation.id
                       ? "border-yellow-500 bg-yellow-500/10"
-                      : "border-zinc-700 hover:border-zinc-600"
+                      : "border-border hover:border-border/80"
                   )}
                 >
                   <div
@@ -411,7 +411,7 @@ export default function RotationPanel({
                           if (e.key === "Enter") handleRenameSave();
                           if (e.key === "Escape") setRenamingId(null);
                         }}
-                        className="bg-zinc-800 text-xs border border-zinc-600 px-2 py-1 rounded w-full"
+                        className="bg-muted text-xs border border-input px-2 py-1 rounded w-full text-foreground"
                       />
                     ) : (
                       <div className="flex items-center gap-2 min-w-0">
@@ -426,7 +426,7 @@ export default function RotationPanel({
                         )}
                       </div>
                     )}
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-muted-foreground">
                       {text.skillCount(rotation.skills.length)}
                     </p>
                   </div>
@@ -488,19 +488,19 @@ export default function RotationPanel({
       {selectedRotation && (
         <Card className="p-4">
           {selectedIsDefault && (
-            <div className="mb-4 rounded border border-zinc-700 bg-zinc-800/50 p-3">
+            <div className="mb-4 rounded border border-border bg-muted/50 p-3">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-xs h-5">
                   Default
                 </Badge>
-                <p className="text-xs text-zinc-300">
+                <p className="text-xs text-foreground/85">
                   {text.readonly}
                 </p>
               </div>
             </div>
           )}
-          <div className="mb-4 p-3 bg-zinc-800 rounded border border-zinc-700">
-            <p className="text-xs text-zinc-400 mb-2">{text.currentMartialArt}</p>
+          <div className="mb-4 p-3 bg-muted rounded border border-border">
+            <p className="text-xs text-muted-foreground mb-2">{text.currentMartialArt}</p>
             <p className="text-sm font-semibold">
               {LIST_MARTIAL_ARTS.find((m) => m.id === currentMartialArtId)?.name ||
                 text.noneAllSkills}
@@ -508,7 +508,7 @@ export default function RotationPanel({
           </div>
 
           {/* ========== PASSIVE SKILLS ========== */}
-          <div className="mb-4 pb-4 border-b border-zinc-700">
+          <div className="mb-4 pb-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold">{text.passiveSkills}</h3>
               <Button
@@ -521,16 +521,16 @@ export default function RotationPanel({
             </div>
 
             {showPassiveSkills && (
-              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
+              <div className="space-y-2 bg-muted/50 p-3 rounded border border-border">
                 {availablePassiveSkills.length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">
+                  <p className="text-xs text-muted-foreground italic">
                     {text.noPassive}
                   </p>
                 ) : (
                   availablePassiveSkills.map((passive) => (
                     <div
                       key={passive.id}
-                      className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                      className="flex items-start gap-2 p-2 rounded hover:bg-accent/30 transition"
                     >
                       <Checkbox
                         checked={selectedRotation.activePassiveSkills.includes(
@@ -544,19 +544,19 @@ export default function RotationPanel({
                         className="mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-zinc-100">
+                        <p className="text-xs font-medium text-foreground">
                           {passive.name}
                         </p>
-                        <p className="text-xs text-zinc-400 leading-tight">
+                        <p className="text-xs text-muted-foreground leading-tight">
                           {passive.description}
                         </p>
 
                         {typeof passive.defaultUptimePercent === "number" && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between">
-                              <p className="text-[11px] text-zinc-400">Uptime</p>
-                              <p className="text-[11px] text-zinc-400">{text.uptime}</p>
-                              <p className="text-[11px] text-zinc-200">
+                              <p className="text-[11px] text-muted-foreground">Uptime</p>
+                              <p className="text-[11px] text-muted-foreground">{text.uptime}</p>
+                              <p className="text-[11px] text-foreground">
                                 {(
                                   selectedRotation.passiveUptimes?.[passive.id] ??
                                   passive.defaultUptimePercent ??
@@ -595,7 +595,7 @@ export default function RotationPanel({
                         )}
 
                         {passive.notes && (
-                          <p className="text-xs text-zinc-500 italic mt-1">
+                          <p className="text-xs text-muted-foreground italic mt-1">
                             {passive.notes}
                           </p>
                         )}
@@ -608,7 +608,7 @@ export default function RotationPanel({
           </div>
 
           {/* ========== INNER WAYS ========== */}
-          <div className="mb-4 pb-4 border-b border-zinc-700">
+          <div className="mb-4 pb-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold">{text.innerWays}</h3>
               <Button
@@ -621,9 +621,9 @@ export default function RotationPanel({
             </div>
 
             {showInnerWays && (
-              <div className="space-y-2 bg-zinc-800/50 p-3 rounded border border-zinc-700">
+              <div className="space-y-2 bg-muted/50 p-3 rounded border border-border">
                 {availableInnerWays.length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">
+                  <p className="text-xs text-muted-foreground italic">
                     {text.noInnerWays}
                   </p>
                 ) : (
@@ -638,7 +638,7 @@ export default function RotationPanel({
                       return (
                         <div
                           key={inner.id}
-                          className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                          className="flex items-start gap-2 p-2 rounded hover:bg-accent/30 transition"
                         >
                           <Checkbox
                             checked={selectedRotation.activeInnerWays.includes(inner.id)}
@@ -651,7 +651,7 @@ export default function RotationPanel({
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium text-zinc-100">
+                              <p className="text-xs font-medium text-foreground">
                                 {inner.name}
                               </p>
                               {typeof inner.level === "number" && (
@@ -661,11 +661,11 @@ export default function RotationPanel({
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-xs text-zinc-400 leading-tight">
+                            <p className="text-xs text-muted-foreground leading-tight">
                               {inner.description}
                             </p>
                             {inner.notes && (
-                              <p className="text-xs text-zinc-500 italic mt-1">
+                              <p className="text-xs text-muted-foreground italic mt-1">
                                 {inner.notes}
                               </p>
                             )}
@@ -691,7 +691,7 @@ export default function RotationPanel({
                     return (
                       <div
                         key={group.key}
-                        className="flex items-start gap-2 p-2 rounded hover:bg-zinc-700/30 transition"
+                        className="flex items-start gap-2 p-2 rounded hover:bg-accent/30 transition"
                       >
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -730,7 +730,7 @@ export default function RotationPanel({
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-xs font-medium text-zinc-100">
+                            <p className="text-xs font-medium text-foreground">
                               {group.baseName}
                             </p>
                             {selectedTier && typeof selectedTier.level === "number" && (
@@ -739,11 +739,11 @@ export default function RotationPanel({
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-zinc-400 leading-tight">
+                          <p className="text-xs text-muted-foreground leading-tight">
                             {details?.description ?? ""}
                           </p>
                           {details?.notes && (
-                            <p className="text-xs text-zinc-500 italic mt-1">
+                            <p className="text-xs text-muted-foreground italic mt-1">
                               {details.notes}
                             </p>
                           )}
@@ -772,7 +772,7 @@ export default function RotationPanel({
 
           {/* Skill Picker */}
           {showSkillPicker && (
-            <div className="mb-4 p-3 bg-zinc-800 rounded border border-zinc-700">
+            <div className="mb-4 p-3 bg-muted rounded border border-border00">
               <Input
                 placeholder={text.searchSkills}
                 value={searchSkill}
@@ -789,14 +789,14 @@ export default function RotationPanel({
                       setSearchSkill("");
                     }}
                     disabled={selectedIsDefault}
-                    className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-zinc-700 transition-colors"
+                    className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent transition-colors"
                   >
                     <p className="font-medium">{skill.name}</p>
-                    <p className="text-zinc-400">{skill.martialArtId}</p>
+                    <p className="text-muted-foreground">{skill.martialArtId}</p>
                   </button>
                 ))}
                 {availableSkills.length === 0 && (
-                  <p className="text-xs text-zinc-500 text-center py-2">
+                  <p className="text-xs text-muted-foreground text-center py-2">
                     {searchSkill ? text.noMatchingSkills : text.allSkillsAdded}
                   </p>
                 )}
@@ -806,7 +806,7 @@ export default function RotationPanel({
 
           {/* Skills List */}
           {selectedRotation.skills.length === 0 ? (
-            <p className="text-xs text-zinc-500 italic">{text.noSkillsAdded}</p>
+            <p className="text-xs text-muted-foreground italic">{text.noSkillsAdded}</p>
           ) : (
             <div className="space-y-2">
               {selectedRotation.skills.map((rotSkill, idx) => {
@@ -823,9 +823,9 @@ export default function RotationPanel({
                     onDrop={() => handleDrop(idx)}
                     onDragEnd={handleDragEnd}
                     className={cn(
-                      "relative flex items-center justify-between p-2 bg-zinc-800 rounded border group cursor-move transition-colors",
+                      "relative flex items-center justify-between p-2 bg-muted rounded border group cursor-move transition-colors",
                       selectedIsDefault ? "cursor-not-allowed" : "cursor-move",
-                      draggedIndex === idx ? "opacity-50 border-yellow-500" : "border-zinc-700",
+                      draggedIndex === idx ? "opacity-50 border-yellow-500" : "border-border00",
                       dragOverIndex === idx && draggedIndex !== idx ? "border-yellow-400 bg-yellow-500/10" : ""
                     )}
                   >
@@ -844,13 +844,13 @@ export default function RotationPanel({
                       </Badge>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium truncate">{skill.name}</p>
-                        <p className="text-xs text-zinc-400">{skill.category}</p>
+                        <p className="text-xs text-muted-foreground">{skill.category}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="flex items-center gap-1">
-                        <span className="text-xs text-zinc-400 whitespace-nowrap">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                           x
                         </span>
                         <input
@@ -866,13 +866,13 @@ export default function RotationPanel({
                               parseInt(e.target.value) || 1
                             )
                           }
-                          className="w-10 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                          className="w-10 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
                         />
                       </div>
 
                       {skill.id === "vernal_unfaded_flower" && (
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-zinc-400 whitespace-nowrap">{text.blossoms}</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{text.blossoms}</span>
                           <input
                             type="number"
                             min="0"
@@ -885,7 +885,7 @@ export default function RotationPanel({
                                 blossoms: Number.isFinite(next) ? next : 0,
                               });
                             }}
-                            className="w-16 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                            className="w-16 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
                             title="Unfaded Flower scaling: duration ~= Blossoms / 10s"
                           />
                         </div>
@@ -893,7 +893,7 @@ export default function RotationPanel({
 
                       {skill.id === "vernal_umbrella_light_spring_away" && (
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-zinc-400 whitespace-nowrap">{text.duration}</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{text.duration}</span>
                           <input
                             type="number"
                             min="0"
@@ -907,7 +907,7 @@ export default function RotationPanel({
                                 duration: Number.isFinite(next) ? next : 1,
                               });
                             }}
-                            className="w-14 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                            className="w-14 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
                             title="Spring Away is DPS-based: total = DPS × duration"
                           />
                         </div>
@@ -915,7 +915,7 @@ export default function RotationPanel({
 
                       {skill.id === "vernal_apricot_heaven" && (
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-zinc-400 whitespace-nowrap">{text.charge}</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{text.charge}</span>
                           <input
                             type="number"
                             min="0"
@@ -930,7 +930,7 @@ export default function RotationPanel({
                                 chargePct: Number.isFinite(next) ? next : 100,
                               });
                             }}
-                            className="w-14 bg-zinc-700 text-xs border border-zinc-600 rounded px-1 py-0.5 text-zinc-100 text-center"
+                            className="w-14 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
                             title="Apricot Heaven: 2nd-stage damage scales linearly Min→Max by charge %"
                           />
                         </div>

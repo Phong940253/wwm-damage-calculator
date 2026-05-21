@@ -5,7 +5,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Zap, ArrowUpRight } from "lucide-react";
+import { Zap, ArrowUpRight, ChevronDown } from "lucide-react";
 import { DamageResult } from "../../domain/damage/type";
 import AverageDamagePie from "./AverageDamagePie";
 import RotationDamagePie from "./RotationDamagePie";
@@ -19,6 +19,7 @@ import { SkillDamagePanel } from "./SkillDamagePanel";
 import { Skill } from "@/app/domain/skill/types";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useState } from "react";
 
 interface Props {
   ctx: DamageContext;
@@ -43,6 +44,7 @@ export default function DamagePanel({
   warnings = [],
 }: Props) {
   const { language } = useI18n();
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const text = language === "vi"
     ? {
       stats: "Chỉ số",
@@ -145,20 +147,46 @@ export default function DamagePanel({
 
           {groupedSkillDamages.map((group) => (
             <div key={group.category}>
-              <div className="text-lg pt-6 px-2 font-semibold text-foreground tracking-wide capitalize">
-                {categoryLabels[group.category]}
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCollapsedCategories((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(group.category)) next.delete(group.category);
+                    else next.add(group.category);
+                    return next;
+                  });
+                }}
+                className="flex w-full items-center justify-between text-lg pt-6 px-2 font-semibold text-foreground tracking-wide capitalize hover:text-foreground/80 transition-colors"
+              >
+                <span>{categoryLabels[group.category]}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-normal">
+                    {group.skills.length}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`text-muted-foreground transition-transform duration-200 ${
+                      collapsedCategories.has(group.category) ? "" : "rotate-180"
+                    }`}
+                  />
+                </div>
+              </button>
 
-              {group.skills.map(({ skill, result }, idx) => (
-                <SkillDamagePanel
-                  key={skill.id}
-                  skill={skill}
-                  result={result}
-                  ctx={ctx}
-                  showHeader={idx === 0}
-                  isEven={idx % 2 === 1}
-                />
-              ))}
+              {!collapsedCategories.has(group.category) && (
+                <>
+                  {group.skills.map(({ skill, result }, idx) => (
+                    <SkillDamagePanel
+                      key={skill.id}
+                      skill={skill}
+                      result={result}
+                      ctx={ctx}
+                      showHeader={idx === 0}
+                      isEven={idx % 2 === 1}
+                    />
+                  ))}
+                </>
+              )}
             </div>
           ))}
 

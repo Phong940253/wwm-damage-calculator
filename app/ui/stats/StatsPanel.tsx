@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ChevronDown } from "lucide-react";
 import { STAT_GROUPS } from "../../constants";
 import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
@@ -109,9 +110,22 @@ export default function StatsPanel({
   // Track local input values for instant UI feedback
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
   const [heatmapLines, setHeatmapLines] = useState(1);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [heatmapCollapsed, setHeatmapCollapsed] = useState(false);
+  const [levelsCollapsed, setLevelsCollapsed] = useState(false);
+  const [elementsCollapsed, setElementsCollapsed] = useState(false);
 
   // Debounce timers
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
+
+  const toggleGroup = useCallback((group: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
+  }, []);
 
   const isElementKey = useCallback(
     (key: string): key is ElementStatKey =>
@@ -271,163 +285,202 @@ export default function StatsPanel({
       <CardContent className="space-y-6 p-3 sm:space-y-8 sm:p-4 lg:space-y-10 lg:p-6">
         {/* Level Selection */}
         <section className="space-y-5">
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setLevelsCollapsed(!levelsCollapsed)}
+            className="flex w-full items-center gap-3 group/header cursor-pointer"
+          >
             <h2 className="text-lg font-semibold">{text.levels}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          </div>
+            <ChevronDown
+              size={16}
+              className={`text-muted-foreground transition-transform duration-200 ${
+                levelsCollapsed ? "" : "rotate-180"
+              }`}
+            />
+          </button>
 
-          <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">{text.playerLevel}</label>
-              <select
-                data-tour="player-level"
-                className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
-                value={safeLevelContext.playerLevel}
-                onChange={(e) => safeSetPlayerLevel(Number(e.target.value))}
-              >
-                {SUPPORTED_PLAYER_LEVELS.map((lv) => (
-                  <option key={lv} value={lv}>
-                    {lv}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {!levelsCollapsed && (
+            <div className="grid gap-3 md:grid-cols-2 sm:gap-4 animate-in fade-in-0 duration-200">
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">{text.playerLevel}</label>
+                <select
+                  data-tour="player-level"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={safeLevelContext.playerLevel}
+                  onChange={(e) => safeSetPlayerLevel(Number(e.target.value))}
+                >
+                  {SUPPORTED_PLAYER_LEVELS.map((lv) => (
+                    <option key={lv} value={lv}>
+                      {lv}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">{text.enemyLevel}</label>
-              <select
-                className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
-                value={safeLevelContext.enemyLevel}
-                onChange={(e) => safeSetEnemyLevel(Number(e.target.value))}
-              >
-                {SUPPORTED_ENEMY_LEVELS.map((lv) => (
-                  <option key={lv} value={lv}>
-                    {lv}
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">{text.enemyLevel}</label>
+                <select
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={safeLevelContext.enemyLevel}
+                  onChange={(e) => safeSetEnemyLevel(Number(e.target.value))}
+                >
+                  {SUPPORTED_ENEMY_LEVELS.map((lv) => (
+                    <option key={lv} value={lv}>
+                      {lv}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* Element Selection */}
         <section className="space-y-5">
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setElementsCollapsed(!elementsCollapsed)}
+            className="flex w-full items-center gap-3 group/header cursor-pointer"
+          >
             <h2 className="text-lg font-semibold">{text.elements}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-baseline justify-between gap-3">
-              <label className="text-xs text-muted-foreground">{text.martialArt}</label>
-              <span className="text-[11px] text-muted-foreground">
-                {text.autoSync}
-              </span>
+            <ChevronDown
+              size={16}
+              className={`text-muted-foreground transition-transform duration-200 ${
+                elementsCollapsed ? "" : "rotate-180"
+              }`}
+            />
+          </button>
+
+          {!elementsCollapsed && (
+            <div className="space-y-2 animate-in fade-in-0 duration-200">
+              <div className="flex items-baseline justify-between gap-3">
+                <label className="text-xs text-muted-foreground">{text.martialArt}</label>
+                <span className="text-[11px] text-muted-foreground">
+                  {text.autoSync}
+                </span>
+              </div>
+              <select
+                data-tour="martial-art"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={elementStats.martialArtsId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  const art = LIST_MARTIAL_ARTS.find((m) => m.id === nextId);
+
+                  onElementChange("martialArtsId", "selected", nextId);
+
+                  // Keep main element in sync with chosen martial art
+                  if (art) {
+                    onElementChange("selected", "selected", art.element);
+                  }
+                }}
+              >
+                {LIST_MARTIAL_ARTS.map((art) => (
+                  <option key={art.id} value={art.id}>
+                    {art.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              data-tour="martial-art"
-              className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
-              value={elementStats.martialArtsId}
-              onChange={(e) => {
-                const nextId = e.target.value;
-                const art = LIST_MARTIAL_ARTS.find((m) => m.id === nextId);
-
-                onElementChange("martialArtsId", "selected", nextId);
-
-                // Keep main element in sync with chosen martial art
-                if (art) {
-                  onElementChange("selected", "selected", art.element);
-                }
-              }}
-            >
-              {LIST_MARTIAL_ARTS.map((art) => (
-                <option key={art.id} value={art.id}>
-                  {art.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          )}
         </section>
 
         <section className="space-y-5">
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setHeatmapCollapsed(!heatmapCollapsed)}
+            className="flex w-full items-center gap-3 group/header cursor-pointer"
+          >
             <h2 className="text-lg font-semibold">{text.heatmap}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          </div>
+            <ChevronDown
+              size={16}
+              className={`text-muted-foreground transition-transform duration-200 ${
+                heatmapCollapsed ? "" : "rotate-180"
+              }`}
+            />
+          </button>
 
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">{text.lineCount}</label>
-              <Input
-                type="number"
-                min={1}
-                max={20}
-                step={1}
-                value={heatmapLines}
-                onChange={(e) => {
-                  const next = Math.floor(Number(e.target.value) || 1);
-                  setHeatmapLines(Math.max(1, Math.min(20, next)));
-                }}
-                className="h-10 w-44 bg-background/50 border-white/10 focus-visible:ring-emerald-500/25 focus-visible:border-emerald-500/30"
-              />
-            </div>
-            <span className="text-xs text-muted-foreground">{text.rankHint}</span>
-          </div>
+          {!heatmapCollapsed && (
+            <div className="space-y-4 animate-in fade-in-0 duration-200">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">{text.lineCount}</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    step={1}
+                    value={heatmapLines}
+                    onChange={(e) => {
+                      const next = Math.floor(Number(e.target.value) || 1);
+                      setHeatmapLines(Math.max(1, Math.min(20, next)));
+                    }}
+                    className="h-10 w-44 bg-background border-input focus-visible:ring-ring/25 focus-visible:border-ring"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">{text.rankHint}</span>
+              </div>
 
-          {statHeatmap.length === 0 ? (
-            <div className="rounded-xl border border-white/10 bg-background/30 px-4 py-3 text-sm text-muted-foreground">
-              {text.noHeatmap}
-            </div>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
-              {statHeatmap.map((row) => {
-                const barWidth =
-                  topHeatmapImpact > 0
-                    ? Math.max(
-                      8,
-                      (Math.abs(row.bestImpactPct) / topHeatmapImpact) * 100,
-                    )
-                    : 0;
+              {statHeatmap.length === 0 ? (
+                <div className="rounded-xl border border-white/10 bg-background/30 px-4 py-3 text-sm text-muted-foreground">
+                  {text.noHeatmap}
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
+                  {statHeatmap.map((row) => {
+                    const barWidth =
+                      topHeatmapImpact > 0
+                        ? Math.max(
+                          8,
+                          (Math.abs(row.bestImpactPct) / topHeatmapImpact) * 100,
+                        )
+                        : 0;
 
-                const label = getStatLabel(row.key, elementStats);
-                const impactClass =
-                  row.bestImpactPct >= 0
-                    ? "bg-emerald-500/20 border-emerald-500/25"
-                    : "bg-red-500/20 border-red-500/25";
-                const impactTextClass =
-                  row.bestImpactPct >= 0 ? "text-emerald-300" : "text-red-300";
+                    const label = getStatLabel(row.key, elementStats);
+                    const impactClass =
+                      row.bestImpactPct >= 0
+                        ? "bg-emerald-500/20 border-emerald-500/25"
+                        : "bg-red-500/20 border-red-500/25";
+                    const impactTextClass =
+                      row.bestImpactPct >= 0 ? "text-emerald-300" : "text-red-300";
 
-                return (
-                  <div
-                    key={row.key}
-                    className="rounded-xl border border-white/10 bg-card/50 p-3 space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">{label}</div>
-                        <div className="text-[11px] text-muted-foreground truncate">
-                          {row.key}
+                    return (
+                      <div
+                        key={row.key}
+                        className="rounded-xl border border-white/10 bg-card/50 p-3 space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">{label}</div>
+                            <div className="text-[11px] text-muted-foreground truncate">
+                              {row.key}
+                            </div>
+                          </div>
+                          <Badge className={`${impactClass} ${impactTextClass} border`}>
+                            {text.gainRange} {row.minImpactPct >= 0 ? "+" : ""}
+                            {row.minImpactPct.toFixed(2)}% → {row.maxImpactPct >= 0 ? "+" : ""}
+                            {row.maxImpactPct.toFixed(2)}%
+                          </Badge>
+                        </div>
+
+                        <div className="text-xs text-muted-foreground">
+                          {text.affixGain}: +{row.minDelta.toFixed(1)} ~ +{row.maxDelta.toFixed(1)}
+                        </div>
+
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
+                          <div
+                            className={`h-full rounded-full ${row.bestImpactPct >= 0 ? "bg-emerald-400/80" : "bg-red-400/80"}`}
+                            style={{ width: `${barWidth}%` }}
+                          />
                         </div>
                       </div>
-                      <Badge className={`${impactClass} ${impactTextClass} border`}>
-                        {text.gainRange} {row.minImpactPct >= 0 ? "+" : ""}
-                        {row.minImpactPct.toFixed(2)}% → {row.maxImpactPct >= 0 ? "+" : ""}
-                        {row.maxImpactPct.toFixed(2)}%
-                      </Badge>
-                    </div>
-
-                    <div className="text-xs text-muted-foreground">
-                      {text.affixGain}: +{row.minDelta.toFixed(1)} ~ +{row.maxDelta.toFixed(1)}
-                    </div>
-
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                      <div
-                        className={`h-full rounded-full ${row.bestImpactPct >= 0 ? "bg-emerald-400/80" : "bg-red-400/80"}`}
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -435,54 +488,66 @@ export default function StatsPanel({
         {Object.entries(STAT_GROUPS).map(([group, keys]) => (
           <section key={group} className="space-y-5">
             {/* ---------- Group Header ---------- */}
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => toggleGroup(group)}
+              className="flex w-full items-center gap-3 group/header cursor-pointer"
+            >
               <h2 className="text-lg font-semibold">{group}</h2>
               <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-            </div>
+              <ChevronDown
+                size={16}
+                className={`text-muted-foreground transition-transform duration-200 ${
+                  collapsedGroups.has(group) ? "" : "rotate-180"
+                }`}
+              />
+            </button>
 
             {/* ---------- Stats Grid ---------- */}
-            <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
-              {(keys as (StatKey | ElementStatKey)[]).map((k) => {
-                const stat = isElementKey(k)
-                  ? elementStats[k]
-                  : stats[k as StatKey];
-                if (!stat) return null;
+            {!collapsedGroups.has(group) && (
+              <div className="grid gap-3 md:grid-cols-2 sm:gap-4 animate-in fade-in-0 duration-200">
+                {(keys as (StatKey | ElementStatKey)[]).map((k) => {
+                  const stat = isElementKey(k)
+                    ? elementStats[k]
+                    : stats[k as StatKey];
+                  if (!stat) return null;
 
-                const impact = statImpact[k] ?? 0;
-                const gear = gearBonus[k] || 0;
-                const derivedValue = derived[k as keyof typeof derived] || 0;
-                const passiveValue = includedInStatsBonus[k] || 0;
-                const base = Number(stat.current || 0);
-                const total =
-                  Math.round((base + gear + derivedValue + passiveValue) * 100000) /
-                  100000;
+                  const impact = statImpact[k] ?? 0;
+                  const gear = gearBonus[k] || 0;
+                  const derivedValue = derived[k as keyof typeof derived] || 0;
+                  const passiveValue = includedInStatsBonus[k] || 0;
+                  const base = Number(stat.current || 0);
+                  const total =
+                    Math.round((base + gear + derivedValue + passiveValue) * 100000) /
+                    100000;
 
-                return (
-                  <StatCard
-                    key={k}
-                    statKey={k}
-                    elementStats={elementStats}
-                    impact={impact}
-                    gear={gear}
-                    derivedValue={derivedValue}
-                    passiveValue={passiveValue}
-                    base={base}
-                    total={total}
-                    increase={stat.increase}
-                    localValue={localValues[`${k}-current`]}
-                    localIncreaseValue={localValues[`${k}-increase`]}
-                    onTotalChange={(value) => {
-                      createDebouncedHandler(k, "current", true)(value);
-                    }}
-                    onTotalBlur={() => handleInputBlur(k, "current", true)}
-                    onIncreaseChange={(value) => {
-                      createDebouncedHandler(k, "increase", false)(value);
-                    }}
-                    onIncreaseBlur={() => handleInputBlur(k, "increase", false)}
-                  />
-                );
-              })}
-            </div>
+                  return (
+                    <StatCard
+                      key={k}
+                      statKey={k}
+                      elementStats={elementStats}
+                      impact={impact}
+                      gear={gear}
+                      derivedValue={derivedValue}
+                      passiveValue={passiveValue}
+                      base={base}
+                      total={total}
+                      increase={stat.increase}
+                      localValue={localValues[`${k}-current`]}
+                      localIncreaseValue={localValues[`${k}-increase`]}
+                      onTotalChange={(value) => {
+                        createDebouncedHandler(k, "current", true)(value);
+                      }}
+                      onTotalBlur={() => handleInputBlur(k, "current", true)}
+                      onIncreaseChange={(value) => {
+                        createDebouncedHandler(k, "increase", false)(value);
+                      }}
+                      onIncreaseBlur={() => handleInputBlur(k, "increase", false)}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </section>
         ))}
 

@@ -164,7 +164,7 @@ export default function MainTabLayout() {
 
   if (tab === "settings") {
     return (
-      <div className="h-[calc(100dvh-150px)] sm:h-[calc(100dvh-165px)] lg:h-[calc(100dvh-180px)] overflow-y-auto px-1.5 sm:px-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
+      <div className="h-[calc(100dvh-150px)] sm:h-[calc(100dvh-165px)] lg:h-[calc(100dvh-180px)] overflow-y-auto px-1.5 sm:px-2">
         <SettingsTab />
       </div>
     );
@@ -176,7 +176,7 @@ export default function MainTabLayout() {
         <div ref={containerRef} className="flex h-full flex-col">
           {/* TOP (LEFT PANEL) */}
           <div
-            className="overflow-y-auto px-1.5 sm:px-2 scrollbar-thin scrollbar-thumb-zinc-600/40"
+            className="overflow-y-auto px-1.5 sm:px-2"
             style={{ height: topPaneHeightPx }}
           >
             {tab === "stats" && (
@@ -259,7 +259,7 @@ export default function MainTabLayout() {
           />
 
           {/* BOTTOM (RIGHT PANEL) */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-1.5 sm:px-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
+          <div className="min-h-0 flex-1 overflow-y-auto px-1.5 sm:px-2">
             <DamagePanel
               ctx={ctx}
               result={damage}
@@ -275,7 +275,7 @@ export default function MainTabLayout() {
       ) : (
         <div className="grid h-full grid-cols-1 gap-3 xl:grid-cols-2 xl:gap-6">
           {/* LEFT PANEL */}
-          <div className="overflow-y-auto pr-1 lg:pr-2 scrollbar-thin scrollbar-thumb-zinc-600/40">
+          <div className="overflow-y-auto pr-1 lg:pr-2">
             {tab === "stats" && (
               <StatsPanel
                 stats={stats}
@@ -319,7 +319,7 @@ export default function MainTabLayout() {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="overflow-y-auto pl-1 lg:pl-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
+          <div className="overflow-y-auto pl-1 lg:pl-2">
             <DamagePanel
               ctx={ctx}
               result={damage}
