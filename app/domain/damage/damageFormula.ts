@@ -24,6 +24,7 @@ const buildDamageCache = (g: (k: string) => number): DamageCache => ({
   critDmgBonus: g("CriticalDMGBonus"),
   affinityDmgBonus: g("AffinityDMGBonus"),
   dmgBoost: g("DamageBoost"),
+  bossDmgBoost: g("CombatBoostAgainstBossUnits"),
 });
 
 export interface CalcExpectedNormalSteps {
@@ -59,7 +60,7 @@ export const explainCalcExpectedNormal = (
   affinityDamage: number
 ): CalcExpectedNormalSteps => {
   const cache = buildDamageCache(g);
-  const dmgBoost = 1 + cache.dmgBoost / 100;
+  const dmgBoost = 1 + (cache.dmgBoost + cache.bossDmgBoost) / 100;
   const physModifier = 1 + cache.physPenetration / 200;
   const physBonus = 1 + cache.physDmgBonus / 100;
   const elementModifier =
@@ -148,7 +149,7 @@ export const calcMinimumDamage = (g: (k: string) => number) => {
         (cache.elementMult / 100) *
         (1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100)) *
     1.02 *
-    (1 + cache.dmgBoost / 100);
+    (1 + (cache.dmgBoost + cache.bossDmgBoost) / 100);
 
   return Math.round(dmg * 10) / 10;
 };
@@ -170,7 +171,7 @@ export const calcCriticalDamage = (g: (k: string) => number) => {
         (cache.elementMult / 100) *
         (1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100)) *
     (1 + cache.critDmgBonus / 100) *
-    (1 + cache.dmgBoost / 100)
+    (1 + (cache.dmgBoost + cache.bossDmgBoost) / 100)
   );
 };
 
@@ -191,7 +192,7 @@ export const calcAffinityDamage = (g: (k: string) => number) => {
         (cache.elementMult / 100) *
         (1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100)) *
     (1 + cache.affinityDmgBonus / 100) *
-    (1 + cache.dmgBoost / 100)
+    (1 + (cache.dmgBoost + cache.bossDmgBoost) / 100)
   );
 };
 
@@ -202,7 +203,7 @@ export const calcAffinityDamage = (g: (k: string) => number) => {
 // Helper to calculate base damage components (shared by breakdown and expected)
 const calcBaseDamageComponents = (g: (k: string) => number) => {
   const cache = buildDamageCache(g);
-  const dmgBoost = 1 + cache.dmgBoost / 100;
+  const dmgBoost = 1 + (cache.dmgBoost + cache.bossDmgBoost) / 100;
   const physModifier = 1 + cache.physPenetration / 200;
   const physBonus = 1 + cache.physDmgBonus / 100;
   const elementModifier =
@@ -231,7 +232,7 @@ export const calcExpectedNormal = (
   affinityDamage: number
 ) => {
   const cache = buildDamageCache(g);
-  const dmgBoost = 1 + cache.dmgBoost / 100;
+  const dmgBoost = 1 + (cache.dmgBoost + cache.bossDmgBoost) / 100;
   const physModifier = 1 + cache.physPenetration / 200;
   const physBonus = 1 + cache.physDmgBonus / 100;
   const elementModifier =

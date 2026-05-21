@@ -148,6 +148,11 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
           value: pct(ctx.get("DamageBoost")),
           ctxKeys: ["DamageBoost"],
         },
+        {
+          label: "Combat Boost against Boss Units",
+          value: pct(ctx.get("CombatBoostAgainstBossUnits")),
+          ctxKeys: ["CombatBoostAgainstBossUnits"],
+        },
       ],
     },
   ];

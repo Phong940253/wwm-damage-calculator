@@ -226,6 +226,12 @@ GENERAL RULES
   - "Art of Dual Blades DMG Boost 0.0%" → ArtOfDualBladesDMGBoost = 0
   - "Art of Rope Dart DMG Boost 2.3%" → ArtOfRopeDartDMGBoost = 2.3
 
+- Boss damage boost values (percent) return NUMBER only
+  Examples:
+  - "Combat Boost against Boss Units 4.5%" → CombatBoostAgainstBossUnits = 4.5
+  - "Combat Boost against Boss 4.5%" → CombatBoostAgainstBossUnits = 4.5
+  - "Boss DMG Boost 4.5%" → CombatBoostAgainstBossUnits = 4.5
+
 - If a stat text does NOT map to one of the VALID STAT KEYS below, omit it.
 - "Set" / "Jadeware set" sections are NOT gear stats. Ignore completely.
 - The line directly under the Tier header like "Max Physical Attack 65" is usually a main stat.
@@ -255,6 +261,7 @@ Rates (SUB ONLY):
 - AffinityRate
 - AffinityDMGBonus
 - DamageBoost (SUB OR ADDITION)
+- CombatBoostAgainstBossUnits (SUB ONLY)
 - ArtOfSwordDMGBoost
 - ArtOfSpearDMGBoost
 - ArtOfFanDMGBoost
