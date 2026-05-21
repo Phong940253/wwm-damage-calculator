@@ -23,26 +23,45 @@ const LEVEL_EFFECTS: Record<
 > = {
   71: { bossResistancePct: 0, playerDirectPrecisionPct: 8.5 },
   81: { bossResistancePct: 13, playerDirectPrecisionPct: 9.8 },
+  91: { bossResistancePct: 45, playerDirectPrecisionPct: 13.5 },
+  95: { bossResistancePct: 45, playerDirectPrecisionPct: 13.5 },
 };
 
-export const SUPPORTED_LEVELS = Object.keys(LEVEL_EFFECTS)
-  .map((x) => Number(x))
-  .filter((x) => Number.isFinite(x))
-  .sort((a, b) => a - b);
+export const SUPPORTED_PLAYER_LEVELS = [71, 81, 91, 95];
+export const SUPPORTED_ENEMY_LEVELS = [71, 81, 85, 90, 95, 100];
+
+export const SUPPORTED_LEVELS = Array.from(
+  new Set([...SUPPORTED_PLAYER_LEVELS, ...SUPPORTED_ENEMY_LEVELS]),
+).sort((a, b) => a - b);
 
 export function getBossResistancePct(enemyLevel: number): number {
+  if (enemyLevel >= 81 && enemyLevel <= 85) return 13;
+  if (enemyLevel >= 86 && enemyLevel <= 90) return 30;
+  if (enemyLevel >= 91 && enemyLevel <= 95) return 45;
+  if (enemyLevel >= 96 && enemyLevel <= 100) return 65;
   return LEVEL_EFFECTS[enemyLevel]?.bossResistancePct ?? 0;
 }
 
 export function getPlayerDirectPrecisionPct(playerLevel: number): number {
+  if (playerLevel >= 91 && playerLevel <= 95) return 13.5;
   return LEVEL_EFFECTS[playerLevel]?.playerDirectPrecisionPct ?? 0;
+}
+
+export function clampToSupportedPlayerLevel(level: number): number {
+  if (!Number.isFinite(level)) return DEFAULT_LEVEL_CONTEXT.playerLevel;
+  if (SUPPORTED_PLAYER_LEVELS.includes(level)) return level;
+  return DEFAULT_LEVEL_CONTEXT.playerLevel;
+}
+
+export function clampToSupportedEnemyLevel(level: number): number {
+  if (!Number.isFinite(level)) return DEFAULT_LEVEL_CONTEXT.enemyLevel;
+  if (SUPPORTED_ENEMY_LEVELS.includes(level)) return level;
+  return DEFAULT_LEVEL_CONTEXT.enemyLevel;
 }
 
 export function clampToSupportedLevel(level: number): number {
   if (!Number.isFinite(level)) return DEFAULT_LEVEL_CONTEXT.playerLevel;
-  if (SUPPORTED_LEVELS.length === 0) return Math.round(level);
   if (SUPPORTED_LEVELS.includes(level)) return level;
-  // Fallback: keep current default until more levels are added.
   return DEFAULT_LEVEL_CONTEXT.playerLevel;
 }
 
@@ -67,10 +86,10 @@ export function getStoredLevelContext(): LevelContext {
   );
 
   return {
-    playerLevel: clampToSupportedLevel(
+    playerLevel: clampToSupportedPlayerLevel(
       storedPlayer ?? DEFAULT_LEVEL_CONTEXT.playerLevel,
     ),
-    enemyLevel: clampToSupportedLevel(
+    enemyLevel: clampToSupportedEnemyLevel(
       storedEnemy ?? DEFAULT_LEVEL_CONTEXT.enemyLevel,
     ),
   };
@@ -82,14 +101,14 @@ export function setStoredLevelContext(next: Partial<LevelContext>) {
   if (typeof next.playerLevel === "number") {
     window.localStorage.setItem(
       LEVEL_STORAGE_KEYS.player,
-      String(clampToSupportedLevel(next.playerLevel)),
+      String(clampToSupportedPlayerLevel(next.playerLevel)),
     );
   }
 
   if (typeof next.enemyLevel === "number") {
     window.localStorage.setItem(
       LEVEL_STORAGE_KEYS.enemy,
-      String(clampToSupportedLevel(next.enemyLevel)),
+      String(clampToSupportedEnemyLevel(next.enemyLevel)),
     );
   }
 

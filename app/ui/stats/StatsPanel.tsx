@@ -10,7 +10,7 @@ import { STAT_GROUPS } from "../../constants";
 import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
 import StatCard from "./StatCard";
-import { SUPPORTED_LEVELS } from "@/app/domain/level/levelSettings";
+import { SUPPORTED_PLAYER_LEVELS, SUPPORTED_ENEMY_LEVELS } from "@/app/domain/level/levelSettings";
 import type { Rotation } from "@/app/types";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { computeDerivedStats } from "@/app/domain/stats/derivedStats";
@@ -285,7 +285,7 @@ export default function StatsPanel({
                 value={safeLevelContext.playerLevel}
                 onChange={(e) => safeSetPlayerLevel(Number(e.target.value))}
               >
-                {SUPPORTED_LEVELS.map((lv) => (
+                {SUPPORTED_PLAYER_LEVELS.map((lv) => (
                   <option key={lv} value={lv}>
                     {lv}
                   </option>
@@ -300,7 +300,7 @@ export default function StatsPanel({
                 value={safeLevelContext.enemyLevel}
                 onChange={(e) => safeSetEnemyLevel(Number(e.target.value))}
               >
-                {SUPPORTED_LEVELS.map((lv) => (
+                {SUPPORTED_ENEMY_LEVELS.map((lv) => (
                   <option key={lv} value={lv}>
                     {lv}
                   </option>
