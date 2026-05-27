@@ -11,7 +11,6 @@ import {
 } from "../stats/derivedStats";
 import {
   getBossResistancePct,
-  getPlayerDirectPrecisionPct,
   getStoredLevelContext,
   type LevelContext,
 } from "../level/levelSettings";
@@ -120,10 +119,12 @@ export function buildDamageContext(
       : storedLevels.enemyLevel;
 
   const bossResistance = getBossResistancePct(enemyLevel) / 100;
-  const levelDirectPrecision = getPlayerDirectPrecisionPct(playerLevel);
 
   const applyBossResistanceToRate = (basePct: number) =>
     basePct * (1 - bossResistance);
+
+  const applyBossResistanceToPrecision = (basePct: number) =>
+    65 + (basePct - 65) * (1 - bossResistance);
 
   /* ============================
      Cache for OTHER elements
@@ -186,12 +187,11 @@ export function buildDamageContext(
       return cur("MaxPhysicalAttack") + derived.maxAtk;
 
     // Boss resistance applies only to: PrecisionRate, CriticalRate, AffinityRate
-    // - Precision: final = (base + direct) * (1 - bossResistance)
+    // - Precision: final = 65 + (base - 65) * (1 - bossResistance)
     // - Critical/Affinity: final = base * (1 - bossResistance) + direct
     if (k === "PrecisionRate") {
       const base = cur("PrecisionRate");
-      const direct = cur("DirectPrecisionRate") + levelDirectPrecision;
-      return applyBossResistanceToRate(base + direct);
+      return applyBossResistanceToPrecision(base);
     }
 
     if (k === "CriticalRate") {
@@ -382,13 +382,27 @@ export function buildDamageContext(
     }
 
     if (k === "PrecisionRate") {
-      return explainRateWithBossResistance({
+      const base = cur("PrecisionRate");
+      const total = applyBossResistanceToPrecision(base);
+      const lines: StatSourceLine[] = [...explainInputStat("PrecisionRate")];
+
+      if (bossResistance !== 0) {
+        lines.push(
+          makeLine(
+            "derived",
+            "Boss resistance",
+            total - base,
+            `Enemy Lv ${enemyLevel} (${(bossResistance * 100).toFixed(1)}%)`,
+          ),
+        );
+      }
+
+      return {
         key: k,
-        baseKey: "PrecisionRate",
-        directKey: "DirectPrecisionRate",
-        levelDirectAdd: levelDirectPrecision,
-        resistanceAppliesToDirect: true,
-      });
+        total,
+        lines: lines.filter((x) => x.value !== 0),
+        formula: `65 + (base + gear - 65) × (1 - resistance)`,
+      };
     }
 
     if (k === "CriticalRate") {

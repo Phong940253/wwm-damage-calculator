@@ -18,13 +18,12 @@ const LEVEL_EFFECTS: Record<
   number,
   {
     bossResistancePct: number;
-    playerDirectPrecisionPct: number;
   }
 > = {
-  71: { bossResistancePct: 0, playerDirectPrecisionPct: 8.5 },
-  81: { bossResistancePct: 13, playerDirectPrecisionPct: 9.8 },
-  91: { bossResistancePct: 45, playerDirectPrecisionPct: 13.5 },
-  95: { bossResistancePct: 45, playerDirectPrecisionPct: 13.5 },
+  71: { bossResistancePct: 0 },
+  81: { bossResistancePct: 13 },
+  91: { bossResistancePct: 31 },
+  95: { bossResistancePct: 31 },
 };
 
 export const SUPPORTED_PLAYER_LEVELS = [71, 81, 91, 95];
@@ -40,11 +39,6 @@ export function getBossResistancePct(enemyLevel: number): number {
   if (enemyLevel >= 91 && enemyLevel <= 95) return 31;
   if (enemyLevel >= 96 && enemyLevel <= 100) return 65;
   return LEVEL_EFFECTS[enemyLevel]?.bossResistancePct ?? 0;
-}
-
-export function getPlayerDirectPrecisionPct(playerLevel: number): number {
-  if (playerLevel >= 91 && playerLevel <= 95) return 13.5;
-  return LEVEL_EFFECTS[playerLevel]?.playerDirectPrecisionPct ?? 0;
 }
 
 export function clampToSupportedPlayerLevel(level: number): number {
