@@ -14,7 +14,7 @@
                 "value": 10
             },
             {
-                "stat": "AffinityRate",
+                "stat": "DirectAffinityRate",
                 "type": "flat",
                 "value": 7.5
             }
@@ -24,17 +24,29 @@
     {
         "id": "ps_universal_food_buff_physical_attack",
         "name": "Food Buff (Physical Attack)",
-        "description": "Food buff: increases Min Physical Attack by 50 and Max Physical Attack by 100.",
+        "description": "Food buff: increases Min Physical Attack by 90 and Max Physical Attack by 180.",
         "modifiers": [
             {
                 "stat": "MinPhysicalAttack",
                 "type": "flat",
-                "value": 50
+                "value": 90
             },
             {
                 "stat": "MaxPhysicalAttack",
                 "type": "flat",
-                "value": 100
+                "value": 180
+            }
+        ]
+    },
+    {
+        "id": "ps_universal_talisman_affinity_dmg",
+        "name": "Talisman Buff (Affinity DMG)",
+        "description": "Talisman buff: increases Affinity DMG by 10%",
+        "modifiers": [
+            {
+                "stat": "AffinityDMGBonus",
+                "type": "flat",
+                "value": 10
             }
         ]
     },
@@ -120,11 +132,11 @@
                 "stat": "AffinityRate",
                 "type": "scale",
                 "sourceStat": "Momentum",
-                "ratio": 0.0155172414,
-                "max": 175
+                "ratio": 0.0151111111,
+                "max": 225
             }
         ],
-        "notes": "Model: bonus = min(Momentum, 175) * 0.04 (cap represented via max=175 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+        "notes": "Model: bonus = min(Momentum, 225) * 0.04 (cap represented via max=225 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
     },
     {
         "id": "ps_bellstrike_splendor_included_max_physical_attack_up_momentum",
@@ -137,11 +149,11 @@
                 "stat": "MaxPhysicalAttack",
                 "type": "scale",
                 "sourceStat": "Momentum",
-                "ratio": 0.2646551724,
-                "max": 175
+                "ratio": 0.264,
+                "max": 225
             }
         ],
-        "notes": "Model: bonus = min(Momentum, 175) * 0.9 (cap represented via max=175 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
+        "notes": "Model: bonus = min(Momentum, 225) * 0.9 (cap represented via max=225 on the source stat). Toggle affects Stat Impact only to avoid double counting when your inputs already include this bonus."
     },
     {
         "id": "ps_bellstrike_umbra_1",

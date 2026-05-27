@@ -37,7 +37,7 @@ export const SUPPORTED_LEVELS = Array.from(
 export function getBossResistancePct(enemyLevel: number): number {
   if (enemyLevel >= 81 && enemyLevel <= 85) return 13;
   if (enemyLevel >= 86 && enemyLevel <= 90) return 30;
-  if (enemyLevel >= 91 && enemyLevel <= 95) return 45;
+  if (enemyLevel >= 91 && enemyLevel <= 95) return 31;
   if (enemyLevel >= 96 && enemyLevel <= 100) return 65;
   return LEVEL_EFFECTS[enemyLevel]?.bossResistancePct ?? 0;
 }

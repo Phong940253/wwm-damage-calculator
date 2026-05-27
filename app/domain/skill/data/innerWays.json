@@ -213,14 +213,9 @@
         ],
         "modifiers": [
             {
-                "stat": "AffinityRate",
+                "stat": "DirectAffinityRate",
                 "type": "flat",
-                "value": 1.5
-            },
-            {
-                "stat": "DamageBoost",
-                "type": "flat",
-                "value": 1.5
+                "value": 3
             }
         ],
         "level": 4,
@@ -256,7 +251,7 @@
         ],
         "modifiers": [
             {
-                "stat": "AffinityRate",
+                "stat": "DirectAffinityRate",
                 "type": "flat",
                 "value": 2.3
             },
