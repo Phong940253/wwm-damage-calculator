@@ -12,6 +12,7 @@ import {
   PieLabelRenderProps,
   Legend,
 } from "recharts";
+import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { Rotation } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { DamageContext } from "@/app/domain/damage/damageContext";
@@ -261,7 +262,7 @@ export default function RotationDamagePie({
   /* =======================
      Tooltip: skill + damage detail
   ======================= */
-  const tooltipFormatter: TooltipProps<number, string>["formatter"] = (
+  const tooltipFormatter: TooltipProps<ValueType, NameType>["formatter"] = (
     value,
     _,
     item

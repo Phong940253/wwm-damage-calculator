@@ -9,6 +9,7 @@ import {
   TooltipProps,
   PieLabelRenderProps,
 } from "recharts";
+import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 const COLORS = {
   normal: "#10b981",
@@ -78,7 +79,7 @@ export default function AverageDamagePie({ data }: { data: Breakdown }) {
   /* =======================
      Tooltip: type + detail
   ======================= */
-  const tooltipFormatter: TooltipProps<number, string>["formatter"] = (
+  const tooltipFormatter: TooltipProps<ValueType, NameType>["formatter"] = (
     value,
     _,
     item
