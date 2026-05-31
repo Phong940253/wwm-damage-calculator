@@ -553,61 +553,63 @@ export default function GearEquippedTab() {
                 <Card
                   key={row.key}
                   className={cn(
-                    "space-y-3 border bg-card/50 p-2.5 shadow-sm sm:p-3",
+                    "space-y-3 border bg-card/50 p-3 shadow-sm sm:p-4",
                     "border-white/10",
                     isWorst && "ring-1 ring-amber-400/40"
                   )}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">{row.label}</p>
-                      <p className="text-sm font-semibold truncate">
-                        {row.equippedGear?.name ?? text.empty}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge
-                        variant={row.diff >= 0 ? "secondary" : "outline"}
-                        className={cn(
-                          row.diff > 0 && "bg-emerald-500/15 text-emerald-700",
-                          row.diff < 0 && "bg-red-500/10 text-red-700"
-                        )}
-                      >
-                        {pctText}
-                      </Badge>
-                      {typeof row.perStat.impactPctNoMain === "number" &&
-                        Number.isFinite(row.perStat.impactPctNoMain) &&
-                        Math.abs(row.perStat.impactPctNoMain) >= 0.01 && (
-                          <Badge
-                            variant="outline"
-                            className="border-amber-400/30 bg-amber-500/10 text-amber-700"
-                            title="Gear impact excluding main stats (subs + bonus only)"
-                          >
-                            {text.noMain} {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
-                            {row.perStat.impactPctNoMain.toFixed(2)}%
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
+                        {isWorst && (
+                          <Badge className="bg-amber-500/15 text-amber-700" variant="outline">
+                            {text.worst}
                           </Badge>
                         )}
-                      {isWorst && (
-                        <Badge className="bg-amber-500/15 text-amber-700" variant="outline">
-                          {text.worst}
-                        </Badge>
-                      )}
-
-                      {row.equippedGear && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 gap-1 px-2 text-[11px] text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                          onClick={() => setEditingGear(row.equippedGear ?? null)}
-                          title={text.editGear}
+                      </div>
+                      <p className="truncate text-sm font-semibold">
+                        {row.equippedGear?.name ?? text.empty}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge
+                          variant={row.diff >= 0 ? "secondary" : "outline"}
+                          className={cn(
+                            "h-6 px-2 text-[11px]",
+                            row.diff > 0 && "bg-emerald-500/15 text-emerald-700",
+                            row.diff < 0 && "bg-red-500/10 text-red-700"
+                          )}
                         >
-                          <PencilLine className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">{text.editGear}</span>
-                        </Button>
-                      )}
+                          {pctText}
+                        </Badge>
+                        {typeof row.perStat.impactPctNoMain === "number" &&
+                          Number.isFinite(row.perStat.impactPctNoMain) &&
+                          Math.abs(row.perStat.impactPctNoMain) >= 0.01 && (
+                            <Badge
+                              variant="outline"
+                              className="h-6 border-amber-400/30 bg-amber-500/10 px-2 text-[11px] text-amber-700"
+                              title="Gear impact excluding main stats (subs + bonus only)"
+                            >
+                              {text.noMain} {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
+                              {row.perStat.impactPctNoMain.toFixed(2)}%
+                            </Badge>
+                          )}
+                      </div>
                     </div>
+
+                    {row.equippedGear && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 shrink-0 gap-1.5 rounded-full px-3 text-[11px] text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                        onClick={() => setEditingGear(row.equippedGear ?? null)}
+                        title={text.editGear}
+                      >
+                        <PencilLine className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">{text.editGear}</span>
+                      </Button>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
@@ -628,32 +630,38 @@ export default function GearEquippedTab() {
 
                   <Separator className="bg-white/5" />
 
-                  <select
-                    value={row.equippedId || ""}
-                    onChange={(e) =>
-                      setEquipped((prev) => {
-                        const next = { ...prev };
-                        const v = e.target.value;
-                        if (!v) {
-                          delete next[row.key];
-                        } else {
-                          next[row.key] = v;
-                        }
-                        return next;
-                      })
-                    }
-                    className={cn(
-                      "w-full rounded-md border bg-background px-2 py-2 text-sm",
-                      "border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
-                    )}
-                  >
-                    <option value="">{text.emptyOption}</option>
-                    {available.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>{text.gear}</span>
+                      <span>{available.length} options</span>
+                    </div>
+                    <select
+                      value={row.equippedId || ""}
+                      onChange={(e) =>
+                        setEquipped((prev) => {
+                          const next = { ...prev };
+                          const v = e.target.value;
+                          if (!v) {
+                            delete next[row.key];
+                          } else {
+                            next[row.key] = v;
+                          }
+                          return next;
+                        })
+                      }
+                      className={cn(
+                        "w-full rounded-lg border bg-background px-3 py-2 text-sm",
+                        "border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
+                      )}
+                    >
+                      <option value="">{text.emptyOption}</option>
+                      {available.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   {row.equippedGear ? (
                     <GearDetailCard
