@@ -248,8 +248,27 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={100} 
-                  tick={{ fontSize: 10, fill: "rgba(255,255,255,0.8)" }} 
+                  width={150} 
+                  tick={(props) => {
+                    const { x, y, payload } = props;
+                    const val = String(payload.value);
+                    const truncated = val.length > 22 ? val.substring(0, 19) + "..." : val;
+                    return (
+                      <g transform={`translate(${x},${y})`}>
+                        <text
+                          x={-8}
+                          y={0}
+                          dy={4}
+                          textAnchor="end"
+                          fill="rgba(255,255,255,0.8)"
+                          fontSize={10}
+                        >
+                          {truncated}
+                        </text>
+                        <title>{val}</title>
+                      </g>
+                    );
+                  }}
                   axisLine={false}
                   tickLine={false}
                   interval={0}

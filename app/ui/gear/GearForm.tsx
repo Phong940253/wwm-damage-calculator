@@ -176,9 +176,17 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     subs,
     setSubs,
     addition: additions[0] ?? null, // useGearStatDnD might need update but let's see
-    setAddition: (val) => {
-      if (!val) setAdditions([]);
-      else setAdditions([val]);
+    setAddition: (valOrFn) => {
+      if (typeof valOrFn === "function") {
+        setAdditions((prev) => {
+          const current = prev[0] ?? null;
+          const next = (valOrFn as (prevState: GearStatRow | null) => GearStatRow | null)(current);
+          return next ? [next] : [];
+        });
+      } else {
+        if (!valOrFn) setAdditions([]);
+        else setAdditions([valOrFn]);
+      }
     },
     dragged,
     setDragged,
