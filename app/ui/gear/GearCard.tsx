@@ -887,7 +887,7 @@ function StatLine({
         border
         text-xs
         ${STAT_BG[type]}
-        ${isTuned ? "border-red-400/40 bg-red-500/15" : ""}
+        ${isTuned ? "border-red-500/60 bg-red-600/40 text-red-50" : ""}
       `}
     >
       <span className="min-w-0 truncate text-muted-foreground">
