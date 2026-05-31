@@ -431,7 +431,7 @@ export default function GearEquippedTab() {
           const range = getTuneStatRange(
             elementStats.selected,
             targetStat,
-            levelContext.enemyLevel,
+            levelContext?.enemyLevel,
           );
           if (!range) continue;
 
