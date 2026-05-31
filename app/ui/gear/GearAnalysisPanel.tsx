@@ -41,6 +41,15 @@ interface Props {
   elementStats: ElementStats;
 }
 
+interface GroupedStatEntry {
+  name: string;
+  totalCount: number;
+  subCount: number;
+  totalValue: number;
+  statKey: string;
+  isVirtual?: boolean;
+}
+
 export default function GearAnalysisPanel({ gears, equipped, elementStats }: Props) {
   const { language } = useI18n();
   
@@ -86,12 +95,12 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
   
   const chartData = useMemo(() => {
     return Object.entries(analysis.statSummary)
-      .filter(([_, data]) => data.subCount > 0)
       .map(([stat, data]) => ({
         name: getStatLabel(stat, elementStats),
-        count: data.subCount,
+        count: data.subCount + data.additionCount, // Exclude mainCount
         statKey: stat
       }))
+      .filter(d => d.count > 0)
       .sort((a, b) => b.count - a.count);
   }, [analysis.statSummary, elementStats]);
 
@@ -105,7 +114,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
 
   // Group stats for display
   const groupedStats = (() => {
-    const groups: Record<string, typeof chartData> = {
+    const groups: Record<string, GroupedStatEntry[]> = {
       Core: [],
       Attributes: [],
       Rates: [],
@@ -114,19 +123,29 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
       Other: []
     };
 
+    let totalMartialArtsBoost = 0;
+
     Object.entries(analysis.statSummary).forEach(([stat, data]) => {
-      const entry = {
+      const totalBonusCount = data.subCount + data.additionCount; // Exclude main
+      if (totalBonusCount === 0 && data.total === 0) return;
+
+      const entry: GroupedStatEntry = {
         name: getStatLabel(stat, elementStats),
-        count: data.subCount + data.mainCount + data.additionCount,
+        totalCount: totalBonusCount,
         subCount: data.subCount,
-        totalValue: data.total,
+        totalValue: data.total, // Already excludes main from analyzeEquippedGear change
         statKey: stat
       };
+
+      // Sum martial arts boosts
+      if (stat === "MartialArtSkillDamageBoost" || stat.includes("MartialArtSkillDMGBoost")) {
+          totalMartialArtsBoost += data.total;
+      }
 
       let assigned = false;
       for (const [groupName, keys] of Object.entries(STAT_GROUPS)) {
         if (keys.includes(stat as any)) {
-          groups[groupName]?.push(entry as any);
+          groups[groupName]?.push(entry);
           assigned = true;
           break;
         }
@@ -134,12 +153,24 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
 
       if (!assigned) {
         if (stat.includes("Min") || stat.includes("Max") || stat.includes("Penetration") || stat.includes("DMGBonus")) {
-            groups.Element.push(entry as any);
+            groups.Element.push(entry);
         } else {
-            groups.Other.push(entry as any);
+            groups.Other.push(entry);
         }
       }
     });
+
+    // Add All Martial Arts Boost if there's any value
+    if (totalMartialArtsBoost > 0) {
+        groups.Core.unshift({
+            name: language === "vi" ? "Tổng cộng Võ học" : "All Martial Arts Boost",
+            totalCount: 0,
+            subCount: 0,
+            totalValue: totalMartialArtsBoost,
+            statKey: "ALL_MARTIAL_ARTS",
+            isVirtual: true
+        });
+    }
 
     return groups;
   })();
@@ -255,7 +286,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
             {text.statDetails}
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-2">
             {Object.entries(groupedStats).map(([groupName, stats]) => {
               if (stats.length === 0) return null;
               return (
@@ -265,26 +296,33 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
                     <span className="text-xs font-bold uppercase tracking-wider">{getGroupLabel(groupName)}</span>
                   </div>
                   <div className="space-y-1.5 px-1">
-                    {stats.map((s: any) => (
+                    {stats.map((s: GroupedStatEntry) => (
                       <div key={s.statKey} className="group">
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="text-muted-foreground group-hover:text-foreground transition-colors truncate max-w-[120px]">
                             {s.name}
                           </span>
                           <div className="flex items-center gap-2">
-                             <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5">
-                               {s.subCount} {text.count}
-                             </Badge>
-                             <span className="font-mono text-emerald-400 font-bold">
+                             {!s.isVirtual && (
+                                <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title="Mains + Subs + Additions">
+                                    {s.totalCount} {text.count}
+                                </Badge>
+                             )}
+                             <span className={cn(
+                                "font-mono font-bold",
+                                s.isVirtual ? "text-blue-400" : "text-emerald-400"
+                             )}>
                                +{s.totalValue.toFixed(1)}
                              </span>
                           </div>
                         </div>
-                        <Progress 
-                          value={Math.min(100, (s.subCount / 8) * 100)} 
-                          className="h-1 bg-white/5" 
-                          indicatorClassName="bg-emerald-500"
-                        />
+                        {!s.isVirtual && (
+                            <Progress 
+                                value={Math.min(100, (s.totalCount / 12) * 100)} 
+                                className="h-1 bg-white/5" 
+                                indicatorClassName="bg-emerald-500"
+                            />
+                        )}
                       </div>
                     ))}
                   </div>

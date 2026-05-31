@@ -73,7 +73,12 @@ export function analyzeEquippedGear(
           additionCount: 0,
         };
       }
-      statSummary[attr.stat].total += attr.value;
+      
+      // ONLY sum values from sub and addition
+      if (type !== "main") {
+        statSummary[attr.stat].total += attr.value;
+      }
+
       if (type === "sub") {
         statSummary[attr.stat].subCount++;
         totalSubLines++;

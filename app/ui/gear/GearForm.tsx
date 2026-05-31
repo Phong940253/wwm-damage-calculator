@@ -333,7 +333,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         if (isValidAdditionStatForSlot(slot, String(a.stat))) return a;
         return { ...a, stat: defaultAdditionStat };
     }));
-  }, [slot, defaultAdditionStat]);
+  }, [slot, defaultAdditionStat, additions.length]);
 
   useEffect(() => {
     if (!tunedSubRowId) return;
