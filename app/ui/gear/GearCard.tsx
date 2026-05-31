@@ -38,6 +38,7 @@ import {
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
+import { useLevelContext } from "@/app/hooks/useLevelContext";
 import { useI18n } from "@/app/providers/I18nProvider";
 import {
   type TuneStatKey,
@@ -156,6 +157,7 @@ interface Props {
 
 export default function GearCard({ gear, elementStats, stats, rotation, onEdit, onDelete }: Props) {
   const { language } = useI18n();
+  const { levelContext } = useLevelContext();
   const text = language === "vi"
     ? {
       equipped: "Đang trang bị",
@@ -513,7 +515,11 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           continue;
         }
 
-        const range = getTuneStatRange(elementStats.selected, targetStat);
+        const range = getTuneStatRange(
+          elementStats.selected,
+          targetStat,
+          levelContext.enemyLevel,
+        );
         if (!range) continue;
 
         const expectedValue = range.maxPerLine;

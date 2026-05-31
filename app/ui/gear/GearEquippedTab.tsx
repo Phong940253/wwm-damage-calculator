@@ -17,6 +17,7 @@ import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { useStats } from "@/app/hooks/useStats";
 import { useElementStats } from "@/app/hooks/useElementStats";
 import { useRotation } from "@/app/hooks/useRotation";
+import { useLevelContext } from "@/app/hooks/useLevelContext";
 import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "@/app/constants";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
@@ -426,7 +427,11 @@ export default function GearEquippedTab() {
           if (!isTuneTargetAllowedBySubRules(subStats, subIndex, targetStat)) {
             continue;
           }
-          const range = getTuneStatRange(elementStats.selected, targetStat);
+          const range = getTuneStatRange(
+            elementStats.selected,
+            targetStat,
+            levelContext.enemyLevel,
+          );
           if (!range) continue;
 
           const expectedValue = range.maxPerLine;

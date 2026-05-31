@@ -1,4 +1,5 @@
 import { ElementKey } from "@/app/constants";
+import { getStoredLevelContext } from "../level/levelSettings";
 
 export type TuneHistoryEntry = {
   subIndex: number;
@@ -26,7 +27,8 @@ export type TuneStatKey =
   | "CriticalRate"
   | "AffinityRate"
   | "Power"
-  | "Momentum";
+  | "Momentum"
+  | "Agility";
 
 type TuneStatRange = { minPerLine: number; maxPerLine: number };
 
@@ -67,6 +69,7 @@ const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
   AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
   Power: { minPerLine: 14.9, maxPerLine: 29.8 },
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
+  Agility: { minPerLine: 14.9, maxPerLine: 29.8 },
 };
 
 export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Record<
@@ -80,6 +83,15 @@ export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Record<
   AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
   Power: { minPerLine: 20.2, maxPerLine: 40.4 },
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
+};
+
+export const LEVEL_95_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
+  ...BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS,
+  bellstrikePenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  bamboocutPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  PhysicalPenetration: { minPerLine: 5.4, maxPerLine: 9.0 },
 };
 
 export function getTuneSystemStatPool(
@@ -116,9 +128,24 @@ export function getBellstrikeLevel91TuneStatPool(): TuneStatKey[] {
 export function getTuneStatRange(
   selectedElement: ElementKey,
   stat: TuneStatKey,
+  enemyLevel?: number,
 ): TuneStatRange {
+  const finalEnemyLevel =
+    typeof enemyLevel === "number"
+      ? enemyLevel
+      : getStoredLevelContext().enemyLevel;
+
   if (selectedElement === "bellstrike") {
+    if (finalEnemyLevel >= 95) {
+      return (
+        LEVEL_95_TUNE_LIMITS[stat] || BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat]
+      );
+    }
     return BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat];
+  }
+
+  if (finalEnemyLevel >= 95) {
+    return LEVEL_95_TUNE_LIMITS[stat] || DEFAULT_TUNE_LIMITS[stat];
   }
 
   return DEFAULT_TUNE_LIMITS[stat];

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ElementStats, InputStats, Rotation } from "@/app/types";
-import { STAT_HEATMAP_AFFIX_LIMITS, StatHeatmapKey } from "@/app/constants";
+import { StatHeatmapKey } from "@/app/constants";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
 import { SKILLS } from "@/app/domain/skill/skills";
@@ -17,6 +17,10 @@ import {
 } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
+import {
+  getTuneStatRange,
+  type TuneStatKey,
+} from "@/app/domain/gear/tuneAdvisor";
 
 type ElementStatKey = Exclude<keyof ElementStats, "selected" | "martialArtsId">;
 
@@ -153,12 +157,38 @@ export function useStatHeatmap(
     };
 
     const rows = (
-      Object.entries(STAT_HEATMAP_AFFIX_LIMITS) as [
-        StatHeatmapKey,
-        { minPerLine: number; maxPerLine: number },
-      ][]
+      [
+        "MinPhysicalAttack",
+        "MaxPhysicalAttack",
+        "bellstrikeMin",
+        "bellstrikeMax",
+        "stonesplitMin",
+        "stonesplitMax",
+        "silkbindMin",
+        "silkbindMax",
+        "bamboocutMin",
+        "bamboocutMax",
+        "bellstrikePenetration",
+        "stonesplitPenetration",
+        "silkbindPenetration",
+        "bamboocutPenetration",
+        "PhysicalPenetration",
+        "PhysicalResistance",
+        "CriticalRate",
+        "AffinityRate",
+        "Power",
+        "Agility",
+        "Momentum",
+      ] as StatHeatmapKey[]
     )
-      .map(([key, range]) => {
+      .map((key) => {
+        const range = getTuneStatRange(
+          elementStats.selected,
+          key as TuneStatKey,
+          levelContext?.enemyLevel,
+        );
+        if (!range) return null;
+
         const minDelta = range.minPerLine * safeLineCount;
         const maxDelta = range.maxPerLine * safeLineCount;
         const minImpactPct = evaluateImpact(key, minDelta);
@@ -173,6 +203,7 @@ export function useStatHeatmap(
           bestImpactPct: Math.max(minImpactPct, maxImpactPct),
         };
       })
+      .filter((row): row is StatHeatmapRow => row !== null)
       .sort((a, b) => b.bestImpactPct - a.bestImpactPct);
 
     return rows;
