@@ -86,8 +86,8 @@ export const explainCalcExpectedNormal = (
   const maxDamage = affinityDamage;
 
   const P_raw = g("PrecisionRate") / 100;
-  const A_raw = g("AffinityRate") / 100;
-  const C_raw = g("CriticalRate") / 100;
+  const A_raw = g("FinalAffinityRate") / 100;
+  const C_raw = g("FinalCriticalRate") / 100;
   const P = clamp01(P_raw);
   const A = clamp01(A_raw);
   const C = clamp01(C_raw);
@@ -263,8 +263,8 @@ export const calcExpectedNormal = (
 
   // Probability calculations with clamping
   const P = clamp01(g("PrecisionRate") / 100);
-  const A = clamp01(g("AffinityRate") / 100);
-  const C = clamp01(g("CriticalRate") / 100);
+  const A = clamp01(g("FinalAffinityRate") / 100);
+  const C = clamp01(g("FinalCriticalRate") / 100);
   const CD = g("CriticalDMGBonus") / 100;
 
   // Normalize probabilities if sum exceeds 1
@@ -292,8 +292,8 @@ export const calcExpectedNormalBreakdown = (
   const { base } = calcBaseDamageComponents(g);
 
   const P = clamp01(g("PrecisionRate") / 100);
-  const A = clamp01(g("AffinityRate") / 100);
-  const C = clamp01(g("CriticalRate") / 100);
+  const A = clamp01(g("FinalAffinityRate") / 100);
+  const C = clamp01(g("FinalCriticalRate") / 100);
   const CD = g("CriticalDMGBonus") / 100;
 
   // Normalize probabilities if sum exceeds 1

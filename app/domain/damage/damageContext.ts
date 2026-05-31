@@ -121,6 +121,7 @@ export function buildDamageContext(
   const bossResistance = getBossResistancePct(enemyLevel) / 100;
 
   const AFFINITY_RATE_CAP_PCT = 40;
+  const CRITICAL_RATE_CAP_PCT = 80;
 
   const applyBossResistanceToRate = (basePct: number) =>
     basePct * (1 - bossResistance);
@@ -197,12 +198,24 @@ export function buildDamageContext(
     }
 
     if (k === "CriticalRate") {
+      return cur("CriticalRate") + derived.critRate + cur("DirectCriticalRate");
+    }
+
+    if (k === "FinalCriticalRate") {
       const base = cur("CriticalRate") + derived.critRate;
       const direct = cur("DirectCriticalRate");
-      return applyBossResistanceToRate(base) + direct;
+      return (
+        Math.min(applyBossResistanceToRate(base), CRITICAL_RATE_CAP_PCT) + direct
+      );
     }
 
     if (k === "AffinityRate") {
+      return (
+        cur("AffinityRate") + derived.affinityRate + cur("DirectAffinityRate")
+      );
+    }
+
+    if (k === "FinalAffinityRate") {
       const base = cur("AffinityRate") + derived.affinityRate;
       const direct = cur("DirectAffinityRate");
       return (
@@ -336,7 +349,7 @@ export function buildDamageContext(
         lines.push(
           makeLine(
             "derived",
-            "Affinity cap",
+            `${args.key.includes("Affinity") ? "Affinity" : "Critical"} cap`,
             capAfterResistancePct - resistedBase,
             `Capped at ${capAfterResistancePct.toFixed(1)}% after boss resistance`,
           ),
@@ -432,15 +445,62 @@ export function buildDamageContext(
     }
 
     if (k === "CriticalRate") {
+      const agility = cur("Agility");
+      const lines = [
+        ...explainInputStat("CriticalRate"),
+        makeLine(
+          "derived",
+          "From Agility",
+          agility * DERIVED_COEFFICIENTS.critRate.agility,
+        ),
+        ...explainInputStat("DirectCriticalRate").map((l) => ({
+          ...l,
+          label: `Direct: ${l.label}`,
+        })),
+      ].filter((x) => x.value !== 0);
+
+      return {
+        key: k,
+        total,
+        lines,
+        formula: `CriticalRate + Derived + DirectCriticalRate`,
+      };
+    }
+
+    if (k === "FinalCriticalRate") {
       return explainRateWithBossResistance({
         key: k,
         baseKey: "CriticalRate",
         directKey: "DirectCriticalRate",
         derivedAdd: derived.critRate,
+        capAfterResistancePct: CRITICAL_RATE_CAP_PCT,
       });
     }
 
     if (k === "AffinityRate") {
+      const momentum = cur("Momentum");
+      const lines = [
+        ...explainInputStat("AffinityRate"),
+        makeLine(
+          "derived",
+          "From Momentum",
+          momentum * DERIVED_COEFFICIENTS.affinityRate.momentum,
+        ),
+        ...explainInputStat("DirectAffinityRate").map((l) => ({
+          ...l,
+          label: `Direct: ${l.label}`,
+        })),
+      ].filter((x) => x.value !== 0);
+
+      return {
+        key: k,
+        total,
+        lines,
+        formula: `AffinityRate + Derived + DirectAffinityRate`,
+      };
+    }
+
+    if (k === "FinalAffinityRate") {
       return explainRateWithBossResistance({
         key: k,
         baseKey: "AffinityRate",
@@ -588,40 +648,6 @@ export function buildDamageContext(
             "derived",
             "From Power",
             power * DERIVED_COEFFICIENTS.maxAtk.power,
-          ),
-        ].filter((x) => x.value !== 0),
-      };
-    }
-
-    if (k === "CriticalRate") {
-      const agility = cur("Agility");
-      return {
-        key: k,
-        total,
-        formula: `Agility×${DERIVED_COEFFICIENTS.critRate.agility}`,
-        lines: [
-          ...explainInputStat("CriticalRate"),
-          makeLine(
-            "derived",
-            "From Agility",
-            agility * DERIVED_COEFFICIENTS.critRate.agility,
-          ),
-        ].filter((x) => x.value !== 0),
-      };
-    }
-
-    if (k === "AffinityRate") {
-      const momentum = cur("Momentum");
-      return {
-        key: k,
-        total,
-        formula: `Momentum×${DERIVED_COEFFICIENTS.affinityRate.momentum}`,
-        lines: [
-          ...explainInputStat("AffinityRate"),
-          makeLine(
-            "derived",
-            "From Momentum",
-            momentum * DERIVED_COEFFICIENTS.affinityRate.momentum,
           ),
         ].filter((x) => x.value !== 0),
       };

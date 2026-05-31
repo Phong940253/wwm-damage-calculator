@@ -34,13 +34,25 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
         },
         {
           label: "Critical Rate",
-          value: pct(ctx.get("CriticalRate")),
-          ctxKeys: ["CriticalRate"],
+          value: `${pct(ctx.get("CriticalRate"))} → ${pct(
+            ctx.get("FinalCriticalRate"),
+          )}`,
+          ctxKeys: ["CriticalRate", "FinalCriticalRate"],
         },
         {
           label: "Affinity Rate",
-          value: pct(ctx.get("AffinityRate")),
-          ctxKeys: ["AffinityRate"],
+          value: `${pct(ctx.get("AffinityRate"))} → ${pct(
+            ctx.get("FinalAffinityRate"),
+          )}`,
+          ctxKeys: ["AffinityRate", "FinalAffinityRate"],
+        },
+        {
+          label: "Total Rate",
+          value: pct(
+            ctx.get("FinalCriticalRate") + ctx.get("FinalAffinityRate"),
+          ),
+          highlight: true,
+          ctxKeys: ["FinalCriticalRate", "FinalAffinityRate"],
         },
       ],
     },
