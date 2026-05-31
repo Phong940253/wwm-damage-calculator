@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { getStatLabel } from "@/app/utils/statLabel";
 import { CustomGear, ElementStats } from "@/app/types";
 import { StatType } from "@/app/domain/gear/types";
@@ -163,15 +164,11 @@ function StatLine({
 
   return (
     <div
-      className={`
-        flex items-center justify-between
-        px-2 py-1.5
-        rounded-md
-        border
-        text-xs
-        ${STAT_BG[type]}
-        ${isTuned ? "border-red-400/40 bg-red-500/15" : ""}
-      `}
+      className={cn(
+        "flex items-center justify-between px-2 py-1.5 rounded-md border text-xs",
+        STAT_BG[type],
+        isTuned && "!border-red-500/40 !bg-red-500/15 !text-red-200"
+      )}
     >
       <span className="text-muted-foreground truncate">
         {getStatLabel(key, elementStats)}
