@@ -90,6 +90,7 @@ export interface CustomGear {
   slot: GearSlot;
   /** Optional weapon kind for weapon_1 / weapon_2 slots. */
   weaponType?: MartialArtWeaponType;
+  level?: number;
 
   /** exactly 1 */
   main?: GearAttribute | null;

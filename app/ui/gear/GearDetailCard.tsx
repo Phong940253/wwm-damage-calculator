@@ -28,15 +28,20 @@ export default function GearDetailCard({
 }: Props) {
   const { language } = useI18n();
   const text = language === "vi"
-    ? { main: "Chính", mainStats: "Chỉ số chính", subStats: "Chỉ số phụ", bonus: "Thưởng" }
-    : { main: "Main", mainStats: "Main Stats", subStats: "Sub Stats", bonus: "Bonus" };
+    ? { main: "Chính", mainStats: "Chỉ số chính", subStats: "Chỉ số phụ", bonus: "Thưởng", level: "Cấp" }
+    : { main: "Main", mainStats: "Main Stats", subStats: "Sub Stats", bonus: "Bonus", level: "Lv." };
 
   return (
     <Card className="p-3 space-y-2 border border-white/10 bg-card/70">
       {/* Gear name */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold truncate">{gear.name}</p>
-        <Badge variant="secondary">{gear.slot}</Badge>
+        <div className="flex items-center gap-1.5">
+          <Badge variant="outline">
+            {text.level} {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}
+          </Badge>
+          <Badge variant="secondary">{gear.slot}</Badge>
+        </div>
       </div>
 
       {/* Main stat (single) */}

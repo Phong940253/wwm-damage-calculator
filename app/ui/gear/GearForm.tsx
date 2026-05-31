@@ -73,6 +73,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       slot: "Vị trí",
       weaponType: "Loại vũ khí",
       weaponTypeRequired: "Vui lòng chọn loại vũ khí cho ô Weapon",
+      level: "Cấp gear",
       rarity: "Độ hiếm",
       rarityPlaceholder: "ví dụ: Common, Rare, Epic, Legendary",
       mainAttributes: "Thuộc tính chính",
@@ -99,6 +100,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       slot: "Slot",
       weaponType: "Weapon Type",
       weaponTypeRequired: "Please select a weapon type for weapon slots",
+      level: "Gear level",
       rarity: "Rarity",
       rarityPlaceholder: "e.g. Common, Rare, Epic, Legendary",
       mainAttributes: "Main Attributes",
@@ -128,6 +130,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const [name, setName] = useState("");
   const [slot, setSlot] = useState<GearSlot>("weapon_1");
   const [weaponType, setWeaponType] = useState<MartialArtWeaponType | "">("sword");
+  const [level, setLevel] = useState(91);
   const [rarity, setRarity] = useState("");
 
   /** 🔥 MULTI MAIN */
@@ -181,6 +184,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       if (result.name) setName(result.name);
       const nextSlot = (result.slot as GearSlot) || slot;
       if (result.slot) setSlot(nextSlot);
+      setLevel(91);
       if (!isWeaponSlot(nextSlot)) {
         setWeaponType("");
       } else if (!weaponType) {
@@ -250,6 +254,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     setName(initialGear.name);
     setSlot(initialGear.slot);
     setWeaponType(initialGear.weaponType ?? (isWeaponSlot(initialGear.slot) ? "sword" : ""));
+    setLevel(typeof initialGear.level === "number" && Number.isFinite(initialGear.level) ? initialGear.level : 91);
     setRarity(initialGear.rarity ?? "");
 
     setMains(initialGear.mains.map(m => ({ id: crypto.randomUUID(), ...m })));
@@ -332,6 +337,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         name,
         slot,
         weaponType: isWeaponSlot(slot) ? weaponType || undefined : undefined,
+        level: Number.isFinite(level) ? level : undefined,
         mains: mains.map(({ stat, value }) => ({ stat, value })),
         subs: subs.map(({ stat, value }) => ({ stat, value })),
         addition:
@@ -412,6 +418,17 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className={labelClass}>{text.level}</label>
+          <Input
+            type="number"
+            min={1}
+            step={1}
+            value={level}
+            onChange={(e) => setLevel(Number(e.target.value))}
+          />
         </div>
 
         {isWeaponSlot(slot) && (

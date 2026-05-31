@@ -29,12 +29,10 @@ import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInSt
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
 import type { CustomGear } from "@/app/types";
 import { useI18n } from "@/app/providers/I18nProvider";
-import {
-  STAT_HEATMAP_AFFIX_LIMITS,
-  type StatHeatmapKey,
-} from "@/app/constants";
 import { getStatLabel } from "@/app/utils/statLabel";
 import {
+  type TuneStatKey,
+  getTuneStatRange,
   getTuneSystemStatPool,
   hasUsedTune,
   isTuneTargetAllowedBySubRules,
@@ -357,9 +355,9 @@ export default function GearEquippedTab() {
       currentValue: number;
       expectedGainPct: number;
       bestCaseGainPct: number;
-      bestTargetStat: StatHeatmapKey;
+      bestTargetStat: TuneStatKey;
       bestTargetValue: number;
-      outcomes: Array<{ targetStat: StatHeatmapKey; expectedGainPct: number; bestCaseGainPct: number }>;
+      outcomes: Array<{ targetStat: TuneStatKey; expectedGainPct: number; bestCaseGainPct: number }>;
     }>;
 
     const calcWithBonus = (nextBonus: Record<string, number>) =>
@@ -374,9 +372,9 @@ export default function GearEquippedTab() {
       currentValue: number;
       expectedGainPct: number;
       bestCaseGainPct: number;
-      bestTargetStat: StatHeatmapKey;
+      bestTargetStat: TuneStatKey;
       bestTargetValue: number;
-      outcomes: Array<{ targetStat: StatHeatmapKey; expectedGainPct: number; bestCaseGainPct: number }>;
+      outcomes: Array<{ targetStat: TuneStatKey; expectedGainPct: number; bestCaseGainPct: number }>;
     }> = [];
 
     for (const { key: slot, label: slotLabel } of GEAR_SLOTS) {
@@ -400,7 +398,7 @@ export default function GearEquippedTab() {
         bonusWithoutLine[currentStat] = (bonusWithoutLine[currentStat] ?? 0) - currentValue;
 
         const outcomes: Array<{
-          targetStat: StatHeatmapKey;
+          targetStat: TuneStatKey;
           expectedGainPct: number;
           bestCaseGainPct: number;
         }> = [];
@@ -410,7 +408,7 @@ export default function GearEquippedTab() {
           if (!isTuneTargetAllowedBySubRules(subStats, subIndex, targetStat)) {
             continue;
           }
-          const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
+          const range = getTuneStatRange(elementStats.selected, targetStat);
           if (!range) continue;
 
           const expectedValue = range.maxPerLine;
@@ -447,7 +445,7 @@ export default function GearEquippedTab() {
           expectedGainPct,
           bestCaseGainPct: bestOutcome.bestCaseGainPct,
           bestTargetStat: bestOutcome.targetStat,
-          bestTargetValue: STAT_HEATMAP_AFFIX_LIMITS[bestOutcome.targetStat].maxPerLine,
+          bestTargetValue: getTuneStatRange(elementStats.selected, bestOutcome.targetStat).maxPerLine,
           outcomes,
         });
       }
