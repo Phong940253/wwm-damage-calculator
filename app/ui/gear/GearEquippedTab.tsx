@@ -43,7 +43,7 @@ import {
   getTuneAvgGainPct,
   getTuneSuccessRatePct,
   getTuneSuccessRateToneClass,
-  getTuneStatRange,
+  getGearTuneStatRange,
   getTuneSystemStatPool,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
@@ -428,11 +428,11 @@ export default function GearEquippedTab() {
           if (!isTuneTargetAllowedBySubRules(subStats, subIndex, targetStat)) {
             continue;
           }
-          const range = getTuneStatRange(
+          const range = getGearTuneStatRange(
             elementStats.selected,
             targetStat,
-            levelContext?.enemyLevel,
           );
+
           if (!range) continue;
 
           const expectedValue = range.maxPerLine;
@@ -470,7 +470,7 @@ export default function GearEquippedTab() {
           successRatePct,
           bestCaseGainPct: bestOutcome.bestCaseGainPct,
           bestTargetStat: bestOutcome.targetStat,
-          bestTargetValue: getTuneStatRange(elementStats.selected, bestOutcome.targetStat).maxPerLine,
+          bestTargetValue: getGearTuneStatRange(elementStats.selected, bestOutcome.targetStat).maxPerLine,
           outcomes,
         });
       }

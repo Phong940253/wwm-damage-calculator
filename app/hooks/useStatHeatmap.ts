@@ -18,7 +18,7 @@ import {
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
 import {
-  getTuneStatRange,
+  getPlayerTuneStatRange,
   type TuneStatKey,
 } from "@/app/domain/gear/tuneAdvisor";
 
@@ -182,8 +182,7 @@ export function useStatHeatmap(
       ] as StatHeatmapKey[]
     )
       .map((key) => {
-        const range = getTuneStatRange(
-          elementStats.selected,
+        const range = getPlayerTuneStatRange(
           key as TuneStatKey,
           levelContext?.enemyLevel,
         );

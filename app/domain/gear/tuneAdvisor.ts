@@ -72,11 +72,9 @@ const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
   Agility: { minPerLine: 14.9, maxPerLine: 29.8 },
 };
 
-export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Record<
-  TuneStatKey,
-  TuneStatRange
+export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Partial<
+  Record<TuneStatKey, TuneStatRange>
 > = {
-  ...DEFAULT_TUNE_LIMITS,
   MaxPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
   bellstrikeMax: { minPerLine: 18.1, maxPerLine: 36.2 },
   CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
@@ -85,8 +83,10 @@ export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Record<
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
 };
 
-export const LEVEL_95_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
-  ...BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS,
+export const LEVEL_91_PENETRATION_TUNE_LIMITS: Record<
+  TuneStatKey,
+  TuneStatRange
+> = {
   bellstrikePenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
   stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
   silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
@@ -113,42 +113,40 @@ export function getTuneSystemStatPool(
 }
 
 export function getBellstrikeLevel91TuneStatPool(): TuneStatKey[] {
-  return (
-    Object.keys(BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS) as TuneStatKey[]
-  ).filter((stat) => {
-    const bellstrikeLimit = BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat];
-    const defaultLimit = DEFAULT_TUNE_LIMITS[stat];
-    return (
-      bellstrikeLimit.minPerLine !== defaultLimit.minPerLine ||
-      bellstrikeLimit.maxPerLine !== defaultLimit.maxPerLine
-    );
-  });
+  return Object.keys(BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS) as TuneStatKey[];
 }
 
-export function getTuneStatRange(
+export function getAllBellstrikeTuneStatKeys(): TuneStatKey[] {
+  return Object.keys(BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS) as TuneStatKey[];
+}
+
+export function getGearTuneStatRange(
   selectedElement: ElementKey,
   stat: TuneStatKey,
-  enemyLevel?: number,
 ): TuneStatRange {
-  const finalEnemyLevel =
-    typeof enemyLevel === "number"
-      ? enemyLevel
-      : getStoredLevelContext().enemyLevel;
-
   if (selectedElement === "bellstrike") {
-    if (finalEnemyLevel >= 95) {
-      return (
-        LEVEL_95_TUNE_LIMITS[stat] || BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat]
-      );
-    }
-    return BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat];
-  }
-
-  if (finalEnemyLevel >= 95) {
-    return LEVEL_95_TUNE_LIMITS[stat] || DEFAULT_TUNE_LIMITS[stat];
+    return (
+      BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat] || DEFAULT_TUNE_LIMITS[stat]
+    );
   }
 
   return DEFAULT_TUNE_LIMITS[stat];
+}
+
+export function getPlayerTuneStatRange(
+  stat: TuneStatKey,
+  enemyLevel: number = 0,
+): TuneStatRange {
+  const baseRange = DEFAULT_TUNE_LIMITS[stat];
+  
+  if (enemyLevel >= 91) {
+    const penRange = LEVEL_91_PENETRATION_TUNE_LIMITS[stat];
+    if (penRange) {
+      return penRange;
+    }
+  }
+  
+  return baseRange;
 }
 
 export function getGearTuneHistory(

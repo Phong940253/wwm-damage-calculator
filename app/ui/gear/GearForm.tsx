@@ -22,7 +22,8 @@ import { GearStatSelect } from "./GearStatSelect";
 import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } from "./useGearStatDnD";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { MartialArtWeaponType } from "@/app/domain/skill/types";
-import { getBellstrikeLevel91TuneStatPool, getGearTuneHistory } from "@/app/domain/gear/tuneAdvisor";
+import { getAllBellstrikeTuneStatKeys, getBellstrikeLevel91TuneStatPool, getGearTuneHistory } from "@/app/domain/gear/tuneAdvisor";
+
 
 
 /* =======================
@@ -198,7 +199,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const additionOptions = getAdditionStatsBySlot(slot);
   const additionOptionGroups = getAdditionStatGroupsBySlot(slot);
   const defaultAdditionStat = additionOptions[0] ?? "PhysicalPenetration";
-  const tuneHistoryStatOptions = getBellstrikeLevel91TuneStatPool();
+  const tuneHistoryStatOptions = getAllBellstrikeTuneStatKeys();
 
   const handleOcr = async (file: File) => {
     console.log("OCR start", file.name, file.size);
@@ -461,15 +462,30 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const removeSub = (rowId: string) =>
     setSubs(s => s.filter(r => r.id !== rowId));
 
-  const addTuneHistoryRow = () =>
+  const addTuneHistoryRow = () => {
+    // Find the current tuned sub index if possible
+    let defaultSubIndex: number | "" = "";
+    if (tunedSubRowId) {
+      const idx = subs.findIndex(s => s.id === tunedSubRowId);
+      if (idx > 0) {
+        defaultSubIndex = idx;
+      }
+    }
+    
+    // Fallback
+    if (defaultSubIndex === "" && subs.length > 1) {
+        defaultSubIndex = 1;
+    }
+
     setTuneHistoryRows((rows) => [
       ...rows,
       {
         id: crypto.randomUUID(),
-        subIndex: subs.length > 1 ? 1 : "",
+        subIndex: defaultSubIndex,
         stat: "",
       },
     ]);
+  };
 
   const removeTuneHistoryRow = (rowId: string) =>
     setTuneHistoryRows((rows) => rows.filter((row) => row.id !== rowId));

@@ -46,7 +46,7 @@ import {
   getGearActiveTuneSubIndex,
   getGearTuneHistoryStatSet,
   getGearTuneHistorySubIndexSet,
-  getTuneStatRange,
+  getGearTuneStatRange,
   getTuneSystemStatPool,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
