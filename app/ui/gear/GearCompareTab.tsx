@@ -125,7 +125,7 @@ export default function GearCompareTab({
             <option value="">{text.selectGear}</option>
             {customGears.map((gear) => (
               <option key={gear.id} value={gear.id}>
-                {gear.name} ({gear.slot})
+                {gear.name} (Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
               </option>
             ))}
           </select>
@@ -143,7 +143,7 @@ export default function GearCompareTab({
             <option value="">{text.selectGear}</option>
             {customGears.map((gear) => (
               <option key={gear.id} value={gear.id}>
-                {gear.name} ({gear.slot})
+                {gear.name} (Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
               </option>
             ))}
           </select>

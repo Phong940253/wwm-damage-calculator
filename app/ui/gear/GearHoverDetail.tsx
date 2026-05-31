@@ -224,6 +224,7 @@ export default function GearHoverDetail({
             <Badge className="bg-emerald-500/15 text-emerald-700" variant="outline">
               {text.newBadge}
             </Badge>
+            <Badge variant="outline">Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}</Badge>
             <Badge variant="secondary">{gear.slot}</Badge>
             {gear.rarity && <Badge variant="secondary">{gear.rarity}</Badge>}
             {oldGear && (

@@ -24,8 +24,6 @@ import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
 import {
   GEAR_SLOTS,
-  STAT_HEATMAP_AFFIX_LIMITS,
-  type StatHeatmapKey,
 } from "@/app/constants";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
@@ -42,6 +40,8 @@ import {
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
 import {
+  type TuneStatKey,
+  getTuneStatRange,
   getTuneSystemStatPool,
   hasUsedTune,
   isTuneTargetAllowedBySubRules,
@@ -430,12 +430,43 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       expectedGainPct: number;
       bestCaseGainPct: number;
       outcomes: Array<{
-        targetStat: StatHeatmapKey;
+        targetStat: TuneStatKey;
         expectedGainPct: number;
         bestCaseGainPct: number;
       }>;
     }>;
     if (hasUsedTune(gear)) return [];
+
+    const gearCurrentBonus = { ...baseline.bonusWithoutSlot };
+
+    mains.forEach((m) => {
+      const statKey = String(m.stat);
+      const value = Number(m.value ?? 0);
+      if (!value) return;
+      gearCurrentBonus[statKey] = (gearCurrentBonus[statKey] ?? 0) + value;
+    });
+
+    (gear.subs ?? []).forEach((s) => {
+      const statKey = String(s.stat);
+      const value = Number(s.value ?? 0);
+      if (!value) return;
+      gearCurrentBonus[statKey] = (gearCurrentBonus[statKey] ?? 0) + value;
+    });
+
+    if (gear.addition) {
+      const statKey = String(gear.addition.stat);
+      const value = Number(gear.addition.value ?? 0);
+      if (value) {
+        gearCurrentBonus[statKey] = (gearCurrentBonus[statKey] ?? 0) + value;
+      }
+    }
+
+    const tuneBaseDamage = calcRotationAwareNormalDamage(
+      stats,
+      elementStats,
+      gearCurrentBonus,
+      rotation
+    );
 
     const rows: Array<{
       subIndex: number;
@@ -444,14 +475,13 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       expectedGainPct: number;
       bestCaseGainPct: number;
       outcomes: Array<{
-        targetStat: StatHeatmapKey;
+        targetStat: TuneStatKey;
         expectedGainPct: number;
         bestCaseGainPct: number;
       }>;
     }> = [];
 
-    const baseDamage = baseline.base;
-    const baseBonusWithoutSlot = baseline.bonusWithoutSlot;
+    const baseBonusWithoutSlot = gearCurrentBonus;
     const subStats = (gear.subs ?? []).map((line) => String(line.stat));
 
     (gear.subs ?? []).forEach((s, subIndex) => {
@@ -464,7 +494,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         (bonusWithoutLine[currentStat] ?? 0) - currentValue;
 
       const outcomes: Array<{
-        targetStat: StatHeatmapKey;
+        targetStat: TuneStatKey;
         expectedGainPct: number;
         bestCaseGainPct: number;
       }> = [];
@@ -475,7 +505,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           continue;
         }
 
-        const range = STAT_HEATMAP_AFFIX_LIMITS[targetStat];
+        const range = getTuneStatRange(elementStats.selected, targetStat);
         if (!range) continue;
 
         const expectedValue = range.maxPerLine;
@@ -500,8 +530,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
         outcomes.push({
           targetStat,
-          expectedGainPct: ((expectedDamage - baseDamage) / baseDamage) * 100,
-          bestCaseGainPct: ((bestCaseDamage - baseDamage) / baseDamage) * 100,
+          expectedGainPct: ((expectedDamage - tuneBaseDamage) / tuneBaseDamage) * 100,
+          bestCaseGainPct: ((bestCaseDamage - tuneBaseDamage) / tuneBaseDamage) * 100,
         });
       }
 
@@ -529,7 +559,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     tuneDialogOpen,
     baseline,
     elementStats,
-    gear.subs,
+    gear,
+    mains,
     rotation,
     stats,
     tuneStatPool,
@@ -602,6 +633,9 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="rounded-md border border-white/10 bg-background/30 px-2 py-0.5 text-[11px] text-muted-foreground">
                 {slotLabel}
+              </span>
+              <span className="rounded-md border border-white/10 bg-background/30 px-2 py-0.5 text-[11px] text-muted-foreground">
+                Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}
               </span>
               {gear.rarity && (
                 <span
