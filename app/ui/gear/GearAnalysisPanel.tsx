@@ -169,8 +169,8 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
     if (totalMartialArtsBoost > 0) {
         groups.Other.unshift({
             name: language === "vi" ? "Tổng cộng Võ học" : "All Martial Arts Boost",
-            totalCount: 0,
-            subCount: 0,
+            totalCount: totalMartialArtsLines,
+            subCount: totalMartialArtsLines, // Using total here for simplicity as it's virtual
             totalValue: totalMartialArtsBoost,
             statKey: "ALL_MARTIAL_ARTS",
             isVirtual: true
