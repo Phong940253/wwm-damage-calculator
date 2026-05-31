@@ -575,6 +575,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     rotation,
     stats,
     tuneStatPool,
+    levelContext,
   ]);
 
   return (

@@ -233,6 +233,7 @@ export default function GearEquippedTab() {
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
   const { selectedRotation } = useRotation();
+  const { levelContext } = useLevelContext();
 
   const bonus = useMemo(
     () => aggregateEquippedGearBonus(customGears, equipped),
@@ -487,6 +488,7 @@ export default function GearEquippedTab() {
     selectedRotation,
     stats,
     tuneStatPool,
+    levelContext,
   ]);
 
   const groupedTuneAdvice = useMemo(() => {
