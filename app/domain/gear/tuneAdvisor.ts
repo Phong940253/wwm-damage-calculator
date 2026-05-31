@@ -228,6 +228,48 @@ export function getGearTuneHistorySubIndexSet(
   return new Set(getGearTuneHistory(gear).map((entry) => entry.subIndex));
 }
 
+export function getTuneAvgGainPct(
+  outcomes: Array<{ expectedGainPct: number }>,
+): number {
+  if (outcomes.length === 0) {
+    return 0;
+  }
+
+  return (
+    outcomes.reduce((sum, outcome) => sum + outcome.expectedGainPct, 0) /
+    outcomes.length
+  );
+}
+
+export function getTuneSuccessRatePct(
+  outcomes: Array<{ expectedGainPct: number }>,
+): number {
+  if (outcomes.length === 0) {
+    return 0;
+  }
+
+  const successCount = outcomes.filter(
+    (outcome) => outcome.expectedGainPct > 0,
+  ).length;
+  return (successCount / outcomes.length) * 100;
+}
+
+export function getTuneSuccessRateToneClass(successRatePct: number): string {
+  if (successRatePct >= 80) {
+    return "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+  }
+  if (successRatePct >= 60) {
+    return "border-emerald-500/20 bg-emerald-500/5 text-emerald-600/80 dark:text-emerald-400/80";
+  }
+  if (successRatePct >= 40) {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400";
+  }
+  if (successRatePct >= 20) {
+    return "border-amber-500/20 bg-amber-500/5 text-amber-600/80 dark:text-amber-400/80";
+  }
+  return "border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400";
+}
+
 export function isTuneTargetAllowedBySubRules(
   subStats: string[],
   rerollIndex: number,

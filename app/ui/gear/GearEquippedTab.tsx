@@ -39,6 +39,9 @@ import {
   canTuneGearSubIndex,
   getGearActiveTuneSubIndex,
   getGearTuneHistoryStatSet,
+  getTuneAvgGainPct,
+  getTuneSuccessRatePct,
+  getTuneSuccessRateToneClass,
   getTuneStatRange,
   getTuneSystemStatPool,
   isTuneTargetAllowedBySubRules,
@@ -174,7 +177,8 @@ export default function GearEquippedTab() {
         "Gợi ý dòng phụ đáng roll nhất (chỉ tune 1 dòng, random trong hệ hiện tại).",
       tuneUnsupported:
         "Hệ Bellstrike chưa mở rule tune trong tool (đợi game cập nhật).",
-      expected: "Kỳ vọng",
+      avgGain: "Avg gain",
+      successRate: "Success rate",
       bestCase: "Best-case",
       recommend: "Nên roll",
       targetPool: "Pool hệ",
@@ -205,7 +209,8 @@ export default function GearEquippedTab() {
         "Suggests the best sub-line to reroll (single line tune, random within current system).",
       tuneUnsupported:
         "Bellstrike tune rules are not available yet in this tool (waiting game update).",
-      expected: "Expected",
+      avgGain: "Avg gain",
+      successRate: "Success rate",
       bestCase: "Best-case",
       recommend: "Recommended",
       targetPool: "System pool",
@@ -362,7 +367,8 @@ export default function GearEquippedTab() {
       subIndex: number;
       currentStat: string;
       currentValue: number;
-      expectedGainPct: number;
+      avgGainPct: number;
+      successRatePct: number;
       bestCaseGainPct: number;
       bestTargetStat: TuneStatKey;
       bestTargetValue: number;
@@ -379,7 +385,8 @@ export default function GearEquippedTab() {
       subIndex: number;
       currentStat: string;
       currentValue: number;
-      expectedGainPct: number;
+      avgGainPct: number;
+      successRatePct: number;
       bestCaseGainPct: number;
       bestTargetStat: TuneStatKey;
       bestTargetValue: number;
@@ -439,8 +446,8 @@ export default function GearEquippedTab() {
 
         if (outcomes.length === 0) continue;
 
-        const expectedGainPct =
-          outcomes.reduce((sum, row) => sum + row.expectedGainPct, 0) / outcomes.length;
+        const avgGainPct = getTuneAvgGainPct(outcomes);
+        const successRatePct = getTuneSuccessRatePct(outcomes);
 
         const bestOutcome = outcomes.reduce((best, row) =>
           row.bestCaseGainPct > best.bestCaseGainPct ? row : best
@@ -453,7 +460,8 @@ export default function GearEquippedTab() {
           subIndex,
           currentStat,
           currentValue,
-          expectedGainPct,
+          avgGainPct,
+          successRatePct,
           bestCaseGainPct: bestOutcome.bestCaseGainPct,
           bestTargetStat: bestOutcome.targetStat,
           bestTargetValue: getTuneStatRange(elementStats.selected, bestOutcome.targetStat).maxPerLine,
@@ -462,7 +470,9 @@ export default function GearEquippedTab() {
       }
     }
 
-    return candidates.sort((a, b) => b.expectedGainPct - a.expectedGainPct);
+    return candidates.sort(
+      (a, b) => b.avgGainPct - a.avgGainPct || b.successRatePct - a.successRatePct || b.bestCaseGainPct - a.bestCaseGainPct
+    );
   }, [
     bonus,
     customGears,
@@ -720,11 +730,14 @@ export default function GearEquippedTab() {
                         {text.gear}: {group.slotLabel} - {group.gearName}
                       </Badge>
                       <Badge
-                        variant="secondary"
-                        className="bg-emerald-500/10 text-emerald-700"
+                        variant="outline"
+                        className={cn(
+                          "border-white/15",
+                          group.items[0].bestCaseGainPct >= 0 ? "text-emerald-700" : "text-red-700"
+                        )}
                       >
-                        {text.expected} {group.items[0].expectedGainPct >= 0 ? "+" : ""}
-                        {group.items[0].expectedGainPct.toFixed(2)}%
+                        {text.bestCase} {group.items[0].bestCaseGainPct >= 0 ? "+" : ""}
+                        {group.items[0].bestCaseGainPct.toFixed(2)}%
                       </Badge>
                     </div>
 
@@ -758,18 +771,21 @@ export default function GearEquippedTab() {
                                   {text.recommend}
                                 </Badge>
                               )}
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "border-white/15",
-                                  item.expectedGainPct >= 0
-                                    ? "text-emerald-700"
-                                    : "text-red-700"
-                                )}
-                              >
-                                {text.expected} {item.expectedGainPct >= 0 ? "+" : ""}
-                                {item.expectedGainPct.toFixed(2)}%
-                              </Badge>
+                              <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                <Badge
+                                  variant="outline"
+                                  className="border-emerald-400/25 text-emerald-700"
+                                >
+                                  {text.avgGain} {item.avgGainPct >= 0 ? "+" : ""}
+                                  {item.avgGainPct.toFixed(2)}%
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className={cn("border-white/15", getTuneSuccessRateToneClass(item.successRatePct))}
+                                >
+                                  {text.successRate} {item.successRatePct.toFixed(2)}%
+                                </Badge>
+                              </div>
                               <Badge
                                 variant="outline"
                                 className={cn(

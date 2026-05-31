@@ -170,7 +170,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       showTune: "Tune",
       tuneTitle: "Tune Preview",
       availableStat: "Stat có thể ra",
-      expected: "Kỳ vọng",
+      avgGain: "Avg gain",
       bestCase: "Best-case",
       noTuneLine: "Không có dòng phụ hợp lệ để tune.",
     }
@@ -187,7 +187,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       showTune: "Tune",
       tuneTitle: "Tune Preview",
       availableStat: "Available stat",
-      expected: "Expected",
+      avgGain: "Avg gain",
       bestCase: "Best-case",
       noTuneLine: "No valid sub-line to tune.",
     };
@@ -436,7 +436,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       subIndex: number;
       currentStat: string;
       currentValue: number;
-      expectedGainPct: number;
       bestCaseGainPct: number;
       outcomes: Array<{
         targetStat: TuneStatKey;
@@ -480,7 +479,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       subIndex: number;
       currentStat: string;
       currentValue: number;
-      expectedGainPct: number;
       bestCaseGainPct: number;
       outcomes: Array<{
         targetStat: TuneStatKey;
@@ -547,9 +545,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
       if (outcomes.length === 0) return;
 
-      const expectedGainPct =
-        outcomes.reduce((sum, x) => sum + x.expectedGainPct, 0) / outcomes.length;
-
       const bestCaseGainPct = Math.max(
         ...outcomes.map((outcome) => outcome.bestCaseGainPct)
       );
@@ -558,13 +553,12 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         subIndex,
         currentStat,
         currentValue,
-        expectedGainPct,
         bestCaseGainPct,
         outcomes: outcomes.sort((a, b) => b.expectedGainPct - a.expectedGainPct),
       });
     });
 
-    return rows.sort((a, b) => b.expectedGainPct - a.expectedGainPct);
+    return rows.sort((a, b) => b.bestCaseGainPct - a.bestCaseGainPct);
   }, [
     tuneDialogOpen,
     baseline,
@@ -788,16 +782,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                       {row.currentValue.toFixed(1)}
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "border-white/15",
-                          row.expectedGainPct >= 0 ? "text-emerald-300" : "text-red-300"
-                        )}
-                      >
-                        {text.expected} {row.expectedGainPct >= 0 ? "+" : ""}
-                        {row.expectedGainPct.toFixed(2)}%
-                      </Badge>
                       <Badge
                         variant="outline"
                         className={cn(
