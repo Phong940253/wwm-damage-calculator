@@ -515,10 +515,9 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           continue;
         }
 
-        const range = getTuneStatRange(
+        const range = getGearTuneStatRange(
           elementStats.selected,
           targetStat,
-          levelContext.enemyLevel,
         );
         if (!range) continue;
 
