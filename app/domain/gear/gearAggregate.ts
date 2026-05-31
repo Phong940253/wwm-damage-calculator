@@ -61,12 +61,13 @@ export function analyzeEquippedGear(
     equippedCount++;
 
     const process = (
-      attr: { stat: string; value: number } | null | undefined,
+      attr: { stat: string | number; value: number } | null | undefined,
       type: "main" | "sub" | "addition"
     ) => {
       if (!attr) return;
-      if (!statSummary[attr.stat]) {
-        statSummary[attr.stat] = {
+      const sKey = String(attr.stat);
+      if (!statSummary[sKey]) {
+        statSummary[sKey] = {
           total: 0,
           subCount: 0,
           mainCount: 0,
@@ -76,16 +77,16 @@ export function analyzeEquippedGear(
       
       // ONLY sum values from sub and addition
       if (type !== "main") {
-        statSummary[attr.stat].total += attr.value;
+        statSummary[sKey].total += attr.value;
       }
 
       if (type === "sub") {
-        statSummary[attr.stat].subCount++;
+        statSummary[sKey].subCount++;
         totalSubLines++;
       } else if (type === "main") {
-        statSummary[attr.stat].mainCount++;
+        statSummary[sKey].mainCount++;
       } else {
-        statSummary[attr.stat].additionCount++;
+        statSummary[sKey].additionCount++;
       }
     };
 

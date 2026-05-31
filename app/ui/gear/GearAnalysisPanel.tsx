@@ -143,9 +143,12 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
       }
 
       let assigned = false;
-      for (const [groupName, keys] of Object.entries(STAT_GROUPS)) {
-        if (keys.includes(stat as any)) {
-          groups[groupName]?.push(entry);
+      const groupKeys = Object.keys(STAT_GROUPS);
+      for (let i = 0; i < groupKeys.length; i++) {
+        const groupName = groupKeys[i];
+        const keys = STAT_GROUPS[groupName];
+        if ((keys as readonly string[]).includes(stat)) {
+          groups[groupName].push(entry);
           assigned = true;
           break;
         }
@@ -239,7 +242,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
           
           <div className="h-[300px] w-full bg-black/20 rounded-xl p-2 border border-white/5">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 40, top: 10, bottom: 10 }}>
+              <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 40, top: 40, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
                 <XAxis type="number" hide domain={[0, 'dataMax + 1']} />
                 <YAxis 
@@ -249,6 +252,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
                   tick={{ fontSize: 10, fill: "rgba(255,255,255,0.8)" }} 
                   axisLine={false}
                   tickLine={false}
+                  interval={0}
                 />
                 <Tooltip 
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
