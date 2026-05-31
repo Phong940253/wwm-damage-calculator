@@ -12,7 +12,7 @@ import { useGear } from "../../providers/GearContext";
 import { GEAR_SLOTS } from "../../constants";
 import GearDetailCard from "@/app/ui/gear/GearDetailCard";
 import GearForm from "@/app/ui/gear/GearForm";
-import GearCombinedStats from "./GearCombinedStats";
+import GearAnalysisPanel from "./GearAnalysisPanel";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { useStats } from "@/app/hooks/useStats";
 import { useElementStats } from "@/app/hooks/useElementStats";
@@ -522,7 +522,7 @@ export default function GearEquippedTab() {
   return (
     <div className="space-y-4">
       {/* Combined result */}
-      <GearCombinedStats bonus={bonus} />
+      <GearAnalysisPanel gears={customGears} equipped={equipped} elementStats={elementStats} />
       <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-0.5">
