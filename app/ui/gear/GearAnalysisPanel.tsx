@@ -14,7 +14,8 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Cell
+  Cell,
+  LabelList
 } from "recharts";
 import { 
   Dna, 
@@ -207,25 +208,40 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
           
           <div className="h-[300px] w-full bg-black/20 rounded-xl p-2 border border-white/5">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 30, top: 10, bottom: 10 }}>
+              <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 40, top: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis type="number" hide />
+                <XAxis type="number" hide domain={[0, 'dataMax + 1']} />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
                   width={100} 
-                  tick={{ fontSize: 10, fill: "rgba(255,255,255,0.5)" }} 
+                  tick={{ fontSize: 10, fill: "rgba(255,255,255,0.8)" }} 
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip 
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  contentStyle={{ backgroundColor: '#18181b', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: '12px' }}
+                  contentStyle={{ 
+                    backgroundColor: '#18181b', 
+                    borderColor: 'rgba(255,255,255,0.1)', 
+                    color: '#fff', 
+                    fontSize: '12px',
+                    borderRadius: '8px'
+                  }}
+                  itemStyle={{ color: '#34d399', fontWeight: 'bold' }}
                 />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={12}>
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={`hsl(${index * 25 % 360}, 70%, 60%)`} />
                   ))}
+                  <LabelList 
+                    dataKey="count" 
+                    position="right" 
+                    fill="rgba(255,255,255,0.9)" 
+                    fontSize={10} 
+                    fontWeight="bold"
+                    offset={8}
+                  />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

@@ -99,8 +99,9 @@ export interface CustomGear {
   /** 0..n */
   subs: GearAttribute[];
 
-  /** optional */
-  addition?: GearAttribute;
+  /** optional: multiple addition stats support */
+  additions?: GearAttribute[];
+  addition?: GearAttribute; // keep for backward compatibility during migration
 
   /** optional: index of the tuned sub line (0-based) */
   tunedSubIndex?: number | null;

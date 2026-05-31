@@ -12,7 +12,7 @@ export function aggregateEquippedGearBonus(
     const gear = gears.find((g) => g.id === id);
     if (!gear) return;
 
-    [gear.main, ...gear.mains, ...gear.subs, gear.addition]
+    [gear.main, ...gear.mains, ...gear.subs, ...(gear.additions ?? []), gear.addition]
       .filter(Boolean)
       .forEach((a) => {
         bonus[a!.stat] = (bonus[a!.stat] || 0) + a!.value;
@@ -87,6 +87,7 @@ export function analyzeEquippedGear(
     process(gear.main, "main");
     gear.mains.forEach((m) => process(m, "main"));
     gear.subs.forEach((s) => process(s, "sub"));
+    (gear.additions ?? []).forEach((a) => process(a, "addition"));
     process(gear.addition, "addition");
   });
 

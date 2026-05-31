@@ -163,9 +163,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     stat: string;
   }>>([]);
 
-  const [addition, setAddition] = useState<
-    GearStatRow | null
-  >(null);
+  const [additions, setAdditions] = useState<
+    GearStatRow[]
+  >([]);
 
   const [dragged, setDragged] = useState<DraggedStat | null>(null);
   const [dragOver, setDragOver] = useState<DragOver>(null);
@@ -175,8 +175,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     setMains,
     subs,
     setSubs,
-    addition,
-    setAddition,
+    addition: additions[0] ?? null, // useGearStatDnD might need update but let's see
+    setAddition: (val) => {
+      if (!val) setAdditions([]);
+      else setAdditions([val]);
+    },
     dragged,
     setDragged,
     dragOver,
@@ -248,13 +251,13 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       if (result.addition) {
         const stat = normalizeStatKey(result.addition.stat);
         if (stat && isValidAdditionStatForSlot(nextSlot, String(stat))) {
-          setAddition({
+          setAdditions([{
             id: crypto.randomUUID(),
             stat,
             value: result.addition.value,
-          });
+          }]);
         } else {
-          setAddition(null);
+          setAdditions([]);
         }
       }
 
@@ -308,11 +311,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       setTunedSubRowId(null);
     }
 
-    setAddition(
-      initialGear.addition &&
-        isValidAdditionStatForSlot(initialGear.slot, String(initialGear.addition.stat))
-        ? { id: crypto.randomUUID(), ...initialGear.addition }
-        : null
+    const gearAdditions = initialGear.additions ?? (initialGear.addition ? [initialGear.addition] : []);
+    setAdditions(
+      gearAdditions
+        .filter(a => isValidAdditionStatForSlot(initialGear.slot, String(a.stat)))
+        .map(a => ({ id: crypto.randomUUID(), ...a }))
     );
   }, [initialGear]);
 
@@ -325,14 +328,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   }, [slot, weaponType]);
 
   useEffect(() => {
-    if (!addition) return;
-    if (isValidAdditionStatForSlot(slot, String(addition.stat))) return;
-
-    setAddition({
-      ...addition,
-      stat: defaultAdditionStat,
-    });
-  }, [slot, addition, defaultAdditionStat]);
+    if (additions.length === 0) return;
+    setAdditions(prev => prev.map(a => {
+        if (isValidAdditionStatForSlot(slot, String(a.stat))) return a;
+        return { ...a, stat: defaultAdditionStat };
+    }));
+  }, [slot, defaultAdditionStat]);
 
   useEffect(() => {
     if (!tunedSubRowId) return;
@@ -400,10 +401,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         level: Number.isFinite(level) ? level : undefined,
         mains: mains.map(({ stat, value }) => ({ stat, value })),
         subs: subs.map(({ stat, value }) => ({ stat, value })),
-        addition:
-          addition && isValidAdditionStatForSlot(slot, String(addition.stat))
-            ? { stat: addition.stat, value: addition.value }
-            : undefined,
+        additions: additions
+            .filter(a => isValidAdditionStatForSlot(slot, String(a.stat)))
+            .map(({ stat, value }) => ({ stat, value })),
         tunedSubIndex:
           (() => {
             if (tunedSubRowId === null) {
@@ -465,6 +465,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   const removeTuneHistoryRow = (rowId: string) =>
     setTuneHistoryRows((rows) => rows.filter((row) => row.id !== rowId));
+
+  const addAddition = () =>
+    setAdditions(a => [...a, { id: crypto.randomUUID(), stat: defaultAdditionStat, value: 0 }]);
+
+  const removeAddition = (rowId: string) =>
+    setAdditions(a => a.filter(r => r.id !== rowId));
 
   /* =======================
      UI
@@ -802,63 +808,54 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
       {/* Addition */}
       <div
-        className={`${sectionClass} ${dragOver?.zone === "addition" ? "ring-1 ring-slate-300" : ""}`}
+        className={sectionClass}
         onDragOver={e => {
+          // Allow dropping onto additions if needed, but for now let's just use regular list
           dnd.allowDrop(e);
-          dnd.setDragOver({ zone: "addition" });
         }}
-        onDragLeave={() => dnd.setDragOver(prev => (prev?.zone === "addition" ? null : prev))}
-        onDrop={dnd.dropOnAddition()}
       >
-        <p className="text-sm font-medium">{text.additionalAttribute}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium">{text.additionalAttribute}</p>
+            <Button className="h-8" size="sm" variant="secondary" onClick={addAddition}>
+                {text.add}
+            </Button>
+        </div>
 
-        {addition ? (
-          <div>
-            <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
-              <div
-                className="flex items-center px-1 text-muted-foreground cursor-grab select-none"
-                draggable
-                onDragStart={dnd.startDrag({ source: "addition" })}
-                onDragEnd={() => {
-                  dnd.endDrag();
-                }}
-                title={text.dragToMove}
-              >
-                <GripVertical className="w-4 h-4" />
+        <div className="space-y-2">
+            {additions.map((a) => (
+              <div key={a.id} className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
+                <GearStatSelect
+                    className="order-1 h-8 w-full border rounded px-2 text-sm sm:order-none sm:min-w-0 sm:flex-1"
+                    value={a.stat}
+                    onChange={nextStat => setAdditions(prev => prev.map(item => item.id === a.id ? { ...item, stat: nextStat } : item))}
+                    optionGroups={additionOptionGroups}
+                />
+
+                <Input
+                    className={compactInputClass}
+                    type="number"
+                    value={a.value}
+                    onChange={e =>
+                        setAdditions(prev => prev.map(item => item.id === a.id ? { ...item, value: Number(e.target.value) } : item))
+                    }
+                />
+
+                <Button className={iconButtonClass} size="icon" variant="ghost" onClick={() => removeAddition(a.id)}>
+                    ✕
+                </Button>
               </div>
-              <GearStatSelect
-                className="order-1 h-8 w-full border rounded px-2 text-sm sm:order-none sm:min-w-0 sm:flex-1"
-                value={addition.stat}
-                onChange={nextStat => setAddition({ ...addition, stat: nextStat })}
-                optionGroups={additionOptionGroups}
-              />
-
-              <Input
-                className={compactInputClass}
-                type="number"
-                value={addition.value}
-                onChange={e =>
-                  setAddition({ ...addition, value: Number(e.target.value) })
-                }
-              />
-
-              <Button className={iconButtonClass} size="icon" variant="ghost" onClick={() => setAddition(null)}>
-                ✕
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button
-            className="w-full sm:w-auto"
-            size="sm"
-            variant="secondary"
-            onClick={() =>
-              setAddition({ id: crypto.randomUUID(), stat: defaultAdditionStat, value: 0 })
-            }
-          >
-            {text.addAdditionalAttribute}
-          </Button>
-        )}
+            ))}
+            {additions.length === 0 && (
+                <Button
+                    className="w-full sm:w-auto"
+                    size="sm"
+                    variant="secondary"
+                    onClick={addAddition}
+                >
+                    {text.addAdditionalAttribute}
+                </Button>
+            )}
+        </div>
       </div>
 
       {/* Actions */}
