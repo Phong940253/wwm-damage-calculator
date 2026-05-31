@@ -1,13 +1,17 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { PencilLine } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
 import { useGear } from "../../providers/GearContext";
 import { GEAR_SLOTS } from "../../constants";
 import GearDetailCard from "@/app/ui/gear/GearDetailCard";
+import GearForm from "@/app/ui/gear/GearForm";
 import GearCombinedStats from "./GearCombinedStats";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { useStats } from "@/app/hooks/useStats";
@@ -182,6 +186,7 @@ export default function GearEquippedTab() {
       gear: "Trang bị",
       current: "Hiện tại",
       availableStat: "Stat có thể ra",
+      editGear: "Sửa trang bị",
     }
     : {
       impactTitle: "📈 Gear DMG Impact",
@@ -212,9 +217,11 @@ export default function GearEquippedTab() {
       gear: "Gear",
       current: "Current",
       availableStat: "Available stat",
+      editGear: "Edit gear",
     };
 
   const { customGears, equipped, setEquipped } = useGear();
+  const [editingGear, setEditingGear] = useState<CustomGear | null>(null);
 
   // Pull the same saved Stats/Element/Rotation that drive the rest of the app
   const { stats } = useStats(INITIAL_STATS);
@@ -586,6 +593,20 @@ export default function GearEquippedTab() {
                           {text.worst}
                         </Badge>
                       )}
+
+                      {row.equippedGear && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1 px-2 text-[11px] text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                          onClick={() => setEditingGear(row.equippedGear ?? null)}
+                          title={text.editGear}
+                        >
+                          <PencilLine className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{text.editGear}</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -651,6 +672,17 @@ export default function GearEquippedTab() {
           </div>
         ))}
       </div>
+
+      <Dialog open={Boolean(editingGear)} onOpenChange={(open) => !open && setEditingGear(null)}>
+        <DialogContent className="max-h-[92dvh] w-[98vw] max-w-[98vw] overflow-y-auto p-4 sm:max-h-[90dvh] sm:w-[96vw] sm:max-w-2xl sm:p-6">
+          <DialogHeader>
+            <DialogTitle>{text.editGear}</DialogTitle>
+          </DialogHeader>
+          {editingGear && (
+            <GearForm initialGear={editingGear} onSuccess={() => setEditingGear(null)} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
         <div className="space-y-3">
