@@ -120,6 +120,8 @@ export function buildDamageContext(
 
   const bossResistance = getBossResistancePct(enemyLevel) / 100;
 
+  const AFFINITY_RATE_CAP_PCT = 40;
+
   const applyBossResistanceToRate = (basePct: number) =>
     basePct * (1 - bossResistance);
 
@@ -203,7 +205,10 @@ export function buildDamageContext(
     if (k === "AffinityRate") {
       const base = cur("AffinityRate") + derived.affinityRate;
       const direct = cur("DirectAffinityRate");
-      return applyBossResistanceToRate(base) + direct;
+      return (
+        Math.min(applyBossResistanceToRate(base), AFFINITY_RATE_CAP_PCT) +
+        direct
+      );
     }
 
     /* ---------- Fallback ---------- */
@@ -279,6 +284,7 @@ export function buildDamageContext(
       derivedAdd?: number;
       levelDirectAdd?: number;
       resistanceAppliesToDirect?: boolean;
+      capAfterResistancePct?: number;
     }): StatExplanation => {
       const baseLines = explainInputStat(args.baseKey);
       const directLines = explainInputStat(args.directKey);
@@ -286,14 +292,20 @@ export function buildDamageContext(
       const derivedAdd = args.derivedAdd ?? 0;
       const levelDirectAdd = args.levelDirectAdd ?? 0;
       const resistanceAppliesToDirect = args.resistanceAppliesToDirect ?? false;
+      const capAfterResistancePct = args.capAfterResistancePct;
 
       const basePre = cur(args.baseKey) + derivedAdd;
       const directPre = cur(args.directKey) + levelDirectAdd;
       const preResist = basePre + directPre;
+      const resistedBase = applyBossResistanceToRate(basePre);
+      const cappedBase =
+        typeof capAfterResistancePct === "number"
+          ? Math.min(resistedBase, capAfterResistancePct)
+          : resistedBase;
 
       const totalPost = resistanceAppliesToDirect
         ? applyBossResistanceToRate(preResist)
-        : applyBossResistanceToRate(basePre) + directPre;
+        : cappedBase + directPre;
 
       const lines: StatSourceLine[] = [];
       lines.push(...baseLines);
@@ -306,13 +318,27 @@ export function buildDamageContext(
         // Represent resistance as a derived-style adjustment so UI legend works without new kinds.
         const delta = resistanceAppliesToDirect
           ? totalPost - preResist
-          : applyBossResistanceToRate(basePre) - basePre;
+          : cappedBase - basePre;
         lines.push(
           makeLine(
             "derived",
             "Boss resistance",
             delta,
             `Enemy Lv ${enemyLevel} (${(bossResistance * 100).toFixed(1)}%)`,
+          ),
+        );
+      }
+
+      if (
+        typeof capAfterResistancePct === "number" &&
+        resistedBase > capAfterResistancePct
+      ) {
+        lines.push(
+          makeLine(
+            "derived",
+            "Affinity cap",
+            capAfterResistancePct - resistedBase,
+            `Capped at ${capAfterResistancePct.toFixed(1)}% after boss resistance`,
           ),
         );
       }
@@ -420,6 +446,7 @@ export function buildDamageContext(
         baseKey: "AffinityRate",
         directKey: "DirectAffinityRate",
         derivedAdd: derived.affinityRate,
+        capAfterResistancePct: AFFINITY_RATE_CAP_PCT,
       });
     }
 
