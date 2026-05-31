@@ -99,7 +99,7 @@ export interface CustomGear {
   /** 0..n */
   subs: GearAttribute[];
 
-  /** optional: multiple addition stats support */
+  /** optional: multiple addition stats support (deprecated, use 'addition' instead) */
   additions?: GearAttribute[];
   addition?: GearAttribute; // keep for backward compatibility during migration
 

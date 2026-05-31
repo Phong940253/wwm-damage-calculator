@@ -29,6 +29,15 @@ function migrateEquipped(
   return result;
 }
 
+function migrateGear(g: CustomGear): CustomGear {
+  const newG = { ...g };
+  if (newG.additions && newG.additions.length > 0) {
+    newG.addition = newG.additions[0];
+    delete newG.additions;
+  }
+  return newG;
+}
+
 /* =======================
    Hook
 ======================= */
@@ -49,7 +58,7 @@ export const useGear = () => {
       const parsed = JSON.parse(savedGears) as CustomGear[];
 
       setCustomGears(
-        parsed.map((g) => ({
+        parsed.map((g) => migrateGear({
           ...g,
           slot: migrateGearSlot(g.slot),
         }))

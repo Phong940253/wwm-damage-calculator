@@ -109,35 +109,20 @@ export default function GearDetailCard({
       )}
 
       {/* Bonus / Addition */}
-      {((gear.additions && gear.additions.length > 0) || gear.addition) && (
+      {gear.addition && (
         <div>
           <p className="text-xs text-muted-foreground mb-1">{text.bonus}</p>
           <div className="space-y-1">
-            {(gear.additions ?? []).map((a, i) => (
-              <StatLine
-                key={`additions:${i}`}
-                stat={String(a.stat)}
-                value={a.value}
-                type="bonus"
-                elementStats={elementStats}
-                impactPct={
-                  impactPctByLineKey?.[`additions:${i}`] ??
-                  impactPctByStat?.[String(a.stat)]
-                }
-              />
-            ))}
-            {gear.addition && (
-              <StatLine
-                stat={String(gear.addition.stat)}
-                value={gear.addition.value}
-                type="bonus"
-                elementStats={elementStats}
-                impactPct={
-                  impactPctByLineKey?.["addition:0"] ??
-                  impactPctByStat?.[String(gear.addition.stat)]
-                }
-              />
-            )}
+            <StatLine
+              stat={String(gear.addition.stat)}
+              value={gear.addition.value}
+              type="bonus"
+              elementStats={elementStats}
+              impactPct={
+                impactPctByLineKey?.["addition:0"] ??
+                impactPctByStat?.[String(gear.addition.stat)]
+              }
+            />
           </div>
         </div>
       )}

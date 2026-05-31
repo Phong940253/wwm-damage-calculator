@@ -17,7 +17,6 @@ import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { useStats } from "@/app/hooks/useStats";
 import { useElementStats } from "@/app/hooks/useElementStats";
 import { useRotation } from "@/app/hooks/useRotation";
-import { useLevelContext } from "@/app/hooks/useLevelContext";
 import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "@/app/constants";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
@@ -233,7 +232,6 @@ export default function GearEquippedTab() {
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
   const { selectedRotation } = useRotation();
-  const { levelContext } = useLevelContext();
 
   const bonus = useMemo(
     () => aggregateEquippedGearBonus(customGears, equipped),
@@ -488,7 +486,6 @@ export default function GearEquippedTab() {
     selectedRotation,
     stats,
     tuneStatPool,
-    levelContext,
   ]);
 
   const groupedTuneAdvice = useMemo(() => {

@@ -38,7 +38,6 @@ import {
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
-import { useLevelContext } from "@/app/hooks/useLevelContext";
 import { useI18n } from "@/app/providers/I18nProvider";
 import {
   type TuneStatKey,
@@ -157,7 +156,6 @@ interface Props {
 
 export default function GearCard({ gear, elementStats, stats, rotation, onEdit, onDelete }: Props) {
   const { language } = useI18n();
-  const { levelContext } = useLevelContext();
   const text = language === "vi"
     ? {
       equipped: "Đang trang bị",
@@ -455,12 +453,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       gearCurrentBonus[statKey] = (gearCurrentBonus[statKey] ?? 0) + value;
     });
 
-    (gear.subs ?? []).forEach((s) => {
-      const statKey = String(s.stat);
-      const value = Number(s.value ?? 0);
-      if (!value) return;
-      gearCurrentBonus[statKey] = (gearCurrentBonus[statKey] ?? 0) + value;
-    });
 
     if (gear.addition) {
       const statKey = String(gear.addition.stat);
@@ -574,7 +566,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     rotation,
     stats,
     tuneStatPool,
-    levelContext,
   ]);
 
   return (
