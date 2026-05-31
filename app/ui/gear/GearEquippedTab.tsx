@@ -32,9 +32,11 @@ import { useI18n } from "@/app/providers/I18nProvider";
 import { getStatLabel } from "@/app/utils/statLabel";
 import {
   type TuneStatKey,
+  canTuneGearSubIndex,
+  getGearActiveTuneSubIndex,
+  getGearTuneHistoryStatSet,
   getTuneStatRange,
   getTuneSystemStatPool,
-  hasUsedTune,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
 
@@ -383,15 +385,16 @@ export default function GearEquippedTab() {
       if (!equippedGear || !equippedGear.subs || equippedGear.subs.length === 0) {
         continue;
       }
-      if (hasUsedTune(equippedGear)) {
-        continue;
-      }
+
+      const activeTuneSubIndex = getGearActiveTuneSubIndex(equippedGear);
+      const tunedStatSet = getGearTuneHistoryStatSet(equippedGear, activeTuneSubIndex);
 
       for (let subIndex = 0; subIndex < equippedGear.subs.length; subIndex += 1) {
         const sub = equippedGear.subs[subIndex];
         const currentStat = String(sub.stat);
         const currentValue = Number(sub.value ?? 0);
         if (!Number.isFinite(currentValue) || currentValue === 0) continue;
+        if (!canTuneGearSubIndex(equippedGear, subIndex)) continue;
         const subStats = equippedGear.subs.map((line) => String(line.stat));
 
         const bonusWithoutLine = { ...bonus };
@@ -405,6 +408,7 @@ export default function GearEquippedTab() {
 
         for (const targetStat of tuneStatPool) {
           if (targetStat === currentStat) continue;
+          if (tunedStatSet.has(targetStat)) continue;
           if (!isTuneTargetAllowedBySubRules(subStats, subIndex, targetStat)) {
             continue;
           }

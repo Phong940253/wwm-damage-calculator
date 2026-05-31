@@ -1,5 +1,11 @@
 import { ElementKey } from "@/app/constants";
 
+export type TuneHistoryEntry = {
+  subIndex: number;
+  stat: string;
+  value?: number;
+};
+
 export type TuneStatKey =
   | "MinPhysicalAttack"
   | "MaxPhysicalAttack"
@@ -63,16 +69,18 @@ const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
 };
 
-const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Record<TuneStatKey, TuneStatRange> =
-  {
-    ...DEFAULT_TUNE_LIMITS,
-    MaxPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
-    bellstrikeMax: { minPerLine: 18.1, maxPerLine: 36.2 },
-    CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
-    AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
-    Power: { minPerLine: 20.2, maxPerLine: 40.4 },
-    Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
-  };
+export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Record<
+  TuneStatKey,
+  TuneStatRange
+> = {
+  ...DEFAULT_TUNE_LIMITS,
+  MaxPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
+  bellstrikeMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+  CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
+  AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
+  Power: { minPerLine: 20.2, maxPerLine: 40.4 },
+  Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
+};
 
 export function getTuneSystemStatPool(
   selectedElement: ElementKey,
@@ -92,6 +100,19 @@ export function getTuneSystemStatPool(
   return [...COMMON_TUNE_STATS, ...elementStats];
 }
 
+export function getBellstrikeLevel91TuneStatPool(): TuneStatKey[] {
+  return (
+    Object.keys(BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS) as TuneStatKey[]
+  ).filter((stat) => {
+    const bellstrikeLimit = BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat];
+    const defaultLimit = DEFAULT_TUNE_LIMITS[stat];
+    return (
+      bellstrikeLimit.minPerLine !== defaultLimit.minPerLine ||
+      bellstrikeLimit.maxPerLine !== defaultLimit.maxPerLine
+    );
+  });
+}
+
 export function getTuneStatRange(
   selectedElement: ElementKey,
   stat: TuneStatKey,
@@ -101,6 +122,110 @@ export function getTuneStatRange(
   }
 
   return DEFAULT_TUNE_LIMITS[stat];
+}
+
+export function getGearTuneHistory(
+  gear?: {
+    tuneHistory?: TuneHistoryEntry[];
+    tunedSubIndex?: number | null;
+    subs?: Array<{ stat?: unknown }>;
+  } | null,
+): TuneHistoryEntry[] {
+  const explicitHistory = (gear?.tuneHistory ?? [])
+    .map((entry) => ({
+      subIndex: Number(entry.subIndex),
+      stat: String(entry.stat ?? ""),
+      value:
+        typeof entry.value === "number" && Number.isFinite(entry.value)
+          ? entry.value
+          : undefined,
+    }))
+    .filter(
+      (entry) =>
+        Number.isInteger(entry.subIndex) && entry.subIndex >= 0 && entry.stat,
+    );
+
+  if (explicitHistory.length > 0) {
+    return explicitHistory;
+  }
+
+  if (typeof gear?.tunedSubIndex === "number" && gear.tunedSubIndex >= 0) {
+    const fallbackStat = String(gear.subs?.[gear.tunedSubIndex]?.stat ?? "");
+    return [{ subIndex: gear.tunedSubIndex, stat: fallbackStat }].filter(
+      (entry) => entry.stat.length > 0,
+    );
+  }
+
+  return [];
+}
+
+export function getGearActiveTuneSubIndex(
+  gear?: {
+    tuneHistory?: TuneHistoryEntry[];
+    tunedSubIndex?: number | null;
+    subs?: Array<{ stat?: unknown }>;
+  } | null,
+): number | null {
+  if (typeof gear?.tunedSubIndex === "number" && gear.tunedSubIndex > 0) {
+    return gear.tunedSubIndex;
+  }
+
+  const history = getGearTuneHistory(gear);
+  const latestHistoryIndex = history.at(-1)?.subIndex;
+
+  if (typeof latestHistoryIndex === "number" && latestHistoryIndex > 0) {
+    return latestHistoryIndex;
+  }
+
+  return null;
+}
+
+export function canTuneGearSubIndex(
+  gear?: {
+    tuneHistory?: TuneHistoryEntry[];
+    tunedSubIndex?: number | null;
+    subs?: Array<{ stat?: unknown }>;
+  } | null,
+  subIndex?: number | null,
+): boolean {
+  if (typeof subIndex !== "number" || subIndex <= 0) return false;
+
+  const activeSubIndex = getGearActiveTuneSubIndex(gear);
+  if (activeSubIndex === null) {
+    return true;
+  }
+
+  return subIndex === activeSubIndex;
+}
+
+export function getGearTuneHistoryStatSet(
+  gear?: {
+    tuneHistory?: TuneHistoryEntry[];
+    tunedSubIndex?: number | null;
+    subs?: Array<{ stat?: unknown }>;
+  } | null,
+  subIndex?: number | null,
+): Set<string> {
+  const history = getGearTuneHistory(gear);
+  if (typeof subIndex === "number") {
+    return new Set(
+      history
+        .filter((entry) => entry.subIndex === subIndex)
+        .map((entry) => entry.stat),
+    );
+  }
+
+  return new Set(history.map((entry) => entry.stat));
+}
+
+export function getGearTuneHistorySubIndexSet(
+  gear?: {
+    tuneHistory?: TuneHistoryEntry[];
+    tunedSubIndex?: number | null;
+    subs?: Array<{ stat?: unknown }>;
+  } | null,
+): Set<number> {
+  return new Set(getGearTuneHistory(gear).map((entry) => entry.subIndex));
 }
 
 export function isTuneTargetAllowedBySubRules(
@@ -127,7 +252,11 @@ export function isTuneTargetAllowedBySubRules(
 }
 
 export function hasUsedTune(
-  gear?: { tunedSubIndex?: number | null } | null,
+  gear?: {
+    tuneHistory?: TuneHistoryEntry[];
+    tunedSubIndex?: number | null;
+    subs?: Array<{ stat?: unknown }>;
+  } | null,
 ): boolean {
-  return typeof gear?.tunedSubIndex === "number" && gear.tunedSubIndex >= 0;
+  return getGearTuneHistory(gear).length > 0;
 }

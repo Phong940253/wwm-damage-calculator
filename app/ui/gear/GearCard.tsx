@@ -41,9 +41,12 @@ import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInSt
 import { useI18n } from "@/app/providers/I18nProvider";
 import {
   type TuneStatKey,
+  canTuneGearSubIndex,
+  getGearActiveTuneSubIndex,
+  getGearTuneHistoryStatSet,
+  getGearTuneHistorySubIndexSet,
   getTuneStatRange,
   getTuneSystemStatPool,
-  hasUsedTune,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
 
@@ -187,7 +190,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       expected: "Expected",
       bestCase: "Best-case",
       noTuneLine: "No valid sub-line to tune.",
-      tunedLocked: "This gear has already been tuned and cannot be tuned again.",
     };
 
   const { customGears, equipped, setEquipped } = useGear();
@@ -266,6 +268,13 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
   const mains = useMemo(() => {
     return gear.mains?.length ? gear.mains : gear.main ? [gear.main] : [];
   }, [gear.mains, gear.main]);
+
+  const tunedSubIndexSet = useMemo(() => getGearTuneHistorySubIndexSet(gear), [gear]);
+  const activeTuneSubIndex = useMemo(() => getGearActiveTuneSubIndex(gear), [gear]);
+  const tunedStatSet = useMemo(
+    () => getGearTuneHistoryStatSet(gear, activeTuneSubIndex),
+    [gear, activeTuneSubIndex]
+  );
 
   const baseline = useMemo(() => {
     if (!impactEnabled || !elementStats) return null;
@@ -435,7 +444,6 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         bestCaseGainPct: number;
       }>;
     }>;
-    if (hasUsedTune(gear)) return [];
 
     const gearCurrentBonus = { ...baseline.bonusWithoutSlot };
 
@@ -488,6 +496,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       const currentStat = String(s.stat);
       const currentValue = Number(s.value ?? 0);
       if (!Number.isFinite(currentValue) || currentValue === 0) return;
+      if (!canTuneGearSubIndex(gear, subIndex)) return;
 
       const bonusWithoutLine = { ...baseBonusWithoutSlot };
       bonusWithoutLine[currentStat] =
@@ -501,6 +510,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
       for (const targetStat of tuneStatPool) {
         if (targetStat === currentStat) continue;
+        if (tunedStatSet.has(targetStat)) continue;
         if (!isTuneTargetAllowedBySubRules(subStats, subIndex, targetStat)) {
           continue;
         }
@@ -561,6 +571,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     elementStats,
     gear,
     mains,
+    tunedStatSet,
     rotation,
     stats,
     tuneStatPool,
@@ -679,7 +690,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
         {/* Stats */}
         <div className="mt-4 flex flex-1 flex-col gap-3">
-          {tuneStatPool.length > 0 && (gear.subs?.length ?? 0) > 0 && !hasUsedTune(gear) && (
+          {tuneStatPool.length > 0 && (gear.subs?.length ?? 0) > 0 && (
             <div className="flex justify-end">
               <Button
                 type="button"
@@ -729,7 +740,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                     type="sub"
                     elementStats={elementStats}
                     impactPct={impactPctByLineKey[`subs:${i}`]}
-                    isTuned={gear.tunedSubIndex === i}
+                    isTuned={tunedSubIndexSet.has(i)}
                   />
                 ))}
               </div>
@@ -760,11 +771,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
             </DialogTitle>
           </DialogHeader>
 
-          {hasUsedTune(gear) ? (
-            <div className="rounded-md border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
-              {text.tunedLocked}
-            </div>
-          ) : tuneRows.length === 0 ? (
+          {tuneRows.length === 0 ? (
             <div className="rounded-md border border-white/10 bg-background/30 px-3 py-2 text-sm text-muted-foreground">
               {text.noTuneLine}
             </div>

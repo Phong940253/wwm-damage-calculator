@@ -22,6 +22,7 @@ import { GearStatSelect } from "./GearStatSelect";
 import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } from "./useGearStatDnD";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { MartialArtWeaponType } from "@/app/domain/skill/types";
+import { getBellstrikeLevel91TuneStatPool, getGearTuneHistory } from "@/app/domain/gear/tuneAdvisor";
 
 
 /* =======================
@@ -74,6 +75,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       weaponType: "Loại vũ khí",
       weaponTypeRequired: "Vui lòng chọn loại vũ khí cho ô Weapon",
       level: "Cấp gear",
+      tuneHistory: "Lịch sử tune",
+      addTuneHistory: "+ Thêm lịch sử tune",
+      tuneHistoryLine: "Dòng",
+      tuneHistoryStat: "Stat sau tune",
+      tuneHistoryStatPlaceholder: "ví dụ: CriticalRate",
+      tuneHistoryNote: "Dòng 1 không thể tune; chỉ nhập các lần tune từ dòng 2 trở đi.",
       rarity: "Độ hiếm",
       rarityPlaceholder: "ví dụ: Common, Rare, Epic, Legendary",
       mainAttributes: "Thuộc tính chính",
@@ -101,6 +108,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       weaponType: "Weapon Type",
       weaponTypeRequired: "Please select a weapon type for weapon slots",
       level: "Gear level",
+      tuneHistory: "Tune history",
+      addTuneHistory: "+ Add tune history",
+      tuneHistoryLine: "Line",
+      tuneHistoryStat: "Post-tune stat",
+      tuneHistoryStatPlaceholder: "e.g. CriticalRate",
+      tuneHistoryNote: "Line 1 cannot be tuned; enter only tune results for line 2 and beyond.",
       rarity: "Rarity",
       rarityPlaceholder: "e.g. Common, Rare, Epic, Legendary",
       mainAttributes: "Main Attributes",
@@ -144,6 +157,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     GearStatRow[]
   >([]);
   const [tunedSubRowId, setTunedSubRowId] = useState<string | null>(null);
+  const [tuneHistoryRows, setTuneHistoryRows] = useState<Array<{
+    id: string;
+    subIndex: number | "";
+    stat: string;
+  }>>([]);
 
   const [addition, setAddition] = useState<
     GearStatRow | null
@@ -169,6 +187,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const additionOptions = getAdditionStatsBySlot(slot);
   const additionOptionGroups = getAdditionStatGroupsBySlot(slot);
   const defaultAdditionStat = additionOptions[0] ?? "PhysicalPenetration";
+  const tuneHistoryStatOptions = getBellstrikeLevel91TuneStatPool();
 
   const handleOcr = async (file: File) => {
     console.log("OCR start", file.name, file.size);
@@ -264,12 +283,27 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       ...s,
     }));
     setSubs(mappedSubs);
+
+    const initialTuneHistory = getGearTuneHistory(initialGear);
+    setTuneHistoryRows(
+      initialTuneHistory.map((entry) => ({
+        id: crypto.randomUUID(),
+        subIndex: entry.subIndex,
+        stat: entry.stat,
+      }))
+    );
+
+    const currentTunedSubIndex =
+      typeof initialGear.tunedSubIndex === "number" && initialGear.tunedSubIndex >= 0
+        ? initialGear.tunedSubIndex
+        : initialTuneHistory.at(-1)?.subIndex;
+
     if (
-      typeof initialGear.tunedSubIndex === "number" &&
-      initialGear.tunedSubIndex >= 0 &&
-      initialGear.tunedSubIndex < mappedSubs.length
+      typeof currentTunedSubIndex === "number" &&
+      currentTunedSubIndex >= 0 &&
+      currentTunedSubIndex < mappedSubs.length
     ) {
-      setTunedSubRowId(mappedSubs[initialGear.tunedSubIndex].id);
+      setTunedSubRowId(mappedSubs[currentTunedSubIndex].id);
     } else {
       setTunedSubRowId(null);
     }
@@ -332,6 +366,32 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
     try {
       const id = initialGear?.id ?? crypto.randomUUID();
 
+      const manualTuneHistory = tuneHistoryRows.flatMap((row) => {
+        const subIndex = typeof row.subIndex === "number" ? row.subIndex : Number(row.subIndex);
+        if (!Number.isInteger(subIndex) || subIndex <= 0 || subIndex >= subs.length) {
+          return [] as Array<{ subIndex: number; stat: string; value?: number }>;
+        }
+
+        const stat = row.stat.trim();
+        if (!stat) return [] as Array<{ subIndex: number; stat: string; value?: number }>;
+
+        return [{ subIndex, stat }];
+      });
+
+      const currentTuneHistory = tunedSubRowId
+        ? (() => {
+          const idx = subs.findIndex((s) => s.id === tunedSubRowId);
+          if (idx < 1) return [] as Array<{ subIndex: number; stat: string; value?: number }>;
+          const current = subs[idx];
+          return [{ subIndex: idx, stat: String(current.stat), value: Number(current.value ?? 0) }];
+        })()
+        : [];
+
+      const mergedTuneHistory = [...manualTuneHistory, ...currentTuneHistory].filter(
+        (entry, index, array) =>
+          array.findIndex((candidate) => candidate.subIndex === entry.subIndex && candidate.stat === entry.stat) === index
+      );
+
       const gear: CustomGear = {
         id,
         name,
@@ -345,12 +405,14 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             ? { stat: addition.stat, value: addition.value }
             : undefined,
         tunedSubIndex:
-          tunedSubRowId === null
-            ? null
-            : (() => {
-              const idx = subs.findIndex((s) => s.id === tunedSubRowId);
-              return idx >= 0 ? idx : null;
-            })(),
+          (() => {
+            if (tunedSubRowId === null) {
+              return mergedTuneHistory.at(-1)?.subIndex ?? null;
+            }
+            const idx = subs.findIndex((s) => s.id === tunedSubRowId);
+            return idx >= 0 ? idx : mergedTuneHistory.at(-1)?.subIndex ?? null;
+          })(),
+        tuneHistory: mergedTuneHistory,
         rarity: rarity.trim() ? rarity.trim() : undefined,
       };
 
@@ -390,6 +452,19 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
   const removeSub = (rowId: string) =>
     setSubs(s => s.filter(r => r.id !== rowId));
+
+  const addTuneHistoryRow = () =>
+    setTuneHistoryRows((rows) => [
+      ...rows,
+      {
+        id: crypto.randomUUID(),
+        subIndex: subs.length > 1 ? 1 : "",
+        stat: "",
+      },
+    ]);
+
+  const removeTuneHistoryRow = (rowId: string) =>
+    setTuneHistoryRows((rows) => rows.filter((row) => row.id !== rowId));
 
   /* =======================
      UI
@@ -661,6 +736,66 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
           ))}
           {dragOver?.zone === "subs" && dragOver.insertIndex === subs.length && (
             <div className="h-0.5 bg-sky-500/80 rounded" />
+          )}
+        </div>
+      </div>
+
+      {/* Tune history */}
+      <div className={sectionClass}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium">{text.tuneHistory}</p>
+          <Button className="h-8" size="sm" variant="secondary" onClick={addTuneHistoryRow}>
+            {text.addTuneHistory}
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          {tuneHistoryRows.length === 0 ? (
+            <div className="rounded border border-dashed border-white/10 px-3 py-2 text-xs text-muted-foreground">
+              {text.tuneHistoryNote}
+            </div>
+          ) : (
+            tuneHistoryRows.map((row, index) => (
+              <div key={row.id} className="flex flex-wrap items-center gap-1.5 rounded sm:flex-nowrap">
+                <div className="w-12 shrink-0 text-xs text-muted-foreground">
+                  {text.tuneHistoryLine} #{index + 1}
+                </div>
+                <select
+                  className="h-8 w-[5.75rem] rounded-md border border-input bg-background px-2 text-sm"
+                  value={row.subIndex}
+                  onChange={(e) => {
+                    const nextValue = e.target.value === "" ? "" : Number(e.target.value);
+                    setTuneHistoryRows((rows) =>
+                      rows.map((item) =>
+                        item.id === row.id ? { ...item, subIndex: nextValue } : item
+                      )
+                    );
+                  }}
+                >
+                  <option value="">-</option>
+                  {subs.slice(1).map((sub, subIndex) => (
+                    <option key={sub.id} value={subIndex + 1}>
+                      #{subIndex + 2}
+                    </option>
+                  ))}
+                </select>
+                <GearStatSelect
+                  className="h-8 min-w-0 flex-1 text-sm"
+                  value={row.stat}
+                  onChange={(nextValue) => {
+                    setTuneHistoryRows((rows) =>
+                      rows.map((item) =>
+                        item.id === row.id ? { ...item, stat: String(nextValue) } : item
+                      )
+                    );
+                  }}
+                  options={Array.from(new Set([...tuneHistoryStatOptions, row.stat].filter(Boolean)))}
+                />
+                <Button className={iconButtonClass} size="icon" variant="ghost" onClick={() => removeTuneHistoryRow(row.id)}>
+                  ✕
+                </Button>
+              </div>
+            ))
           )}
         </div>
       </div>

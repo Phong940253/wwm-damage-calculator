@@ -105,6 +105,13 @@ export interface CustomGear {
   /** optional: index of the tuned sub line (0-based) */
   tunedSubIndex?: number | null;
 
+  /** optional history of tune results, newest last */
+  tuneHistory?: Array<{
+    subIndex: number;
+    stat: string;
+    value?: number;
+  }>;
+
   rarity?: string;
 }
 

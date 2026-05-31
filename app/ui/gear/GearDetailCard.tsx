@@ -7,6 +7,7 @@ import { CustomGear, ElementStats } from "@/app/types";
 import { StatType } from "@/app/domain/gear/types";
 import { STAT_BG } from "@/app/domain/gear/constants";
 import { useI18n } from "@/app/providers/I18nProvider";
+import { getGearTuneHistorySubIndexSet } from "@/app/domain/gear/tuneAdvisor";
 
 interface Props {
   gear: CustomGear;
@@ -27,6 +28,7 @@ export default function GearDetailCard({
   impactPctByLineKey,
 }: Props) {
   const { language } = useI18n();
+  const tunedSubIndexSet = getGearTuneHistorySubIndexSet(gear);
   const text = language === "vi"
     ? { main: "Chính", mainStats: "Chỉ số chính", subStats: "Chỉ số phụ", bonus: "Thưởng", level: "Cấp" }
     : { main: "Main", mainStats: "Main Stats", subStats: "Sub Stats", bonus: "Bonus", level: "Lv." };
@@ -99,7 +101,7 @@ export default function GearDetailCard({
                   impactPctByLineKey?.[`subs:${i}`] ??
                   impactPctByStat?.[String(s.stat)]
                 }
-                isTuned={gear.tunedSubIndex === i}
+                isTuned={tunedSubIndexSet.has(i)}
               />
             ))}
           </div>
