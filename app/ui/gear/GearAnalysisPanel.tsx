@@ -124,6 +124,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
     };
 
     let totalMartialArtsBoost = 0;
+    let totalMartialArtsLines = 0;
 
     Object.entries(analysis.statSummary).forEach(([stat, data]) => {
       const totalBonusCount = data.subCount + data.additionCount; // Exclude main
@@ -140,6 +141,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
       // Sum martial arts boosts
       if (stat === "MartialArtSkillDamageBoost" || stat === "AllMartialArtsBoost" || stat.includes("MartialArtSkillDMGBoost")) {
           totalMartialArtsBoost += data.total;
+          totalMartialArtsLines += totalBonusCount;
       }
 
       let assigned = false;
@@ -165,7 +167,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
 
     // Add All Martial Arts Boost if there's any value
     if (totalMartialArtsBoost > 0) {
-        groups.Core.unshift({
+        groups.Other.unshift({
             name: language === "vi" ? "Tổng cộng Võ học" : "All Martial Arts Boost",
             totalCount: 0,
             subCount: 0,
@@ -322,30 +324,25 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
                     {stats.map((s: GroupedStatEntry) => (
                       <div key={s.statKey} className="group">
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-muted-foreground group-hover:text-foreground transition-colors truncate max-w-[120px]">
+                          <span className="text-muted-foreground group-hover:text-foreground transition-colors truncate max-w-[180px]">
                             {s.name}
                           </span>
                           <div className="flex items-center gap-2">
-                             {!s.isVirtual && (
-                                <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title="Mains + Subs + Additions">
-                                    {s.totalCount} {text.count}
-                                </Badge>
-                             )}
+                             <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title="Mains + Subs + Additions">
+                                 {s.totalCount} {text.count}
+                             </Badge>
                              <span className={cn(
-                                "font-mono font-bold",
-                                s.isVirtual ? "text-blue-400" : "text-emerald-400"
+                                "font-mono font-bold text-emerald-400"
                              )}>
                                +{s.totalValue.toFixed(1)}
                              </span>
                           </div>
                         </div>
-                        {!s.isVirtual && (
-                            <Progress 
-                                value={Math.min(100, (s.totalCount / 12) * 100)} 
-                                className="h-1 bg-white/5" 
-                                indicatorClassName="bg-emerald-500"
-                            />
-                        )}
+                        <Progress 
+                            value={Math.min(100, (s.totalCount / 12) * 100)} 
+                            className="h-1 bg-white/5" 
+                            indicatorClassName="bg-emerald-500"
+                        />
                       </div>
                     ))}
                   </div>
