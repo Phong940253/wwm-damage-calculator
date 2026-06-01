@@ -122,6 +122,23 @@
         "notes": "Condition: when Endurance is below 60%."
     },
     {
+        "id": "ps_bellstrike_splendor_light_as_feather",
+        "name": "Light as a Feather",
+        "description": "Increases damage dealt by Homeless Charge skills by 20%.",
+        "martialArtId": "bellstrike_splendor",
+        "defaultEnabledForMartialArtIds": [
+            "bellstrike_splendor"
+        ],
+        "modifiers": [
+            {
+                "stat": "NamelessSwordChargedSkillDMGBoost",
+                "type": "flat",
+                "value": 20
+            }
+        ],
+        "notes": "Modeling note: Restricts +20% damage to Homeless Charge 1/2/3 via NamelessSwordChargedSkillDMGBoost."
+    },
+    {
         "id": "ps_bellstrike_splendor_included_affinity_rate_up_momentum",
         "name": "Affinity Rate UP (Momentum, included in stats)",
         "description": "Increases Affinity Rate based on Momentum. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
