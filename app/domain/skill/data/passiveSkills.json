@@ -139,6 +139,24 @@
         "notes": "Modeling note: Restricts +20% damage to Homeless Charge 1/2/3 via NamelessSwordChargedSkillDMGBoost."
     },
     {
+        "id": "ps_bellstrike_splendor_sword_slash_dmg_boost",
+        "name": "Sword Slash Damage Boost",
+        "description": "Sword energy hits increase sword energy damage by 8% for 8s, stacking up to 3 times (conditional).",
+        "martialArtId": "bellstrike_splendor",
+        "defaultEnabledForMartialArtIds": [
+            "bellstrike_splendor"
+        ],
+        "defaultUptimePercent": 100,
+        "modifiers": [
+            {
+                "stat": "NamelessSwordChargedSkillDMGBoost",
+                "type": "flat",
+                "value": 24
+            }
+        ],
+        "notes": "Modeling note: Max stacks (3x8%=24%) for non-player targets. This boost applies to 'Nameless' sword energy skills."
+    },
+    {
         "id": "ps_bellstrike_splendor_included_affinity_rate_up_momentum",
         "name": "Affinity Rate UP (Momentum, included in stats)",
         "description": "Increases Affinity Rate based on Momentum. This bonus is assumed to already be included in the in-game displayed stats you input; enabling this passive only affects Stat Impact calculations.",
