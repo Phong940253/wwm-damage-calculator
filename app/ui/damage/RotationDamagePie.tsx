@@ -123,80 +123,84 @@ export default function RotationDamagePie({
     );
     if (!skillDamage) return;
 
-    if (!rotSkill.cancelled) {
-      const baseSkillDamage =
-        rotSkill.id === SCARLET_SPIN_SKILL_ID
-          ? calculateSkillDamage(
-            ctx,
-            skill,
-            buildRotationSkillDamageOptions(
-              rotSkill.id,
-              rotSkill.params,
-              [],
-              skillUseCountsInRotation,
-              rotSkill.count,
-              rotation.activePassiveSkills,
-              runtimeState.priorHitsBySkill,
-            ),
-          )
-          : skillDamage;
+    const baseSkillDamage =
+      rotSkill.id === SCARLET_SPIN_SKILL_ID
+        ? calculateSkillDamage(
+          ctx,
+          skill,
+          buildRotationSkillDamageOptions(
+            rotSkill.id,
+            rotSkill.params,
+            [],
+            skillUseCountsInRotation,
+            rotSkill.count,
+            rotation.activePassiveSkills,
+            runtimeState.priorHitsBySkill,
+          ),
+        )
+        : skillDamage;
 
-      // Total hits for ONE usage/cast of the skill (supports scaled skills)
-      const baseHitsPerCast = baseSkillDamage.perHit.length;
-      const duration =
-        skill.id === "vernal_umbrella_light_spring_away"
-          ? Math.max(0, Number(rotSkill.params?.duration ?? 1))
-          : 1;
-      const hitsPerCast = baseHitsPerCast * duration;
-      const resonanceHits =
-        rotSkill.id === SCARLET_SPIN_SKILL_ID
-          ? getScarletSpinResonanceHitCount(rotation.activeInnerWays, rotSkill.count)
-          : 0;
-      const totalHits = hitsPerCast * rotSkill.count;
+    // Total hits for ONE usage/cast of the skill (supports scaled skills)
+    const baseHitsPerCast = baseSkillDamage.perHit.length;
+    const duration =
+      skill.id === "vernal_umbrella_light_spring_away"
+        ? Math.max(0, Number(rotSkill.params?.duration ?? 1))
+        : 1;
+    const hitsPerCast = baseHitsPerCast * duration;
+    const resonanceHits =
+      rotSkill.id === SCARLET_SPIN_SKILL_ID
+        ? getScarletSpinResonanceHitCount(rotation.activeInnerWays, rotSkill.count)
+        : 0;
+    const totalHits = hitsPerCast * rotSkill.count;
 
-      // Average damage = normal damage nhân với count
-      const avgDamage = baseSkillDamage.total.normal.value * rotSkill.count;
+    // Average damage = normal damage nhân với count
+    // IF cancelled, damage is 0 but we still count hits/usage
+    const avgDamage = rotSkill.cancelled
+      ? 0
+      : baseSkillDamage.total.normal.value * rotSkill.count;
 
-      // Merge by groupKey (or skillId when ungrouped)
-      const existing = skillDamageMap.get(groupKey);
-      if (existing) {
-        skillDamageMap.set(groupKey, {
-          ...existing,
-          value: existing.value + avgDamage,
-          count: existing.count + rotSkill.count,
-          totalHits: existing.totalHits + totalHits,
-          name: `${displayName} x${formatHitCount(existing.totalHits + totalHits)}`,
+    // Merge by groupKey (or skillId when ungrouped)
+    const existing = skillDamageMap.get(groupKey);
+    if (existing) {
+      skillDamageMap.set(groupKey, {
+        ...existing,
+        value: existing.value + avgDamage,
+        count: existing.count + rotSkill.count,
+        totalHits: existing.totalHits + totalHits,
+        name: `${displayName} x${formatHitCount(existing.totalHits + totalHits)}`,
+      });
+    } else {
+      skillDamageMap.set(groupKey, {
+        name: `${displayName} x${formatHitCount(totalHits)}`,
+        value: avgDamage,
+        skillId: groupKey,
+        count: rotSkill.count,
+        totalHits,
+      });
+    }
+
+    // Split Scarlet Spin resonance as its own breakdown row/slice.
+    if (rotSkill.id === SCARLET_SPIN_SKILL_ID && scarletSpinUseCount > 0) {
+      const resonancePerCast =
+        skillDamage.total.normal.value - baseSkillDamage.total.normal.value;
+      const resonanceDamage = rotSkill.cancelled
+        ? 0
+        : Math.max(0, resonancePerCast) * rotSkill.count;
+
+      if (resonanceDamage > 0 || resonanceHits > 0) {
+        const resonanceExisting = skillDamageMap.get(SCARLET_SPIN_RESONANCE_KEY);
+        const nextResonanceHits =
+          (resonanceExisting?.totalHits ?? 0) + resonanceHits;
+        const nextResonanceDamage =
+          (resonanceExisting?.value ?? 0) + resonanceDamage;
+
+        skillDamageMap.set(SCARLET_SPIN_RESONANCE_KEY, {
+          name: `${SCARLET_SPIN_RESONANCE_NAME} x${formatHitCount(nextResonanceHits)}`,
+          value: nextResonanceDamage,
+          skillId: SCARLET_SPIN_RESONANCE_KEY,
+          count: (resonanceExisting?.count ?? 0) + rotSkill.count,
+          totalHits: nextResonanceHits,
         });
-      } else {
-        skillDamageMap.set(groupKey, {
-          name: `${displayName} x${formatHitCount(totalHits)}`,
-          value: avgDamage,
-          skillId: groupKey,
-          count: rotSkill.count,
-          totalHits,
-        });
-      }
-
-      // Split Scarlet Spin resonance as its own breakdown row/slice.
-      if (rotSkill.id === SCARLET_SPIN_SKILL_ID && scarletSpinUseCount > 0) {
-        const resonancePerCast =
-          skillDamage.total.normal.value - baseSkillDamage.total.normal.value;
-        const resonanceDamage = Math.max(0, resonancePerCast) * rotSkill.count;
-        if (resonanceDamage > 0 || resonanceHits > 0) {
-          const resonanceExisting = skillDamageMap.get(SCARLET_SPIN_RESONANCE_KEY);
-          const nextResonanceHits =
-            (resonanceExisting?.totalHits ?? 0) + resonanceHits;
-          const nextResonanceDamage =
-            (resonanceExisting?.value ?? 0) + resonanceDamage;
-
-          skillDamageMap.set(SCARLET_SPIN_RESONANCE_KEY, {
-            name: `${SCARLET_SPIN_RESONANCE_NAME} x${formatHitCount(nextResonanceHits)}`,
-            value: nextResonanceDamage,
-            skillId: SCARLET_SPIN_RESONANCE_KEY,
-            count: (resonanceExisting?.count ?? 0) + rotSkill.count,
-            totalHits: nextResonanceHits,
-          });
-        }
       }
     }
 
