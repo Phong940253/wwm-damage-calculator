@@ -18,7 +18,7 @@ import {
   isValidAdditionStatForSlot,
 } from "@/app/domain/gear/additionRules";
 import { GripVertical, Loader2 } from "lucide-react";
-import { GearStatSelect } from "./GearStatSelect";
+import { GearStatSelect, type GearStatKey } from "./GearStatSelect";
 import { useGearStatDnD, type DragOver, type DraggedStat, type GearStatRow } from "./useGearStatDnD";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { MartialArtWeaponType } from "@/app/domain/skill/types";
@@ -472,7 +472,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const addAddition = () =>
     setAddition({ id: crypto.randomUUID(), stat: defaultAdditionStat, value: 0 });
 
-  const setAdditionStat = (stat: string) => {
+  const setAdditionStat = (stat: GearStatKey) => {
     setAddition(prev => prev ? { ...prev, stat } : { id: crypto.randomUUID(), stat, value: 0 });
   }
 
