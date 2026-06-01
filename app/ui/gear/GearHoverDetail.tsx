@@ -154,7 +154,9 @@ export default function GearHoverDetail({
             skill,
             entryOpts,
           );
-          totalNormal += dmg.total.normal.value * rotSkill.count;
+          if (!rotSkill.cancelled) {
+            totalNormal += dmg.total.normal.value * rotSkill.count;
+          }
 
           advanceRotationSkillRuntimeState(
             runtimeState,

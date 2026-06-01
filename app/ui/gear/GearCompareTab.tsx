@@ -363,24 +363,28 @@ export default function GearCompareTab({
                           skill,
                           entryOpts,
                         );
-                        totalMinA +=
-                          skillDmgA.total.min.value * rotSkill.count;
-                        totalNormalA +=
-                          skillDmgA.total.normal.value * rotSkill.count;
-                        totalAffinityA +=
-                          skillDmgA.total.affinity.value * rotSkill.count;
+                        if (!rotSkill.cancelled) {
+                          totalMinA +=
+                            skillDmgA.total.min.value * rotSkill.count;
+                          totalNormalA +=
+                            skillDmgA.total.normal.value * rotSkill.count;
+                          totalAffinityA +=
+                            skillDmgA.total.affinity.value * rotSkill.count;
+                        }
 
                         const skillDmgB = calculateSkillDamage(
                           ctxB,
                           skill,
                           entryOpts,
                         );
-                        totalMinB +=
-                          skillDmgB.total.min.value * rotSkill.count;
-                        totalNormalB +=
-                          skillDmgB.total.normal.value * rotSkill.count;
-                        totalAffinityB +=
-                          skillDmgB.total.affinity.value * rotSkill.count;
+                        if (!rotSkill.cancelled) {
+                          totalMinB +=
+                            skillDmgB.total.min.value * rotSkill.count;
+                          totalNormalB +=
+                            skillDmgB.total.normal.value * rotSkill.count;
+                          totalAffinityB +=
+                            skillDmgB.total.affinity.value * rotSkill.count;
+                        }
 
                         advanceRotationSkillRuntimeState(
                           runtimeState,

@@ -97,15 +97,17 @@ function calcRotationAwareNormalDamage(
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
       );
+const dmg = calculateSkillDamage(ctx, skill, entryOpts);
+if (!rotSkill.cancelled) {
+  totalNormal += dmg.total.normal.value * rotSkill.count;
+}
 
-      const dmg = calculateSkillDamage(
-        ctx,
-        skill,
-        entryOpts,
-      );
-      totalNormal += dmg.total.normal.value * rotSkill.count;
-
-      advanceRotationSkillRuntimeState(runtimeState, skill, entryOpts, rotSkill.count);
+advanceRotationSkillRuntimeState(
+  runtimeState,
+  skill,
+  entryOpts,
+  rotSkill.count,
+);
     }
     return totalNormal;
   }
