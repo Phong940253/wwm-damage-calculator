@@ -758,5 +758,185 @@
       "ps_bamboocut_dust_soul_loss_soulbreak": 100,
       "ps_universal_stars_align_set_4": 100
     }
+  },
+  {
+    "id": "2uw7rgv0k6j",
+    "name": "Nameless Sword DPS Rotation (Tier 6 Standard)",
+    "martialArtId": "bellstrike_splendor",
+    "skills": [
+      {
+        "entryId": "92t0nob6rxu",
+        "id": "mystic_flute_of_the_tides",
+        "order": 0,
+        "count": 1
+      },
+      {
+        "entryId": "8k6z7l6eo0a",
+        "id": "nameless_qiankuns_lock",
+        "order": 1,
+        "count": 1,
+        "cancelled": true
+      },
+      {
+        "entryId": "xl11vmestbe",
+        "id": "nameless_homeless_charge_3",
+        "order": 2,
+        "count": 1
+      },
+      {
+        "entryId": "02esxhw2nfex",
+        "id": "nameless_fearless_lunge_1",
+        "order": 3,
+        "count": 1
+      },
+      {
+        "entryId": "lqx8dvbe7tm",
+        "id": "nameless_homeless_charge_3",
+        "order": 4,
+        "count": 5
+      },
+      {
+        "entryId": "7bf7bwqvgtr",
+        "id": "nameless_qiankuns_lock",
+        "order": 5,
+        "count": 1,
+        "cancelled": true
+      },
+      {
+        "entryId": "3pcpjl8j9v3",
+        "id": "nameless_homeless_charge_3",
+        "order": 6,
+        "count": 1
+      },
+      {
+        "entryId": "yrg7udwzoms",
+        "id": "nameless_fearless_lunge_1",
+        "order": 7,
+        "count": 1
+      },
+      {
+        "entryId": "eg3jjygahej",
+        "id": "nameless_homeless_charge_3",
+        "order": 8,
+        "count": 4
+      },
+      {
+        "entryId": "5eve3cwj4vv",
+        "id": "mystic_flute_of_the_tides",
+        "order": 9,
+        "count": 1
+      },
+      {
+        "entryId": "8h2nlj29nos",
+        "id": "nameless_qiankuns_lock",
+        "order": 10,
+        "count": 1,
+        "cancelled": true
+      },
+      {
+        "entryId": "89hcj33vkc9",
+        "id": "nameless_homeless_charge_3",
+        "order": 11,
+        "count": 1
+      },
+      {
+        "entryId": "045tijs2phju",
+        "id": "nameless_fearless_lunge_1",
+        "order": 12,
+        "count": 1
+      },
+      {
+        "entryId": "c75naju935i",
+        "id": "nameless_homeless_charge_3",
+        "order": 13,
+        "count": 4
+      },
+      {
+        "entryId": "wd0wvpu019f",
+        "id": "nameless_qiankuns_lock",
+        "order": 14,
+        "count": 1,
+        "cancelled": true
+      },
+      {
+        "entryId": "0xpd66251joj",
+        "id": "nameless_homeless_charge_3",
+        "order": 15,
+        "count": 1
+      },
+      {
+        "entryId": "zzi4eg5mwr",
+        "id": "nameless_fearless_lunge_1",
+        "order": 16,
+        "count": 1
+      },
+      {
+        "entryId": "pdlot0znugg",
+        "id": "nameless_homeless_charge_3",
+        "order": 17,
+        "count": 4
+      },
+      {
+        "entryId": "300b3x4jze6",
+        "id": "mystic_flute_of_the_tides",
+        "order": 18,
+        "count": 1
+      },
+      {
+        "entryId": "9kwafsznsfr",
+        "id": "nameless_qiankuns_lock",
+        "order": 19,
+        "count": 1,
+        "cancelled": true
+      },
+      {
+        "entryId": "wunr8xeuut",
+        "id": "nameless_homeless_charge_3",
+        "order": 20,
+        "count": 1
+      },
+      {
+        "entryId": "pkt51v8c9v",
+        "id": "nameless_fearless_lunge_1",
+        "order": 21,
+        "count": 1
+      },
+      {
+        "entryId": "wp3c6agliw9",
+        "id": "nameless_homeless_charge_3",
+        "order": 22,
+        "count": 4
+      }
+    ],
+    "activePassiveSkills": [
+      "ps_bellstrike_splendor_1",
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum",
+      "ps_universal_jadeware",
+      "ps_universal_talisman_affinity_dmg",
+      "ps_universal_food_buff_physical_attack",
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum",
+      "ps_bellstrike_splendor_2",
+      "ps_bellstrike_splendor_light_as_feather",
+      "ps_bellstrike_splendor_sword_slash_dmg_boost"
+    ],
+    "activeInnerWays": [
+      "iw_universal_mountains_might_t4",
+      "iw_bellstrike_sword_morph_t5",
+      "iw_universal_morale_chant_t5",
+      "iw_universal_battle_anthem_t6"
+    ],
+    "createdAt": 1779332775140,
+    "updatedAt": 1780321946699,
+    "passiveUptimes": {
+      "ps_universal_jadeware": 100,
+      "ps_bellstrike_splendor_1": 100,
+      "ps_bellstrike_splendor_2": 100,
+      "ps_bellstrike_splendor_included_affinity_rate_up_momentum": 100,
+      "ps_bellstrike_splendor_included_max_physical_attack_up_momentum": 100,
+      "ps_universal_food_buff_physical_attack": 100,
+      "ps_universal_talisman_affinity_dmg": 100,
+      "ps_bellstrike_splendor_light_as_feather": 100,
+      "ps_bellstrike_splendor_sword_slash_dmg_boost": 100
+    }
   }
 ]

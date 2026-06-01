@@ -82,9 +82,8 @@ export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Partial<
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
 };
 
-export const LEVEL_91_PENETRATION_TUNE_LIMITS: Record<
-  TuneStatKey,
-  TuneStatRange
+export const LEVEL_91_PENETRATION_TUNE_LIMITS: Partial<
+  Record<TuneStatKey, TuneStatRange>
 > = {
   bellstrikePenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
   stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
