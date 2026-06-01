@@ -284,7 +284,9 @@ export async function computeOptimizeResultsAsync(
         );
 
         const skillDamage = calculateSkillDamage(ctx, skill, entryOpts);
-        rotationTotal += skillDamage.total.normal.value * rotSkill.count;
+        if (!rotSkill.cancelled) {
+          rotationTotal += skillDamage.total.normal.value * rotSkill.count;
+        }
 
         advanceRotationSkillRuntimeState(
           runtimeState,

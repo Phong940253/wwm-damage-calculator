@@ -85,6 +85,7 @@ export default function MainTabLayout() {
     moveSkill,
     updateSkillCount,
     updateSkillParams,
+    toggleSkillCancellation,
     togglePassiveSkill,
     toggleInnerWay,
     setInnerWayTier,
@@ -213,6 +214,7 @@ export default function MainTabLayout() {
                 onMoveSkill={moveSkill}
                 onUpdateSkillCount={updateSkillCount}
                 onUpdateSkillParams={updateSkillParams}
+                onToggleSkillCancellation={toggleSkillCancellation}
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}
@@ -310,6 +312,7 @@ export default function MainTabLayout() {
                 onMoveSkill={moveSkill}
                 onUpdateSkillCount={updateSkillCount}
                 onUpdateSkillParams={updateSkillParams}
+                onToggleSkillCancellation={toggleSkillCancellation}
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}

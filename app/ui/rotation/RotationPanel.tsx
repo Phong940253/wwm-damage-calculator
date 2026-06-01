@@ -35,6 +35,7 @@ interface RotationPanelProps {
   onMoveSkill: (rotationId: string, fromIndex: number, toIndex: number) => void;
   onUpdateSkillCount: (rotationId: string, entryId: string, count: number) => void;
   onUpdateSkillParams: (rotationId: string, entryId: string, patch: Record<string, number>) => void;
+  onToggleSkillCancellation: (rotationId: string, entryId: string) => void;
   onTogglePassiveSkill: (rotationId: string, passiveId: string) => void;
   onUpdatePassiveUptime: (
     rotationId: string,
@@ -67,6 +68,7 @@ export default function RotationPanel({
   onMoveSkill,
   onUpdateSkillCount,
   onUpdateSkillParams,
+  onToggleSkillCancellation,
   onTogglePassiveSkill,
   onUpdatePassiveUptime,
   onToggleInnerWay,
@@ -115,6 +117,7 @@ export default function RotationPanel({
       moveUp: "Di chuyển lên",
       moveDown: "Di chuyển xuống",
       remove: "Xóa",
+      cancel: "Hủy chiêu (lấy hiệu ứng)",
     }
     : {
       newRotation: "New Rotation",
@@ -157,6 +160,7 @@ export default function RotationPanel({
       moveUp: "Move up",
       moveDown: "Move down",
       remove: "Remove",
+      cancel: "Cancel (effect only)",
     };
 
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
@@ -828,7 +832,8 @@ export default function RotationPanel({
                       "relative flex items-center justify-between p-2 bg-muted rounded border group cursor-move transition-colors",
                       selectedIsDefault ? "cursor-not-allowed" : "cursor-move",
                       draggedIndex === idx ? "opacity-50 border-yellow-500" : "border-border00",
-                      dragOverIndex === idx && draggedIndex !== idx ? "border-yellow-400 bg-yellow-500/10" : ""
+                      dragOverIndex === idx && draggedIndex !== idx ? "border-yellow-400 bg-yellow-500/10" : "",
+                      rotSkill.cancelled && "opacity-60 bg-black/40 grayscale-[0.5]"
                     )}
                   >
                     {/* Drop position indicator */}
@@ -844,8 +849,25 @@ export default function RotationPanel({
                       <Badge variant="outline" className="text-xs flex-shrink-0 cursor-grab active:cursor-grabbing">
                         ⋮⋮
                       </Badge>
+
+                      <div className="flex flex-col items-center gap-1">
+                        <Checkbox
+                          checked={rotSkill.cancelled}
+                          onCheckedChange={() =>
+                            !selectedIsDefault &&
+                            onToggleSkillCancellation(selectedRotation.id, rotSkill.entryId)
+                          }
+                          disabled={selectedIsDefault}
+                          className="h-4 w-4"
+                          title={text.cancel}
+                        />
+                      </div>
+
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium truncate">{skill.name}</p>
+                        <p className={cn(
+                          "text-xs font-medium truncate",
+                          rotSkill.cancelled && "line-through text-muted-foreground"
+                        )}>{skill.name}</p>
                         <p className="text-xs text-muted-foreground">{skill.category}</p>
                       </div>
                     </div>

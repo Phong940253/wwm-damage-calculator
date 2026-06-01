@@ -195,12 +195,15 @@ export function useDamage(
           skill,
           entryOpts,
         );
-        baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
-        baseNormalTotal += baseSkillDamage.total.normal.value * rotSkill.count;
-        baseCriticalTotal +=
-          baseSkillDamage.total.critical.value * rotSkill.count;
-        baseAffinityTotal +=
-          baseSkillDamage.total.affinity.value * rotSkill.count;
+
+        if (!rotSkill.cancelled) {
+          baseMinTotal += baseSkillDamage.total.min.value * rotSkill.count;
+          baseNormalTotal += baseSkillDamage.total.normal.value * rotSkill.count;
+          baseCriticalTotal +=
+            baseSkillDamage.total.critical.value * rotSkill.count;
+          baseAffinityTotal +=
+            baseSkillDamage.total.affinity.value * rotSkill.count;
+        }
 
         // console.log(`Skill: ${skill.name}, Base Damage:`, baseSkillDamage);
 
@@ -210,24 +213,30 @@ export function useDamage(
           skill,
           entryOpts,
         );
-        const skillNormalDamage =
-          finalSkillDamage.total.normal.value * rotSkill.count;
-        finalMinTotal += finalSkillDamage.total.min.value * rotSkill.count;
-        finalNormalTotal += skillNormalDamage;
-        finalCriticalTotal +=
-          finalSkillDamage.total.critical.value * rotSkill.count;
-        finalAffinityTotal +=
-          finalSkillDamage.total.affinity.value * rotSkill.count;
 
-        // Get breakdown for this skill from calculated skill damage
-        const skillBreakdown = finalSkillDamage.total.averageBreakdown;
-        if (!skillBreakdown) continue;
+        if (!rotSkill.cancelled) {
+          const skillNormalDamage =
+            finalSkillDamage.total.normal.value * rotSkill.count;
+          finalMinTotal += finalSkillDamage.total.min.value * rotSkill.count;
+          finalNormalTotal += skillNormalDamage;
+          finalCriticalTotal +=
+            finalSkillDamage.total.critical.value * rotSkill.count;
+          finalAffinityTotal +=
+            finalSkillDamage.total.affinity.value * rotSkill.count;
 
-        // Weight breakdown by this skill's count (flat damage, not percent)
-        weightedBreakdownNormal += skillBreakdown.normal * rotSkill.count;
-        weightedBreakdownAbrasion += skillBreakdown.abrasion * rotSkill.count;
-        weightedBreakdownAffinity += skillBreakdown.affinity * rotSkill.count;
-        weightedBreakdownCritical += skillBreakdown.critical * rotSkill.count;
+          // Get breakdown for this skill from calculated skill damage
+          const skillBreakdown = finalSkillDamage.total.averageBreakdown;
+          if (skillBreakdown) {
+            // Weight breakdown by this skill's count (flat damage, not percent)
+            weightedBreakdownNormal += skillBreakdown.normal * rotSkill.count;
+            weightedBreakdownAbrasion +=
+              skillBreakdown.abrasion * rotSkill.count;
+            weightedBreakdownAffinity +=
+              skillBreakdown.affinity * rotSkill.count;
+            weightedBreakdownCritical +=
+              skillBreakdown.critical * rotSkill.count;
+          }
+        }
 
         advanceRotationSkillRuntimeState(
           runtimeState,

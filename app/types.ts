@@ -125,6 +125,7 @@ export interface RotationSkill {
   id: string; // skill ID
   order: number;
   count: number; // số lần sử dụng skill này
+  cancelled?: boolean; // nếu true, skill này không tính dmg (chỉ để lấy hiệu ứng/proc)
 
   /** Optional per-skill-entry parameters (e.g. Blossoms for Unfaded Flower). */
   params?: Record<string, number>;
