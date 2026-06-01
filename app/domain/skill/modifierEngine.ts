@@ -3,6 +3,7 @@ import { INNER_WAYS } from "./innerWays";
 import { PASSIVE_SKILLS } from "./passiveSkills";
 import { PassiveModifier, StatKey } from "./passiveSkillTypes";
 import { computeDerivedStats } from "../stats/derivedStats";
+import { SKILLS } from "./skills";
 
 export interface RotationBonusBreakdown {
   /** Total bonus = sum of all sources (passives + inner ways) */
@@ -44,6 +45,32 @@ function sumRecords(...records: Array<Record<string, number> | undefined>) {
     for (const [key, value] of Object.entries(record)) {
       out[key] = (out[key] || 0) + value;
     }
+  }
+  return out;
+}
+
+function collectSkillSelfDamageBoosts(
+  rotation?: Rotation,
+): Array<{ id: string; name: string; value: number }> {
+  if (!rotation) return [];
+
+  const uniqueSkillIds = new Set((rotation.skills ?? []).map((s) => s.id));
+  const out: Array<{ id: string; name: string; value: number }> = [];
+
+  for (const skillId of uniqueSkillIds) {
+    const skill = SKILLS.find((s) => s.id === skillId);
+    const value = Number(skill?.selfDamageBoostPct ?? 0);
+    if (!Number.isFinite(value) || value === 0) continue;
+    out.push({ id: skillId, name: skill?.name ?? skillId, value });
+  }
+
+  return out;
+}
+
+function computeRotationSkillBonuses(rotation?: Rotation) {
+  const out: Record<string, number> = {};
+  for (const entry of collectSkillSelfDamageBoosts(rotation)) {
+    out.DamageBoost = (out.DamageBoost || 0) + entry.value;
   }
   return out;
 }
@@ -280,7 +307,9 @@ export function computeRotationBonuses(
     }
   }
 
-  return sumRecords(flatBonus, scaleBonus);
+  const skillBonuses = computeRotationSkillBonuses(rotation);
+
+  return sumRecords(flatBonus, scaleBonus, skillBonuses);
 }
 
 /**
@@ -369,6 +398,13 @@ export function computeRotationBonusesWithBreakdown(
       const add = clamp(modifier.value, modifier.min, modifier.max);
       addTo(bucket, key, add);
     }
+  }
+
+  for (const entry of collectSkillSelfDamageBoosts(rotation)) {
+    const key = `skill:${entry.id}`;
+    metaPassives[key] = { name: `${entry.name} (Skill)`, uptimePct: 100 };
+    const bucket = (byPassiveFlat[key] ??= {});
+    addTo(bucket, "DamageBoost", entry.value);
   }
 
   const flatTotal = sumRecords(

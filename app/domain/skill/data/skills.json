@@ -1458,20 +1458,41 @@
     "id": "mystic_flute_of_the_tides",
     "name": "Flute of the Tides",
     "category": "mystic-skill",
+    "selfDamageBoostPct": 20,
     "hits": [
       {
-        "physicalMultiplier": 1.81,
+        "physicalMultiplier": 1.8382,
         "elementMultiplier": 1,
         "hits": 1,
-        "flatPhysical": 298
+        "flatPhysical": 377,
+        "scale": {
+          "paramKey": "distanceBonusPct",
+          "inputMin": 0,
+          "inputMax": 20,
+          "to": {
+            "physicalMultiplier": 2.2058,
+            "elementMultiplier": 1.2,
+            "flatPhysical": 452
+          }
+        }
       },
       {
-        "physicalMultiplier": 0.6787,
+        "physicalMultiplier": 0.6893,
         "elementMultiplier": 1,
         "hits": 5,
-        "flatPhysical": 111
+        "flatPhysical": 142,
+        "scale": {
+          "paramKey": "distanceBonusPct",
+          "inputMin": 0,
+          "inputMax": 20,
+          "to": {
+            "physicalMultiplier": 0.8272,
+            "elementMultiplier": 1.2,
+            "flatPhysical": 170
+          }
+        }
       }
     ],
-    "notes": "Placeholder multipliers"
+    "notes": "Tier 6 tooltip: initial hit 194.85% + 400, then up to 5 ripple sequences (modeled as 5 single-target hits at 73.07% + 150). Applies +6% self Damage Boost when used. Distance bonus modeled via rotation param distanceBonusPct (0-20%)."
   }
 ]

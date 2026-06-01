@@ -87,6 +87,9 @@ export interface Skill {
 
   /** purely for UI */
   notes?: string;
+
+  /** Optional: adds a global DamageBoost when this skill is in rotation. */
+  selfDamageBoostPct?: number;
 }
 
 export type MartialArtId =

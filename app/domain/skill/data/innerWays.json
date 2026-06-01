@@ -224,21 +224,15 @@
     {
         "id": "iw_bellstrike_sword_morph_t3",
         "name": "Sword Morph (Tier 3)",
-        "description": "After sword energy hits a target: sword energy deals more damage (stacks).",
+        "description": "Sword energy attacks do not cause Abrasion against Exhausted targets; against Exhausted non-player targets, the 3rd sword energy hit is guaranteed Affinity.",
         "tierGroupId": "iw_bellstrike_sword_morph",
         "applicableToMartialArtId": "bellstrike_splendor",
         "defaultEnabledForMartialArtIds": [
             "bellstrike_splendor"
         ],
-        "modifiers": [
-            {
-                "stat": "ChargeSkillDamageBoost",
-                "type": "flat",
-                "value": 15
-            }
-        ],
+        "modifiers": [],
         "level": 3,
-        "notes": "In-game: for 5s after sword energy hits a target, sword energy deals +5% damage to that target; consecutive hits stack up to +15%. If the target is a non-player unit and Exhausted, each stack becomes +8% (up to +24% at 3 stacks). This calculator approximates the max normal stack as +15% Damage Boost (unconditional)."
+        "notes": "Exhausted means target has depleted Qi. This calculator does not yet model abrasion suppression or guaranteed affinity hits; assumed Exhausted uptime is 20% for future approximation."
     },
     {
         "id": "iw_bellstrike_sword_morph_t5",

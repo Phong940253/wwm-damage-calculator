@@ -111,6 +111,7 @@ export default function RotationPanel({
       blossoms: "Hoa",
       duration: "Thời lượng (s)",
       charge: "Tích lực (%)",
+      distanceBonus: "Bonus khoảng cách (%)",
       moveUp: "Di chuyển lên",
       moveDown: "Di chuyển xuống",
       remove: "Xóa",
@@ -152,6 +153,7 @@ export default function RotationPanel({
       blossoms: "Blossoms",
       duration: "Duration (s)",
       charge: "Charge (%)",
+      distanceBonus: "Distance bonus (%)",
       moveUp: "Move up",
       moveDown: "Move down",
       remove: "Remove",
@@ -932,6 +934,34 @@ export default function RotationPanel({
                             }}
                             className="w-14 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
                             title="Apricot Heaven: 2nd-stage damage scales linearly Min→Max by charge %"
+                          />
+                        </div>
+                      )}
+
+                      {skill.id === "mystic_flute_of_the_tides" && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {text.distanceBonus}
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="20"
+                            step="1"
+                            value={rotSkill.params?.distanceBonusPct ?? 0}
+                            disabled={selectedIsDefault}
+                            onChange={(e) => {
+                              if (selectedIsDefault) return;
+                              const next = Number(e.target.value);
+                              const clamped = Number.isFinite(next)
+                                ? Math.min(20, Math.max(0, next))
+                                : 0;
+                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
+                                distanceBonusPct: clamped,
+                              });
+                            }}
+                            className="w-16 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
+                            title="Flute of the Tides: distance-based damage bonus"
                           />
                         </div>
                       )}
