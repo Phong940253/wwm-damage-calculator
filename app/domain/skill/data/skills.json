@@ -529,11 +529,11 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 1.0248,
-        "elementMultiplier": 1.5371,
+        "physicalMultiplier": 1.0252,
+        "elementMultiplier": 1.5378,
         "hits": 1,
-        "flatPhysical": 149,
-        "flatAttribute": 87
+        "flatPhysical": 236,
+        "flatAttribute": 132
       }
     ],
     "notes": "Placeholder multipliers"
@@ -546,11 +546,11 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 0.7686,
-        "elementMultiplier": 1.15285,
+        "physicalMultiplier": 0.7689,
+        "elementMultiplier": 1.15335,
         "hits": 2,
-        "flatPhysical": 112,
-        "flatAttribute": 66
+        "flatPhysical": 177.5,
+        "flatAttribute": 99
       }
     ],
     "notes": "Placeholder multipliers"
@@ -563,11 +563,11 @@
     "category": "martial-art-skill",
     "hits": [
       {
-        "physicalMultiplier": 0.854,
-        "elementMultiplier": 1.28,
+        "physicalMultiplier": 0.85433,
+        "elementMultiplier": 1.28153,
         "hits": 3,
-        "flatPhysical": 125,
-        "flatAttribute": 73
+        "flatPhysical": 197.33,
+        "flatAttribute": 110.33
       }
     ],
     "notes": "Placeholder multipliers"
@@ -646,7 +646,7 @@
   },
   {
     "id": "nameless_homeless_charge_3",
-    "name": "Homeless Charge: 2rd Stage with Sword Morph",
+    "name": "Homeless Charge: 2nd Stage with Sword Morph",
     "martialArtId": "bellstrike_splendor",
     "weaponType": "Sword",
     "category": "ultimate",
@@ -655,25 +655,25 @@
     ],
     "hits": [
       {
-        "physicalMultiplier": 1.3056,
-        "elementMultiplier": 1.9583,
+        "physicalMultiplier": 1.3064,
+        "elementMultiplier": 1.9595,
         "hits": 1,
-        "flatAttribute": 111,
-        "flatPhysical": 190
+        "flatAttribute": 168,
+        "flatPhysical": 302
       },
       {
-        "physicalMultiplier": 1.5667,
-        "elementMultiplier": 2.35,
+        "physicalMultiplier": 1.5676,
+        "elementMultiplier": 2.3514,
         "hits": 1,
-        "flatAttribute": 133,
-        "flatPhysical": 228
+        "flatAttribute": 202,
+        "flatPhysical": 362
       },
       {
-        "physicalMultiplier": 1.8278,
-        "elementMultiplier": 2.7417,
+        "physicalMultiplier": 1.8289,
+        "elementMultiplier": 2.7434,
         "hits": 1,
-        "flatAttribute": 156,
-        "flatPhysical": 267
+        "flatAttribute": 236,
+        "flatPhysical": 422
       }
     ],
     "notes": "Placeholder multipliers"

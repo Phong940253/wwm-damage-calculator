@@ -1,10 +1,83 @@
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import { FinalStatSection } from "./type";
+import { STAT_LABELS } from "@/app/constants";
 
 const pctNP = (v: number) => `${v.toFixed(1)}`;
 const pct = (v: number) => `${v.toFixed(1)}%`;
 
+const SPECIAL_STAT_KEYS = [
+  "DamageBoost",
+  "CombatBoostAgainstBossUnits",
+  "MartialArtSkillDamageBoost",
+  "AllMartialArtsBoost",
+  "ChargeSkillDamageBoost",
+  "BallisticSkillDamageBoost",
+  "PursuitSkillDamageBoost",
+  "SpringAwayDamageBoost",
+  "UmbrellaBallisticCriticalDMGBonus",
+  "MoonlitShatterSpringPursuitCriticalDMGBonus",
+  "ArtOfSwordDMGBoost",
+  "ArtOfSpearDMGBoost",
+  "ArtOfFanDMGBoost",
+  "ArtOfUmbrellaDMGBoost",
+  "ArtOfHorizontalBladeDMGBoost",
+  "ArtOfMoBladeDMGBoost",
+  "ArtOfDualBladesDMGBoost",
+  "ArtOfRopeDartDMGBoost",
+  "SoulshadeUmbrellaSpinningUmbrellaDMGBoost",
+  "NamelessSwordMartialArtSkillDMGBoost",
+  "NamelessSwordChargedSkillDMGBoost",
+  "NamelessSwordSpecialSkillDMGBoost",
+  "NamelessSpearMartialArtSkillDMGBoost",
+  "NamelessSpearChargedSkillDMGBoost",
+  "NamelessSpearSpecialSkillDMGBoost",
+  "VernalUmbrellaMartialArtSkillDMGBoost",
+  "VernalUmbrellaChargedSkillDMGBoost",
+  "VernalUmbrellaSpecialSkillDMGBoost",
+  "InkwellFanMartialArtSkillDMGBoost",
+  "InkwellFanChargedSkillDMGBoost",
+  "InkwellFanSpecialAndPursuitSkillDMGBoost",
+  "InfernalTwinbladesMartialArtSkillDMGBoost",
+  "InfernalTwinbladesSpecialSkillDMGBoost",
+  "InfernalTwinbladesEmpoweredLightAttackDMGBoost",
+  "MortalRopeDartMartialArtSkillDMGBoost",
+  "MortalRopeDartChargedSkillDMGBoost",
+  "MortalRopeDartRodentDMGBoost",
+  "UnfetteredRopeDartMartialArtSkillDMGBoost",
+  "UnfetteredRopeDartChargedSkillDMGBoost",
+  "UnfetteredRopeDartSpecialSkillDMGBoost",
+  "StrategicSwordMartialArtSkillDMGBoost",
+  "StrategicSwordChargedSkillDMGBoost",
+  "StrategicSwordSpecialSkillDMGBoost",
+  "HeavenquakerSpearMartialArtSkillDMGBoost",
+  "HeavenquakerSpearChargedSkillDMGBoost",
+  "HeavenquakerSpearSpecialSkillDMGBoost",
+  "ThundercryBladeChargedSkillDMGBoost",
+  "ThundercryBladeSpecialSkillDMGBoost",
+  "StormbreakerSpearMartialArtSkillDMGBoost",
+  "StormbreakerSpearChargedSkillDMGBoost",
+  "StormbreakerSpearSpecialSkillDMGBoost",
+  "EverspringUmbrellaMartialArtSkillDMGBoost",
+  "EverspringUmbrellaChargedSkillDMGBoost",
+  "EverspringUmbrellaSpecialSkillDMGBoost",
+  "PanaceaFanMartialArtSkillHealingBoost",
+  "PanaceaFanSpecialSkillHealingBoost",
+  "SoulshadeUmbrellaMartialArtSkillHealingBoost",
+  "SoulshadeUmbrellaSpecialSkillHealingBoost",
+  "SoulshadeUmbrellaChargedSkillDMGBoost",
+];
+
 export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
+  const hiddenRows = SPECIAL_STAT_KEYS.map((key) => {
+    const val = ctx.get(key);
+    if (val <= 0) return null;
+    return {
+      label: STAT_LABELS[key] || key,
+      value: pct(val),
+      ctxKeys: [key],
+    };
+  }).filter((r): r is NonNullable<typeof r> => r !== null);
+
   return [
     {
       title: "Combat Attributes",
@@ -128,44 +201,8 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
     },
     {
       title: "Hidden Stats",
-      rows: [
-        {
-          label: "Charge Skill DMG Boost",
-          value: pct(ctx.get("ChargeSkillDamageBoost")),
-          ctxKeys: ["ChargeSkillDamageBoost"],
-        },
-        {
-          label: "Projectile Skill DMG Boost",
-          value: pct(ctx.get("BallisticSkillDamageBoost")),
-          ctxKeys: ["BallisticSkillDamageBoost"],
-        },
-        {
-          label: "Pursuit Skill DMG Boost",
-          value: pct(ctx.get("PursuitSkillDamageBoost")),
-          ctxKeys: ["PursuitSkillDamageBoost"],
-        },
-        {
-          label: "Umbrella Ballistic Crit DMG Bonus",
-          value: pct(ctx.get("UmbrellaBallisticCriticalDMGBonus")),
-          ctxKeys: ["UmbrellaBallisticCriticalDMGBonus"],
-        },
-        {
-          label: "Moonlit Shatter Spring Pursuit Crit DMG Bonus",
-          value: pct(ctx.get("MoonlitShatterSpringPursuitCriticalDMGBonus")),
-          ctxKeys: ["MoonlitShatterSpringPursuitCriticalDMGBonus"],
-        },
-
-        {
-          label: "Damage Boost",
-          value: pct(ctx.get("DamageBoost")),
-          ctxKeys: ["DamageBoost"],
-        },
-        {
-          label: "Combat Boost against Boss Units",
-          value: pct(ctx.get("CombatBoostAgainstBossUnits")),
-          ctxKeys: ["CombatBoostAgainstBossUnits"],
-        },
-      ],
+      rows: hiddenRows,
     },
-  ];
+  ].filter((s) => s.rows.length > 0);
 }
+
