@@ -45,7 +45,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
           `idealGearResult:${path}:${rotationKey}`,
           JSON.stringify({ result: res, ts: Date.now() })
         );
-      } catch (e) {
+      } catch {
         // ignore storage errors
       }
       setIsCalculating(false);

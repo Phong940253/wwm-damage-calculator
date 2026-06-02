@@ -46,7 +46,7 @@ import {
   getTuneSystemStatPool,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
-import { calculateIdealGearStats } from "@/app/domain/gear/idealOptimizer";
+import { calculateIdealGearStats, IdealGearResult } from "@/app/domain/gear/idealOptimizer";
 
 const LEFT_SLOT_ORDER: GearSlot[] = ["weapon_1", "weapon_2", "disc", "pendant"];
 const RIGHT_SLOT_ORDER: GearSlot[] = ["head", "chest", "leg", "hand"];
@@ -258,19 +258,22 @@ export default function GearEquippedTab() {
     const parts: Array<string | number> = [];
     const statKeys = Object.keys(s).sort();
     for (const k of statKeys) {
-      const v = (s as any)[k];
+      const v = s[k as keyof InputStats];
       parts.push(k, Number(v?.current ?? 0), Number(v?.increase ?? 0));
     }
     parts.push("el:", es.selected ?? "");
-    const esKeys = Object.keys(es).sort();
-    for (const k of esKeys) {
-      const v = (es as any)[k];
+    
+    // es has explicit type ElementStats, but we need to access its properties safely if they are nested or not in the type definition, 
+    // but based on typical usage, it seems safe. The previous 'any' was likely for flexibility in key access.
+    // Let's use Object.entries to iterate safely.
+    Object.entries(es).sort(([k1], [k2]) => k1.localeCompare(k2)).forEach(([k, v]) => {
       if (v && typeof v === "object") {
         parts.push(k, Number(v.current ?? 0), Number(v.increase ?? 0));
       } else {
         parts.push(k, String(v));
       }
-    }
+    });
+
     const bonusKeys = Object.keys(b).sort();
     for (const k of bonusKeys) {
       parts.push(k, Number(b[k] ?? 0));
@@ -570,7 +573,7 @@ export default function GearEquippedTab() {
     return Array.from(groups.values());
   }, [tuneAdvice]);
 
-  const [cachedIdealResult, setCachedIdealResult] = useState<null | any>(null);
+  const [cachedIdealResult, setCachedIdealResult] = useState<IdealGearResult | null>(null);
 
   // Load cached ideal result (if the user previously saved it via "Find Max Damage")
   useEffect(() => {
@@ -584,7 +587,7 @@ export default function GearEquippedTab() {
       } else {
         setCachedIdealResult(null);
       }
-    } catch (e) {
+    } catch {
       // ignore
       setCachedIdealResult(null);
     }
@@ -592,7 +595,7 @@ export default function GearEquippedTab() {
 
   const idealGearResult = useMemo(() => {
     // Prefer cached result to avoid expensive recomputation.
-    if (cachedIdealResult) return cachedIdealResult as any;
+    if (cachedIdealResult) return cachedIdealResult;
     return calculateIdealGearStats(elementStats.selected, selectedRotation, stats, elementStats);
   }, [cachedIdealResult, selectedRotation, stats, elementStats]);
 
@@ -603,7 +606,7 @@ export default function GearEquippedTab() {
       idealGearResult.stats,
       selectedRotation
     );
-  }, [stats, elementStats, idealGearResult.stats, selectedRotation]);
+  }, [stats, elementStats, idealGearResult.stats, selectedRotation, calcWithCache]);
 
   return (
     <div className="space-y-4">
