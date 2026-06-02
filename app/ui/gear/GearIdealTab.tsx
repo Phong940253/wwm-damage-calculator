@@ -39,6 +39,15 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
     setTimeout(() => {
       const res = calculateIdealGearStats(path, rotation, stats, elementStats);
       setResult(res);
+      try {
+        const rotationKey = (rotation?.skills ?? []).map((s) => s.id).join(",") || "no-rot";
+        localStorage.setItem(
+          `idealGearResult:${path}:${rotationKey}`,
+          JSON.stringify({ result: res, ts: Date.now() })
+        );
+      } catch (e) {
+        // ignore storage errors
+      }
       setIsCalculating(false);
     }, 50);
   };
