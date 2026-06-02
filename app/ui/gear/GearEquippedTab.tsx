@@ -521,7 +521,7 @@ export default function GearEquippedTab() {
 
   const idealGearResult = useMemo(() => {
     return calculateIdealGearStats(elementStats.selected, selectedRotation, stats, elementStats);
-  }, [elementStats.selected, selectedRotation, stats, elementStats]);
+  }, [selectedRotation, stats, elementStats]);
 
   const theoreticalMaxDamage = useMemo(() => {
     return calcRotationAwareNormalDamage(

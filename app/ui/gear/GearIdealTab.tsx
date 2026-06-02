@@ -8,14 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Zap, Loader2, Target, TrendingUp, Cpu } from "lucide-react";
 import { useDamage } from "@/app/hooks/useDamage";
-import { useI18n } from "@/app/providers/I18nProvider";
+import { DamageResult } from "@/app/domain/damage/type";
 import { Rotation } from "@/app/types";
 import { useStats } from "@/app/hooks/useStats";
 import { useElementStats } from "@/app/hooks/useElementStats";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
+import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
+import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { buildDamageContext } from "@/app/domain/damage/damageContext";
+import DamagePanel from "@/app/ui/damage/DamagePanel";
 
 export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
-  const { t } = useI18n();
   const [path, setPath] = useState<ElementKey>("bellstrike");
   const [isCalculating, setIsCalculating] = useState(false);
   const [result, setResult] = useState<IdealGearResult | null>(null);
@@ -75,9 +78,9 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                 ))}
               </select>
             </div>
-            
-            <Button 
-              onClick={handleCalculate} 
+
+            <Button
+              onClick={handleCalculate}
               disabled={isCalculating}
               className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
             >
@@ -121,11 +124,11 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Object.entries(result.allocations).sort((a, b) => b[1] - a[1]).map(([statKey, lines]) => {
                 const totalVal = result.stats[statKey];
-                
+
                 return (
                   <div key={statKey} className="flex flex-col p-4 rounded-lg bg-zinc-950/50 border border-zinc-800/80 relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/50 group-hover:bg-emerald-400 transition-colors" />
-                    
+
                     <div className="flex justify-between items-start mb-2 pl-2">
                       <span className="text-sm font-medium text-zinc-300 leading-tight">
                         {getStatLabel(statKey)}
@@ -134,7 +137,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                         {lines} lines
                       </Badge>
                     </div>
-                    
+
                     <div className="mt-auto pl-2 flex items-center gap-1.5">
                       <Target size={14} className="text-zinc-500" />
                       <span className="text-lg font-bold text-zinc-100">
@@ -145,7 +148,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                 );
               })}
             </div>
-            
+
             <div className="mt-6 p-4 rounded-md bg-emerald-950/20 border border-emerald-900/30 text-sm text-emerald-200/80">
               <span className="font-semibold text-emerald-400">Insight:</span> The algorithm mathematically tested tens of thousands of combinations to discover that this specific distribution of 32 substat lines yields the absolute highest DPS.
             </div>
@@ -158,16 +161,9 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   );
 }
 
-import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
-import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
-import { buildDamageContext } from "@/app/domain/damage/damageContext";
-import { calculateDamage } from "@/app/domain/damage/damageCalculator";
-import DamagePanel from "@/app/ui/damage/DamagePanel";
-
-function FinalIdealStatsDisplay({ result, rotation, damageResult }: { result: IdealGearResult, rotation?: Rotation, damageResult: any }) {
+function FinalIdealStatsDisplay({ result, rotation, damageResult }: { result: IdealGearResult, rotation?: Rotation, damageResult: DamageResult }) {
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
-  const { language } = useI18n();
 
   const finalCtx = React.useMemo(() => {
     const gearBonus = result.stats;
@@ -198,12 +194,12 @@ function FinalIdealStatsDisplay({ result, rotation, damageResult }: { result: Id
       <div className="text-sm text-amber-400 mb-4 bg-amber-500/10 p-3 rounded-md border border-amber-500/20">
         Note: The stats below INCLUDE the buffs from your active Rotation (Passive Skills & Inner Ways).
       </div>
-      
-      <DamagePanel 
+
+      <DamagePanel
         ctx={finalCtx}
         result={damageResult}
         showFormula={false}
-        toggleFormula={() => {}}
+        toggleFormula={() => { }}
         elementStats={elementStats}
         rotation={rotation}
       />
