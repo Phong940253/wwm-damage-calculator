@@ -48,27 +48,27 @@ function getElementAttackTuneStats(
 }
 
 const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
-  MinPhysicalAttack: { minPerLine: 23.5, maxPerLine: 47.0 },
-  MaxPhysicalAttack: { minPerLine: 23.5, maxPerLine: 47.0 },
-  bellstrikeMin: { minPerLine: 13.3, maxPerLine: 26.6 },
-  bellstrikeMax: { minPerLine: 13.3, maxPerLine: 26.6 },
-  stonesplitMin: { minPerLine: 13.3, maxPerLine: 26.6 },
-  stonesplitMax: { minPerLine: 13.3, maxPerLine: 26.6 },
-  silkbindMin: { minPerLine: 13.3, maxPerLine: 26.6 },
-  silkbindMax: { minPerLine: 13.3, maxPerLine: 26.6 },
-  bamboocutMin: { minPerLine: 13.3, maxPerLine: 26.6 },
-  bamboocutMax: { minPerLine: 13.3, maxPerLine: 26.6 },
-  bellstrikePenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
-  stonesplitPenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
-  silkbindPenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
-  bamboocutPenetration: { minPerLine: 4.8, maxPerLine: 8.0 },
-  PhysicalPenetration: { minPerLine: 4.0, maxPerLine: 6.6 },
-  PhysicalResistance: { minPerLine: 4.0, maxPerLine: 6.6 },
-  CriticalRate: { minPerLine: 2.7, maxPerLine: 5.4 },
+  MinPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
+  MaxPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
+  bellstrikeMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+  bellstrikeMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+  stonesplitMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+  stonesplitMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+  silkbindMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+  silkbindMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+  bamboocutMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+  bamboocutMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+  bellstrikePenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  bamboocutPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  PhysicalPenetration: { minPerLine: 5.4, maxPerLine: 9.0 },
+  PhysicalResistance: { minPerLine: 5.4, maxPerLine: 9.0 },
+  CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
   AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
-  Power: { minPerLine: 14.9, maxPerLine: 29.8 },
+  Power: { minPerLine: 20.2, maxPerLine: 40.4 },
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
-  Agility: { minPerLine: 14.9, maxPerLine: 29.8 },
+  Agility: { minPerLine: 20.2, maxPerLine: 40.4 },
 };
 
 export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Partial<
@@ -324,4 +324,36 @@ export function hasUsedTune(
   } | null,
 ): boolean {
   return getGearTuneHistory(gear).length > 0;
+}
+
+export function getStatTheoreticalMaxPercentage(
+  statKey: string,
+  totalLines: number,
+  actualValue: number,
+  elementKey?: ElementKey,
+): number | null {
+  if (totalLines <= 0 || actualValue <= 0) return null;
+
+  const isValidStat = (Object.keys(DEFAULT_TUNE_LIMITS) as string[]).includes(statKey);
+  if (!isValidStat) return null;
+
+  const tKey = statKey as TuneStatKey;
+  let maxPerLine = DEFAULT_TUNE_LIMITS[tKey].maxPerLine;
+
+  const penLimit = LEVEL_91_PENETRATION_TUNE_LIMITS[tKey]?.maxPerLine;
+  if (penLimit && penLimit > maxPerLine) {
+    maxPerLine = penLimit;
+  }
+
+  if (elementKey === "bellstrike") {
+    const bellstrikeLimit = BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[tKey]?.maxPerLine;
+    if (bellstrikeLimit && bellstrikeLimit > maxPerLine) {
+      maxPerLine = bellstrikeLimit;
+    }
+  }
+
+  const theoreticalMax = maxPerLine * totalLines;
+  if (theoreticalMax <= 0) return null;
+
+  return Math.min(100, (actualValue / theoreticalMax) * 100);
 }

@@ -46,6 +46,7 @@ import {
   getTuneSystemStatPool,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
+import { calculateIdealGearStats } from "@/app/domain/gear/idealOptimizer";
 
 const LEFT_SLOT_ORDER: GearSlot[] = ["weapon_1", "weapon_2", "disc", "pendant"];
 const RIGHT_SLOT_ORDER: GearSlot[] = ["head", "chest", "leg", "hand"];
@@ -518,10 +519,29 @@ export default function GearEquippedTab() {
     return Array.from(groups.values());
   }, [tuneAdvice]);
 
+  const idealGearResult = useMemo(() => {
+    return calculateIdealGearStats(elementStats.selected, selectedRotation, stats, elementStats);
+  }, [selectedRotation, stats, elementStats]);
+
+  const theoreticalMaxDamage = useMemo(() => {
+    return calcRotationAwareNormalDamage(
+      stats,
+      elementStats,
+      idealGearResult.stats,
+      selectedRotation
+    );
+  }, [stats, elementStats, idealGearResult.stats, selectedRotation]);
+
   return (
     <div className="space-y-4">
       {/* Combined result */}
-      <GearAnalysisPanel gears={customGears} equipped={equipped} elementStats={elementStats} />
+      <GearAnalysisPanel 
+        gears={customGears} 
+        equipped={equipped} 
+        elementStats={elementStats}
+        currentDamage={fullDamage}
+        theoreticalMaxDamage={theoreticalMaxDamage}
+      />
       <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-0.5">

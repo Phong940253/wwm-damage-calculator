@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import GearCustomizeTab from "../gear/GearCustomizeTab";
 import GearEquippedTab from "../gear/GearEquippedTab";
 import GearCompareTab from "../gear/GearCompareTab";
+import GearIdealTab from "../gear/GearIdealTab";
 import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
 import { useRotation } from "@/app/hooks/useRotation";
 import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "@/app/constants";
@@ -40,6 +41,8 @@ export default function GearTabLayout() {
       {tab === "compare" && (
         <GearCompareTab stats={stats} elementStats={elementStats} rotation={selectedRotation} />
       )}
+
+      {tab === "ideal" && <GearIdealTab rotation={selectedRotation} />}
     </div>
   );
 }

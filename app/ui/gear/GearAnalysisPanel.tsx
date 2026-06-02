@@ -39,6 +39,8 @@ interface Props {
   gears: CustomGear[];
   equipped: Partial<Record<GearSlot, string | undefined>>;
   elementStats: ElementStats;
+  currentDamage: number;
+  theoreticalMaxDamage: number;
 }
 
 interface GroupedStatEntry {
@@ -50,7 +52,7 @@ interface GroupedStatEntry {
   isVirtual?: boolean;
 }
 
-export default function GearAnalysisPanel({ gears, equipped, elementStats }: Props) {
+export default function GearAnalysisPanel({ gears, equipped, elementStats, currentDamage, theoreticalMaxDamage }: Props) {
   const { language } = useI18n();
   
   const text = language === "vi"
@@ -70,7 +72,8 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
         groupRates: "Tỷ lệ",
         groupDef: "Phòng thủ",
         groupElem: "Nguyên tố",
-        groupOther: "Khác"
+        groupOther: "Khác",
+        theoreticalMax: "tối đa lí thuyết"
       }
     : {
         title: "📊 Gear Analysis",
@@ -88,7 +91,8 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
         groupRates: "Rates",
         groupDef: "Defense",
         groupElem: "Element",
-        groupOther: "Other"
+        groupOther: "Other",
+        theoreticalMax: "theoretical max"
       };
 
   const analysis = useMemo(() => analyzeEquippedGear(gears, equipped), [gears, equipped]);
@@ -103,6 +107,8 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
       .filter(d => d.count > 0)
       .sort((a, b) => b.count - a.count);
   }, [analysis.statSummary, elementStats]);
+
+  const overallMaxPercentage = theoreticalMaxDamage > 0 ? Math.min(100, (currentDamage / theoreticalMaxDamage) * 100) : 0;
 
   if (analysis.equippedCount === 0) {
     return (
@@ -235,6 +241,30 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
 
       <Separator className="bg-white/5" />
 
+      {/* OVERALL DAMAGE COMPARISON TO THEORETICAL MAX */}
+      <div className="flex flex-col gap-2 rounded-lg bg-black/20 p-4 border border-white/5">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-400" />
+            {language === "vi" ? "Sát thương thực tế so với Tối đa lý thuyết" : "Actual Damage vs Theoretical Max"}
+          </span>
+          <span className="font-mono font-bold text-amber-400">
+            {overallMaxPercentage.toFixed(2)}%
+          </span>
+        </div>
+        <Progress 
+            value={overallMaxPercentage} 
+            className="h-3 bg-white/5" 
+            indicatorClassName="bg-amber-400"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+          <span>{Math.round(currentDamage).toLocaleString()} (Current)</span>
+          <span>{Math.round(theoreticalMaxDamage).toLocaleString()} (Max)</span>
+        </div>
+      </div>
+
+      <Separator className="bg-white/5" />
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left: Chart */}
         <div className="lg:col-span-2 space-y-4">
@@ -324,30 +354,29 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
                     <span className="text-xs font-bold uppercase tracking-wider">{getGroupLabel(groupName)}</span>
                   </div>
                   <div className="space-y-1.5 px-1">
-                    {stats.map((s: GroupedStatEntry) => (
-                      <div key={s.statKey} className="group">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-muted-foreground group-hover:text-foreground transition-colors truncate max-w-[180px]">
-                            {s.name}
-                          </span>
-                          <div className="flex items-center gap-2">
-                             <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title="Mains + Subs + Additions">
-                                 {s.totalCount} {text.count}
-                             </Badge>
-                             <span className={cn(
-                                "font-mono font-bold text-emerald-400"
-                             )}>
-                               +{s.totalValue.toFixed(1)}
-                             </span>
+                    {stats.map((s: GroupedStatEntry) => {
+                      return (
+                        <div key={s.statKey} className="group pb-1">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-muted-foreground group-hover:text-foreground transition-colors truncate max-w-[180px]">
+                              {s.name}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title="Mains + Subs + Additions">
+                                  {s.totalCount} {text.count}
+                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <span className={cn(
+                                    "font-mono font-bold text-emerald-400"
+                                )}>
+                                  +{s.totalValue.toFixed(1)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <Progress 
-                            value={Math.min(100, (s.totalCount / 12) * 100)} 
-                            className="h-1 bg-white/5" 
-                            indicatorClassName="bg-emerald-500"
-                        />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );

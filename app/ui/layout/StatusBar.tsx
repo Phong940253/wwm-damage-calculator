@@ -133,6 +133,15 @@ export function StatusBar() {
             >
               <GitCompare size={18} />
             </TabButton>
+
+            <TabButton
+              active={tab === "ideal"}
+              onClick={() => set("gear", "ideal")}
+              label={t("status.idealGear")}
+              title={t("status.idealGear")}
+            >
+              <Zap size={18} />
+            </TabButton>
           </>
         )}
       </div>

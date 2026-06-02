@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +10,9 @@ import { useI18n } from "@/app/providers/I18nProvider";
 
 import {
   exportToClipboard,
+  exportToJsonFile,
   importFromClipboard,
+  importFromJsonFile,
 } from "@/app/utils/importExport";
 
 import { mergeCustomGears, mergeEquipped } from "@/app/utils/mergeGear";
@@ -27,6 +29,8 @@ type StatusState =
 
 export default function ImportExportTab() {
   const { language } = useI18n();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const text = language === "vi"
     ? {
       clearConfirm:
@@ -34,13 +38,14 @@ export default function ImportExportTab() {
       cleared: "Đã xóa dữ liệu local. Tải lại để áp dụng.",
       clearFailed: "Xóa thất bại",
       exported: "Đã xuất vào clipboard",
+      exportedFile: "Đã tải xuống file JSON",
       exportFailed: "Xuất thất bại",
       importedMerged: "Đã nhập (đã gộp trang bị). Tải lại để áp dụng.",
       imported: "Đã nhập. Tải lại để áp dụng.",
-      invalidClipboard: "Dữ liệu clipboard không hợp lệ",
+      invalidClipboard: "Dữ liệu không hợp lệ",
       title: "Nhập / Xuất dữ liệu",
       export: "Xuất",
-      exportDesc: "Chọn phần dữ liệu cần đưa vào payload clipboard.",
+      exportDesc: "Chọn phần dữ liệu cần đưa vào payload clipboard hoặc file JSON.",
       stats: "Chỉ số",
       statsExportDesc: "Chỉ số hiện tại + chỉ số nguyên tố",
       gear: "Trang bị",
@@ -48,14 +53,16 @@ export default function ImportExportTab() {
       rotations: "Rotations",
       rotationsExportDesc: "Rotation đã lưu + rotation đang chọn",
       exportClipboard: "Xuất vào Clipboard",
+      exportFile: "Xuất File JSON",
       import: "Nhập",
-      importDesc: "Dán payload từ clipboard và chọn mục muốn áp dụng.",
+      importDesc: "Dán payload từ clipboard hoặc file JSON và chọn mục muốn áp dụng.",
       statsImportDesc: "Ghi đè chỉ số local",
       gearImportDesc: "Ghi đè hoặc gộp (bên dưới)",
       rotationsImportDesc: "Ghi đè rotation đã lưu",
       mergeGear: "Gộp trang bị",
       mergeGearDesc: "Giữ item local; chỉ thêm item còn thiếu",
       importClipboard: "Nhập từ Clipboard",
+      importFile: "Nhập từ File JSON",
       reload: "Tải lại",
       dangerZone: "Vùng nguy hiểm",
       dangerDesc: "Xóa vĩnh viễn toàn bộ dữ liệu đã lưu trong trình duyệt này.",
@@ -68,13 +75,14 @@ export default function ImportExportTab() {
       cleared: "Cleared local data. Reload to apply.",
       clearFailed: "Clear failed",
       exported: "Exported to clipboard",
+      exportedFile: "Downloaded JSON file",
       exportFailed: "Export failed",
       importedMerged: "Imported (gear merged). Reload to apply.",
       imported: "Imported. Reload to apply.",
-      invalidClipboard: "Invalid clipboard data",
+      invalidClipboard: "Invalid data",
       title: "Import / Export Data",
       export: "Export",
-      exportDesc: "Choose what to include in the clipboard payload.",
+      exportDesc: "Choose what to include in the clipboard or JSON file payload.",
       stats: "Stats",
       statsExportDesc: "Current stats + element stats",
       gear: "Gear",
@@ -82,14 +90,16 @@ export default function ImportExportTab() {
       rotations: "Rotations",
       rotationsExportDesc: "Saved rotations + selected rotation",
       exportClipboard: "Export to Clipboard",
+      exportFile: "Export JSON File",
       import: "Import",
-      importDesc: "Paste a payload from clipboard and choose which sections to apply.",
+      importDesc: "Paste a payload from clipboard or import JSON file and choose which sections to apply.",
       statsImportDesc: "Overwrite local stats",
       gearImportDesc: "Overwrite or merge (below)",
       rotationsImportDesc: "Overwrite saved rotations",
       mergeGear: "Merge gear",
       mergeGearDesc: "Keep local items; only add missing",
       importClipboard: "Import from Clipboard",
+      importFile: "Import JSON File",
       reload: "Reload",
       dangerZone: "Danger zone",
       dangerDesc: "Permanently deletes all saved data in this browser.",
@@ -134,50 +144,55 @@ export default function ImportExportTab() {
      Export
   ======================= */
 
+  const buildExportPayload = (): ExportPayload => {
+    const payload: ExportPayload = { version: "1.0" };
+
+    if (exportStats) {
+      const statsRaw = localStorage.getItem("wwm_dmg_current_stats");
+      const elementRaw = localStorage.getItem("wwm_element_stats");
+
+      if (statsRaw) {
+        payload.stats = JSON.parse(statsRaw) as Record<string, number>;
+      }
+
+      if (elementRaw) {
+        payload.elementStats = JSON.parse(elementRaw) as Record<
+          string,
+          number | string
+        >;
+      }
+    }
+
+    if (exportGear) {
+      const customRaw = localStorage.getItem("wwm_custom_gear");
+      const equippedRaw = localStorage.getItem("wwm_equipped");
+
+      payload.gear = {
+        customGears: customRaw ? (JSON.parse(customRaw) as CustomGear[]) : [],
+        equipped: equippedRaw
+          ? (JSON.parse(equippedRaw) as Partial<Record<GearSlot, string>>)
+          : {},
+      };
+    }
+
+    if (exportRotations) {
+      const rotationsRaw = localStorage.getItem(ROTATIONS_KEY);
+      const selectedRotationIdRaw = localStorage.getItem(
+        ROTATIONS_SELECTED_ID_KEY
+      );
+
+      payload.rotations = {
+        list: rotationsRaw ? (JSON.parse(rotationsRaw) as Rotation[]) : [],
+        selectedId: selectedRotationIdRaw || undefined,
+      };
+    }
+
+    return payload;
+  };
+
   const handleExport = async () => {
     try {
-      const payload: ExportPayload = { version: "1.0" };
-
-      if (exportStats) {
-        const statsRaw = localStorage.getItem("wwm_dmg_current_stats");
-        const elementRaw = localStorage.getItem("wwm_element_stats");
-
-        if (statsRaw) {
-          payload.stats = JSON.parse(statsRaw) as Record<string, number>;
-        }
-
-        if (elementRaw) {
-          payload.elementStats = JSON.parse(elementRaw) as Record<
-            string,
-            number | string
-          >;
-        }
-      }
-
-      if (exportGear) {
-        const customRaw = localStorage.getItem("wwm_custom_gear");
-        const equippedRaw = localStorage.getItem("wwm_equipped");
-
-        payload.gear = {
-          customGears: customRaw ? (JSON.parse(customRaw) as CustomGear[]) : [],
-          equipped: equippedRaw
-            ? (JSON.parse(equippedRaw) as Partial<Record<GearSlot, string>>)
-            : {},
-        };
-      }
-
-      if (exportRotations) {
-        const rotationsRaw = localStorage.getItem(ROTATIONS_KEY);
-        const selectedRotationIdRaw = localStorage.getItem(
-          ROTATIONS_SELECTED_ID_KEY
-        );
-
-        payload.rotations = {
-          list: rotationsRaw ? (JSON.parse(rotationsRaw) as Rotation[]) : [],
-          selectedId: selectedRotationIdRaw || undefined,
-        };
-      }
-
+      const payload = buildExportPayload();
       await exportToClipboard(payload);
       setStatus({ variant: "default", text: text.exported });
     } catch {
@@ -185,80 +200,119 @@ export default function ImportExportTab() {
     }
   };
 
+  const handleExportFile = () => {
+    try {
+      const payload = buildExportPayload();
+      exportToJsonFile(payload);
+      setStatus({ variant: "default", text: text.exportedFile });
+    } catch {
+      setStatus({ variant: "destructive", text: text.exportFailed });
+    }
+  };
+
   /* =======================
-     Import (Merge Gear)
+     Import Logic
+  ======================= */
+
+  const processImportPayload = (data: ExportPayload) => {
+    /* ---- stats ---- */
+    if (importStats && data.stats) {
+      localStorage.setItem(
+        "wwm_dmg_current_stats",
+        JSON.stringify(data.stats)
+      );
+    }
+
+    if (importStats && data.elementStats) {
+      localStorage.setItem(
+        "wwm_element_stats",
+        JSON.stringify(data.elementStats)
+      );
+    }
+
+    /* ---- gear ---- */
+    if (importGear && data.gear) {
+      const localCustomRaw = localStorage.getItem("wwm_custom_gear");
+      const localEquippedRaw = localStorage.getItem("wwm_equipped");
+
+      const localCustom: CustomGear[] = localCustomRaw
+        ? (JSON.parse(localCustomRaw) as CustomGear[])
+        : [];
+
+      const localEquipped: Partial<Record<GearSlot, string>> =
+        localEquippedRaw
+          ? (JSON.parse(localEquippedRaw) as Partial<
+            Record<GearSlot, string>
+          >)
+          : {};
+
+      const nextCustom = mergeGear
+        ? mergeCustomGears(localCustom, data.gear.customGears)
+        : data.gear.customGears;
+
+      const nextEquipped = mergeGear
+        ? mergeEquipped(localEquipped, data.gear.equipped)
+        : data.gear.equipped;
+
+      localStorage.setItem("wwm_custom_gear", JSON.stringify(nextCustom));
+
+      localStorage.setItem("wwm_equipped", JSON.stringify(nextEquipped));
+    }
+
+    /* ---- rotations ---- */
+    if (importRotations && data.rotations) {
+      localStorage.setItem(ROTATIONS_KEY, JSON.stringify(data.rotations.list));
+      if (data.rotations.selectedId) {
+        localStorage.setItem(
+          ROTATIONS_SELECTED_ID_KEY,
+          String(data.rotations.selectedId)
+        );
+      }
+    }
+
+    setStatus({
+      variant: "default",
+      text:
+        importGear && mergeGear
+          ? text.importedMerged
+          : text.imported,
+    });
+  };
+
+  /* =======================
+     Import Actions
   ======================= */
 
   const handleImport = async () => {
     try {
       const data = await importFromClipboard();
-
-      /* ---- stats ---- */
-      if (importStats && data.stats) {
-        localStorage.setItem(
-          "wwm_dmg_current_stats",
-          JSON.stringify(data.stats)
-        );
-      }
-
-      if (importStats && data.elementStats) {
-        localStorage.setItem(
-          "wwm_element_stats",
-          JSON.stringify(data.elementStats)
-        );
-      }
-
-      /* ---- gear ---- */
-      if (importGear && data.gear) {
-        const localCustomRaw = localStorage.getItem("wwm_custom_gear");
-        const localEquippedRaw = localStorage.getItem("wwm_equipped");
-
-        const localCustom: CustomGear[] = localCustomRaw
-          ? (JSON.parse(localCustomRaw) as CustomGear[])
-          : [];
-
-        const localEquipped: Partial<Record<GearSlot, string>> =
-          localEquippedRaw
-            ? (JSON.parse(localEquippedRaw) as Partial<
-              Record<GearSlot, string>
-            >)
-            : {};
-
-        const nextCustom = mergeGear
-          ? mergeCustomGears(localCustom, data.gear.customGears)
-          : data.gear.customGears;
-
-        const nextEquipped = mergeGear
-          ? mergeEquipped(localEquipped, data.gear.equipped)
-          : data.gear.equipped;
-
-        localStorage.setItem("wwm_custom_gear", JSON.stringify(nextCustom));
-
-        localStorage.setItem("wwm_equipped", JSON.stringify(nextEquipped));
-      }
-
-      /* ---- rotations ---- */
-      if (importRotations && data.rotations) {
-        localStorage.setItem(ROTATIONS_KEY, JSON.stringify(data.rotations.list));
-        if (data.rotations.selectedId) {
-          localStorage.setItem(
-            ROTATIONS_SELECTED_ID_KEY,
-            String(data.rotations.selectedId)
-          );
-        }
-      }
-
-      setStatus({
-        variant: "default",
-        text:
-          importGear && mergeGear
-            ? text.importedMerged
-            : text.imported,
-      });
+      processImportPayload(data);
     } catch {
       setStatus({ variant: "destructive", text: text.invalidClipboard });
     }
   };
+
+  const handleImportFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const data = await importFromJsonFile(file);
+      processImportPayload(data);
+    } catch {
+      setStatus({ variant: "destructive", text: text.invalidClipboard });
+    } finally {
+      // clear input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
 
   /* =======================
      UI
@@ -330,6 +384,7 @@ export default function ImportExportTab() {
 
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleExport}>{text.exportClipboard}</Button>
+            <Button variant="outline" onClick={handleExportFile}>{text.exportFile}</Button>
           </div>
         </div>
 
@@ -399,10 +454,22 @@ export default function ImportExportTab() {
             </label>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             <Button data-tour="import-gear-button" variant="outline" onClick={handleImport}>
               {text.importClipboard}
             </Button>
+            
+            <input
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+            />
+            <Button variant="outline" onClick={handleImportFileClick}>
+              {text.importFile}
+            </Button>
+
             <Button
               variant="secondary"
               onClick={() => window.location.reload()}
