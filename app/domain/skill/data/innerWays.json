@@ -116,6 +116,51 @@
         "notes": "Tier 5: +4.6% Critical Rate in-game."
     },
     {
+        "id": "iw_universal_insightful_strike_t3",
+        "name": "Insightful Strike (Tier 3)",
+        "description": "Concentration: +10% Affinity DMG, +3% Direct Affinity Rate; 5% chance to reduce damage taken by 40%; heal 1.5% of damage dealt.",
+        "tierGroupId": "iw_universal_insightful_strike",
+        "modifiers": [
+            {
+                "stat": "AffinityDMGBonus",
+                "type": "flat",
+                "value": 10
+            },
+            {
+                "stat": "DirectAffinityRate",
+                "type": "flat",
+                "value": 3
+            }
+        ],
+        "level": 3,
+        "notes": "In-game: Focus/Concentration is conditional. This calculator models Affinity DMG and Direct Affinity Rate as unconditional; damage reduction and healing are not modeled."
+    },
+    {
+        "id": "iw_universal_insightful_strike_t5",
+        "name": "Insightful Strike (Tier 5)",
+        "description": "Concentration: +10% Affinity DMG, +3% Direct Affinity Rate, +5.1 Physical Penetration; 5% chance to reduce damage taken by 40%; heal 1.5% of damage dealt.",
+        "tierGroupId": "iw_universal_insightful_strike",
+        "modifiers": [
+            {
+                "stat": "AffinityDMGBonus",
+                "type": "flat",
+                "value": 10
+            },
+            {
+                "stat": "DirectAffinityRate",
+                "type": "flat",
+                "value": 3
+            },
+            {
+                "stat": "PhysicalPenetration",
+                "type": "flat",
+                "value": 5.1
+            }
+        ],
+        "level": 5,
+        "notes": "In-game: Focus/Concentration is conditional. This calculator models Affinity DMG, Direct Affinity Rate, and Physical Penetration as unconditional; damage reduction and healing are not modeled."
+    },
+    {
         "id": "iw_silkbind_blossom_barrage_t1",
         "name": "Blossom Barrage (Tier 1)",
         "description": "Increases the ballistic skill DMG Bonus from Combo effect to 20%.",
