@@ -23,6 +23,7 @@ const MESSAGES = {
             customizeGear: "Customize Gear",
             equippedGear: "Equipped Gear",
             compareGear: "Compare Gear",
+            idealGear: "Ideal Gear",
         },
         settings: {
             language: "Language",
@@ -72,6 +73,7 @@ const MESSAGES = {
             customizeGear: "Tùy chỉnh trang bị",
             equippedGear: "Đang trang bị",
             compareGear: "So sánh trang bị",
+            idealGear: "Trang bị lý tưởng",
         },
         settings: {
             language: "Ngôn ngữ",
