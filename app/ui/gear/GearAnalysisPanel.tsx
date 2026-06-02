@@ -139,9 +139,12 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats }: Pro
       };
 
       // Sum martial arts boosts
-      if (stat === "MartialArtSkillDamageBoost" || stat === "AllMartialArtsBoost" || stat.includes("MartialArtSkillDMGBoost")) {
+      const isMartialArtsStat = stat === "MartialArtSkillDamageBoost" || stat === "AllMartialArtsBoost" || stat.includes("MartialArtSkillDMGBoost");
+      
+      if (isMartialArtsStat) {
           totalMartialArtsBoost += data.total;
           totalMartialArtsLines += totalBonusCount;
+          return; // Skip individual entry to avoid duplication with aggregated line
       }
 
       let assigned = false;

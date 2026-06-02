@@ -42,7 +42,6 @@ export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
     "AffinityRate",
     "AffinityDMGBonus",
     "DamageBoost",
-    "CombatBoostAgainstBossUnits",
   ],
   Defense: [
     "HP",
