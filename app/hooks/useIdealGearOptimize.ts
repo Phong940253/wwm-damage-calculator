@@ -147,6 +147,10 @@ export function useIdealGearOptimize(
             const best = valid.reduce((acc, cur) =>
               cur.maxDamage > acc.maxDamage ? cur : acc,
             );
+            try {
+              // eslint-disable-next-line no-console
+              console.debug("idealHook: finalize best", { best });
+            } catch {}
             setResult(best);
             setLoading(false);
             terminateWorkers();
@@ -173,6 +177,15 @@ export function useIdealGearOptimize(
               }
 
               if (msg.type === "done") {
+                // Debug: log worker result for tracing specialLines
+                try {
+                  // eslint-disable-next-line no-console
+                  console.debug("idealWorker: done", {
+                    jobId: msg.jobId,
+                    result: msg.result,
+                  });
+                } catch {}
+
                 const p = perJobProgress.get(msg.jobId);
                 const doneTotal =
                   p && p.total > 0 ? p.total : (msg.result.elapsedMs ?? 0);
@@ -250,6 +263,10 @@ export function useIdealGearOptimize(
               });
 
         if (!controller.signal.aborted) {
+          try {
+            // eslint-disable-next-line no-console
+            console.debug("idealHook: sync result", { res });
+          } catch {}
           setResult(res);
         }
       } catch (e) {

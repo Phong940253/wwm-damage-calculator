@@ -358,6 +358,51 @@ function buildSpecialSequence(
   return sequence;
 }
 
+function buildCanonicalSpecialSequence(
+  candidateStats: readonly CandidateStat[],
+  counts: readonly number[],
+): string[] {
+  const sequence: string[] = [];
+  candidateStats.forEach((stat, index) => {
+    const count = counts[index] ?? 0;
+    for (let i = 0; i < count; i += 1) {
+      sequence.push(stat);
+    }
+  });
+  return sequence;
+}
+
+function enumerateSpecialGroupPlans(
+  candidateStats: readonly CandidateStat[],
+  pool: readonly number[],
+  slotCount: number,
+): number[][] {
+  const plans: number[][] = [];
+  const current = Array.from({ length: candidateStats.length }, () => 0);
+
+  const walk = (poolIndex: number, remaining: number) => {
+    if (poolIndex >= pool.length) {
+      if (remaining === 0) plans.push([...current]);
+      return;
+    }
+
+    const statIndex = pool[poolIndex];
+    const stat = candidateStats[statIndex];
+    const cap = SINGLE_LINE_STATS.has(stat) ? 1 : slotCount;
+    const max = Math.min(cap, remaining);
+
+    for (let count = 0; count <= max; count += 1) {
+      current[statIndex] = count;
+      walk(poolIndex + 1, remaining - count);
+    }
+
+    current[statIndex] = 0;
+  };
+
+  walk(0, slotCount);
+  return plans;
+}
+
 function createRandomValidCounts(
   rand: () => number,
   caps: number[],
@@ -596,6 +641,18 @@ export function calculateIdealGearStats(
     bestBonus = { ...currentBonus };
     bestAllocations = snapshotAllocations();
     bestSpecialLines = [...specialSequence];
+    // Debug: log when we update the best found configuration
+    try {
+      // eslint-disable-next-line no-console
+      console.debug("idealOptimizer: new best", {
+        path: path,
+        dmg: bestDamage,
+        specialSequence: bestSpecialLines,
+        allocations: bestAllocations,
+      });
+    } catch {
+      // ignore
+    }
   };
 
   const searchRandom = (statIndex: number, remaining: number) => {
@@ -652,7 +709,86 @@ export function calculateIdealGearStats(
       }
     }
   } else {
-    searchRandom(0, randomLineCount);
+    // Use constrained local search per special-plan to avoid full combinatorial blowup.
+    const restartsPerPlan = 8;
+    let rngSeed = Math.floor(Math.random() * 0x7fffffff);
+    const rand = () => {
+      rngSeed = (rngSeed * 1664525 + 1013904223) >>> 0;
+      return rngSeed / 0x100000000;
+    };
+
+    for (const plan of activeSpecialPlans) {
+      // apply special lines
+      for (const idx of plan.indices) applyLines(idx, plan.counts[idx]);
+
+      const specialCounts = plan.counts.slice();
+      const caps = maxRandomLines.map(
+        (cap, index) => cap - specialCounts[index],
+      );
+      if (caps.some((c) => c < 0)) {
+        for (const idx of plan.indices) applyLines(idx, -plan.counts[idx]);
+        continue;
+      }
+
+      const available = caps.reduce((s, v) => s + v, 0);
+      if (available < randomLineCount) {
+        for (const idx of plan.indices) applyLines(idx, -plan.counts[idx]);
+        continue;
+      }
+
+      for (let r = 0; r < restartsPerPlan; r += 1) {
+        // build initial tuning
+        const tuning = createRandomValidCounts(rand, caps, randomLineCount);
+        for (let i = 0; i < tuning.length; i += 1)
+          if (tuning[i]) applyLines(i, tuning[i]);
+
+        // hill-climb: try moving one tuning line between stats
+        let improved = true;
+        let steps = 0;
+        const stepLimit = Math.max(8, candidateCount * 6);
+
+        while (improved && steps < stepLimit) {
+          throwIfCancelled();
+          improved = false;
+
+          for (let from = 0; from < candidateCount; from += 1) {
+            const tuningFrom = allocations[from] - (specialCounts[from] || 0);
+            if (tuningFrom <= 0) continue;
+
+            for (let to = 0; to < candidateCount; to += 1) {
+              if (from === to) continue;
+              const tuningTo = allocations[to] - (specialCounts[to] || 0);
+              if (tuningTo >= caps[to]) continue;
+
+              // try move
+              applyLines(from, -1);
+              applyLines(to, 1);
+              const evalResult = evaluateCurrentDamage(currentBonus);
+
+              if (evalResult.dmg > bestDamage) {
+                // keep move
+                recordBest(plan.sequence, specialCounts);
+                improved = true;
+                break;
+              }
+
+              // revert
+              applyLines(from, 1);
+              applyLines(to, -1);
+            }
+            if (improved) break;
+          }
+          steps += 1;
+        }
+
+        // unapply tuning before next restart
+        for (let i = 0; i < tuning.length; i += 1)
+          if (tuning[i]) applyLines(i, -tuning[i]);
+      }
+
+      // unapply special lines
+      for (const idx of plan.indices) applyLines(idx, -plan.counts[idx]);
+    }
   }
 
   reportProgress(true);
@@ -667,6 +803,12 @@ export function calculateIdealGearStats(
     elapsedMs: Date.now() - startTime,
   };
 }
+
+// Debug: final log for exhaustive
+try {
+  // eslint-disable-next-line no-console
+  console.debug && console.debug("idealOptimizer: exhaustive configured");
+} catch {}
 
 export interface IdealGear {
   id: number;
@@ -722,6 +864,20 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
     gear.tuningLines.push(stat);
     tuningCounts[stat] -= 1;
     return true;
+  };
+
+  const finalizeBellstrikeSlot6Order = () => {
+    if (path !== "bellstrike") return;
+
+    for (const gear of gears) {
+      const fixedStat = getSlot6Stat(gear.id);
+      if (!fixedStat) continue;
+      const fixedIdx = gear.tuningLines.indexOf(fixedStat);
+      if (fixedIdx !== -1) {
+        gear.tuningLines.splice(fixedIdx, 1);
+        gear.tuningLines.push(fixedStat);
+      }
+    }
   };
 
   for (const gear of gears) {
@@ -843,7 +999,55 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
   }
 
   if (flow !== targetAssignments) {
-    return [];
+    try {
+      // eslint-disable-next-line no-console
+      console.debug("distributeStatsToGears: flow mismatch", {
+        flow,
+        targetAssignments,
+      });
+    } catch {}
+
+    // Fallback: greedy fill remaining stats into available gear slots
+    const remaining: Record<string, number> = {};
+    for (const s of remainingStats) remaining[s.stat] = s.count;
+
+    const cap = remainingCapacity.slice();
+
+    const statsByCount = Object.keys(remaining).sort(
+      (a, b) => remaining[b] - remaining[a],
+    );
+    for (const stat of statsByCount) {
+      let toAssign = remaining[stat];
+      while (toAssign > 0) {
+        let bestGear = -1;
+        let bestCap = -1;
+        for (let i = 0; i < gears.length; i += 1) {
+          if (cap[i] <= 0) continue;
+          if (gears[i].tuningLines.includes(stat)) continue;
+          if (cap[i] > bestCap) {
+            bestCap = cap[i];
+            bestGear = i;
+          }
+        }
+        if (bestGear === -1) break;
+        gears[bestGear].tuningLines.push(stat);
+        cap[bestGear] -= 1;
+        toAssign -= 1;
+      }
+      remaining[stat] = toAssign;
+    }
+
+    try {
+      // eslint-disable-next-line no-console
+      console.debug("distributeStatsToGears: fallback remaining", {
+        remaining,
+      });
+    } catch {}
+
+    finalizeBellstrikeSlot6Order();
+
+    // return best-effort assignment even if incomplete
+    return gears;
   }
 
   for (let statIndex = 0; statIndex < remainingStats.length; statIndex += 1) {
@@ -857,17 +1061,7 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
     }
   }
 
-  if (path === "bellstrike") {
-    for (const gear of gears) {
-      const fixedStat = getSlot6Stat(gear.id);
-      if (!fixedStat) continue;
-      const fixedIdx = gear.tuningLines.indexOf(fixedStat);
-      if (fixedIdx !== -1) {
-        gear.tuningLines.splice(fixedIdx, 1);
-        gear.tuningLines.push(fixedStat);
-      }
-    }
-  }
+  finalizeBellstrikeSlot6Order();
 
   return gears;
 }
@@ -1121,6 +1315,17 @@ export function calculateIdealGearStatsFast(
     new Array(candidateCount).fill(0),
     fixedLineStats,
   );
+
+  // Debug final state for fast path
+  try {
+    // eslint-disable-next-line no-console
+    console.debug("idealOptimizer: fast final", {
+      path,
+      bestDamage,
+      bestSpecialLines,
+      bestAllocations,
+    });
+  } catch {}
 
   return {
     path,
