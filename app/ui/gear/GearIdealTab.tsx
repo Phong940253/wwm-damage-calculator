@@ -20,7 +20,20 @@ import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import DamagePanel from "@/app/ui/damage/DamagePanel";
 import { useIdealGearOptimize } from "@/app/hooks/useIdealGearOptimize";
 
-import { distributeStatsToGears, IdealGear } from "@/app/domain/gear/idealOptimizer";
+import {
+  distributeStatsToGears,
+  getIdealGearBaseBonus,
+  IdealGear,
+} from "@/app/domain/gear/idealOptimizer";
+
+type IdealGearDisplay = IdealGear & {
+  lineValues: Record<string, number | null>;
+};
+
+function formatLineValue(value: number | null | undefined): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value.toFixed(1);
+}
 
 export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const [path, setPath] = useState<ElementKey>("bellstrike");
@@ -41,7 +54,38 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 
   const gears = React.useMemo(() => {
     if (!result) return [];
-    return distributeStatsToGears(result);
+    const baseGearBonus = getIdealGearBaseBonus(result.path);
+    const distributed = distributeStatsToGears(result);
+    return distributed.map((gear) => {
+      const lineValues: Record<string, number | null> = {
+        [gear.specialLine]: (() => {
+          const lines = Number(result.allocations[gear.specialLine] || 0);
+          if (lines <= 0) return null;
+          const netValue =
+            Number(result.stats[gear.specialLine] || 0) -
+            Number(baseGearBonus[gear.specialLine] || 0);
+          return netValue / lines;
+        })(),
+      };
+
+      for (const stat of gear.tuningLines) {
+        const lines = Number(result.allocations[stat] || 0);
+        if (lines <= 0) {
+          lineValues[stat] = null;
+          continue;
+        }
+
+        const netValue =
+          Number(result.stats[stat] || 0) -
+          Number(baseGearBonus[stat] || 0);
+        lineValues[stat] = netValue / lines;
+      }
+
+      return {
+        ...gear,
+        lineValues,
+      } satisfies IdealGearDisplay;
+    });
   }, [result]);
 
   const damageResult = useDamage(
@@ -115,6 +159,14 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
         progress.total / 1000,
       )}s`
       : `${Math.min(progress.current, progress.total).toLocaleString()} / ${progress.total.toLocaleString()}`;
+
+  const getNetStatLineValue = (statKey: string, lines: number) => {
+    if (!result || lines <= 0) return null;
+    const baseGearBonus = getIdealGearBaseBonus(result.path);
+    const totalVal = Number(result.stats[statKey] || 0);
+    const baseVal = Number(baseGearBonus[statKey] || 0);
+    return (totalVal - baseVal) / lines;
+  };
 
   const insightText =
     result?.mode === "fast"
@@ -278,7 +330,10 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Object.entries(result.allocations).sort((a, b) => b[1] - a[1]).map(([statKey, lines]) => {
-                const totalVal = result.stats[statKey];
+                const perLine = getNetStatLineValue(statKey, Number(lines)) ?? 0;
+                const totalVal = (perLine * Number(lines)) || 0;
+                const perLineText = formatLineValue(perLine);
+                const totalText = formatLineValue(totalVal);
 
                 return (
                   <div key={statKey} className="flex flex-col p-4 rounded-lg bg-zinc-950/50 border border-zinc-800/80 relative overflow-hidden group">
@@ -293,11 +348,23 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                       </Badge>
                     </div>
 
-                    <div className="mt-auto pl-2 flex items-center gap-1.5">
-                      <Target size={14} className="text-zinc-500" />
-                      <span className="text-lg font-bold text-zinc-100">
-                        +{(totalVal || 0).toFixed(1)}
-                      </span>
+                    <div className="mt-auto pl-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5 text-zinc-400">
+                        <Target size={14} className="text-zinc-500" />
+                        <span className="text-xs">
+                          total
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-zinc-100 tabular-nums">
+                          +{totalText ?? "0.0"}
+                        </div>
+                        {perLineText && (
+                          <div className="text-xs text-zinc-400 tabular-nums">
+                            +{perLineText}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -328,7 +395,7 @@ const getStatColor = (key: string) => {
   return "text-zinc-400";
 };
 
-function IdealGearCard({ gear, getStatLabel }: { gear: IdealGear, getStatLabel: (k: string) => string }) {
+function IdealGearCard({ gear, getStatLabel }: { gear: IdealGearDisplay, getStatLabel: (k: string) => string }) {
   return (
     <div className="flex flex-col rounded-xl bg-zinc-900/40 border border-zinc-800/60 shadow-sm hover:border-emerald-500/30 transition-all duration-300 group overflow-hidden h-full">
       {/* Header */}
@@ -349,9 +416,16 @@ function IdealGearCard({ gear, getStatLabel }: { gear: IdealGear, getStatLabel: 
             </div>
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-amber-600 uppercase tracking-tighter leading-none mb-0.5">Primary Slot</span>
-              <span className={`text-xs font-bold leading-tight ${getStatColor(gear.specialLine)}`}>
-                {getStatLabel(gear.specialLine)}
-              </span>
+              <div className="flex items-center justify-between gap-3">
+                <span className={`text-xs font-bold leading-tight ${getStatColor(gear.specialLine)}`}>
+                  {getStatLabel(gear.specialLine)}
+                </span>
+                {gear.lineValues[gear.specialLine] !== null && (
+                  <span className="text-xs font-bold text-amber-300 tabular-nums whitespace-nowrap">
+                    +{formatLineValue(gear.lineValues[gear.specialLine])}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="absolute -top-1 -right-1 p-1 opacity-[0.03] rotate-12">
@@ -364,14 +438,14 @@ function IdealGearCard({ gear, getStatLabel }: { gear: IdealGear, getStatLabel: 
           {gear.tuningLines.map((stat, i) => {
             const isFixed = i === 4; // Slot 6
             const statColor = isFixed ? "text-blue-300" : getStatColor(stat);
-            
+
             return (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className={`
                   flex items-center justify-between px-2.5 py-2 rounded-md text-[11px] font-medium transition-all duration-200
-                  ${isFixed 
-                    ? "bg-blue-500/10 border border-blue-500/20 shadow-[inset_0_0_8px_rgba(59,130,246,0.05)]" 
+                  ${isFixed
+                    ? "bg-blue-500/10 border border-blue-500/20 shadow-[inset_0_0_8px_rgba(59,130,246,0.05)]"
                     : "bg-zinc-950/40 border border-zinc-800/40 hover:bg-zinc-800/60 hover:border-zinc-700/60"
                   }
                 `}
@@ -382,12 +456,21 @@ function IdealGearCard({ gear, getStatLabel }: { gear: IdealGear, getStatLabel: 
                   ) : (
                     <div className={`w-1 h-1 rounded-full ${statColor.replace('text', 'bg').replace('400', '500/50')}`} />
                   )}
-                  <span className={`truncate max-w-[140px] ${statColor}`}>{getStatLabel(stat)}</span>
+                  <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <span className={`truncate max-w-[140px] ${statColor}`}>{getStatLabel(stat)}</span>
+                  </div>
                 </div>
-                
-                {isFixed && (
-                  <Badge className="h-4 text-[8px] bg-blue-500/20 text-blue-400 border border-blue-400/20 px-1 uppercase font-black tracking-tighter">Fixed</Badge>
-                )}
+
+                <div className="flex items-center gap-2">
+                  {gear.lineValues[stat] !== null && (
+                    <span className={`text-[10px] font-semibold tabular-nums whitespace-nowrap ${isFixed ? "text-blue-200" : "text-zinc-400"}`}>
+                      +{formatLineValue(gear.lineValues[stat])}
+                    </span>
+                  )}
+                  {isFixed && (
+                    <Badge className="h-4 text-[8px] bg-blue-500/20 text-blue-400 border border-blue-400/20 px-1 uppercase font-black tracking-tighter">Fixed</Badge>
+                  )}
+                </div>
               </div>
             );
           })}

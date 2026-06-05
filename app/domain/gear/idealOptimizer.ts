@@ -39,6 +39,81 @@ export class IdealGearCancelledError extends Error {
   }
 }
 
+type DamageEvalResult = {
+  dmg: number;
+  totalRate: number;
+  critRate: number;
+};
+
+function stableSerialize(value: unknown): string {
+  if (value === null || value === undefined) return String(value);
+  if (typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
+  }
+
+  const entries = Object.entries(value as Record<string, unknown>).sort(
+    ([leftKey], [rightKey]) => leftKey.localeCompare(rightKey),
+  );
+  return `{${entries
+    .map(
+      ([key, entryValue]) =>
+        `${JSON.stringify(key)}:${stableSerialize(entryValue)}`,
+    )
+    .join(",")}}`;
+}
+
+function serializeNumberMap(map: Record<string, number>): string {
+  return Object.keys(map)
+    .sort()
+    .map((key) => {
+      const value = map[key];
+      const normalized = Number.isFinite(value)
+        ? Math.round(value * 1e6) / 1e6
+        : value;
+      return `${key}:${normalized}`;
+    })
+    .join("|");
+}
+
+function createDamageCacheKey(
+  path: ElementKey,
+  rotation: Rotation | undefined,
+  baseStats: InputStats | undefined,
+  baseElementStats: ElementStats | undefined,
+  scopeKey: string,
+): string {
+  return `${stableSerialize({
+    path,
+    rotation: rotation ?? null,
+    baseStats: baseStats ?? null,
+    baseElementStats: baseElementStats ?? null,
+  })}|${scopeKey}`;
+}
+
+function evaluateDamageCached(
+  cache: Map<string, DamageEvalResult>,
+  cacheKey: string,
+  gearBonus: Record<string, number>,
+  path: ElementKey,
+  rotation?: Rotation,
+  baseStats?: InputStats,
+  baseElementStats?: ElementStats,
+): DamageEvalResult {
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const result = evaluateDamage(
+    gearBonus,
+    path,
+    rotation,
+    baseStats,
+    baseElementStats,
+  );
+  cache.set(cacheKey, result);
+  return result;
+}
+
 function evaluateDamage(
   gearBonus: Record<string, number>,
   path: ElementKey,
@@ -161,6 +236,17 @@ type RuleSet = {
   baseGearBonus: Record<string, number>;
 };
 
+export function getIdealGearBaseBonus(
+  path: ElementKey,
+): Record<string, number> {
+  const baseGearBonus: Record<string, number> = {
+    MinPhysicalAttack: 71 + 53 + 53,
+    MaxPhysicalAttack: 106 + 124 + 124,
+  };
+
+  return baseGearBonus;
+}
+
 function buildRuleSet(path: ElementKey): RuleSet {
   const fixedLineStats: Record<
     string,
@@ -185,17 +271,7 @@ function buildRuleSet(path: ElementKey): RuleSet {
     TOTAL_LINES - fixedLineCount - SPECIAL_LINE_POOLS.length,
   );
 
-  const baseGearBonus: Record<string, number> = {
-    DamageBoost: 4 * 5.4,
-    MinPhysicalAttack: 71 + 53 + 53,
-    MaxPhysicalAttack: 106 + 124 + 124,
-  };
-
-  if (path !== "bellstrike") {
-    baseGearBonus["DamageBoost"] =
-      (baseGearBonus["DamageBoost"] || 0) + 1 * 5.9;
-    baseGearBonus[`${path}DMGBonus`] = 4 * 4.5;
-  }
+  const baseGearBonus = getIdealGearBaseBonus(path);
 
   for (const [stat, { lines, valuePerLine }] of Object.entries(
     fixedLineStats,
@@ -210,6 +286,102 @@ function buildRuleSet(path: ElementKey): RuleSet {
     randomLineCount,
     baseGearBonus,
   };
+}
+
+type SearchState = {
+  specialLines: string[];
+  specialCounts: number[];
+  tuningCounts: number[];
+  totalCounts: number[];
+  bonus: Record<string, number>;
+  score: number;
+};
+
+function buildTotalCountsSnapshot(
+  candidateStats: readonly CandidateStat[],
+  totalCounts: number[],
+  fixedLineStats: Record<string, { lines: number; valuePerLine: number }>,
+): Record<string, number> {
+  const snapshot: Record<string, number> = {};
+  candidateStats.forEach((stat, index) => {
+    snapshot[stat] = totalCounts[index] ?? 0;
+  });
+  for (const [stat, { lines }] of Object.entries(fixedLineStats)) {
+    snapshot[stat] = (snapshot[stat] || 0) + lines;
+  }
+  return snapshot;
+}
+
+function buildBonusFromCounts(
+  baseGearBonus: Record<string, number>,
+  candidateStats: readonly CandidateStat[],
+  perLineValues: number[],
+  totalCounts: number[],
+): Record<string, number> {
+  const bonus: Record<string, number> = { ...baseGearBonus };
+  candidateStats.forEach((stat, index) => {
+    const count = totalCounts[index] ?? 0;
+    if (count <= 0) return;
+    bonus[stat] = (bonus[stat] || 0) + count * perLineValues[index];
+  });
+  return bonus;
+}
+
+function countSpecialLines(
+  candidateStats: readonly CandidateStat[],
+  specialLines: string[],
+): number[] {
+  const counts = Array.from({ length: candidateStats.length }, () => 0);
+  const indexByStat = new Map<string, number>(
+    candidateStats.map((stat, index) => [stat, index]),
+  );
+
+  for (const stat of specialLines) {
+    const index = indexByStat.get(stat);
+    if (index === undefined) continue;
+    counts[index] += 1;
+  }
+
+  return counts;
+}
+
+function buildSpecialSequence(
+  rand: () => number,
+  specialLinePools: number[][],
+  candidateStats: readonly CandidateStat[],
+): string[] {
+  const sequence: string[] = [];
+  for (const pool of specialLinePools) {
+    const statIndex = pool[Math.floor(rand() * pool.length)];
+    sequence.push(candidateStats[statIndex]);
+  }
+  return sequence;
+}
+
+function createRandomValidCounts(
+  rand: () => number,
+  caps: number[],
+  totalLines: number,
+): number[] {
+  const counts = Array.from({ length: caps.length }, () => 0);
+  const remainingCaps = [...caps];
+  const openIndices = remainingCaps
+    .map((cap, index) => (cap > 0 ? index : -1))
+    .filter((index) => index >= 0);
+
+  let remaining = totalLines;
+  while (remaining > 0 && openIndices.length > 0) {
+    const pickIndex = Math.floor(rand() * openIndices.length);
+    const statIndex = openIndices[pickIndex];
+    counts[statIndex] += 1;
+    remainingCaps[statIndex] -= 1;
+    if (remainingCaps[statIndex] <= 0) {
+      openIndices.splice(pickIndex, 1);
+    }
+    remaining -= 1;
+  }
+
+  return counts;
 }
 
 export function calculateIdealGearStats(
@@ -306,6 +478,24 @@ export function calculateIdealGearStats(
     return walk(0, remaining);
   };
 
+  const damageCache = new Map<string, DamageEvalResult>();
+  const evaluateCurrentDamage = (gearBonus: Record<string, number>) =>
+    evaluateDamageCached(
+      damageCache,
+      createDamageCacheKey(
+        path,
+        rotation,
+        baseStats,
+        baseElementStats,
+        serializeNumberMap(gearBonus),
+      ),
+      gearBonus,
+      path,
+      rotation,
+      baseStats,
+      baseElementStats,
+    );
+
   const currentBonus: Record<string, number> = { ...baseGearBonus };
 
   let bestDamage = -Infinity;
@@ -318,13 +508,7 @@ export function calculateIdealGearStats(
     bestAllocations = { ...options.initialResult.allocations };
     bestSpecialLines = options.initialResult.specialLines || [];
     // Re-evaluate to get accurate benchmark for CURRENT base stats
-    const benchmark = evaluateDamage(
-      bestBonus,
-      path,
-      rotation,
-      baseStats,
-      baseElementStats,
-    );
+    const benchmark = evaluateCurrentDamage(bestBonus);
     bestDamage = benchmark.dmg;
   }
 
@@ -405,13 +589,7 @@ export function calculateIdealGearStats(
       // if (allocations[i] > MAX_LINES_PER_STAT) return;
     }
 
-    const evalResult = evaluateDamage(
-      currentBonus,
-      path,
-      rotation,
-      baseStats,
-      baseElementStats,
-    );
+    const evalResult = evaluateCurrentDamage(currentBonus);
 
     if (evalResult.dmg <= bestDamage) return;
     bestDamage = evalResult.dmg;
@@ -632,15 +810,30 @@ export function calculateIdealGearStatsFast(
   const randomLineCount = ruleSet.randomLineCount;
   const baseGearBonus = ruleSet.baseGearBonus;
   const fixedLineStats = ruleSet.fixedLineStats;
-
   const perLineValues = candidateStats.map((stat) => getValPerLine(stat));
-  const randomCaps = candidateStats.map((stat) =>
+  const maxCaps = candidateStats.map((stat) =>
     SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT,
   );
-
   const specialPools = ruleSet.specialLinePools.map((pool) =>
     pool.map((stat) => candidateStats.indexOf(stat)).filter((i) => i >= 0),
   );
+  const damageCache = new Map<string, DamageEvalResult>();
+  const evaluateCurrentDamage = (gearBonus: Record<string, number>) =>
+    evaluateDamageCached(
+      damageCache,
+      createDamageCacheKey(
+        path,
+        rotation,
+        baseStats,
+        baseElementStats,
+        serializeNumberMap(gearBonus),
+      ),
+      gearBonus,
+      path,
+      rotation,
+      baseStats,
+      baseElementStats,
+    );
 
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
@@ -651,14 +844,7 @@ export function calculateIdealGearStatsFast(
     bestBonus = { ...options.initialResult.stats };
     bestAllocations = { ...options.initialResult.allocations };
     bestSpecialLines = options.initialResult.specialLines || [];
-    // Re-evaluate to get accurate benchmark for CURRENT base stats
-    const benchmark = evaluateDamage(
-      bestBonus,
-      path,
-      rotation,
-      baseStats,
-      baseElementStats,
-    );
+    const benchmark = evaluateCurrentDamage(bestBonus);
     bestDamage = benchmark.dmg;
   }
 
@@ -688,122 +874,172 @@ export function calculateIdealGearStatsFast(
     }
   };
 
-  const snapshotAllocations = (allocations: number[]) => {
-    const snapshot: Record<string, number> = {};
-    candidateStats.forEach((stat, index) => {
-      snapshot[stat] = allocations[index] ?? 0;
-    });
-    for (const [stat, { lines }] of Object.entries(fixedLineStats)) {
-      snapshot[stat] = (snapshot[stat] || 0) + lines;
-    }
-    return snapshot;
+  const updateBest = (state: SearchState) => {
+    if (state.score <= bestDamage) return;
+    bestDamage = state.score;
+    bestBonus = { ...state.bonus };
+    bestAllocations = buildTotalCountsSnapshot(
+      candidateStats,
+      state.totalCounts,
+      fixedLineStats,
+    );
+    bestSpecialLines = [...state.specialLines];
   };
+
+  const buildState = (
+    specialLines: string[],
+    specialCounts: number[],
+    tuningCounts: number[],
+  ): SearchState => {
+    const totalCounts = tuningCounts.map(
+      (count, index) => count + (specialCounts[index] ?? 0),
+    );
+    const bonus = buildBonusFromCounts(
+      baseGearBonus,
+      candidateStats,
+      perLineValues,
+      totalCounts,
+    );
+    const score = evaluateCurrentDamage(bonus).dmg;
+    iterations += 1;
+    return {
+      specialLines,
+      specialCounts,
+      tuningCounts,
+      totalCounts,
+      bonus,
+      score,
+    };
+  };
+
+  const reconstructSeedState = (): SearchState | null => {
+    if (options?.initialResult?.path !== path) return null;
+    const specialLines = options.initialResult.specialLines || [];
+    if (specialLines.length < 8) return null;
+
+    const specialCounts = countSpecialLines(candidateStats, specialLines);
+    const tuningCounts = candidateStats.map((stat, index) => {
+      const total = Number(options.initialResult?.allocations[stat] ?? 0);
+      const normalizedTotal = Number.isFinite(total) ? Math.floor(total) : 0;
+      return Math.max(0, normalizedTotal - specialCounts[index]);
+    });
+
+    return buildState([...specialLines], specialCounts, tuningCounts);
+  };
+
+  const buildRandomRestartState = (): SearchState | null => {
+    const specialLines = buildSpecialSequence(
+      rand,
+      specialPools,
+      candidateStats,
+    );
+    const specialCounts = countSpecialLines(candidateStats, specialLines);
+    const caps = maxCaps.map((cap, index) => cap - specialCounts[index]);
+    if (caps.some((cap) => cap < 0)) return null;
+
+    const availableLines = caps.reduce((sum, cap) => sum + cap, 0);
+    if (availableLines < randomLineCount) return null;
+
+    const tuningCounts = createRandomValidCounts(rand, caps, randomLineCount);
+    if (
+      tuningCounts.reduce((sum, count) => sum + count, 0) !== randomLineCount
+    ) {
+      return null;
+    }
+
+    return buildState(specialLines, specialCounts, tuningCounts);
+  };
+
+  const runHillClimb = (startState: SearchState) => {
+    updateBest(startState);
+    let currentState = startState;
+    let localSteps = 0;
+    const stepLimit = Math.max(8, candidateCount * 4);
+
+    while (Date.now() - startTime < timeMs && localSteps < stepLimit) {
+      throwIfCancelled();
+
+      const caps = maxCaps.map(
+        (cap, index) => cap - currentState.specialCounts[index],
+      );
+      let nextBest: SearchState | null = null;
+
+      for (let fromIndex = 0; fromIndex < candidateCount; fromIndex += 1) {
+        if (currentState.tuningCounts[fromIndex] <= 0) continue;
+
+        for (let toIndex = 0; toIndex < candidateCount; toIndex += 1) {
+          if (fromIndex === toIndex) continue;
+          if (currentState.tuningCounts[toIndex] >= caps[toIndex]) continue;
+
+          const nextTuningCounts = [...currentState.tuningCounts];
+          nextTuningCounts[fromIndex] -= 1;
+          nextTuningCounts[toIndex] += 1;
+
+          const nextTotalCounts = nextTuningCounts.map(
+            (count, index) => count + currentState.specialCounts[index],
+          );
+          const nextBonus = buildBonusFromCounts(
+            baseGearBonus,
+            candidateStats,
+            perLineValues,
+            nextTotalCounts,
+          );
+          const nextScore = evaluateCurrentDamage(nextBonus).dmg;
+          iterations += 1;
+
+          if (!nextBest || nextScore > nextBest.score) {
+            nextBest = {
+              specialLines: currentState.specialLines,
+              specialCounts: currentState.specialCounts,
+              tuningCounts: nextTuningCounts,
+              totalCounts: nextTotalCounts,
+              bonus: nextBonus,
+              score: nextScore,
+            };
+          }
+
+          reportProgress();
+          if (Date.now() - startTime >= timeMs) break;
+        }
+
+        if (Date.now() - startTime >= timeMs) break;
+      }
+
+      if (!nextBest || nextBest.score <= currentState.score) {
+        break;
+      }
+
+      currentState = nextBest;
+      localSteps += 1;
+      updateBest(currentState);
+    }
+  };
+
+  const seedState = reconstructSeedState();
+  if (seedState) {
+    runHillClimb(seedState);
+  }
 
   while (Date.now() - startTime < timeMs) {
     throwIfCancelled();
-    iterations += 1;
-    const allocations = Array.from({ length: candidateCount }, () => 0);
-    const currentBonus: Record<string, number> = { ...baseGearBonus };
-    const currentSpecialLines: string[] = [];
-    const remainingCaps = [...randomCaps];
-
-    let remaining = randomLineCount;
-    const openStats = remainingCaps
-      .map((cap, index) => (cap > 0 ? index : -1))
-      .filter((index) => index >= 0);
-
-    // 1. Phân bổ ngẫu nhiên các dòng phụ (Random/Tuning Lines)
-    while (remaining > 0 && openStats.length > 0) {
-      const pickIndex = Math.floor(rand() * openStats.length);
-      const statIndex = openStats[pickIndex];
-      allocations[statIndex] += 1;
-      remainingCaps[statIndex] -= 1;
-      currentBonus[candidateStats[statIndex]] =
-        (currentBonus[candidateStats[statIndex]] || 0) +
-        perLineValues[statIndex];
-
-      if (remainingCaps[statIndex] <= 0) {
-        openStats.splice(pickIndex, 1);
-      }
-      remaining -= 1;
-    }
-
-    if (remaining > 0) continue;
-
-    // 2. Phân bổ ngẫu nhiên các dòng đặc biệt (Special Lines)
-    for (const pool of specialPools) {
-      const statIndex = pool[Math.floor(rand() * pool.length)];
-      allocations[statIndex] += 1;
-      const statName = candidateStats[statIndex];
-      currentBonus[statName] =
-        (currentBonus[statName] || 0) + perLineValues[statIndex];
-      currentSpecialLines.push(statName);
-    }
-
-    // 3. VALIDATION: Kiểm tra tính hợp lệ của cấu hình vừa sinh
-    let isValid = true;
-
-    // Luật 3.1: Kiểm tra giới hạn nghiêm ngặt cho Exclusive Boosts (Tổng Special + Tuning không quá 1 dòng)
-    for (const stat of SINGLE_LINE_STATS) {
-      const statIndex = candidateStats.indexOf(stat as CandidateStat);
-      if (statIndex !== -1 && allocations[statIndex] > 1) {
-        isValid = false;
-        break;
-      }
-    }
-
-    // Luật 3.2: Kiểm tra giới hạn Max 8 dòng phụ cho các stat thông thường
-    if (isValid) {
-      for (let i = 0; i < candidateCount; i++) {
-        const stat = candidateStats[i];
-        if (SINGLE_LINE_STATS.has(stat)) continue;
-
-        // Tách số dòng Special ra để kiểm tra riêng phần Tuning Lines
-        const specialCountForThisStat = currentSpecialLines.filter(
-          (s) => s === stat,
-        ).length;
-        const tuningLinesOnly = allocations[i] - specialCountForThisStat;
-
-        if (tuningLinesOnly > MAX_LINES_PER_STAT) {
-          isValid = false;
-          break;
-        }
-
-        // LƯU Ý: Nếu luật game của bạn tính TỔNG (Special + Tuning) không được quá 8 dòng,
-        // hãy comment đoạn trên lại và dùng dòng check dưới này:
-        // if (allocations[i] > MAX_LINES_PER_STAT) { isValid = false; break; }
-      }
-    }
-
-    // Nếu cấu hình ngẫu nhiên phạm luật, bỏ qua và nhảy sang loop kế tiếp
-    if (!isValid) continue;
-
-    // 4. Tính toán damage và cập nhật Best Result
-    const evalResult = evaluateDamage(
-      currentBonus,
-      path,
-      rotation,
-      baseStats,
-      baseElementStats,
-    );
-
-    if (evalResult.dmg > bestDamage) {
-      bestDamage = evalResult.dmg;
-      bestBonus = { ...currentBonus };
-      bestAllocations = snapshotAllocations(allocations);
-      bestSpecialLines = [...currentSpecialLines];
-    }
-
+    const restartState = buildRandomRestartState();
+    if (!restartState) break;
+    runHillClimb(restartState);
     reportProgress();
   }
 
   reportProgress(true);
 
+  const fallbackAllocations = buildTotalCountsSnapshot(
+    candidateStats,
+    new Array(candidateCount).fill(0),
+    fixedLineStats,
+  );
+
   return {
     path,
     maxDamage: bestDamage,
-    allocations:
-      bestAllocations || snapshotAllocations(new Array(candidateCount).fill(0)),
+    allocations: bestAllocations || fallbackAllocations,
     stats: bestBonus || { ...baseGearBonus },
     specialLines: bestSpecialLines,
     mode: "fast",
