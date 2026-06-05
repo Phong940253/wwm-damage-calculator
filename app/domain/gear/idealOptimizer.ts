@@ -678,31 +678,28 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
   const { path, specialLines, allocations } = result;
   if (!specialLines || specialLines.length < 8) return [];
 
-  // Initialize gears with special line (slot 1) and fixed lines (slot 6)
-  const gears: IdealGear[] = Array.from({ length: 8 }, (_, i) => ({
-    id: i + 1,
-    specialLine: specialLines[i],
+  type GearState = {
+    id: number;
+    specialLine: string;
+    tuningLines: string[];
+  };
+
+  type FlowEdge = {
+    to: number;
+    rev: number;
+    cap: number;
+    statIndex?: number;
+    gearIndex?: number;
+  };
+
+  const gears: GearState[] = Array.from({ length: 8 }, (_, index) => ({
+    id: index + 1,
+    specialLine: specialLines[index],
     tuningLines: [],
   }));
 
-  // Define Fixed Stats (Slot 6)
-  const getSlot6Stat = (gearId: number) => {
-    if (path !== "bellstrike") return null;
-    return gearId <= 4
-      ? "PhysicalPenetration"
-      : "NamelessSwordChargedSkillDMGBoost";
-  };
-
-  // Define Exclusive Placements (to be placed in slots 2-5)
-  const exclusivePlacements: Record<string, number> = {
-    ArtOfSwordDMGBoost: 1, // Gear 1
-    AllMartialArtsBoost: 3, // Gear 3
-    CombatBoostAgainstBossUnits: 7, // Gear 7
-  };
-
   const tuningCounts: Record<string, number> = { ...allocations };
 
-  // Deduct Special Lines (Slot 1)
   for (const gear of gears) {
     tuningCounts[gear.specialLine] = Math.max(
       0,
@@ -710,75 +707,164 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
     );
   }
 
-  // Place Fixed Stats (Slot 6)
+  const getSlot6Stat = (gearId: number) => {
+    if (path !== "bellstrike") return null;
+    return gearId <= 4
+      ? "PhysicalPenetration"
+      : "NamelessSwordChargedSkillDMGBoost";
+  };
+
+  const reserveLine = (gearIndex: number, stat: string) => {
+    const gear = gears[gearIndex];
+    if (!gear) return false;
+    if ((tuningCounts[stat] || 0) <= 0) return false;
+    if (gear.tuningLines.includes(stat)) return false;
+    gear.tuningLines.push(stat);
+    tuningCounts[stat] -= 1;
+    return true;
+  };
+
   for (const gear of gears) {
-    const slot6 = getSlot6Stat(gear.id);
-    if (slot6 && tuningCounts[slot6] > 0) {
-      gear.tuningLines.push(slot6);
-      tuningCounts[slot6]--;
+    const fixedStat = getSlot6Stat(gear.id);
+    if (fixedStat) {
+      reserveLine(gear.id - 1, fixedStat);
     }
   }
 
-  // Place Exclusive Boosts (Slots 2-5)
+  const exclusivePlacements: Record<string, number> = {
+    ArtOfSwordDMGBoost: 1,
+    AllMartialArtsBoost: 3,
+    CombatBoostAgainstBossUnits: 7,
+  };
+
   for (const [stat, gearId] of Object.entries(exclusivePlacements)) {
-    if (tuningCounts[stat] > 0) {
-      const gear = gears.find((g) => g.id === gearId);
-      if (gear) {
-        // STRICT: No duplicate stats in one gear (Special Slot + Fixed Slot + Tuning Slots)
-        const hasStat =
-          gear.specialLine === stat || gear.tuningLines.includes(stat);
-        if (gear.tuningLines.length < 5 && !hasStat) {
-          gear.tuningLines.push(stat);
-          tuningCounts[stat]--;
-        }
-      }
-    }
+    reserveLine(gearId - 1, stat);
   }
 
-  // Place remaining stats into Slots 2-5
-  const tuningPool: string[] = [];
-  Object.entries(tuningCounts).forEach(([stat, count]) => {
-    for (let i = 0; i < count; i++) tuningPool.push(stat);
+  const remainingStats = Object.entries(tuningCounts)
+    .filter(([, count]) => count > 0)
+    .map(([stat, count]) => ({ stat, count }));
+
+  const remainingCapacity = gears.map((gear) =>
+    Math.max(0, 5 - gear.tuningLines.length),
+  );
+  const statNodeCount = remainingStats.length;
+  const gearNodeOffset = 1 + statNodeCount;
+  const sinkNode = gearNodeOffset + gears.length;
+  const nodeCount = sinkNode + 1;
+  const graph: FlowEdge[][] = Array.from({ length: nodeCount }, () => []);
+
+  const addEdge = (
+    from: number,
+    to: number,
+    cap: number,
+    meta?: { statIndex?: number; gearIndex?: number },
+  ) => {
+    const forward: FlowEdge = {
+      to,
+      rev: graph[to].length,
+      cap,
+      statIndex: meta?.statIndex,
+      gearIndex: meta?.gearIndex,
+    };
+    const backward: FlowEdge = {
+      to: from,
+      rev: graph[from].length,
+      cap: 0,
+    };
+    graph[from].push(forward);
+    graph[to].push(backward);
+  };
+
+  const source = 0;
+  let targetAssignments = 0;
+
+  remainingStats.forEach(({ stat, count }, statIndex) => {
+    addEdge(source, 1 + statIndex, count, { statIndex });
+    targetAssignments += count;
   });
 
-  // Sort by frequency (desc)
-  tuningPool.sort((a, b) => (tuningCounts[b] || 0) - (tuningCounts[a] || 0));
+  remainingStats.forEach(({ stat }, statIndex) => {
+    gears.forEach((gear, gearIndex) => {
+      if (remainingCapacity[gearIndex] <= 0) return;
+      if (gear.tuningLines.includes(stat)) return;
+      addEdge(1 + statIndex, gearNodeOffset + gearIndex, 1, {
+        statIndex,
+        gearIndex,
+      });
+    });
+  });
 
-  for (const stat of tuningPool) {
-    let placed = false;
-    for (const gear of gears) {
-      if (gear.tuningLines.length >= 5) continue;
+  remainingCapacity.forEach((cap, gearIndex) => {
+    addEdge(gearNodeOffset + gearIndex, sinkNode, cap, { gearIndex });
+  });
 
-      // ALLOW: Special line can duplicate tuning lines.
-      // STRICT: No duplicate stats among tuning lines.
-      const hasStat = gear.tuningLines.includes(stat);
-      if (!hasStat) {
-        gear.tuningLines.push(stat);
-        placed = true;
-        break;
+  let flow = 0;
+  while (true) {
+    const parentNode = Array(nodeCount).fill(-1);
+    const parentEdge = Array(nodeCount).fill(-1);
+    const queue: number[] = [source];
+    parentNode[source] = source;
+
+    for (
+      let head = 0;
+      head < queue.length && parentNode[sinkNode] === -1;
+      head += 1
+    ) {
+      const node = queue[head];
+      for (let edgeIndex = 0; edgeIndex < graph[node].length; edgeIndex += 1) {
+        const edge = graph[node][edgeIndex];
+        if (edge.cap <= 0 || parentNode[edge.to] !== -1) continue;
+        parentNode[edge.to] = node;
+        parentEdge[edge.to] = edgeIndex;
+        queue.push(edge.to);
+        if (edge.to === sinkNode) break;
       }
     }
-    // Fallback: If strict uniqueness fails, force fill anyway to ensure 6 total lines
-    if (!placed) {
-      for (const gear of gears) {
-        if (gear.tuningLines.length < 5) {
-          gear.tuningLines.push(stat);
-          break;
-        }
+
+    if (parentNode[sinkNode] === -1) break;
+
+    let bottleneck = Number.POSITIVE_INFINITY;
+    for (let node = sinkNode; node !== source; node = parentNode[node]) {
+      const prev = parentNode[node];
+      const edge = graph[prev][parentEdge[node]];
+      bottleneck = Math.min(bottleneck, edge.cap);
+    }
+
+    for (let node = sinkNode; node !== source; node = parentNode[node]) {
+      const prev = parentNode[node];
+      const edgeIndex = parentEdge[node];
+      const edge = graph[prev][edgeIndex];
+      edge.cap -= bottleneck;
+      graph[node][edge.rev].cap += bottleneck;
+    }
+
+    flow += bottleneck;
+  }
+
+  if (flow !== targetAssignments) {
+    return [];
+  }
+
+  for (let statIndex = 0; statIndex < remainingStats.length; statIndex += 1) {
+    const node = 1 + statIndex;
+    for (const edge of graph[node]) {
+      if (edge.gearIndex === undefined) continue;
+      const reverse = graph[edge.to][edge.rev];
+      if (reverse.cap > 0) {
+        gears[edge.gearIndex].tuningLines.push(remainingStats[statIndex].stat);
       }
     }
   }
 
-  // Ensure Slot 6 is always the fixed stat if it exists
   if (path === "bellstrike") {
     for (const gear of gears) {
       const fixedStat = getSlot6Stat(gear.id);
       if (!fixedStat) continue;
-
       const fixedIdx = gear.tuningLines.indexOf(fixedStat);
       if (fixedIdx !== -1) {
         gear.tuningLines.splice(fixedIdx, 1);
-        gear.tuningLines.push(fixedStat); // Move to end
+        gear.tuningLines.push(fixedStat);
       }
     }
   }
