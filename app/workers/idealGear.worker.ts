@@ -18,6 +18,8 @@ type StartMessage = {
     mode?: "exhaustive" | "fast";
     timeMs?: number;
     seed?: number;
+    shardIndex?: number;
+    shardCount?: number;
   };
 };
 
@@ -105,6 +107,8 @@ self.addEventListener("message", (event: MessageEvent) => {
             {
               onProgress,
               signal: controller.signal,
+              shardIndex: payload.shardIndex,
+              shardCount: payload.shardCount,
             },
           );
 

@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "test": "vitest",
-    "dev": "next dev --turbopack",
-    "dev:webpack": "next dev",
+    "dev": "next dev",
+    "dev:turbopack": "next --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

@@ -100,14 +100,11 @@ export function useIdealGearOptimize(
             typeof navigator !== "undefined" && navigator.hardwareConcurrency
               ? navigator.hardwareConcurrency
               : 4;
-          const maxWorkers = Math.max(1, Math.min(8, hw - 1));
-          const workerCount =
-            mode === "fast"
-              ? Math.max(
-                  1,
-                  Math.min(options?.workers ?? maxWorkers, maxWorkers),
-                )
-              : 1;
+          const maxWorkers = Math.max(1, hw);
+          const workerCount = Math.max(
+            1,
+            Math.min(options?.workers ?? maxWorkers, maxWorkers),
+          );
 
           const workers: Worker[] = [];
           for (let i = 0; i < workerCount; i += 1) {
@@ -140,7 +137,14 @@ export function useIdealGearOptimize(
           const finalizeIfDone = () => {
             if (!isStillActive()) return;
             if (completedJobs < workerCount) return;
-            const best = results.reduce((acc, cur) =>
+            const valid = results.filter((r) => Number.isFinite(r.maxDamage));
+            if (valid.length === 0) {
+              setError("Ideal gear failed");
+              setLoading(false);
+              terminateWorkers();
+              return;
+            }
+            const best = valid.reduce((acc, cur) =>
               cur.maxDamage > acc.maxDamage ? cur : acc,
             );
             setResult(best);
@@ -208,6 +212,8 @@ export function useIdealGearOptimize(
                 mode,
                 timeMs: mode === "fast" ? timeMs : undefined,
                 seed: Date.now() + index * 1013904223,
+                shardIndex: mode === "exhaustive" ? index : undefined,
+                shardCount: mode === "exhaustive" ? workerCount : undefined,
               },
             });
           });

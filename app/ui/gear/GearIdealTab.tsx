@@ -24,7 +24,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const [path, setPath] = useState<ElementKey>("bellstrike");
   const maxWorkers =
     typeof navigator !== "undefined" && navigator.hardwareConcurrency
-      ? Math.max(1, Math.min(8, navigator.hardwareConcurrency - 1))
+      ? Math.max(1, navigator.hardwareConcurrency)
       : 4;
   const [workerCount, setWorkerCount] = useState(maxWorkers);
 
@@ -45,7 +45,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   );
 
   const handleCalculate = () => {
-    run(path, { mode: "exhaustive" });
+    run(path, { mode: "exhaustive", workers: workerCount });
   };
 
   const handleFastCalculate = () => {

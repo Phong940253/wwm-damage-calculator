@@ -144,8 +144,8 @@ const SPECIAL_LINE_POOLS: CandidateStat[][] = [
   ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
   ["CriticalRate", "AffinityRate"],
   ["CriticalRate", "AffinityRate"],
-  ["AffinityRate", "CriticalRate", "Momentum", "Power"],
-  ["AffinityRate", "CriticalRate", "Momentum", "Power"],
+  ["AffinityRate", "CriticalRate", "Power"],
+  ["AffinityRate", "CriticalRate", "Power"],
 ];
 
 type RuleSet = {
@@ -215,6 +215,8 @@ export function calculateIdealGearStats(
   options?: {
     onProgress?: (current: number, total: number) => void;
     signal?: AbortSignal;
+    shardIndex?: number;
+    shardCount?: number;
   },
 ): IdealGearResult {
   const onProgress = options?.onProgress;
@@ -363,7 +365,7 @@ export function calculateIdealGearStats(
     throwIfCancelled();
     if (statIndex === candidateCount) {
       if (remaining === 0) {
-        for (const plan of specialCountPlans) {
+        for (const plan of activeSpecialPlans) {
           for (const index of plan.indices) {
             applyLines(index, plan.counts[index]);
           }
@@ -386,15 +388,24 @@ export function calculateIdealGearStats(
 
   buildSpecialCountPlans(0);
 
+  const shardIndex = Math.max(0, Math.floor(options?.shardIndex ?? 0));
+  const shardCount = Math.max(1, Math.floor(options?.shardCount ?? 1));
+  const activeSpecialPlans =
+    shardCount > 1
+      ? specialCountPlans.filter(
+          (_, index) => index % shardCount === shardIndex,
+        )
+      : specialCountPlans;
+
   const randomComboCount =
     randomLineCount > 0
       ? countRandomCombinations(maxRandomLines, randomLineCount)
       : 1;
-  progressTotal = specialCountPlans.length * randomComboCount;
+  progressTotal = activeSpecialPlans.length * randomComboCount;
   reportProgress(true);
 
   if (randomLineCount <= 0) {
-    for (const plan of specialCountPlans) {
+    for (const plan of activeSpecialPlans) {
       for (const index of plan.indices) {
         applyLines(index, plan.counts[index]);
       }
