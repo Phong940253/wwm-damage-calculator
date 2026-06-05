@@ -214,6 +214,7 @@ export function useIdealGearOptimize(
                 seed: Date.now() + index * 1013904223,
                 shardIndex: mode === "exhaustive" ? index : undefined,
                 shardCount: mode === "exhaustive" ? workerCount : undefined,
+                initialResult: result?.path === path ? result : undefined,
               },
             });
           });
@@ -230,16 +231,19 @@ export function useIdealGearOptimize(
       abortRef.current = controller;
 
       try {
+        const initialResult = result?.path === path ? result : undefined;
         const res =
           mode === "fast"
             ? calculateIdealGearStatsFast(path, rotation, stats, elementStats, {
                 onProgress: (current, total) => setProgress({ current, total }),
                 signal: controller.signal,
                 timeMs,
+                initialResult,
               })
             : calculateIdealGearStats(path, rotation, stats, elementStats, {
                 onProgress: (current, total) => setProgress({ current, total }),
                 signal: controller.signal,
+                initialResult,
               });
 
         if (!controller.signal.aborted) {

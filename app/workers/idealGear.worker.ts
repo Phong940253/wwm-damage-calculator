@@ -20,6 +20,7 @@ type StartMessage = {
     seed?: number;
     shardIndex?: number;
     shardCount?: number;
+    initialResult?: IdealGearResult;
   };
 };
 
@@ -97,6 +98,7 @@ self.addEventListener("message", (event: MessageEvent) => {
               signal: controller.signal,
               timeMs: payload.timeMs,
               seed: payload.seed,
+              initialResult: payload.initialResult,
             },
           )
         : calculateIdealGearStats(
@@ -109,6 +111,7 @@ self.addEventListener("message", (event: MessageEvent) => {
               signal: controller.signal,
               shardIndex: payload.shardIndex,
               shardCount: payload.shardCount,
+              initialResult: payload.initialResult,
             },
           );
 

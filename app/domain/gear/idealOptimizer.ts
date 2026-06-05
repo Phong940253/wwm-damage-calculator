@@ -26,6 +26,7 @@ export interface IdealGearResult {
   maxDamage: number;
   allocations: Record<string, number>; // number of lines
   stats: Record<string, number>; // total stat value from these lines
+  specialLines: string[]; // 8 lines, one for each gear
   mode?: "exhaustive" | "fast";
   elapsedMs?: number;
   iterations?: number;
@@ -217,6 +218,7 @@ export function calculateIdealGearStats(
     signal?: AbortSignal;
     shardIndex?: number;
     shardCount?: number;
+    initialResult?: IdealGearResult;
   },
 ): IdealGearResult {
   const onProgress = options?.onProgress;
@@ -299,6 +301,20 @@ export function calculateIdealGearStats(
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
   let bestAllocations: Record<string, number> | null = null;
+
+  if (options?.initialResult && options.initialResult.path === path) {
+    bestBonus = { ...options.initialResult.stats };
+    bestAllocations = { ...options.initialResult.allocations };
+    // Re-evaluate to get accurate benchmark for CURRENT base stats
+    const benchmark = evaluateDamage(
+      bestBonus,
+      path,
+      rotation,
+      baseStats,
+      baseElementStats,
+    );
+    bestDamage = benchmark.dmg;
+  }
 
   let progressCurrent = 0;
   let lastProgress = 0;
@@ -440,6 +456,7 @@ export function calculateIdealGearStatsFast(
     signal?: AbortSignal;
     timeMs?: number;
     seed?: number;
+    initialResult?: IdealGearResult;
   },
 ): IdealGearResult {
   const onProgress = options?.onProgress;
@@ -466,6 +483,21 @@ export function calculateIdealGearStatsFast(
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
   let bestAllocations: Record<string, number> | null = null;
+
+  if (options?.initialResult && options.initialResult.path === path) {
+    bestBonus = { ...options.initialResult.stats };
+    bestAllocations = { ...options.initialResult.allocations };
+    // Re-evaluate to get accurate benchmark for CURRENT base stats
+    const benchmark = evaluateDamage(
+      bestBonus,
+      path,
+      rotation,
+      baseStats,
+      baseElementStats,
+    );
+    bestDamage = benchmark.dmg;
+  }
+
   let iterations = 0;
   let lastProgressAt = 0;
 
