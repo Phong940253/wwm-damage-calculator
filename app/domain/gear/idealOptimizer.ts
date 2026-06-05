@@ -112,205 +112,208 @@ export function calculateIdealGearStats(
   baseStats?: InputStats,
   baseElementStats?: ElementStats,
 ): IdealGearResult {
-  const TOTAL_LINES = 40; // 48 total - 4 phys pen - 4 empty = 40 lines to work with
-  const RESERVED_LINES = 2; // 1 weapon dmg bonus + 1 pendant martial art dmg bonus
-  const THRESHOLD_LINES = 6; // 6 lines * 40.4 = 242.4 (Reaches the 225 threshold)
-  const REMAINING_LINES = TOTAL_LINES - RESERVED_LINES - THRESHOLD_LINES; // 32 lines for greedy tuning
+  const TOTAL_LINES = 48;
+  const MAX_LINES_PER_STAT = 8;
+  const CANDIDATE_STATS = [
+    "MaxPhysicalAttack",
+    "bellstrikeMax",
+    "CriticalRate",
+    "AffinityRate",
+    "CombatBoostAgainstBossUnits",
+    "AllMartialArtsBoost",
+    "ArtOfSwordDMGBoost",
+    "Momentum",
+    "Power",
+  ] as const;
+  type CandidateStat = (typeof CANDIDATE_STATS)[number];
 
-  // Base setup
-  const gearBonus: Record<string, number> = {};
+  const SINGLE_LINE_STATS = new Set<CandidateStat>([
+    "CombatBoostAgainstBossUnits",
+    "AllMartialArtsBoost",
+    "ArtOfSwordDMGBoost",
+  ]);
 
-  // Reserved Additions:
-  // 4 Additions for DMG Boost (Head, Chest, Hand, Leg) gives 5.4% each
-  gearBonus["DamageBoost"] = 4 * 5.4;
+  const SPECIAL_LINE_POOLS: CandidateStat[][] = [
+    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+    ["CriticalRate", "AffinityRate"],
+    ["CriticalRate", "AffinityRate"],
+    ["AffinityRate", "CriticalRate", "Momentum", "Power"],
+    ["AffinityRate", "CriticalRate", "Momentum", "Power"],
+  ];
 
-  // 1 Reserved Tune Line for Pendant gives 5.9%
-  gearBonus["AllMartialArtsBoost"] = 1 * 2.9;
+  const fixedLineStats: Record<
+    string,
+    { lines: number; valuePerLine: number }
+  > =
+    path === "bellstrike"
+      ? {
+          NamelessSwordChargedSkillDMGBoost: { lines: 4, valuePerLine: 4.5 },
+          PhysicalPenetration: {
+            lines: 4,
+            valuePerLine: getValPerLine("PhysicalPenetration"),
+          },
+        }
+      : {};
 
-  // Weapon & Path Bonus depending on path
-  if (path === "bellstrike") {
-    gearBonus["ArtOfSwordDMGBoost"] = 1 * 5.9;
-    gearBonus["NamelessSwordChargedSkillDMGBoost"] = 4 * 4.5;
-  } else {
-    gearBonus["DamageBoost"] = (gearBonus["DamageBoost"] || 0) + 1 * 5.9;
-    gearBonus[`${path}DMGBonus`] = 4 * 4.5;
+  const fixedLineCount = Object.values(fixedLineStats).reduce(
+    (sum, stat) => sum + stat.lines,
+    0,
+  );
+  const randomLineCount = Math.max(
+    0,
+    TOTAL_LINES - fixedLineCount - SPECIAL_LINE_POOLS.length,
+  );
+
+  const baseGearBonus: Record<string, number> = {
+    DamageBoost: 4 * 5.4,
+    MinPhysicalAttack: 71 + 53 + 53,
+    MaxPhysicalAttack: 106 + 124 + 124,
+  };
+
+  if (path !== "bellstrike") {
+    baseGearBonus["DamageBoost"] =
+      (baseGearBonus["DamageBoost"] || 0) + 1 * 5.9;
+    baseGearBonus[`${path}DMGBonus`] = 4 * 4.5;
   }
 
-  // 4 Fixed lines for Physical Penetration
-  gearBonus["PhysicalPenetration"] = 4 * 9.0;
-
-  // Base gear main stats (from Weapons, Disc, Pendant)
-  gearBonus["MinPhysicalAttack"] = 71 + 53 + 53; // 177
-  gearBonus["MaxPhysicalAttack"] = 106 + 124 + 124; // 354
-
-  let candidates: string[] = [];
-  if (path === "bellstrike") {
-    candidates = [
-      "MaxPhysicalAttack",
-      "bellstrikeMax",
-      "bellstrikePenetration",
-      "CriticalRate",
-      "AffinityRate",
-      "CombatBoostAgainstBossUnits",
-      "AllMartialArtsBoost",
-      "ArtOfSwordDMGBoost",
-      "Momentum",
-      "Power",
-    ];
-  } else {
-    candidates = [
-      "MinPhysicalAttack",
-      `${path}Min`,
-      `${path}Penetration`,
-      "CriticalRate",
-      "AffinityRate",
-      "CombatBoostAgainstBossUnits",
-      "AllMartialArtsBoost",
-      "ArtOfSwordDMGBoost",
-      "Agility",
-      "Power",
-    ];
+  for (const [stat, { lines, valuePerLine }] of Object.entries(
+    fixedLineStats,
+  )) {
+    baseGearBonus[stat] = (baseGearBonus[stat] || 0) + lines * valuePerLine;
   }
 
-  const allocations: Record<string, number> = {};
-  for (const c of candidates) allocations[c] = 0;
+  const candidateStats = [...CANDIDATE_STATS];
+  const candidateCount = candidateStats.length;
+  const allocations = Array.from({ length: candidateCount }, () => 0);
+  const candidateIndexByStat = new Map<CandidateStat, number>(
+    candidateStats.map((stat, index) => [stat, index]),
+  );
+  const perLineValues = candidateStats.map((stat) => getValPerLine(stat));
+  const maxRandomLines = candidateStats.map((stat) =>
+    SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT,
+  );
 
-  // Pre-allocate Phys Pen (4 lines) - Not part of the 40 lines budget, but added to allocations for UI
-  allocations["PhysicalPenetration"] = 4;
+  const specialLinePools = SPECIAL_LINE_POOLS.map((pool) =>
+    pool
+      .map((stat) => candidateIndexByStat.get(stat) ?? -1)
+      .filter((i) => i >= 0),
+  );
 
-  // Pre-allocate to hit the 225 threshold
-  if (path === "bellstrike") {
-    allocations["Momentum"] = THRESHOLD_LINES;
-  } else {
-    allocations["Agility"] = THRESHOLD_LINES;
-  }
+  const specialCountPlans: Array<{ counts: number[]; indices: number[] }> = [];
+  const specialCounts = Array.from({ length: candidateCount }, () => 0);
+  const specialCountKeys = new Set<string>();
 
-  // Greedy Algorithm
-  for (let i = 0; i < REMAINING_LINES; i++) {
-    let bestCandidate = "";
-    let bestDmg = -1;
+  const buildSpecialCountPlans = (slotIndex: number) => {
+    if (slotIndex >= specialLinePools.length) {
+      const key = specialCounts.join(",");
+      if (!specialCountKeys.has(key)) {
+        specialCountKeys.add(key);
+        const countsSnapshot = [...specialCounts];
+        const indices = countsSnapshot
+          .map((count, index) => (count ? index : -1))
+          .filter((index) => index >= 0);
+        specialCountPlans.push({ counts: countsSnapshot, indices });
+      }
+      return;
+    }
 
-    for (const c of candidates) {
-      if (c === "PhysicalPenetration" && allocations[c] >= 4) continue;
-      if (c === "Momentum" && allocations[c] >= THRESHOLD_LINES) continue;
-      if (c === "Agility" && allocations[c] >= THRESHOLD_LINES) continue;
-      if (
-        (c === "MaxPhysicalAttack" || c === "MinPhysicalAttack") &&
-        allocations[c] >= 12
-      )
+    for (const statIndex of specialLinePools[slotIndex]) {
+      const stat = candidateStats[statIndex];
+      if (SINGLE_LINE_STATS.has(stat) && specialCounts[statIndex] >= 1) {
         continue;
-      if (
-        (c === "CombatBoostAgainstBossUnits" ||
-          c === "AllMartialArtsBoost" ||
-          c === "ArtOfSwordDMGBoost") &&
-        allocations[c] >= 1
-      )
-        continue;
-      if (c === "Power" && allocations[c] >= 8) continue;
-      if (allocations[c] >= 16) continue;
+      }
+      specialCounts[statIndex] += 1;
+      buildSpecialCountPlans(slotIndex + 1);
+      specialCounts[statIndex] -= 1;
+    }
+  };
 
-      const testBonus = { ...gearBonus };
-      for (const cand of candidates) {
-        const lines = allocations[cand] + (cand === c ? 1 : 0);
-        if (lines > 0) {
-          testBonus[cand] =
-            (testBonus[cand] || 0) + lines * getValPerLine(cand);
+  const currentBonus: Record<string, number> = { ...baseGearBonus };
+
+  let bestDamage = -Infinity;
+  let bestBonus: Record<string, number> | null = null;
+  let bestAllocations: Record<string, number> | null = null;
+
+  const applyLines = (statIndex: number, delta: number) => {
+    if (delta === 0) return;
+    const stat = candidateStats[statIndex];
+    allocations[statIndex] += delta;
+    currentBonus[stat] =
+      (currentBonus[stat] || 0) + delta * perLineValues[statIndex];
+  };
+
+  const snapshotAllocations = () => {
+    const snapshot: Record<string, number> = {};
+    candidateStats.forEach((stat, index) => {
+      snapshot[stat] = allocations[index];
+    });
+    for (const [stat, { lines }] of Object.entries(fixedLineStats)) {
+      snapshot[stat] = (snapshot[stat] || 0) + lines;
+    }
+    return snapshot;
+  };
+
+  const recordBest = () => {
+    const evalResult = evaluateDamage(
+      currentBonus,
+      path,
+      rotation,
+      baseStats,
+      baseElementStats,
+    );
+    if (evalResult.dmg <= bestDamage) return;
+    bestDamage = evalResult.dmg;
+    bestBonus = { ...currentBonus };
+    bestAllocations = snapshotAllocations();
+  };
+
+  const searchRandom = (statIndex: number, remaining: number) => {
+    if (statIndex === candidateCount) {
+      if (remaining === 0) {
+        for (const plan of specialCountPlans) {
+          for (const index of plan.indices) {
+            applyLines(index, plan.counts[index]);
+          }
+          recordBest();
+          for (const index of plan.indices) {
+            applyLines(index, -plan.counts[index]);
+          }
         }
       }
-
-      const evalResult = evaluateDamage(testBonus, path, rotation);
-
-      // Soft constraint: Heavily weight total rate progress until 90% is reached
-      const rateProgress = Math.min(90, evalResult.totalRate);
-
-      // Penalty: If we exceed ~92%, heavily penalize it so it stops picking rate stats
-      let penalty = 0;
-      if (evalResult.totalRate > 92) {
-        penalty += (evalResult.totalRate - 92) * 10000000;
-      }
-
-      // Penalty: Final Critical Rate should stay around 35% (cap it softly at ~37%)
-      if (evalResult.critRate > 37) {
-        penalty += (evalResult.critRate - 37) * 10000000;
-      }
-
-      const score = evalResult.dmg + rateProgress * 1000000 - penalty;
-
-      if (score > bestDmg) {
-        bestDmg = score;
-        bestCandidate = c;
-      }
+      return;
     }
 
-    if (bestCandidate) {
-      allocations[bestCandidate]++;
-    } else {
-      break; // Should not happen unless all candidates hit max limit
+    const maxLinesForStat = Math.min(maxRandomLines[statIndex], remaining);
+    for (let lines = 0; lines <= maxLinesForStat; lines += 1) {
+      if (lines) applyLines(statIndex, lines);
+      searchRandom(statIndex + 1, remaining - lines);
+      if (lines) applyLines(statIndex, -lines);
     }
-  }
+  };
 
-  // Calculate final max damage with chosen allocations
-  const finalBonus = { ...gearBonus };
-  const finalStats: Record<string, number> = {};
-  for (const cand of candidates) {
-    const val = allocations[cand] * getValPerLine(cand);
-    if (allocations[cand] > 0) {
-      finalBonus[cand] = (finalBonus[cand] || 0) + val;
+  buildSpecialCountPlans(0);
+
+  if (randomLineCount <= 0) {
+    for (const plan of specialCountPlans) {
+      for (const index of plan.indices) {
+        applyLines(index, plan.counts[index]);
+      }
+      recordBest();
+      for (const index of plan.indices) {
+        applyLines(index, -plan.counts[index]);
+      }
     }
-    finalStats[cand] = val;
-  }
-
-  const finalEval = evaluateDamage(
-    finalBonus,
-    path,
-    rotation,
-    baseStats,
-    baseElementStats,
-  );
-  const maxDamage = finalEval.dmg;
-
-  const finalAllocations = { ...allocations };
-  const finalStatsResult = { ...finalStats };
-
-  // Explicitly add the reserved fixed lines so they show up in the UI
-  if (path === "bellstrike") {
-    finalAllocations["ArtOfSwordDMGBoost"] =
-      (finalAllocations["ArtOfSwordDMGBoost"] || 0) + 1;
-    finalStatsResult["ArtOfSwordDMGBoost"] =
-      (finalStatsResult["ArtOfSwordDMGBoost"] || 0) + 1 * 5.9;
-
-    finalAllocations["NamelessSwordChargedSkillDMGBoost"] = 4;
-    finalStatsResult["NamelessSwordChargedSkillDMGBoost"] = 4 * 4.5;
   } else {
-    finalAllocations["WeaponDMGBoost"] = 1;
-    finalStatsResult["WeaponDMGBoost"] = 1 * 5.9;
-
-    finalAllocations["PathBonus"] = 4;
-    finalStatsResult["PathBonus"] = 4 * 4.5;
+    searchRandom(0, randomLineCount);
   }
-
-  finalAllocations["AllMartialArtsBoost"] =
-    (finalAllocations["AllMartialArtsBoost"] || 0) + 1;
-  finalStatsResult["AllMartialArtsBoost"] =
-    (finalStatsResult["AllMartialArtsBoost"] || 0) + 1 * 2.9;
-
-  finalAllocations["PhysicalPenetration"] = 4;
-  finalStatsResult["PhysicalPenetration"] = 4 * 9.0;
-
-  // Add the base DMG boost (4 pieces)
-  finalStatsResult["DamageBoost"] =
-    (finalStatsResult["DamageBoost"] || 0) + 4 * 5.4;
-
-  // Add the base main stats (Weapons, Disc, Pendant)
-  finalStatsResult["MinPhysicalAttack"] =
-    (finalStatsResult["MinPhysicalAttack"] || 0) + 177;
-  finalStatsResult["MaxPhysicalAttack"] =
-    (finalStatsResult["MaxPhysicalAttack"] || 0) + 354;
 
   return {
     path,
-    maxDamage,
-    allocations: finalAllocations,
-    stats: finalStatsResult,
+    maxDamage: bestDamage,
+    allocations: bestAllocations || snapshotAllocations(),
+    stats: bestBonus || { ...currentBonus },
   };
 }
