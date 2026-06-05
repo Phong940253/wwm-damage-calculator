@@ -1,10 +1,17 @@
-import { ElementKey, INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
+import {
+  ElementKey,
+  INITIAL_STATS,
+  INITIAL_ELEMENT_STATS,
+} from "@/app/constants";
 import { buildDamageContext } from "../damage/damageContext";
 import { calculateDamage } from "../damage/damageCalculator";
 import { TuneStatKey, getPlayerTuneStatRange } from "./tuneAdvisor";
 import { InputStats, ElementStats, Rotation } from "@/app/types";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
-import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import {
+  computeRotationBonuses,
+  sumBonuses,
+} from "@/app/domain/skill/modifierEngine";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
   calculateSkillDamage,
@@ -22,26 +29,44 @@ export interface IdealGearResult {
 }
 
 function evaluateDamage(
-  gearBonus: Record<string, number>, 
-  path: ElementKey, 
+  gearBonus: Record<string, number>,
+  path: ElementKey,
   rotation?: Rotation,
   baseStats?: InputStats,
-  baseElementStats?: ElementStats
-): { dmg: number, totalRate: number, critRate: number } {
-  const elementStats = baseElementStats || { ...INITIAL_ELEMENT_STATS, selected: path };
+  baseElementStats?: ElementStats,
+): { dmg: number; totalRate: number; critRate: number } {
+  const elementStats = baseElementStats || {
+    ...INITIAL_ELEMENT_STATS,
+    selected: path,
+  };
   const stats = baseStats || INITIAL_STATS;
 
-  const includedAbs = computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus);
+  const includedAbs = computeIncludedInStatsGearBonus(
+    stats,
+    elementStats,
+    rotation,
+    gearBonus,
+  );
   const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
-  const rotationBonuses = computeRotationBonuses(stats, elementStats, effectiveGearBonus, rotation);
+  const rotationBonuses = computeRotationBonuses(
+    stats,
+    elementStats,
+    effectiveGearBonus,
+    rotation,
+  );
   const finalBonus = sumBonuses(effectiveGearBonus, rotationBonuses);
 
-  const ctx = buildDamageContext(stats, elementStats, finalBonus, undefined, { playerLevel: 91, enemyLevel: 91 });
+  const ctx = buildDamageContext(stats, elementStats, finalBonus, undefined, {
+    playerLevel: 91,
+    enemyLevel: 91,
+  });
   const totalRate = ctx.get("FinalCriticalRate") + ctx.get("FinalAffinityRate");
   const critRate = ctx.get("FinalCriticalRate");
 
   if (rotation && rotation.skills.length > 0) {
-    const skillUseCountsInRotation = buildSkillUseCountsInRotation(rotation.skills);
+    const skillUseCountsInRotation = buildSkillUseCountsInRotation(
+      rotation.skills,
+    );
     let totalNormal = 0;
     const runtimeState = createRotationSkillRuntimeState();
 
@@ -64,7 +89,12 @@ function evaluateDamage(
         totalNormal += skillDmg.total.normal.value * rotSkill.count;
       }
 
-      advanceRotationSkillRuntimeState(runtimeState, skill, entryOpts, rotSkill.count);
+      advanceRotationSkillRuntimeState(
+        runtimeState,
+        skill,
+        entryOpts,
+        rotSkill.count,
+      );
     }
     return { dmg: totalNormal, totalRate, critRate };
   }
@@ -77,10 +107,10 @@ function getValPerLine(stat: string): number {
 }
 
 export function calculateIdealGearStats(
-  path: ElementKey, 
+  path: ElementKey,
   rotation?: Rotation,
   baseStats?: InputStats,
-  baseElementStats?: ElementStats
+  baseElementStats?: ElementStats,
 ): IdealGearResult {
   const TOTAL_LINES = 40; // 48 total - 4 phys pen - 4 empty = 40 lines to work with
   const RESERVED_LINES = 2; // 1 weapon dmg bonus + 1 pendant martial art dmg bonus
@@ -95,7 +125,7 @@ export function calculateIdealGearStats(
   gearBonus["DamageBoost"] = 4 * 5.4;
 
   // 1 Reserved Tune Line for Pendant gives 5.9%
-  gearBonus["AllMartialArtsBoost"] = 1 * 5.9;
+  gearBonus["AllMartialArtsBoost"] = 1 * 2.9;
 
   // Weapon & Path Bonus depending on path
   if (path === "bellstrike") {
@@ -121,8 +151,11 @@ export function calculateIdealGearStats(
       "bellstrikePenetration",
       "CriticalRate",
       "AffinityRate",
+      "CombatBoostAgainstBossUnits",
+      "AllMartialArtsBoost",
+      "ArtOfSwordDMGBoost",
       "Momentum",
-      "Power"
+      "Power",
     ];
   } else {
     candidates = [
@@ -131,8 +164,11 @@ export function calculateIdealGearStats(
       `${path}Penetration`,
       "CriticalRate",
       "AffinityRate",
+      "CombatBoostAgainstBossUnits",
+      "AllMartialArtsBoost",
+      "ArtOfSwordDMGBoost",
       "Agility",
-      "Power"
+      "Power",
     ];
   }
 
@@ -141,7 +177,7 @@ export function calculateIdealGearStats(
 
   // Pre-allocate Phys Pen (4 lines) - Not part of the 40 lines budget, but added to allocations for UI
   allocations["PhysicalPenetration"] = 4;
-  
+
   // Pre-allocate to hit the 225 threshold
   if (path === "bellstrike") {
     allocations["Momentum"] = THRESHOLD_LINES;
@@ -158,7 +194,18 @@ export function calculateIdealGearStats(
       if (c === "PhysicalPenetration" && allocations[c] >= 4) continue;
       if (c === "Momentum" && allocations[c] >= THRESHOLD_LINES) continue;
       if (c === "Agility" && allocations[c] >= THRESHOLD_LINES) continue;
-      if ((c === "MaxPhysicalAttack" || c === "MinPhysicalAttack") && allocations[c] >= 12) continue;
+      if (
+        (c === "MaxPhysicalAttack" || c === "MinPhysicalAttack") &&
+        allocations[c] >= 12
+      )
+        continue;
+      if (
+        (c === "CombatBoostAgainstBossUnits" ||
+          c === "AllMartialArtsBoost" ||
+          c === "ArtOfSwordDMGBoost") &&
+        allocations[c] >= 1
+      )
+        continue;
       if (c === "Power" && allocations[c] >= 8) continue;
       if (allocations[c] >= 16) continue;
 
@@ -166,27 +213,28 @@ export function calculateIdealGearStats(
       for (const cand of candidates) {
         const lines = allocations[cand] + (cand === c ? 1 : 0);
         if (lines > 0) {
-          testBonus[cand] = (testBonus[cand] || 0) + lines * getValPerLine(cand);
+          testBonus[cand] =
+            (testBonus[cand] || 0) + lines * getValPerLine(cand);
         }
       }
 
       const evalResult = evaluateDamage(testBonus, path, rotation);
-      
+
       // Soft constraint: Heavily weight total rate progress until 90% is reached
       const rateProgress = Math.min(90, evalResult.totalRate);
-      
+
       // Penalty: If we exceed ~92%, heavily penalize it so it stops picking rate stats
       let penalty = 0;
       if (evalResult.totalRate > 92) {
         penalty += (evalResult.totalRate - 92) * 10000000;
       }
-      
+
       // Penalty: Final Critical Rate should stay around 35% (cap it softly at ~37%)
       if (evalResult.critRate > 37) {
         penalty += (evalResult.critRate - 37) * 10000000;
       }
-      
-      const score = evalResult.dmg + (rateProgress * 1000000) - penalty;
+
+      const score = evalResult.dmg + rateProgress * 1000000 - penalty;
 
       if (score > bestDmg) {
         bestDmg = score;
@@ -212,7 +260,13 @@ export function calculateIdealGearStats(
     finalStats[cand] = val;
   }
 
-  const finalEval = evaluateDamage(finalBonus, path, rotation, baseStats, baseElementStats);
+  const finalEval = evaluateDamage(
+    finalBonus,
+    path,
+    rotation,
+    baseStats,
+    baseElementStats,
+  );
   const maxDamage = finalEval.dmg;
 
   const finalAllocations = { ...allocations };
@@ -220,8 +274,10 @@ export function calculateIdealGearStats(
 
   // Explicitly add the reserved fixed lines so they show up in the UI
   if (path === "bellstrike") {
-    finalAllocations["ArtOfSwordDMGBoost"] = 1;
-    finalStatsResult["ArtOfSwordDMGBoost"] = 1 * 5.9;
+    finalAllocations["ArtOfSwordDMGBoost"] =
+      (finalAllocations["ArtOfSwordDMGBoost"] || 0) + 1;
+    finalStatsResult["ArtOfSwordDMGBoost"] =
+      (finalStatsResult["ArtOfSwordDMGBoost"] || 0) + 1 * 5.9;
 
     finalAllocations["NamelessSwordChargedSkillDMGBoost"] = 4;
     finalStatsResult["NamelessSwordChargedSkillDMGBoost"] = 4 * 4.5;
@@ -233,18 +289,23 @@ export function calculateIdealGearStats(
     finalStatsResult["PathBonus"] = 4 * 4.5;
   }
 
-  finalAllocations["AllMartialArtsBoost"] = 1;
-  finalStatsResult["AllMartialArtsBoost"] = 1 * 5.9;
+  finalAllocations["AllMartialArtsBoost"] =
+    (finalAllocations["AllMartialArtsBoost"] || 0) + 1;
+  finalStatsResult["AllMartialArtsBoost"] =
+    (finalStatsResult["AllMartialArtsBoost"] || 0) + 1 * 2.9;
 
   finalAllocations["PhysicalPenetration"] = 4;
   finalStatsResult["PhysicalPenetration"] = 4 * 9.0;
 
   // Add the base DMG boost (4 pieces)
-  finalStatsResult["DamageBoost"] = (finalStatsResult["DamageBoost"] || 0) + 4 * 5.4;
+  finalStatsResult["DamageBoost"] =
+    (finalStatsResult["DamageBoost"] || 0) + 4 * 5.4;
 
   // Add the base main stats (Weapons, Disc, Pendant)
-  finalStatsResult["MinPhysicalAttack"] = (finalStatsResult["MinPhysicalAttack"] || 0) + 177;
-  finalStatsResult["MaxPhysicalAttack"] = (finalStatsResult["MaxPhysicalAttack"] || 0) + 354;
+  finalStatsResult["MinPhysicalAttack"] =
+    (finalStatsResult["MinPhysicalAttack"] || 0) + 177;
+  finalStatsResult["MaxPhysicalAttack"] =
+    (finalStatsResult["MaxPhysicalAttack"] || 0) + 354;
 
   return {
     path,

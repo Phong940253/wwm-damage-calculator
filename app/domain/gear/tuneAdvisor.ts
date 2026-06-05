@@ -25,6 +25,9 @@ export type TuneStatKey =
   | "PhysicalResistance"
   | "CriticalRate"
   | "AffinityRate"
+  | "CombatBoostAgainstBossUnits"
+  | "AllMartialArtsBoost"
+  | "ArtOfSwordDMGBoost"
   | "Power"
   | "Momentum"
   | "Agility";
@@ -66,6 +69,9 @@ const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
   PhysicalResistance: { minPerLine: 5.4, maxPerLine: 9.0 },
   CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
   AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
+  CombatBoostAgainstBossUnits: { minPerLine: 2.9, maxPerLine: 2.9 },
+  AllMartialArtsBoost: { minPerLine: 2.9, maxPerLine: 2.9 },
+  ArtOfSwordDMGBoost: { minPerLine: 5.9, maxPerLine: 5.9 },
   Power: { minPerLine: 20.2, maxPerLine: 40.4 },
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
   Agility: { minPerLine: 20.2, maxPerLine: 40.4 },
@@ -136,14 +142,14 @@ export function getPlayerTuneStatRange(
   enemyLevel: number = 0,
 ): TuneStatRange {
   const baseRange = DEFAULT_TUNE_LIMITS[stat];
-  
+
   if (enemyLevel >= 91) {
     const penRange = LEVEL_91_PENETRATION_TUNE_LIMITS[stat];
     if (penRange) {
       return penRange;
     }
   }
-  
+
   return baseRange;
 }
 
@@ -334,7 +340,9 @@ export function getStatTheoreticalMaxPercentage(
 ): number | null {
   if (totalLines <= 0 || actualValue <= 0) return null;
 
-  const isValidStat = (Object.keys(DEFAULT_TUNE_LIMITS) as string[]).includes(statKey);
+  const isValidStat = (Object.keys(DEFAULT_TUNE_LIMITS) as string[]).includes(
+    statKey,
+  );
   if (!isValidStat) return null;
 
   const tKey = statKey as TuneStatKey;
@@ -346,7 +354,8 @@ export function getStatTheoreticalMaxPercentage(
   }
 
   if (elementKey === "bellstrike") {
-    const bellstrikeLimit = BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[tKey]?.maxPerLine;
+    const bellstrikeLimit =
+      BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[tKey]?.maxPerLine;
     if (bellstrikeLimit && bellstrikeLimit > maxPerLine) {
       maxPerLine = bellstrikeLimit;
     }
