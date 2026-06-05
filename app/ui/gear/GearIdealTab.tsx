@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { calculateIdealGearStats, IdealGearResult } from "@/app/domain/gear/idealOptimizer";
+import React, { useEffect, useState } from "react";
+import type { IdealGearResult } from "@/app/domain/gear/idealOptimizer";
 import { ELEMENT_TYPES, ElementKey, STAT_LABELS } from "@/app/constants";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Zap, Loader2, Target, TrendingUp, Cpu } from "lucide-react";
 import { useDamage } from "@/app/hooks/useDamage";
 import { DamageResult } from "@/app/domain/damage/type";
@@ -17,14 +18,15 @@ import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInSt
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import DamagePanel from "@/app/ui/damage/DamagePanel";
+import { useIdealGearOptimize } from "@/app/hooks/useIdealGearOptimize";
 
 export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const [path, setPath] = useState<ElementKey>("bellstrike");
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [result, setResult] = useState<IdealGearResult | null>(null);
 
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
+  const { loading, progress, result, error, run, cancel } =
+    useIdealGearOptimize(stats, elementStats, rotation);
 
   const damageResult = useDamage(
     stats,
@@ -34,25 +36,29 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   );
 
   const handleCalculate = () => {
-    setIsCalculating(true);
-    // Timeout to allow UI to render loading state
-    setTimeout(() => {
-      const res = calculateIdealGearStats(path, rotation, stats, elementStats);
-      setResult(res);
-      try {
-        const rotationKey = (rotation?.skills ?? []).map((s) => s.id).join(",") || "no-rot";
-        localStorage.setItem(
-          `idealGearResult:${path}:${rotationKey}`,
-          JSON.stringify({ result: res, ts: Date.now() })
-        );
-      } catch {
-        // ignore storage errors
-      }
-      setIsCalculating(false);
-    }, 50);
+    run(path);
   };
 
+  useEffect(() => {
+    if (!result) return;
+    try {
+      const rotationKey =
+        (rotation?.skills ?? []).map((s) => s.id).join(",") || "no-rot";
+      localStorage.setItem(
+        `idealGearResult:${result.path}:${rotationKey}`,
+        JSON.stringify({ result, ts: Date.now() })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [result, rotation]);
+
   const getStatLabel = (key: string) => STAT_LABELS[key] || key;
+
+  const progressPct =
+    progress.total > 0
+      ? Math.min(100, (progress.current / progress.total) * 100)
+      : 0;
 
   return (
     <div className="space-y-4 pb-20">
@@ -64,10 +70,10 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
             Theoretical Ideal Gear Optimizer
           </CardTitle>
           <CardDescription className="text-zinc-400">
-            Calculate the mathematically perfect distribution of 32 tune lines across 8 gears to maximize Normal Damage.
+            Calculate the mathematically perfect distribution of 48 tune lines to maximize Normal Damage.
             <br />
             <span className="text-xs text-amber-500/80 mt-1 block">
-              * Optimization based on {rotation?.skills.length ? "the active Skill Rotation" : "a single normal attack"}, Level 91 stats, and all base rates tuned using 29 lines + 3 reserved lines for specific DMG Boosts.
+              * Optimization based on {rotation?.skills.length ? "the active Skill Rotation" : "a single normal attack"} and Level 91 stats.
             </span>
           </CardDescription>
         </CardHeader>
@@ -90,10 +96,10 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 
             <Button
               onClick={handleCalculate}
-              disabled={isCalculating}
+              disabled={loading}
               className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {isCalculating ? (
+              {loading ? (
                 <>
                   <Loader2 size={16} className="mr-2 animate-spin" />
                   Calculating...
@@ -105,7 +111,31 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                 </>
               )}
             </Button>
+            {loading && (
+              <Button
+                onClick={cancel}
+                variant="outline"
+                className="w-full sm:w-auto border-emerald-500/40 text-emerald-200"
+              >
+                Cancel
+              </Button>
+            )}
           </div>
+          {loading && progress.total > 0 && (
+            <div className="mt-4 space-y-2">
+              <Progress value={progressPct} className="h-2 bg-zinc-800" />
+              <div className="text-xs text-zinc-400">
+                {Math.min(progress.current, progress.total).toLocaleString()} /
+                {" "}
+                {progress.total.toLocaleString()}
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              {error}
+            </div>
+          )}
         </CardContent>
       </Card>
 

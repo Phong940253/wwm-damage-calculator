@@ -46,7 +46,7 @@ import {
   getTuneSystemStatPool,
   isTuneTargetAllowedBySubRules,
 } from "@/app/domain/gear/tuneAdvisor";
-import { calculateIdealGearStats, IdealGearResult } from "@/app/domain/gear/idealOptimizer";
+import type { IdealGearResult } from "@/app/domain/gear/idealOptimizer";
 
 const LEFT_SLOT_ORDER: GearSlot[] = ["weapon_1", "weapon_2", "disc", "pendant"];
 const RIGHT_SLOT_ORDER: GearSlot[] = ["head", "chest", "leg", "hand"];
@@ -262,7 +262,7 @@ export default function GearEquippedTab() {
       parts.push(k, Number(v?.current ?? 0), Number(v?.increase ?? 0));
     }
     parts.push("el:", es.selected ?? "");
-    
+
     // es has explicit type ElementStats, but we need to access its properties safely if they are nested or not in the type definition, 
     // but based on typical usage, it seems safe. The previous 'any' was likely for flexibility in key access.
     // Let's use Object.entries to iterate safely.
@@ -594,19 +594,18 @@ export default function GearEquippedTab() {
   }, [elementStats.selected, selectedRotation]);
 
   const idealGearResult = useMemo(() => {
-    // Prefer cached result to avoid expensive recomputation.
-    if (cachedIdealResult) return cachedIdealResult;
-    return calculateIdealGearStats(elementStats.selected, selectedRotation, stats, elementStats);
-  }, [cachedIdealResult, selectedRotation, stats, elementStats]);
+    return cachedIdealResult;
+  }, [cachedIdealResult]);
 
   const theoreticalMaxDamage = useMemo(() => {
+    if (!idealGearResult) return 0;
     return calcWithCache(
       stats,
       elementStats,
       idealGearResult.stats,
       selectedRotation
     );
-  }, [stats, elementStats, idealGearResult.stats, selectedRotation, calcWithCache]);
+  }, [stats, elementStats, idealGearResult, selectedRotation, calcWithCache]);
 
   return (
     <div className="space-y-4">

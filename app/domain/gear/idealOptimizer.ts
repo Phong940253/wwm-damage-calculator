@@ -28,6 +28,13 @@ export interface IdealGearResult {
   stats: Record<string, number>; // total stat value from these lines
 }
 
+export class IdealGearCancelledError extends Error {
+  constructor() {
+    super("Ideal gear optimization cancelled");
+    this.name = "IdealGearCancelledError";
+  }
+}
+
 function evaluateDamage(
   gearBonus: Record<string, number>,
   path: ElementKey,
@@ -111,7 +118,13 @@ export function calculateIdealGearStats(
   rotation?: Rotation,
   baseStats?: InputStats,
   baseElementStats?: ElementStats,
+  options?: {
+    onProgress?: (current: number, total: number) => void;
+    signal?: AbortSignal;
+  },
 ): IdealGearResult {
+  const onProgress = options?.onProgress;
+  const signal = options?.signal;
   const TOTAL_LINES = 48;
   const MAX_LINES_PER_STAT = 8;
   const CANDIDATE_STATS = [
@@ -231,11 +244,55 @@ export function calculateIdealGearStats(
     }
   };
 
+  const countRandomCombinations = (caps: number[], remaining: number) => {
+    const memo = new Map<string, number>();
+    const walk = (index: number, leftover: number): number => {
+      const key = `${index}:${leftover}`;
+      const cached = memo.get(key);
+      if (cached !== undefined) return cached;
+      if (index >= caps.length) return leftover === 0 ? 1 : 0;
+
+      let total = 0;
+      const max = Math.min(caps[index], leftover);
+      for (let v = 0; v <= max; v += 1) {
+        total += walk(index + 1, leftover - v);
+      }
+      memo.set(key, total);
+      return total;
+    };
+    return walk(0, remaining);
+  };
+
   const currentBonus: Record<string, number> = { ...baseGearBonus };
 
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
   let bestAllocations: Record<string, number> | null = null;
+
+  let progressCurrent = 0;
+  let lastProgress = 0;
+  let lastProgressAt = 0;
+  let progressTotal = 0;
+  const progressStep = 1000;
+
+  const throwIfCancelled = () => {
+    if (signal?.aborted) throw new IdealGearCancelledError();
+  };
+
+  const reportProgress = (force = false) => {
+    if (!onProgress) return;
+    const now = Date.now();
+    if (
+      force ||
+      progressCurrent === progressTotal ||
+      progressCurrent - lastProgress >= progressStep ||
+      now - lastProgressAt >= 200
+    ) {
+      lastProgress = progressCurrent;
+      lastProgressAt = now;
+      onProgress(progressCurrent, progressTotal);
+    }
+  };
 
   const applyLines = (statIndex: number, delta: number) => {
     if (delta === 0) return;
@@ -257,6 +314,7 @@ export function calculateIdealGearStats(
   };
 
   const recordBest = () => {
+    throwIfCancelled();
     const evalResult = evaluateDamage(
       currentBonus,
       path,
@@ -264,6 +322,8 @@ export function calculateIdealGearStats(
       baseStats,
       baseElementStats,
     );
+    progressCurrent += 1;
+    reportProgress();
     if (evalResult.dmg <= bestDamage) return;
     bestDamage = evalResult.dmg;
     bestBonus = { ...currentBonus };
@@ -271,6 +331,7 @@ export function calculateIdealGearStats(
   };
 
   const searchRandom = (statIndex: number, remaining: number) => {
+    throwIfCancelled();
     if (statIndex === candidateCount) {
       if (remaining === 0) {
         for (const plan of specialCountPlans) {
@@ -296,6 +357,13 @@ export function calculateIdealGearStats(
 
   buildSpecialCountPlans(0);
 
+  const randomComboCount =
+    randomLineCount > 0
+      ? countRandomCombinations(maxRandomLines, randomLineCount)
+      : 1;
+  progressTotal = specialCountPlans.length * randomComboCount;
+  reportProgress(true);
+
   if (randomLineCount <= 0) {
     for (const plan of specialCountPlans) {
       for (const index of plan.indices) {
@@ -309,6 +377,8 @@ export function calculateIdealGearStats(
   } else {
     searchRandom(0, randomLineCount);
   }
+
+  reportProgress(true);
 
   return {
     path,

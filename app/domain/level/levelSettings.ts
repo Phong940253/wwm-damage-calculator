@@ -67,16 +67,19 @@ function safeParseStoredNumber(raw: string | null): number | null {
 }
 
 export function getStoredLevelContext(): LevelContext {
+  const storage =
+    typeof globalThis !== "undefined"
+      ? (globalThis as { localStorage?: Storage }).localStorage
+      : undefined;
+
   // SSR / worker-safe fallback
-  if (typeof window === "undefined" || !window.localStorage) {
-    return DEFAULT_LEVEL_CONTEXT;
-  }
+  if (!storage) return DEFAULT_LEVEL_CONTEXT;
 
   const storedPlayer = safeParseStoredNumber(
-    window.localStorage.getItem(LEVEL_STORAGE_KEYS.player),
+    storage.getItem(LEVEL_STORAGE_KEYS.player),
   );
   const storedEnemy = safeParseStoredNumber(
-    window.localStorage.getItem(LEVEL_STORAGE_KEYS.enemy),
+    storage.getItem(LEVEL_STORAGE_KEYS.enemy),
   );
 
   return {
@@ -90,17 +93,22 @@ export function getStoredLevelContext(): LevelContext {
 }
 
 export function setStoredLevelContext(next: Partial<LevelContext>) {
-  if (typeof window === "undefined" || !window.localStorage) return;
+  const storage =
+    typeof globalThis !== "undefined"
+      ? (globalThis as { localStorage?: Storage }).localStorage
+      : undefined;
+
+  if (!storage) return;
 
   if (typeof next.playerLevel === "number") {
-    window.localStorage.setItem(
+    storage.setItem(
       LEVEL_STORAGE_KEYS.player,
       String(clampToSupportedPlayerLevel(next.playerLevel)),
     );
   }
 
   if (typeof next.enemyLevel === "number") {
-    window.localStorage.setItem(
+    storage.setItem(
       LEVEL_STORAGE_KEYS.enemy,
       String(clampToSupportedEnemyLevel(next.enemyLevel)),
     );
@@ -108,7 +116,9 @@ export function setStoredLevelContext(next: Partial<LevelContext>) {
 
   // Notify in-tab listeners (storage event doesn't fire in the same tab).
   try {
-    window.dispatchEvent(new Event("wwm_level_context_changed"));
+    (globalThis as { dispatchEvent?: (ev: Event) => void }).dispatchEvent?.(
+      new Event("wwm_level_context_changed"),
+    );
   } catch {
     // ignore
   }
