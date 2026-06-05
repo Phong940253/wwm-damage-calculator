@@ -34,7 +34,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
-  const { loading, progress, result, error, run, cancel, mode } =
+  const { loading, progress, result, setResult, error, run, cancel, mode } =
     useIdealGearOptimize(stats, elementStats, rotation);
 
   const damageResult = useDamage(
@@ -51,6 +51,31 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const handleFastCalculate = () => {
     run(path, { mode: "fast", timeMs: 60_000, workers: workerCount });
   };
+
+  // Load from localStorage
+  useEffect(() => {
+    if (loading) return;
+    try {
+      const rotationKey =
+        (rotation?.skills ?? []).map((s) => s.id).join(",") || "no-rot";
+      const storageKey = `idealGearResult:${path}:${rotationKey}`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.result && parsed.result.path === path) {
+          setResult(parsed.result);
+        }
+      } else {
+        // If no saved result for this path/rotation, and the current result 
+        // doesn't match the current path, clear it.
+        if (result && result.path !== path) {
+          setResult(null);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [path, rotation, loading, setResult]);
 
   useEffect(() => {
     if (!result) return;

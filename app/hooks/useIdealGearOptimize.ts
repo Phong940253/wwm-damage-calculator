@@ -264,6 +264,7 @@ export function useIdealGearOptimize(
     mode: activeMode,
     progress,
     result,
+    setResult,
     run,
     cancel,
   };
