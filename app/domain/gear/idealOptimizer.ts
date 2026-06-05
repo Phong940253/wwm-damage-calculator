@@ -373,12 +373,14 @@ export function calculateIdealGearStats(
     return snapshot;
   };
 
-  const recordBest = (specialSequence: string[], specialCountsPlan: number[]) => {
+  const recordBest = (
+    specialSequence: string[],
+    specialCountsPlan: number[],
+  ) => {
     throwIfCancelled();
 
     // STRICT: No duplicate stats in one gear means total count for any stat (Special + Random + Fixed) <= 8
     for (let i = 0; i < candidateCount; i++) {
-      const stat = candidateStats[i];
       const total = allocations[i] + specialCountsPlan[i];
       if (total > MAX_LINES_PER_STAT) return;
     }
@@ -447,7 +449,7 @@ export function calculateIdealGearStats(
       for (const index of plan.indices) {
         applyLines(index, plan.counts[index]);
       }
-      recordBest(plan.sequence);
+      recordBest(plan.sequence, plan.counts);
       for (const index of plan.indices) {
         applyLines(index, -plan.counts[index]);
       }
@@ -489,7 +491,9 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
   // Define Fixed Stats (Slot 6)
   const getSlot6Stat = (gearId: number) => {
     if (path !== "bellstrike") return null;
-    return gearId <= 4 ? "PhysicalPenetration" : "NamelessSwordChargedSkillDMGBoost";
+    return gearId <= 4
+      ? "PhysicalPenetration"
+      : "NamelessSwordChargedSkillDMGBoost";
   };
 
   // Define Exclusive Placements (to be placed in slots 2-5)
@@ -500,10 +504,13 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
   };
 
   const tuningCounts: Record<string, number> = { ...allocations };
-  
+
   // Deduct Special Lines (Slot 1)
   for (const gear of gears) {
-    tuningCounts[gear.specialLine] = Math.max(0, (tuningCounts[gear.specialLine] || 0) - 1);
+    tuningCounts[gear.specialLine] = Math.max(
+      0,
+      (tuningCounts[gear.specialLine] || 0) - 1,
+    );
   }
 
   // Place Fixed Stats (Slot 6)
@@ -521,7 +528,8 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
       const gear = gears.find((g) => g.id === gearId);
       if (gear) {
         // STRICT: No duplicate stats in one gear (Special Slot + Fixed Slot + Tuning Slots)
-        const hasStat = gear.specialLine === stat || gear.tuningLines.includes(stat);
+        const hasStat =
+          gear.specialLine === stat || gear.tuningLines.includes(stat);
         if (gear.tuningLines.length < 5 && !hasStat) {
           gear.tuningLines.push(stat);
           tuningCounts[stat]--;
@@ -535,16 +543,16 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
   Object.entries(tuningCounts).forEach(([stat, count]) => {
     for (let i = 0; i < count; i++) tuningPool.push(stat);
   });
-  
+
   // Sort by frequency (desc)
   tuningPool.sort((a, b) => (tuningCounts[b] || 0) - (tuningCounts[a] || 0));
 
   for (const stat of tuningPool) {
     let placed = false;
     for (const gear of gears) {
-      if (gear.tuningLines.length >= 5) continue; 
+      if (gear.tuningLines.length >= 5) continue;
 
-      // ALLOW: Special line can duplicate tuning lines. 
+      // ALLOW: Special line can duplicate tuning lines.
       // STRICT: No duplicate stats among tuning lines.
       const hasStat = gear.tuningLines.includes(stat);
       if (!hasStat) {
@@ -569,7 +577,7 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
     for (const gear of gears) {
       const fixedStat = getSlot6Stat(gear.id);
       if (!fixedStat) continue;
-      
+
       const fixedIdx = gear.tuningLines.indexOf(fixedStat);
       if (fixedIdx !== -1) {
         gear.tuningLines.splice(fixedIdx, 1);
@@ -681,7 +689,7 @@ export function calculateIdealGearStatsFast(
     const remainingCaps = [...randomCaps];
 
     let remaining = randomLineCount;
-    let openStats = remainingCaps
+    const openStats = remainingCaps
       .map((cap, index) => (cap > 0 ? index : -1))
       .filter((index) => index >= 0);
 
