@@ -139,7 +139,7 @@ const SINGLE_LINE_STATS = new Set<CandidateStat>([
 ]);
 
 const SPECIAL_LINE_POOLS: CandidateStat[][] = [
-  // DONT CHANGE THE ORDER OF THESE POOLS UNLESS YOU KNOW WHAT YOU'RE DOING, ideal gear distribution relies on the order to assign lines to gears correctly
+  // DONT CHANGE THE ORDER OF THESE POOLS ANYWAY, IT AFFECTS THE ALLOCATION STRATEGY
   // 1-2: bellstrikeMax, MaxPhysicalAttack, Power, Momentum
   ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
   ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
@@ -373,8 +373,16 @@ export function calculateIdealGearStats(
     return snapshot;
   };
 
-  const recordBest = (specialSequence: string[]) => {
+  const recordBest = (specialSequence: string[], specialCountsPlan: number[]) => {
     throwIfCancelled();
+
+    // STRICT: No duplicate stats in one gear means total count for any stat (Special + Random + Fixed) <= 8
+    for (let i = 0; i < candidateCount; i++) {
+      const stat = candidateStats[i];
+      const total = allocations[i] + specialCountsPlan[i];
+      if (total > MAX_LINES_PER_STAT) return;
+    }
+
     const evalResult = evaluateDamage(
       currentBonus,
       path,
@@ -399,7 +407,7 @@ export function calculateIdealGearStats(
           for (const index of plan.indices) {
             applyLines(index, plan.counts[index]);
           }
-          recordBest(plan.sequence);
+          recordBest(plan.sequence, plan.counts);
           for (const index of plan.indices) {
             applyLines(index, -plan.counts[index]);
           }
@@ -471,64 +479,81 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
   const { path, specialLines, allocations } = result;
   if (!specialLines || specialLines.length < 8) return [];
 
-  // Create gears with their slot 1 (special) and slot 6 (fixed if bellstrike)
-  const gears: IdealGear[] = Array.from({ length: 8 }, (_, i) => {
-    const gear: IdealGear = {
-      id: i + 1,
-      specialLine: specialLines[i],
-      tuningLines: [],
-    };
+  // Initialize gears with special line (slot 1) and fixed lines (slot 6)
+  const gears: IdealGear[] = Array.from({ length: 8 }, (_, i) => ({
+    id: i + 1,
+    specialLine: specialLines[i],
+    tuningLines: [],
+  }));
 
-    // If path is bellstrike, slot 6 is fixed
-    if (path === "bellstrike") {
-      const slot6 =
-        i < 4
-          ? "PhysicalPenetration"
-          : "NamelessSwordChargedSkillDMGBoost";
-      gear.tuningLines.push(slot6);
-    }
-    return gear;
-  });
+  // Define Fixed Stats (Slot 6)
+  const getSlot6Stat = (gearId: number) => {
+    if (path !== "bellstrike") return null;
+    return gearId <= 4 ? "PhysicalPenetration" : "NamelessSwordChargedSkillDMGBoost";
+  };
 
-  // Calculate remaining lines to be distributed (48 total - 8 special - 8 fixed/random)
-  // We want to fill each gear to 6 lines total.
+  // Define Exclusive Placements (to be placed in slots 2-5)
+  const exclusivePlacements: Record<string, number> = {
+    ArtOfSwordDMGBoost: 1, // Gear 1
+    AllMartialArtsBoost: 3, // Gear 3
+    CombatBoostAgainstBossUnits: 7, // Gear 7
+  };
+
   const tuningCounts: Record<string, number> = { ...allocations };
   
-  // Deduct already placed lines from the pool
+  // Deduct Special Lines (Slot 1)
   for (const gear of gears) {
     tuningCounts[gear.specialLine] = Math.max(0, (tuningCounts[gear.specialLine] || 0) - 1);
-    for (const stat of gear.tuningLines) {
-      tuningCounts[stat] = Math.max(0, (tuningCounts[stat] || 0) - 1);
+  }
+
+  // Place Fixed Stats (Slot 6)
+  for (const gear of gears) {
+    const slot6 = getSlot6Stat(gear.id);
+    if (slot6 && tuningCounts[slot6] > 0) {
+      gear.tuningLines.push(slot6);
+      tuningCounts[slot6]--;
     }
   }
 
+  // Place Exclusive Boosts (Slots 2-5)
+  for (const [stat, gearId] of Object.entries(exclusivePlacements)) {
+    if (tuningCounts[stat] > 0) {
+      const gear = gears.find((g) => g.id === gearId);
+      if (gear) {
+        // STRICT: No duplicate stats in one gear (Special Slot + Fixed Slot + Tuning Slots)
+        const hasStat = gear.specialLine === stat || gear.tuningLines.includes(stat);
+        if (gear.tuningLines.length < 5 && !hasStat) {
+          gear.tuningLines.push(stat);
+          tuningCounts[stat]--;
+        }
+      }
+    }
+  }
+
+  // Place remaining stats into Slots 2-5
   const tuningPool: string[] = [];
-  const sortedStats = Object.entries(tuningCounts)
-    .filter(([_, count]) => count > 0)
-    .sort((a, b) => b[1] - a[1]);
-
-  for (const [stat, count] of sortedStats) {
-    for (let i = 0; i < count; i++) {
-      tuningPool.push(stat);
-    }
-  }
+  Object.entries(tuningCounts).forEach(([stat, count]) => {
+    for (let i = 0; i < count; i++) tuningPool.push(stat);
+  });
+  
+  // Sort by frequency (desc)
+  tuningPool.sort((a, b) => (tuningCounts[b] || 0) - (tuningCounts[a] || 0));
 
   for (const stat of tuningPool) {
     let placed = false;
     for (const gear of gears) {
-      if (gear.tuningLines.length >= 5) continue; // Slot 1 special + 5 tuning = 6 total
+      if (gear.tuningLines.length >= 5) continue; 
 
-      // Max 2 same lines per gear (including special line)
-      const countInGear =
-        (gear.specialLine === stat ? 1 : 0) +
-        gear.tuningLines.filter((s) => s === stat).length;
-
-      if (countInGear < 2) {
+      // ALLOW: Special line can duplicate tuning lines. 
+      // STRICT: No duplicate stats among tuning lines.
+      const hasStat = gear.tuningLines.includes(stat);
+      if (!hasStat) {
         gear.tuningLines.push(stat);
         placed = true;
         break;
       }
     }
+    // Fallback: If strict uniqueness fails, force fill anyway to ensure 6 total lines
     if (!placed) {
       for (const gear of gears) {
         if (gear.tuningLines.length < 5) {
@@ -539,14 +564,16 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
     }
   }
 
-  // Sort tuning lines so that the fixed line (if any) is at the end (slot 6)
+  // Ensure Slot 6 is always the fixed stat if it exists
   if (path === "bellstrike") {
     for (const gear of gears) {
-      const fixedStat = gear.id <= 4 ? "PhysicalPenetration" : "NamelessSwordChargedSkillDMGBoost";
+      const fixedStat = getSlot6Stat(gear.id);
+      if (!fixedStat) continue;
+      
       const fixedIdx = gear.tuningLines.indexOf(fixedStat);
       if (fixedIdx !== -1) {
         gear.tuningLines.splice(fixedIdx, 1);
-        gear.tuningLines.push(fixedStat);
+        gear.tuningLines.push(fixedStat); // Move to end
       }
     }
   }
