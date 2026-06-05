@@ -139,12 +139,17 @@ const SINGLE_LINE_STATS = new Set<CandidateStat>([
 ]);
 
 const SPECIAL_LINE_POOLS: CandidateStat[][] = [
+  // DONT CHANGE THE ORDER OF THESE POOLS UNLESS YOU KNOW WHAT YOU'RE DOING, ideal gear distribution relies on the order to assign lines to gears correctly
+  // 1-2: bellstrikeMax, MaxPhysicalAttack, Power, Momentum
   ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
   ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
-  ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
-  ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+  // 3-4: MaxPhysicalAttack
+  ["MaxPhysicalAttack"],
+  ["MaxPhysicalAttack"],
+  // 5-6: CriticalRate, AffinityRate
   ["CriticalRate", "AffinityRate"],
   ["CriticalRate", "AffinityRate"],
+  // 7-8: AffinityRate, CriticalRate, Power
   ["AffinityRate", "CriticalRate", "Power"],
   ["AffinityRate", "CriticalRate", "Power"],
 ];
@@ -248,21 +253,25 @@ export function calculateIdealGearStats(
       .filter((i) => i >= 0),
   );
 
-  const specialCountPlans: Array<{ counts: number[]; indices: number[] }> = [];
+  const specialCountPlans: Array<{
+    counts: number[];
+    indices: number[];
+    sequence: string[];
+  }> = [];
   const specialCounts = Array.from({ length: candidateCount }, () => 0);
-  const specialCountKeys = new Set<string>();
+  const currentSpecialSequence: string[] = [];
 
   const buildSpecialCountPlans = (slotIndex: number) => {
     if (slotIndex >= specialLinePools.length) {
-      const key = specialCounts.join(",");
-      if (!specialCountKeys.has(key)) {
-        specialCountKeys.add(key);
-        const countsSnapshot = [...specialCounts];
-        const indices = countsSnapshot
-          .map((count, index) => (count ? index : -1))
-          .filter((index) => index >= 0);
-        specialCountPlans.push({ counts: countsSnapshot, indices });
-      }
+      const countsSnapshot = [...specialCounts];
+      const indices = countsSnapshot
+        .map((count, index) => (count ? index : -1))
+        .filter((index) => index >= 0);
+      specialCountPlans.push({
+        counts: countsSnapshot,
+        indices,
+        sequence: [...currentSpecialSequence],
+      });
       return;
     }
 
@@ -272,7 +281,9 @@ export function calculateIdealGearStats(
         continue;
       }
       specialCounts[statIndex] += 1;
+      currentSpecialSequence.push(stat);
       buildSpecialCountPlans(slotIndex + 1);
+      currentSpecialSequence.pop();
       specialCounts[statIndex] -= 1;
     }
   };
@@ -301,10 +312,12 @@ export function calculateIdealGearStats(
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
   let bestAllocations: Record<string, number> | null = null;
+  let bestSpecialLines: string[] = [];
 
   if (options?.initialResult && options.initialResult.path === path) {
     bestBonus = { ...options.initialResult.stats };
     bestAllocations = { ...options.initialResult.allocations };
+    bestSpecialLines = options.initialResult.specialLines || [];
     // Re-evaluate to get accurate benchmark for CURRENT base stats
     const benchmark = evaluateDamage(
       bestBonus,
@@ -360,7 +373,7 @@ export function calculateIdealGearStats(
     return snapshot;
   };
 
-  const recordBest = () => {
+  const recordBest = (specialSequence: string[]) => {
     throwIfCancelled();
     const evalResult = evaluateDamage(
       currentBonus,
@@ -375,6 +388,7 @@ export function calculateIdealGearStats(
     bestDamage = evalResult.dmg;
     bestBonus = { ...currentBonus };
     bestAllocations = snapshotAllocations();
+    bestSpecialLines = [...specialSequence];
   };
 
   const searchRandom = (statIndex: number, remaining: number) => {
@@ -385,7 +399,7 @@ export function calculateIdealGearStats(
           for (const index of plan.indices) {
             applyLines(index, plan.counts[index]);
           }
-          recordBest();
+          recordBest(plan.sequence);
           for (const index of plan.indices) {
             applyLines(index, -plan.counts[index]);
           }
@@ -425,7 +439,7 @@ export function calculateIdealGearStats(
       for (const index of plan.indices) {
         applyLines(index, plan.counts[index]);
       }
-      recordBest();
+      recordBest(plan.sequence);
       for (const index of plan.indices) {
         applyLines(index, -plan.counts[index]);
       }
@@ -441,9 +455,103 @@ export function calculateIdealGearStats(
     maxDamage: bestDamage,
     allocations: bestAllocations || snapshotAllocations(),
     stats: bestBonus || { ...currentBonus },
+    specialLines: bestSpecialLines,
     mode: "exhaustive",
     elapsedMs: Date.now() - startTime,
   };
+}
+
+export interface IdealGear {
+  id: number;
+  specialLine: string;
+  tuningLines: string[];
+}
+
+export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
+  const { path, specialLines, allocations } = result;
+  if (!specialLines || specialLines.length < 8) return [];
+
+  // Create gears with their slot 1 (special) and slot 6 (fixed if bellstrike)
+  const gears: IdealGear[] = Array.from({ length: 8 }, (_, i) => {
+    const gear: IdealGear = {
+      id: i + 1,
+      specialLine: specialLines[i],
+      tuningLines: [],
+    };
+
+    // If path is bellstrike, slot 6 is fixed
+    if (path === "bellstrike") {
+      const slot6 =
+        i < 4
+          ? "PhysicalPenetration"
+          : "NamelessSwordChargedSkillDMGBoost";
+      gear.tuningLines.push(slot6);
+    }
+    return gear;
+  });
+
+  // Calculate remaining lines to be distributed (48 total - 8 special - 8 fixed/random)
+  // We want to fill each gear to 6 lines total.
+  const tuningCounts: Record<string, number> = { ...allocations };
+  
+  // Deduct already placed lines from the pool
+  for (const gear of gears) {
+    tuningCounts[gear.specialLine] = Math.max(0, (tuningCounts[gear.specialLine] || 0) - 1);
+    for (const stat of gear.tuningLines) {
+      tuningCounts[stat] = Math.max(0, (tuningCounts[stat] || 0) - 1);
+    }
+  }
+
+  const tuningPool: string[] = [];
+  const sortedStats = Object.entries(tuningCounts)
+    .filter(([_, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  for (const [stat, count] of sortedStats) {
+    for (let i = 0; i < count; i++) {
+      tuningPool.push(stat);
+    }
+  }
+
+  for (const stat of tuningPool) {
+    let placed = false;
+    for (const gear of gears) {
+      if (gear.tuningLines.length >= 5) continue; // Slot 1 special + 5 tuning = 6 total
+
+      // Max 2 same lines per gear (including special line)
+      const countInGear =
+        (gear.specialLine === stat ? 1 : 0) +
+        gear.tuningLines.filter((s) => s === stat).length;
+
+      if (countInGear < 2) {
+        gear.tuningLines.push(stat);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      for (const gear of gears) {
+        if (gear.tuningLines.length < 5) {
+          gear.tuningLines.push(stat);
+          break;
+        }
+      }
+    }
+  }
+
+  // Sort tuning lines so that the fixed line (if any) is at the end (slot 6)
+  if (path === "bellstrike") {
+    for (const gear of gears) {
+      const fixedStat = gear.id <= 4 ? "PhysicalPenetration" : "NamelessSwordChargedSkillDMGBoost";
+      const fixedIdx = gear.tuningLines.indexOf(fixedStat);
+      if (fixedIdx !== -1) {
+        gear.tuningLines.splice(fixedIdx, 1);
+        gear.tuningLines.push(fixedStat);
+      }
+    }
+  }
+
+  return gears;
 }
 
 export function calculateIdealGearStatsFast(
@@ -483,10 +591,12 @@ export function calculateIdealGearStatsFast(
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
   let bestAllocations: Record<string, number> | null = null;
+  let bestSpecialLines: string[] = [];
 
   if (options?.initialResult && options.initialResult.path === path) {
     bestBonus = { ...options.initialResult.stats };
     bestAllocations = { ...options.initialResult.allocations };
+    bestSpecialLines = options.initialResult.specialLines || [];
     // Re-evaluate to get accurate benchmark for CURRENT base stats
     const benchmark = evaluateDamage(
       bestBonus,
@@ -540,6 +650,7 @@ export function calculateIdealGearStatsFast(
     iterations += 1;
     const allocations = Array.from({ length: candidateCount }, () => 0);
     const currentBonus: Record<string, number> = { ...baseGearBonus };
+    const currentSpecialLines: string[] = [];
     const remainingCaps = [...randomCaps];
 
     let remaining = randomLineCount;
@@ -567,9 +678,10 @@ export function calculateIdealGearStatsFast(
     for (const pool of specialPools) {
       const statIndex = pool[Math.floor(rand() * pool.length)];
       allocations[statIndex] += 1;
-      currentBonus[candidateStats[statIndex]] =
-        (currentBonus[candidateStats[statIndex]] || 0) +
-        perLineValues[statIndex];
+      const statName = candidateStats[statIndex];
+      currentBonus[statName] =
+        (currentBonus[statName] || 0) + perLineValues[statIndex];
+      currentSpecialLines.push(statName);
     }
 
     const evalResult = evaluateDamage(
@@ -583,6 +695,7 @@ export function calculateIdealGearStatsFast(
       bestDamage = evalResult.dmg;
       bestBonus = { ...currentBonus };
       bestAllocations = snapshotAllocations(allocations);
+      bestSpecialLines = [...currentSpecialLines];
     }
 
     reportProgress();
@@ -596,6 +709,7 @@ export function calculateIdealGearStatsFast(
     allocations:
       bestAllocations || snapshotAllocations(new Array(candidateCount).fill(0)),
     stats: bestBonus || { ...baseGearBonus },
+    specialLines: bestSpecialLines,
     mode: "fast",
     elapsedMs: Date.now() - startTime,
     iterations,

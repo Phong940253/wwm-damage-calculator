@@ -20,6 +20,8 @@ import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import DamagePanel from "@/app/ui/damage/DamagePanel";
 import { useIdealGearOptimize } from "@/app/hooks/useIdealGearOptimize";
 
+import { distributeStatsToGears, IdealGear } from "@/app/domain/gear/idealOptimizer";
+
 export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const [path, setPath] = useState<ElementKey>("bellstrike");
   const maxWorkers =
@@ -37,6 +39,11 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const { loading, progress, result, setResult, error, run, cancel, mode } =
     useIdealGearOptimize(stats, elementStats, rotation);
 
+  const gears = React.useMemo(() => {
+    if (!result) return [];
+    return distributeStatsToGears(result);
+  }, [result]);
+
   const damageResult = useDamage(
     stats,
     elementStats,
@@ -50,6 +57,10 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 
   const handleFastCalculate = () => {
     run(path, { mode: "fast", timeMs: 60_000, workers: workerCount });
+  };
+
+  const handleSuperFastCalculate = () => {
+    run(path, { mode: "fast", timeMs: 10_000, workers: workerCount });
   };
 
   // Load from localStorage
@@ -185,6 +196,14 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
             >
               Fast 1 min
             </Button>
+            <Button
+              onClick={handleSuperFastCalculate}
+              disabled={loading}
+              variant="outline"
+              className="w-full sm:w-auto border-emerald-500/40 text-emerald-200"
+            >
+              Fast 10s
+            </Button>
             {loading && (
               <Button
                 onClick={cancel}
@@ -237,6 +256,26 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
+            {/* Gear Grid Visualization */}
+            <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-8">
+              {/* Left Side: Gears 1, 2, 3, 4 */}
+              <div className="grid grid-cols-2 gap-4">
+                {[0, 1, 2, 3].map((idx) => {
+                  const gear = gears[idx];
+                  if (!gear) return null;
+                  return <IdealGearCard key={idx} gear={gear} getStatLabel={getStatLabel} />;
+                })}
+              </div>
+              {/* Right Side: Gears 5, 6, 7, 8 */}
+              <div className="grid grid-cols-2 gap-4">
+                {[4, 5, 6, 7].map((idx) => {
+                  const gear = gears[idx];
+                  if (!gear) return null;
+                  return <IdealGearCard key={idx} gear={gear} getStatLabel={getStatLabel} />;
+                })}
+              </div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Object.entries(result.allocations).sort((a, b) => b[1] - a[1]).map(([statKey, lines]) => {
                 const totalVal = result.stats[statKey];
@@ -273,6 +312,84 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+const getStatColor = (key: string) => {
+  if (key.includes("Attack") || key === "Power") return "text-red-400";
+  if (key.includes("Rate") || key.includes("Critical") || key.includes("Affinity")) return "text-emerald-400";
+  if (key.includes("Boost") || key.includes("DMGBonus")) return "text-sky-400";
+  if (key.includes("Momentum") || key.includes("bellstrike")) return "text-purple-400";
+  if (key.includes("Penetration")) return "text-orange-400";
+  return "text-zinc-400";
+};
+
+function IdealGearCard({ gear, getStatLabel }: { gear: IdealGear, getStatLabel: (k: string) => string }) {
+  return (
+    <div className="flex flex-col rounded-xl bg-zinc-900/40 border border-zinc-800/60 shadow-sm hover:border-emerald-500/30 transition-all duration-300 group overflow-hidden h-full">
+      {/* Header */}
+      <div className="bg-zinc-900/80 px-3 py-2 border-b border-zinc-800/80 flex justify-between items-center group-hover:bg-zinc-800/90 transition-colors">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+          <span className="text-[10px] font-black text-zinc-500 tracking-widest">GEAR-{gear.id.toString().padStart(2, '0')}</span>
+        </div>
+        <Badge variant="outline" className="h-4 text-[9px] border-zinc-700 text-zinc-500 uppercase px-1.5 font-bold">Optimal</Badge>
+      </div>
+
+      <div className="p-3 space-y-2.5 flex-grow">
+        {/* Slot 1: Special Line (The "Primary") */}
+        <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent p-2.5 border border-amber-500/20 shadow-[inset_0_0_12px_rgba(245,158,11,0.05)]">
+          <div className="flex items-center gap-2.5 relative z-10">
+            <div className="p-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <Zap size={14} className="fill-amber-400/20" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-amber-600 uppercase tracking-tighter leading-none mb-0.5">Primary Slot</span>
+              <span className="text-xs font-bold text-amber-200 leading-tight">
+                {getStatLabel(gear.specialLine)}
+              </span>
+            </div>
+          </div>
+          <div className="absolute -top-1 -right-1 p-1 opacity-[0.03] rotate-12">
+            <Cpu size={48} />
+          </div>
+        </div>
+
+        {/* Slots 2-6: Tuning Lines */}
+        <div className="space-y-1">
+          {gear.tuningLines.map((stat, i) => {
+            const isFixed = i === 4; // Slot 6
+            const statColor = isFixed ? "text-blue-300" : getStatColor(stat);
+            
+            return (
+              <div 
+                key={i} 
+                className={`
+                  flex items-center justify-between px-2.5 py-2 rounded-md text-[11px] font-medium transition-all duration-200
+                  ${isFixed 
+                    ? "bg-blue-500/10 border border-blue-500/20 shadow-[inset_0_0_8px_rgba(59,130,246,0.05)]" 
+                    : "bg-zinc-950/40 border border-zinc-800/40 hover:bg-zinc-800/60 hover:border-zinc-700/60"
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2.5">
+                  {isFixed ? (
+                    <Target size={12} className="text-blue-400" />
+                  ) : (
+                    <div className={`w-1 h-1 rounded-full ${statColor.replace('text', 'bg').replace('400', '500/50')}`} />
+                  )}
+                  <span className={`truncate max-w-[140px] ${statColor}`}>{getStatLabel(stat)}</span>
+                </div>
+                
+                {isFixed && (
+                  <Badge className="h-4 text-[8px] bg-blue-500/20 text-blue-400 border border-blue-400/20 px-1 uppercase font-black tracking-tighter">Fixed</Badge>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
