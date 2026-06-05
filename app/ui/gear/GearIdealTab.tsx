@@ -317,11 +317,14 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 }
 
 const getStatColor = (key: string) => {
-  if (key.includes("Attack") || key === "Power") return "text-red-400";
+  if (key === "MaxPhysicalAttack") return "text-red-400";
+  if (key === "Power") return "text-orange-400";
+  if (key === "Momentum") return "text-purple-400";
+  if (key === "bellstrikeMax") return "text-indigo-400";
+  if (key.includes("Attack")) return "text-red-300";
   if (key.includes("Rate") || key.includes("Critical") || key.includes("Affinity")) return "text-emerald-400";
   if (key.includes("Boost") || key.includes("DMGBonus")) return "text-sky-400";
-  if (key.includes("Momentum") || key.includes("bellstrike")) return "text-purple-400";
-  if (key.includes("Penetration")) return "text-orange-400";
+  if (key.includes("Penetration")) return "text-pink-400";
   return "text-zinc-400";
 };
 
@@ -346,7 +349,7 @@ function IdealGearCard({ gear, getStatLabel }: { gear: IdealGear, getStatLabel: 
             </div>
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-amber-600 uppercase tracking-tighter leading-none mb-0.5">Primary Slot</span>
-              <span className="text-xs font-bold text-amber-200 leading-tight">
+              <span className={`text-xs font-bold leading-tight ${getStatColor(gear.specialLine)}`}>
                 {getStatLabel(gear.specialLine)}
               </span>
             </div>
