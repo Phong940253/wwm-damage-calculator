@@ -5,6 +5,7 @@ import type { ElementStats, InputStats, Rotation } from "@/app/types";
 import type { ElementKey } from "@/app/constants";
 import {
   calculateIdealGearStats,
+  calculateIdealGearStatsFast,
   IdealGearCancelledError,
   type IdealGearResult,
 } from "@/app/domain/gear/idealOptimizer";
@@ -24,6 +25,9 @@ export function useIdealGearOptimize(
 ) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeMode, setActiveMode] = useState<"exhaustive" | "fast" | null>(
+    null,
+  );
   const [progress, setProgress] = useState<WorkerProgress>({
     current: 0,
     total: 0,
@@ -31,105 +35,186 @@ export function useIdealGearOptimize(
   const [result, setResult] = useState<IdealGearResult | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
-  const workerRef = useRef<Worker | null>(null);
-  const jobIdRef = useRef<string | null>(null);
+  const workersRef = useRef<Worker[]>([]);
+  const activeJobIdsRef = useRef<Set<string>>(new Set());
+  const runTokenRef = useRef<string | null>(null);
 
-  const terminateWorker = useCallback(() => {
-    if (workerRef.current) {
-      workerRef.current.terminate();
+  const terminateWorkers = useCallback(() => {
+    for (const w of workersRef.current) {
+      w.terminate();
     }
-    workerRef.current = null;
-    jobIdRef.current = null;
+    workersRef.current = [];
+    activeJobIdsRef.current.clear();
   }, []);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      terminateWorker();
+      terminateWorkers();
     };
-  }, [terminateWorker]);
+  }, [terminateWorkers]);
 
   const cancel = useCallback(() => {
-    if (workerRef.current && jobIdRef.current) {
-      try {
-        workerRef.current.postMessage({
-          type: "cancel",
-          jobId: jobIdRef.current,
-        });
-      } catch {
-        // ignore
+    for (const id of activeJobIdsRef.current) {
+      for (const w of workersRef.current) {
+        try {
+          w.postMessage({ type: "cancel", jobId: id });
+        } catch {
+          // ignore
+        }
       }
     }
 
     abortRef.current?.abort();
-    terminateWorker();
+    terminateWorkers();
+    runTokenRef.current = null;
     setLoading(false);
-  }, [terminateWorker]);
+  }, [terminateWorkers]);
 
   const run = useCallback(
-    async (path: ElementKey) => {
+    async (
+      path: ElementKey,
+      options?: {
+        mode?: "exhaustive" | "fast";
+        timeMs?: number;
+        workers?: number;
+      },
+    ) => {
       cancel();
       setLoading(true);
       setError(null);
       setProgress({ current: 0, total: 0 });
+      const mode = options?.mode ?? "exhaustive";
+      const timeMs = options?.timeMs ?? 60_000;
+      setActiveMode(mode);
 
       const canUseWorker =
         typeof window !== "undefined" && typeof Worker !== "undefined";
 
       if (canUseWorker) {
         try {
-          const jobId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-          jobIdRef.current = jobId;
+          const runToken = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          runTokenRef.current = runToken;
 
-          const worker = new Worker(
-            new URL("../workers/idealGear.worker.ts", import.meta.url),
-            { type: "module" },
-          );
-          workerRef.current = worker;
+          const hw =
+            typeof navigator !== "undefined" && navigator.hardwareConcurrency
+              ? navigator.hardwareConcurrency
+              : 4;
+          const maxWorkers = Math.max(1, Math.min(8, hw - 1));
+          const workerCount =
+            mode === "fast"
+              ? Math.max(
+                  1,
+                  Math.min(options?.workers ?? maxWorkers, maxWorkers),
+                )
+              : 1;
 
-          worker.onmessage = (event: MessageEvent<WorkerOutMessage>) => {
-            const msg = event.data;
-            if (!msg || msg.jobId !== jobIdRef.current) return;
+          const workers: Worker[] = [];
+          for (let i = 0; i < workerCount; i += 1) {
+            workers.push(
+              new Worker(
+                new URL("../workers/idealGear.worker.ts", import.meta.url),
+                { type: "module" },
+              ),
+            );
+          }
+          workersRef.current = workers;
 
-            if (msg.type === "progress") {
-              setProgress({ current: msg.current, total: msg.total });
-              return;
+          const perJobProgress = new Map<string, WorkerProgress>();
+          const completedTotals = { current: 0, total: 0 };
+          const results: IdealGearResult[] = [];
+          let completedJobs = 0;
+
+          const recomputeProgress = () => {
+            let current = completedTotals.current;
+            let total = completedTotals.total;
+            for (const p of perJobProgress.values()) {
+              current += p.current;
+              total += p.total;
             }
-
-            if (msg.type === "done") {
-              setResult(msg.result);
-              setLoading(false);
-              terminateWorker();
-              return;
-            }
-
-            if (msg.type === "cancelled") {
-              setLoading(false);
-              terminateWorker();
-              return;
-            }
-
-            if (msg.type === "error") {
-              setError(msg.error.message || "Ideal gear failed");
-              setLoading(false);
-              terminateWorker();
-            }
+            setProgress({ current, total });
           };
 
-          worker.postMessage({
-            type: "start",
-            jobId,
-            payload: {
-              path,
-              stats,
-              elementStats,
-              rotation,
-            },
+          const isStillActive = () => runTokenRef.current === runToken;
+
+          const finalizeIfDone = () => {
+            if (!isStillActive()) return;
+            if (completedJobs < workerCount) return;
+            const best = results.reduce((acc, cur) =>
+              cur.maxDamage > acc.maxDamage ? cur : acc,
+            );
+            setResult(best);
+            setLoading(false);
+            terminateWorkers();
+          };
+
+          workers.forEach((worker, index) => {
+            const jobId = `${runToken}_${index}`;
+            activeJobIdsRef.current.add(jobId);
+            perJobProgress.set(jobId, { current: 0, total: 0 });
+            recomputeProgress();
+
+            worker.onmessage = (event: MessageEvent<WorkerOutMessage>) => {
+              const msg = event.data;
+              if (!msg || msg.jobId !== jobId) return;
+              if (!isStillActive()) return;
+
+              if (msg.type === "progress") {
+                perJobProgress.set(msg.jobId, {
+                  current: msg.current,
+                  total: msg.total,
+                });
+                recomputeProgress();
+                return;
+              }
+
+              if (msg.type === "done") {
+                const p = perJobProgress.get(msg.jobId);
+                const doneTotal =
+                  p && p.total > 0 ? p.total : (msg.result.elapsedMs ?? 0);
+                completedTotals.current += doneTotal;
+                completedTotals.total += doneTotal;
+                results.push(msg.result);
+                completedJobs += 1;
+                perJobProgress.delete(msg.jobId);
+                activeJobIdsRef.current.delete(msg.jobId);
+                recomputeProgress();
+                finalizeIfDone();
+                return;
+              }
+
+              if (msg.type === "cancelled") {
+                perJobProgress.delete(msg.jobId);
+                activeJobIdsRef.current.delete(msg.jobId);
+                finalizeIfDone();
+                return;
+              }
+
+              if (msg.type === "error") {
+                setError(msg.error.message || "Ideal gear failed");
+                setLoading(false);
+                terminateWorkers();
+              }
+            };
+
+            worker.postMessage({
+              type: "start",
+              jobId,
+              payload: {
+                path,
+                stats,
+                elementStats,
+                rotation,
+                mode,
+                timeMs: mode === "fast" ? timeMs : undefined,
+                seed: Date.now() + index * 1013904223,
+              },
+            });
           });
         } catch (e) {
           setError(e instanceof Error ? e.message : "Ideal gear failed");
           setLoading(false);
-          terminateWorker();
+          terminateWorkers();
         }
 
         return;
@@ -139,16 +224,17 @@ export function useIdealGearOptimize(
       abortRef.current = controller;
 
       try {
-        const res = calculateIdealGearStats(
-          path,
-          rotation,
-          stats,
-          elementStats,
-          {
-            onProgress: (current, total) => setProgress({ current, total }),
-            signal: controller.signal,
-          },
-        );
+        const res =
+          mode === "fast"
+            ? calculateIdealGearStatsFast(path, rotation, stats, elementStats, {
+                onProgress: (current, total) => setProgress({ current, total }),
+                signal: controller.signal,
+                timeMs,
+              })
+            : calculateIdealGearStats(path, rotation, stats, elementStats, {
+                onProgress: (current, total) => setProgress({ current, total }),
+                signal: controller.signal,
+              });
 
         if (!controller.signal.aborted) {
           setResult(res);
@@ -163,12 +249,13 @@ export function useIdealGearOptimize(
         setLoading(false);
       }
     },
-    [cancel, elementStats, rotation, stats, terminateWorker],
+    [cancel, elementStats, rotation, stats, terminateWorkers],
   );
 
   return {
     loading,
     error,
+    mode: activeMode,
     progress,
     result,
     run,

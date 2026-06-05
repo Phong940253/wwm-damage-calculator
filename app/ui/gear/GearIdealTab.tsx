@@ -22,10 +22,19 @@ import { useIdealGearOptimize } from "@/app/hooks/useIdealGearOptimize";
 
 export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const [path, setPath] = useState<ElementKey>("bellstrike");
+  const maxWorkers =
+    typeof navigator !== "undefined" && navigator.hardwareConcurrency
+      ? Math.max(1, Math.min(8, navigator.hardwareConcurrency - 1))
+      : 4;
+  const [workerCount, setWorkerCount] = useState(maxWorkers);
+
+  useEffect(() => {
+    setWorkerCount((prev) => Math.min(prev, maxWorkers));
+  }, [maxWorkers]);
 
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
-  const { loading, progress, result, error, run, cancel } =
+  const { loading, progress, result, error, run, cancel, mode } =
     useIdealGearOptimize(stats, elementStats, rotation);
 
   const damageResult = useDamage(
@@ -36,7 +45,11 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   );
 
   const handleCalculate = () => {
-    run(path);
+    run(path, { mode: "exhaustive" });
+  };
+
+  const handleFastCalculate = () => {
+    run(path, { mode: "fast", timeMs: 60_000, workers: workerCount });
   };
 
   useEffect(() => {
@@ -59,6 +72,18 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
     progress.total > 0
       ? Math.min(100, (progress.current / progress.total) * 100)
       : 0;
+
+  const progressLabel =
+    mode === "fast"
+      ? `${Math.ceil(progress.current / 1000)}s / ${Math.ceil(
+        progress.total / 1000,
+      )}s`
+      : `${Math.min(progress.current, progress.total).toLocaleString()} / ${progress.total.toLocaleString()}`;
+
+  const insightText =
+    result?.mode === "fast"
+      ? "Fast search ran for 1 minute and found a strong candidate (not guaranteed optimal)."
+      : "Exhaustive search evaluated all combinations and found the optimal distribution.";
 
   return (
     <div className="space-y-4 pb-20">
@@ -93,6 +118,22 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                 ))}
               </select>
             </div>
+            <div className="w-full sm:w-40 space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Workers</label>
+              <select
+                className="flex h-10 w-full items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                value={workerCount}
+                onChange={(e) => setWorkerCount(Number(e.target.value))}
+              >
+                {Array.from({ length: maxWorkers }, (_, i) => i + 1).map(
+                  (count) => (
+                    <option key={count} value={count}>
+                      {count}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
 
             <Button
               onClick={handleCalculate}
@@ -111,6 +152,14 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                 </>
               )}
             </Button>
+            <Button
+              onClick={handleFastCalculate}
+              disabled={loading}
+              variant="outline"
+              className="w-full sm:w-auto border-emerald-500/40 text-emerald-200"
+            >
+              Fast 1 min
+            </Button>
             {loading && (
               <Button
                 onClick={cancel}
@@ -124,11 +173,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
           {loading && progress.total > 0 && (
             <div className="mt-4 space-y-2">
               <Progress value={progressPct} className="h-2 bg-zinc-800" />
-              <div className="text-xs text-zinc-400">
-                {Math.min(progress.current, progress.total).toLocaleString()} /
-                {" "}
-                {progress.total.toLocaleString()}
-              </div>
+              <div className="text-xs text-zinc-400">{progressLabel}</div>
             </div>
           )}
           {error && (
@@ -145,7 +190,14 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
           <CardHeader className="border-b border-zinc-800/50 bg-zinc-950/30">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-emerald-400">Optimal Distribution</CardTitle>
+                <CardTitle className="text-emerald-400 flex items-center gap-2">
+                  Optimal Distribution
+                  {result.mode === "fast" && (
+                    <Badge variant="outline" className="border-amber-400/40 text-amber-300">
+                      Fast
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>
                   For {ELEMENT_TYPES.find(e => e.key === result.path)?.label} Path
                 </CardDescription>
@@ -189,7 +241,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
             </div>
 
             <div className="mt-6 p-4 rounded-md bg-emerald-950/20 border border-emerald-900/30 text-sm text-emerald-200/80">
-              <span className="font-semibold text-emerald-400">Insight:</span> The algorithm mathematically tested tens of thousands of combinations to discover that this specific distribution of 32 substat lines yields the absolute highest DPS.
+              <span className="font-semibold text-emerald-400">Insight:</span> {insightText}
             </div>
 
             <FinalIdealStatsDisplay result={result} rotation={rotation} damageResult={damageResult} />

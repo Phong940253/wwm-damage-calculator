@@ -2,6 +2,7 @@ import type { ElementStats, InputStats, Rotation } from "@/app/types";
 import type { ElementKey } from "@/app/constants";
 import {
   calculateIdealGearStats,
+  calculateIdealGearStatsFast,
   IdealGearCancelledError,
   type IdealGearResult,
 } from "@/app/domain/gear/idealOptimizer";
@@ -14,6 +15,9 @@ type StartMessage = {
     stats: InputStats;
     elementStats: ElementStats;
     rotation?: Rotation;
+    mode?: "exhaustive" | "fast";
+    timeMs?: number;
+    seed?: number;
   };
 };
 
@@ -75,17 +79,34 @@ self.addEventListener("message", (event: MessageEvent) => {
   controllers.set(jobId, controller);
 
   try {
-    const result = calculateIdealGearStats(
-      payload.path,
-      payload.rotation,
-      payload.stats,
-      payload.elementStats,
-      {
-        onProgress: (current, total) =>
-          post({ type: "progress", jobId, current, total }),
-        signal: controller.signal,
-      },
-    );
+    const onProgress = (current: number, total: number) =>
+      post({ type: "progress", jobId, current, total });
+
+    const mode = payload.mode ?? "exhaustive";
+    const result =
+      mode === "fast"
+        ? calculateIdealGearStatsFast(
+            payload.path,
+            payload.rotation,
+            payload.stats,
+            payload.elementStats,
+            {
+              onProgress,
+              signal: controller.signal,
+              timeMs: payload.timeMs,
+              seed: payload.seed,
+            },
+          )
+        : calculateIdealGearStats(
+            payload.path,
+            payload.rotation,
+            payload.stats,
+            payload.elementStats,
+            {
+              onProgress,
+              signal: controller.signal,
+            },
+          );
 
     post({ type: "done", jobId, result });
   } catch (e) {

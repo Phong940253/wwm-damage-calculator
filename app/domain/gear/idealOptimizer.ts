@@ -26,6 +26,9 @@ export interface IdealGearResult {
   maxDamage: number;
   allocations: Record<string, number>; // number of lines
   stats: Record<string, number>; // total stat value from these lines
+  mode?: "exhaustive" | "fast";
+  elapsedMs?: number;
+  iterations?: number;
 }
 
 export class IdealGearCancelledError extends Error {
@@ -113,57 +116,54 @@ function getValPerLine(stat: string): number {
   return getPlayerTuneStatRange(stat as TuneStatKey, 91).maxPerLine;
 }
 
-export function calculateIdealGearStats(
-  path: ElementKey,
-  rotation?: Rotation,
-  baseStats?: InputStats,
-  baseElementStats?: ElementStats,
-  options?: {
-    onProgress?: (current: number, total: number) => void;
-    signal?: AbortSignal;
-  },
-): IdealGearResult {
-  const onProgress = options?.onProgress;
-  const signal = options?.signal;
-  const TOTAL_LINES = 48;
-  const MAX_LINES_PER_STAT = 8;
-  const CANDIDATE_STATS = [
-    "MaxPhysicalAttack",
-    "bellstrikeMax",
-    "CriticalRate",
-    "AffinityRate",
-    "CombatBoostAgainstBossUnits",
-    "AllMartialArtsBoost",
-    "ArtOfSwordDMGBoost",
-    "Momentum",
-    "Power",
-  ] as const;
-  type CandidateStat = (typeof CANDIDATE_STATS)[number];
+const TOTAL_LINES = 48;
+const MAX_LINES_PER_STAT = 8;
+const CANDIDATE_STATS = [
+  "MaxPhysicalAttack",
+  "bellstrikeMax",
+  "CriticalRate",
+  "AffinityRate",
+  "CombatBoostAgainstBossUnits",
+  "AllMartialArtsBoost",
+  "ArtOfSwordDMGBoost",
+  "Momentum",
+  "Power",
+] as const;
+type CandidateStat = (typeof CANDIDATE_STATS)[number];
 
-  const SINGLE_LINE_STATS = new Set<CandidateStat>([
-    "CombatBoostAgainstBossUnits",
-    "AllMartialArtsBoost",
-    "ArtOfSwordDMGBoost",
-  ]);
+const SINGLE_LINE_STATS = new Set<CandidateStat>([
+  "CombatBoostAgainstBossUnits",
+  "AllMartialArtsBoost",
+  "ArtOfSwordDMGBoost",
+]);
 
-  const SPECIAL_LINE_POOLS: CandidateStat[][] = [
-    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
-    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
-    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
-    ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
-    ["CriticalRate", "AffinityRate"],
-    ["CriticalRate", "AffinityRate"],
-    ["AffinityRate", "CriticalRate", "Momentum", "Power"],
-    ["AffinityRate", "CriticalRate", "Momentum", "Power"],
-  ];
+const SPECIAL_LINE_POOLS: CandidateStat[][] = [
+  ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+  ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+  ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+  ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
+  ["CriticalRate", "AffinityRate"],
+  ["CriticalRate", "AffinityRate"],
+  ["AffinityRate", "CriticalRate", "Momentum", "Power"],
+  ["AffinityRate", "CriticalRate", "Momentum", "Power"],
+];
 
+type RuleSet = {
+  candidateStats: CandidateStat[];
+  specialLinePools: CandidateStat[][];
+  fixedLineStats: Record<string, { lines: number; valuePerLine: number }>;
+  randomLineCount: number;
+  baseGearBonus: Record<string, number>;
+};
+
+function buildRuleSet(path: ElementKey): RuleSet {
   const fixedLineStats: Record<
     string,
     { lines: number; valuePerLine: number }
   > =
     path === "bellstrike"
       ? {
-          NamelessSwordChargedSkillDMGBoost: { lines: 4, valuePerLine: 4.5 },
+          NamelessSwordChargedSkillDMGBoost: { lines: 4, valuePerLine: 5.0 },
           PhysicalPenetration: {
             lines: 4,
             valuePerLine: getValPerLine("PhysicalPenetration"),
@@ -198,7 +198,36 @@ export function calculateIdealGearStats(
     baseGearBonus[stat] = (baseGearBonus[stat] || 0) + lines * valuePerLine;
   }
 
-  const candidateStats = [...CANDIDATE_STATS];
+  return {
+    candidateStats: [...CANDIDATE_STATS],
+    specialLinePools: SPECIAL_LINE_POOLS,
+    fixedLineStats,
+    randomLineCount,
+    baseGearBonus,
+  };
+}
+
+export function calculateIdealGearStats(
+  path: ElementKey,
+  rotation?: Rotation,
+  baseStats?: InputStats,
+  baseElementStats?: ElementStats,
+  options?: {
+    onProgress?: (current: number, total: number) => void;
+    signal?: AbortSignal;
+  },
+): IdealGearResult {
+  const onProgress = options?.onProgress;
+  const signal = options?.signal;
+  const startTime = Date.now();
+  const ruleSet = buildRuleSet(path);
+  const {
+    candidateStats,
+    specialLinePools: ruleSpecialLinePools,
+    fixedLineStats,
+    randomLineCount,
+  } = ruleSet;
+  const baseGearBonus = ruleSet.baseGearBonus;
   const candidateCount = candidateStats.length;
   const allocations = Array.from({ length: candidateCount }, () => 0);
   const candidateIndexByStat = new Map<CandidateStat, number>(
@@ -209,7 +238,7 @@ export function calculateIdealGearStats(
     SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT,
   );
 
-  const specialLinePools = SPECIAL_LINE_POOLS.map((pool) =>
+  const specialLinePools = ruleSpecialLinePools.map((pool) =>
     pool
       .map((stat) => candidateIndexByStat.get(stat) ?? -1)
       .filter((i) => i >= 0),
@@ -385,5 +414,147 @@ export function calculateIdealGearStats(
     maxDamage: bestDamage,
     allocations: bestAllocations || snapshotAllocations(),
     stats: bestBonus || { ...currentBonus },
+    mode: "exhaustive",
+    elapsedMs: Date.now() - startTime,
+  };
+}
+
+export function calculateIdealGearStatsFast(
+  path: ElementKey,
+  rotation?: Rotation,
+  baseStats?: InputStats,
+  baseElementStats?: ElementStats,
+  options?: {
+    onProgress?: (current: number, total: number) => void;
+    signal?: AbortSignal;
+    timeMs?: number;
+    seed?: number;
+  },
+): IdealGearResult {
+  const onProgress = options?.onProgress;
+  const signal = options?.signal;
+  const timeMs = Math.max(1000, Math.floor(options?.timeMs ?? 60_000));
+  const startTime = Date.now();
+  const ruleSet = buildRuleSet(path);
+
+  const candidateStats = ruleSet.candidateStats;
+  const candidateCount = candidateStats.length;
+  const randomLineCount = ruleSet.randomLineCount;
+  const baseGearBonus = ruleSet.baseGearBonus;
+  const fixedLineStats = ruleSet.fixedLineStats;
+
+  const perLineValues = candidateStats.map((stat) => getValPerLine(stat));
+  const randomCaps = candidateStats.map((stat) =>
+    SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT,
+  );
+
+  const specialPools = ruleSet.specialLinePools.map((pool) =>
+    pool.map((stat) => candidateStats.indexOf(stat)).filter((i) => i >= 0),
+  );
+
+  let bestDamage = -Infinity;
+  let bestBonus: Record<string, number> | null = null;
+  let bestAllocations: Record<string, number> | null = null;
+  let iterations = 0;
+  let lastProgressAt = 0;
+
+  let rngSeed =
+    typeof options?.seed === "number"
+      ? Math.floor(options.seed)
+      : Math.floor(Math.random() * 0x7fffffff);
+
+  const rand = () => {
+    rngSeed = (rngSeed * 1664525 + 1013904223) >>> 0;
+    return rngSeed / 0x100000000;
+  };
+
+  const throwIfCancelled = () => {
+    if (signal?.aborted) throw new IdealGearCancelledError();
+  };
+
+  const reportProgress = (force = false) => {
+    if (!onProgress) return;
+    const elapsed = Math.min(timeMs, Date.now() - startTime);
+    if (force || Date.now() - lastProgressAt >= 200) {
+      lastProgressAt = Date.now();
+      onProgress(elapsed, timeMs);
+    }
+  };
+
+  const snapshotAllocations = (allocations: number[]) => {
+    const snapshot: Record<string, number> = {};
+    candidateStats.forEach((stat, index) => {
+      snapshot[stat] = allocations[index] ?? 0;
+    });
+    for (const [stat, { lines }] of Object.entries(fixedLineStats)) {
+      snapshot[stat] = (snapshot[stat] || 0) + lines;
+    }
+    return snapshot;
+  };
+
+  while (Date.now() - startTime < timeMs) {
+    throwIfCancelled();
+    iterations += 1;
+    const allocations = Array.from({ length: candidateCount }, () => 0);
+    const currentBonus: Record<string, number> = { ...baseGearBonus };
+    const remainingCaps = [...randomCaps];
+
+    let remaining = randomLineCount;
+    let openStats = remainingCaps
+      .map((cap, index) => (cap > 0 ? index : -1))
+      .filter((index) => index >= 0);
+
+    while (remaining > 0 && openStats.length > 0) {
+      const pickIndex = Math.floor(rand() * openStats.length);
+      const statIndex = openStats[pickIndex];
+      allocations[statIndex] += 1;
+      remainingCaps[statIndex] -= 1;
+      currentBonus[candidateStats[statIndex]] =
+        (currentBonus[candidateStats[statIndex]] || 0) +
+        perLineValues[statIndex];
+
+      if (remainingCaps[statIndex] <= 0) {
+        openStats.splice(pickIndex, 1);
+      }
+      remaining -= 1;
+    }
+
+    if (remaining > 0) continue;
+
+    for (const pool of specialPools) {
+      const statIndex = pool[Math.floor(rand() * pool.length)];
+      allocations[statIndex] += 1;
+      currentBonus[candidateStats[statIndex]] =
+        (currentBonus[candidateStats[statIndex]] || 0) +
+        perLineValues[statIndex];
+    }
+
+    const evalResult = evaluateDamage(
+      currentBonus,
+      path,
+      rotation,
+      baseStats,
+      baseElementStats,
+    );
+    if (evalResult.dmg > bestDamage) {
+      bestDamage = evalResult.dmg;
+      bestBonus = { ...currentBonus };
+      bestAllocations = snapshotAllocations(allocations);
+    }
+
+    reportProgress();
+  }
+
+  reportProgress(true);
+
+  return {
+    path,
+    maxDamage: bestDamage,
+    allocations:
+      bestAllocations || snapshotAllocations(new Array(candidateCount).fill(0)),
+    stats: bestBonus || { ...baseGearBonus },
+    mode: "fast",
+    elapsedMs: Date.now() - startTime,
+    iterations,
   };
 }
