@@ -210,7 +210,10 @@ export function useIdealGearOptimize(
                 elementStats,
                 rotation,
                 mode,
-                timeMs: mode === "fast" ? timeMs : undefined,
+                timeMs:
+                  mode === "fast"
+                    ? Math.floor(timeMs / workerCount)
+                    : undefined,
                 seed: Date.now() + index * 1013904223,
                 shardIndex: mode === "exhaustive" ? index : undefined,
                 shardCount: mode === "exhaustive" ? workerCount : undefined,

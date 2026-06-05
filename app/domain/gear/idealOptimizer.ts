@@ -139,7 +139,6 @@ const SINGLE_LINE_STATS = new Set<CandidateStat>([
 ]);
 
 const SPECIAL_LINE_POOLS: CandidateStat[][] = [
-  // DONT CHANGE THE ORDER OF THESE POOLS ANYWAY, IT AFFECTS THE ALLOCATION STRATEGY
   // 1-2: bellstrikeMax, MaxPhysicalAttack, Power, Momentum
   ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
   ["bellstrikeMax", "MaxPhysicalAttack", "Power", "Momentum"],
@@ -379,10 +378,31 @@ export function calculateIdealGearStats(
   ) => {
     throwIfCancelled();
 
-    // STRICT: No duplicate stats in one gear means total count for any stat (Special + Random + Fixed) <= 8
+    // Đưa tiến trình lên đầu để đảm bảo quét qua case nào là tính case đó
+    progressCurrent += 1;
+    reportProgress();
+
+    // 1. Kiểm tra giới hạn nghiêm ngặt cho exclusive boosts (Tối đa 1 dòng trên toàn bộ hệ thống)
+    for (const stat of SINGLE_LINE_STATS) {
+      const statIndex = candidateStats.indexOf(stat as CandidateStat);
+      if (statIndex !== -1) {
+        // allocations[statIndex] đã bao gồm cả random + special nhờ hàm applyLines trước đó rồi
+        if (allocations[statIndex] > 1) return;
+      }
+    }
+
+    // 2. Kiểm tra giới hạn Max 8 dòng cho các stat thông thường
     for (let i = 0; i < candidateCount; i++) {
-      const total = allocations[i] + specialCountsPlan[i];
-      if (total > MAX_LINES_PER_STAT) return;
+      const stat = candidateStats[i];
+      if (SINGLE_LINE_STATS.has(stat)) continue;
+
+      // Nếu dòng Special ĐƯỢC MIỄN TRỪ khỏi mốc 8 dòng:
+      // Ta lấy tổng trừ đi dòng special để ra số dòng phụ (Tuning), dòng phụ không được > 8
+      const tuningLinesOnly = allocations[i] - specialCountsPlan[i];
+      if (tuningLinesOnly > MAX_LINES_PER_STAT) return;
+
+      // NGƯỢC LẠI, nếu luật game ép TỔNG TẤT CẢ không được quá 8, hãy dùng:
+      // if (allocations[i] > MAX_LINES_PER_STAT) return;
     }
 
     const evalResult = evaluateDamage(
@@ -392,8 +412,7 @@ export function calculateIdealGearStats(
       baseStats,
       baseElementStats,
     );
-    progressCurrent += 1;
-    reportProgress();
+
     if (evalResult.dmg <= bestDamage) return;
     bestDamage = evalResult.dmg;
     bestBonus = { ...currentBonus };
@@ -693,6 +712,7 @@ export function calculateIdealGearStatsFast(
       .map((cap, index) => (cap > 0 ? index : -1))
       .filter((index) => index >= 0);
 
+    // 1. Phân bổ ngẫu nhiên các dòng phụ (Random/Tuning Lines)
     while (remaining > 0 && openStats.length > 0) {
       const pickIndex = Math.floor(rand() * openStats.length);
       const statIndex = openStats[pickIndex];
@@ -710,6 +730,7 @@ export function calculateIdealGearStatsFast(
 
     if (remaining > 0) continue;
 
+    // 2. Phân bổ ngẫu nhiên các dòng đặc biệt (Special Lines)
     for (const pool of specialPools) {
       const statIndex = pool[Math.floor(rand() * pool.length)];
       allocations[statIndex] += 1;
@@ -719,6 +740,45 @@ export function calculateIdealGearStatsFast(
       currentSpecialLines.push(statName);
     }
 
+    // 3. VALIDATION: Kiểm tra tính hợp lệ của cấu hình vừa sinh
+    let isValid = true;
+
+    // Luật 3.1: Kiểm tra giới hạn nghiêm ngặt cho Exclusive Boosts (Tổng Special + Tuning không quá 1 dòng)
+    for (const stat of SINGLE_LINE_STATS) {
+      const statIndex = candidateStats.indexOf(stat as CandidateStat);
+      if (statIndex !== -1 && allocations[statIndex] > 1) {
+        isValid = false;
+        break;
+      }
+    }
+
+    // Luật 3.2: Kiểm tra giới hạn Max 8 dòng phụ cho các stat thông thường
+    if (isValid) {
+      for (let i = 0; i < candidateCount; i++) {
+        const stat = candidateStats[i];
+        if (SINGLE_LINE_STATS.has(stat)) continue;
+
+        // Tách số dòng Special ra để kiểm tra riêng phần Tuning Lines
+        const specialCountForThisStat = currentSpecialLines.filter(
+          (s) => s === stat,
+        ).length;
+        const tuningLinesOnly = allocations[i] - specialCountForThisStat;
+
+        if (tuningLinesOnly > MAX_LINES_PER_STAT) {
+          isValid = false;
+          break;
+        }
+
+        // LƯU Ý: Nếu luật game của bạn tính TỔNG (Special + Tuning) không được quá 8 dòng,
+        // hãy comment đoạn trên lại và dùng dòng check dưới này:
+        // if (allocations[i] > MAX_LINES_PER_STAT) { isValid = false; break; }
+      }
+    }
+
+    // Nếu cấu hình ngẫu nhiên phạm luật, bỏ qua và nhảy sang loop kế tiếp
+    if (!isValid) continue;
+
+    // 4. Tính toán damage và cập nhật Best Result
     const evalResult = evaluateDamage(
       currentBonus,
       path,
@@ -726,6 +786,7 @@ export function calculateIdealGearStatsFast(
       baseStats,
       baseElementStats,
     );
+
     if (evalResult.dmg > bestDamage) {
       bestDamage = evalResult.dmg;
       bestBonus = { ...currentBonus };
