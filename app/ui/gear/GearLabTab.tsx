@@ -14,7 +14,7 @@ import { useElementStats } from "@/app/hooks/useElementStats";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
-import { computeRotationBonuses } from "@/app/domain/skill/modifierEngine";
+import { computeRotationBonusesWithBreakdown } from "@/app/domain/skill/modifierEngine";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import DamagePanel from "@/app/ui/damage/DamagePanel";
 import {
@@ -271,10 +271,48 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
   const finalCtx = React.useMemo(() => {
     if (!result) return null;
     const gearBonus = result.stats;
-    const includedAbs = computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus);
+    const includedAbs = computeIncludedInStatsGearBonus(
+      stats,
+      elementStats,
+      rotation,
+      gearBonus
+    );
+
     const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
-    const rotationBonuses = computeRotationBonuses(stats, elementStats, effectiveGearBonus, rotation);
-    return buildDamageContext(stats, elementStats, sumBonuses(effectiveGearBonus, rotationBonuses));
+    
+    const breakdown = computeRotationBonusesWithBreakdown(
+      stats,
+      elementStats,
+      effectiveGearBonus,
+      rotation
+    );
+
+    const combinedBonus = sumBonuses(effectiveGearBonus, breakdown.total);
+
+    return buildDamageContext(
+      stats,
+      elementStats,
+      combinedBonus,
+      {
+        gear: effectiveGearBonus,
+        passives: Object.fromEntries(
+          Object.entries(breakdown.byPassive).map(([id, bonus]) => [
+            id,
+            {
+              name: breakdown.meta.passives[id]?.name ?? id,
+              uptimePct: breakdown.meta.passives[id]?.uptimePct,
+              bonus,
+            },
+          ]),
+        ),
+        innerWays: Object.fromEntries(
+          Object.entries(breakdown.byInnerWay).map(([id, bonus]) => [
+            id,
+            { name: breakdown.meta.innerWays[id]?.name ?? id, bonus },
+          ]),
+        ),
+      }
+    );
   }, [stats, elementStats, rotation, result]);
 
   return (
@@ -392,6 +430,9 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
 
             {finalCtx && (
                 <div className="mt-8 space-y-4">
+                    <div className="text-sm text-amber-400 mb-4 bg-amber-500/10 p-3 rounded-md border border-amber-500/20">
+                      Note: The stats below INCLUDE the buffs from your active Rotation (Passive Skills & Inner Ways).
+                    </div>
                     <DamagePanel
                         ctx={finalCtx}
                         result={damageResult}

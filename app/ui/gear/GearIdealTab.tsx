@@ -15,7 +15,7 @@ import { useStats } from "@/app/hooks/useStats";
 import { useElementStats } from "@/app/hooks/useElementStats";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
-import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { computeRotationBonusesWithBreakdown, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import DamagePanel from "@/app/ui/damage/DamagePanel";
 import { useIdealGearOptimize } from "@/app/hooks/useIdealGearOptimize";
@@ -524,22 +524,44 @@ function FinalIdealStatsDisplay({ result, rotation, damageResult }: { result: Id
     const includedAbs = computeIncludedInStatsGearBonus(
       stats,
       elementStats,
-      rotation, // Pass rotation to correctly evaluate rotation damage!
+      rotation,
       gearBonus
     );
 
     const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
-    const rotationBonuses = computeRotationBonuses(
+    
+    const breakdown = computeRotationBonusesWithBreakdown(
       stats,
       elementStats,
       effectiveGearBonus,
-      rotation // Pass rotation!
+      rotation
     );
+
+    const combinedBonus = sumBonuses(effectiveGearBonus, breakdown.total);
 
     return buildDamageContext(
       stats,
       elementStats,
-      sumBonuses(effectiveGearBonus, rotationBonuses)
+      combinedBonus,
+      {
+        gear: effectiveGearBonus,
+        passives: Object.fromEntries(
+          Object.entries(breakdown.byPassive).map(([id, bonus]) => [
+            id,
+            {
+              name: breakdown.meta.passives[id]?.name ?? id,
+              uptimePct: breakdown.meta.passives[id]?.uptimePct,
+              bonus,
+            },
+          ]),
+        ),
+        innerWays: Object.fromEntries(
+          Object.entries(breakdown.byInnerWay).map(([id, bonus]) => [
+            id,
+            { name: breakdown.meta.innerWays[id]?.name ?? id, bonus },
+          ]),
+        ),
+      }
     );
   }, [stats, elementStats, rotation, result]);
 
