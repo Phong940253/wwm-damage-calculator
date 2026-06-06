@@ -23,6 +23,7 @@ import {
   buildStaticHashKey,
   FixedOptimizerContext,
   evaluateDamageCachedOptimized,
+  evaluateDamageCachedWithKey,
 } from "./optimizerUtils";
 import {
   CANDIDATE_STATS,
@@ -651,9 +652,13 @@ export async function calculateIdealGearStatsBeamSearch(
     beamWidth?: number;
     onProgress?: (current: number, total: number) => void;
     signal?: AbortSignal;
+    shardIndex?: number;
+    shardCount?: number;
   },
 ): Promise<IdealGearResult> {
   const beamWidth = options?.beamWidth ?? 2000;
+  const shardIndex = options?.shardIndex ?? 0;
+  const shardCount = options?.shardCount ?? 1;
   const startTime = Date.now();
   const ruleSet = buildRuleSet(path);
   const { candidateStats, randomLineCount, baseGearBonus } = ruleSet;
@@ -702,13 +707,18 @@ export async function calculateIdealGearStatsBeamSearch(
     counts: number[];
   };
 
-  const specialPlans: SpecialPlan[] = [];
+  let allSpecialPlans: SpecialPlan[] = [];
   const currentSpecialLines: string[] = [];
   const currentSpecialCounts = new Array(candidateCount).fill(0);
+  const seenPlans = new Set<string>();
 
   const generateSpecialPlans = (slot: number) => {
     if (slot === 8) {
-      specialPlans.push({
+      const key = currentSpecialCounts.join(",");
+      if (seenPlans.has(key)) return;
+      seenPlans.add(key);
+
+      allSpecialPlans.push({
         lines: [...currentSpecialLines],
         counts: [...currentSpecialCounts],
       });
@@ -730,13 +740,15 @@ export async function calculateIdealGearStatsBeamSearch(
   };
   generateSpecialPlans(0);
 
+  // SHARDING: Chia nhỏ các special plans cho từng worker
+  const specialPlans = shardCount > 1
+    ? allSpecialPlans.filter((_, idx) => idx % shardCount === shardIndex)
+    : allSpecialPlans;
+
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
   let bestAllocations: Record<string, number> | null = null;
   let bestSpecialLines: string[] = [];
-
-  let progressCurrent = 0;
-  const progressTotal = specialPlans.length;
 
   const signal = options?.signal;
   const throwIfCancelled = () => {
@@ -744,163 +756,164 @@ export async function calculateIdealGearStatsBeamSearch(
   };
 
   try {
-    for (const plan of specialPlans) {
-      // Yield to event loop so cancel messages can be processed
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      throwIfCancelled();
-      // XOÁ TRỐNG CACHE SAU MỖI PLAN ĐỂ GIẢI PHÓNG HOÀN TOÀN RAM
-      damageCache.clear();
+    // XOÁ TRỐNG CACHE TRƯỚC KHI CHẠY ĐỂ GIẢI PHÓNG RAM
+    damageCache.clear();
 
-      progressCurrent++;
-      if (options?.onProgress)
-        options.onProgress(progressCurrent, progressTotal);
+    type BeamState = {
+      tuning: number[];
+      planIndex: number;
+      bonus: Record<string, number>;
+      score: number;
+    };
 
-      // Check cancel here too for long-running beam searches
-      if (signal?.aborted) throw new IdealGearCancelledError();
-
-      type BeamState = {
-        tuning: number[];
-        bonus: Record<string, number>;
-        score: number;
-        lastAddedIndex: number; // TRỌNG TÂM: Khử trùng lặp
-      };
-
-      let beam: BeamState[] = [
-        {
-          tuning: new Array(candidateCount).fill(0),
-          bonus: { ...baseGearBonus },
-          score: 0,
-          lastAddedIndex: 0,
-        },
-      ];
-
+    // 1. KHỞI TẠO BEAM VỚI TẤT CẢ CÁC SPECIAL PLANS TRONG SHARD NÀY
+    let beam: BeamState[] = specialPlans.map((plan, planIndex) => {
+      const planBaseBonus: Record<string, number> = { ...baseGearBonus };
       for (let i = 0; i < candidateCount; i++) {
-        beam[0].bonus[candidateStats[i]] =
-          (beam[0].bonus[candidateStats[i]] || 0) +
-          plan.counts[i] * perLineValues[i];
+        if (plan.counts[i] > 0) {
+          planBaseBonus[candidateStats[i]] =
+            (planBaseBonus[candidateStats[i]] || 0) +
+            plan.counts[i] * perLineValues[i];
+        }
       }
-      beam[0].score = evaluateCurrentDamage(beam[0].bonus).dmg;
-      console.log(
-        `Initial plan: ${plan.lines.join(", ")} - Damage: ${beam[0].score}`,
+
+      return {
+        tuning: new Array(candidateCount).fill(0),
+        planIndex,
+        bonus: planBaseBonus,
+        score: evaluateDamageCachedOptimized(damageCache, fixedCtx, planBaseBonus)
+          .dmg,
+      };
+    });
+
+    // Sắp xếp và lấy các plan tốt nhất để bắt đầu (nếu số plan > beamWidth)
+    beam.sort((a, b) => b.score - a.score);
+    if (beam.length > beamWidth) {
+      beam = beam.slice(0, beamWidth);
+    }
+
+    // Cập nhật kết quả tốt nhất ban đầu
+    if (beam.length > 0 && beam[0].score > bestDamage) {
+      const bestState = beam[0];
+      const plan = specialPlans[bestState.planIndex];
+      bestDamage = bestState.score;
+      bestBonus = bestState.bonus;
+      bestSpecialLines = plan.lines;
+      bestAllocations = buildTotalCountsSnapshot(
+        candidateStats,
+        bestState.tuning.map((count, idx) => count + plan.counts[idx]),
+        ruleSet.fixedLineStats,
       );
+    }
 
-      // Save initial beam result BEFORE any cancel check
-      if (beam[0].score > bestDamage) {
-        bestDamage = beam[0].score;
-        bestBonus = beam[0].bonus;
-        bestSpecialLines = plan.lines;
-        bestAllocations = buildTotalCountsSnapshot(
-          candidateStats,
-          beam[0].tuning.map((count, idx) => count + plan.counts[idx]),
-          ruleSet.fixedLineStats,
-        );
+    // 2. CHẠY BEAM SEARCH 32 BƯỚC (RANDOM LINES)
+    const EPSILON = 1e-6;
+    for (let i = 0; i < randomLineCount; i++) {
+      throwIfCancelled();
+      if (options?.onProgress) {
+        options.onProgress(i, randomLineCount);
       }
 
-      for (let i = 0; i < randomLineCount; i++) {
-        // Save best from previous iteration before checking cancel
-        if (beam.length > 0 && beam[0].score > bestDamage) {
-          bestDamage = beam[0].score;
-          bestBonus = beam[0].bonus;
-          bestSpecialLines = plan.lines;
-          bestAllocations = buildTotalCountsSnapshot(
-            candidateStats,
-            beam[0].tuning.map((count, idx) => count + plan.counts[idx]),
-            ruleSet.fixedLineStats,
-          );
-        }
-        throwIfCancelled();
-        // Save best partial result before yielding (in case cancel happens mid-loop)
-        if (beam.length > 0 && beam[0].score > bestDamage) {
-          bestDamage = beam[0].score;
-          bestBonus = beam[0].bonus;
-          bestSpecialLines = plan.lines;
-          bestAllocations = buildTotalCountsSnapshot(
-            candidateStats,
-            beam[0].tuning.map((count, idx) => count + plan.counts[idx]),
-            ruleSet.fixedLineStats,
-          );
-        }
-        // Yield to event loop so cancel message can be processed
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-        let nextBeam: BeamState[] = [];
-        let evalCount = 0;
+      // Yield to event loop
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-        for (const state of beam) {
-          // Chỉ duyệt từ lastAddedIndex trở đi để tránh sinh hoán vị trùng lặp
-          for (
-            let statIndex = state.lastAddedIndex;
-            statIndex < candidateCount;
-            statIndex++
+      const nextBeamMap = new Map<string, BeamState>();
+      let evalCount = 0;
+
+      for (const state of beam) {
+        const plan = specialPlans[state.planIndex];
+
+        for (let statIndex = 0; statIndex < candidateCount; statIndex++) {
+          if (++evalCount % 10000 === 0) {
+            if (signal?.aborted) throw new IdealGearCancelledError();
+            await new Promise<void>((resolve) => setTimeout(resolve, 0));
+          }
+
+          const fixedCount =
+            ruleSet.fixedLineStats[candidateStats[statIndex]]?.lines ?? 0;
+          const stat = candidateStats[statIndex];
+
+          // Limit 8 check
+          if (
+            !SINGLE_LINE_STATS.has(stat) &&
+            state.tuning[statIndex] + fixedCount >= MAX_LINES_PER_STAT
           ) {
-            // Yield every 2000 evaluations so cancel can be processed
-            if (++evalCount % 2000 === 0) {
-              if (signal?.aborted) throw new IdealGearCancelledError();
-              await new Promise<void>((resolve) => setTimeout(resolve, 0));
-            }
-            const fixedCount =
-              ruleSet.fixedLineStats[candidateStats[statIndex]]?.lines ?? 0;
-            const stat = candidateStats[statIndex];
+            continue;
+          }
 
-            // Tối ưu hóa check Limit 8 (bao gồm cả Fixed Lines)
-            if (
-              !SINGLE_LINE_STATS.has(stat) &&
-              state.tuning[statIndex] + fixedCount >= MAX_LINES_PER_STAT
-            ) {
-              continue;
-            }
+          // Exclusive check
+          const totalExclusiveCount =
+            state.tuning[statIndex] + plan.counts[statIndex] + fixedCount;
+          if (SINGLE_LINE_STATS.has(stat) && totalExclusiveCount >= 1) continue;
 
-            // Check Exclusive (giữ nguyên logic chuẩn của bạn)
-            const totalExclusiveCount =
-              state.tuning[statIndex] + plan.counts[statIndex] + fixedCount;
-            if (SINGLE_LINE_STATS.has(stat) && totalExclusiveCount >= 1)
-              continue;
+          const nextTuning = [...state.tuning];
+          nextTuning[statIndex]++;
 
-            const nextTuning = [...state.tuning];
-            nextTuning[statIndex]++;
+          // Deduplicate bằng tuning key + planIndex
+          const tuningKey = `${state.planIndex}|${nextTuning.join(",")}`;
+          if (nextBeamMap.has(tuningKey)) continue;
 
-            const nextBonus = { ...state.bonus };
-            nextBonus[stat] = (nextBonus[stat] || 0) + perLineValues[statIndex];
+          const nextBonus = { ...state.bonus };
+          nextBonus[stat] = (nextBonus[stat] || 0) + perLineValues[statIndex];
 
-            const dmg = evaluateDamageCachedOptimized(
-              damageCache,
-              fixedCtx,
-              nextBonus,
-            ).dmg;
+          const cacheKey = `${fixedCtx.staticHashKey}|${tuningKey}`;
 
-            nextBeam.push({
-              tuning: nextTuning,
-              bonus: nextBonus,
-              score: dmg,
-              lastAddedIndex: statIndex, // Lưu lại vị trí để ép thứ tự tổ hợp
-            });
+          const dmg = evaluateDamageCachedWithKey(
+            damageCache,
+            fixedCtx,
+            nextBonus,
+            cacheKey,
+          ).dmg;
+
+          nextBeamMap.set(tuningKey, {
+            tuning: nextTuning,
+            planIndex: state.planIndex,
+            bonus: nextBonus,
+            score: dmg,
+          });
+        }
+      }
+
+      let nextBeam = Array.from(nextBeamMap.values());
+      nextBeam.sort((a, b) => b.score - a.score);
+      beam = nextBeam.slice(0, beamWidth);
+
+      // CẬP NHẬT KẾT QUẢ TỐT NHẤT: Ưu tiên damage cao nhất, nếu bằng nhau thì ưu tiên bước muộn hơn (nhiều dòng hơn)
+      if (beam.length > 0) {
+        const stepBest = beam[0];
+        if (stepBest.score >= bestDamage - EPSILON) {
+          const plan = specialPlans[stepBest.planIndex];
+          bestDamage = stepBest.score;
+          bestBonus = stepBest.bonus;
+          bestSpecialLines = plan.lines;
+          bestAllocations = buildTotalCountsSnapshot(
+            candidateStats,
+            stepBest.tuning.map((count, idx) => count + plan.counts[idx]),
+            ruleSet.fixedLineStats,
+          );
+          
+          if (shardIndex === 0) {
+             const totalLines = Object.values(bestAllocations).reduce((a, b) => a + b, 0);
+             console.log(`Step ${i + 1}: Best Damage = ${bestDamage.toFixed(2)} (Lines: ${totalLines})`);
           }
         }
-
-        nextBeam.sort((a, b) => b.score - a.score);
-        beam = nextBeam.slice(0, beamWidth);
-        // Yield after sort so cancel can be processed
-        if (signal?.aborted) throw new IdealGearCancelledError();
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
 
-      // Final save after all iterations complete
-      if (beam.length > 0 && beam[0].score > bestDamage) {
-        bestDamage = beam[0].score;
-        bestBonus = beam[0].bonus;
-        bestSpecialLines = plan.lines;
-        bestAllocations = buildTotalCountsSnapshot(
-          candidateStats,
-          beam[0].tuning.map((count, idx) => count + plan.counts[idx]),
-          ruleSet.fixedLineStats,
-        );
+      // Cắt bớt cache nếu quá lớn để tránh OOM
+      if (damageCache.size > 20000) {
+        damageCache.clear();
       }
+    }
+
+    if (options?.onProgress) {
+      options.onProgress(randomLineCount, randomLineCount);
     }
   } catch (e: unknown) {
     if (!(e instanceof IdealGearCancelledError)) throw e;
     // On cancel, keep the best result found so far as a partial result
     return {
       path,
-      maxDamage: bestDamage,
+      maxDamage: bestDamage === -Infinity ? 0 : bestDamage,
       allocations: bestAllocations ?? {},
       stats: bestBonus ?? {},
       specialLines: bestSpecialLines ?? [],
@@ -911,7 +924,7 @@ export async function calculateIdealGearStatsBeamSearch(
 
   return {
     path,
-    maxDamage: bestDamage,
+    maxDamage: bestDamage === -Infinity ? 0 : bestDamage,
     allocations: bestAllocations ?? {},
     stats: bestBonus ?? {},
     specialLines: bestSpecialLines ?? [],

@@ -273,11 +273,16 @@ export function useIdealGearOptimize(
                 timeMs,
                 initialResult,
               })
-            : calculateIdealGearStats(path, rotation, stats, elementStats, {
-                onProgress: (current, total) => setProgress({ current, total }),
-                signal: controller.signal,
-                initialResult,
-              });
+            : await calculateIdealGearStatsBeamSearch(
+                path,
+                rotation,
+                stats,
+                elementStats,
+                {
+                  onProgress: (current, total) => setProgress({ current, total }),
+                  signal: controller.signal,
+                },
+              );
 
         if (!controller.signal.aborted) {
           try {

@@ -111,6 +111,8 @@ self.addEventListener("message", async (event: MessageEvent) => {
         {
           onProgress,
           signal: controller.signal,
+          shardIndex: payload.shardIndex,
+          shardCount: payload.shardCount,
         },
       );
     }

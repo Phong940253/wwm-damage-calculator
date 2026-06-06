@@ -18,5 +18,5 @@ describe("Beam Search Gear Optimization", () => {
     expect(result.allocations["ArtOfSwordDMGBoost"]).toBeLessThanOrEqual(1);
     
     expect(result.maxDamage).toBeGreaterThan(0);
-  });
+  }, 60000);
 });

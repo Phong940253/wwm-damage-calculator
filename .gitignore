@@ -44,3 +44,5 @@ all_ts_code.txt
 
 settings.json
 pnpm-lock.yaml
+
+/images/**

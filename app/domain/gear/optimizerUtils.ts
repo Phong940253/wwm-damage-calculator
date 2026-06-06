@@ -211,6 +211,26 @@ export interface FixedOptimizerContext {
 }
 
 // 3. Hàm Evaluate tối ưu, nhận context tĩnh và chỉ tạo cache key dựa trên gearBonus
+export function evaluateDamageCachedWithKey(
+  cache: Map<string, DamageEvalResult>,
+  ctx: FixedOptimizerContext,
+  gearBonus: Record<string, number>,
+  cacheKey: string,
+): DamageEvalResult {
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const result = evaluateDamage(
+    gearBonus,
+    ctx.path,
+    ctx.rotation,
+    ctx.baseStats,
+    ctx.baseElementStats,
+  );
+  cache.set(cacheKey, result);
+  return result;
+}
+
 export function evaluateDamageCachedOptimized(
   cache: Map<string, DamageEvalResult>,
   ctx: FixedOptimizerContext,

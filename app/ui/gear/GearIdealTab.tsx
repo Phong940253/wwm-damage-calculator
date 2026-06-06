@@ -110,27 +110,39 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 
   // Load from localStorage
   useEffect(() => {
+    // Only load from localStorage if we are NOT currently calculating
     if (loading) return;
+    
     try {
       const rotationKey =
         (rotation?.skills ?? []).map((s) => s.id).join(",") || "no-rot";
       const storageKey = `idealGearResult:${path}:${rotationKey}`;
       const saved = localStorage.getItem(storageKey);
+      
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.result && parsed.result.path === path) {
-          setResult(parsed.result);
+          // Only set if current result is different or null
+          setResult((prev) => {
+            if (!prev || prev.path !== path || prev.maxDamage < parsed.result.maxDamage) {
+               return parsed.result;
+            }
+            return prev;
+          });
         }
       } else {
         // If no saved result for this path/rotation, and the current result 
         // doesn't match the current path, clear it.
-        if (result && result.path !== path) {
-          setResult(null);
-        }
+        setResult((prev) => {
+          if (prev && prev.path !== path) return null;
+          return prev;
+        });
       }
     } catch {
       // ignore
     }
+    // We intentionally exclude 'result' from deps to avoid circular updates,
+    // and only run this when identity of search target (path/rotation) changes.
   }, [path, rotation, loading, setResult]);
 
   useEffect(() => {
