@@ -38,6 +38,7 @@ export function useIdealGearOptimize(
   const workersRef = useRef<Worker[]>([]);
   const activeJobIdsRef = useRef<Set<string>>(new Set());
   const runTokenRef = useRef<string | null>(null);
+  const cancelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const terminateWorkers = useCallback(() => {
     for (const w of workersRef.current) {
@@ -55,8 +56,17 @@ export function useIdealGearOptimize(
   }, [terminateWorkers]);
 
   const cancel = useCallback(() => {
-    for (const id of activeJobIdsRef.current) {
-      for (const w of workersRef.current) {
+    // Clear any previous cancel timeout
+    if (cancelTimeoutRef.current !== null) {
+      clearTimeout(cancelTimeoutRef.current);
+      cancelTimeoutRef.current = null;
+    }
+
+    // Signal all workers to abort - they will finish with best partial result
+    const oldWorkers = [...workersRef.current];
+    const oldActiveJobIds = [...activeJobIdsRef.current];
+    for (const id of oldActiveJobIds) {
+      for (const w of oldWorkers) {
         try {
           w.postMessage({ type: "cancel", jobId: id });
         } catch {
@@ -66,10 +76,23 @@ export function useIdealGearOptimize(
     }
 
     abortRef.current?.abort();
-    terminateWorkers();
-    runTokenRef.current = null;
+    // Update loading immediately so the UI stops showing the progress
     setLoading(false);
-  }, [terminateWorkers]);
+    // Workers will finish with partial results and send "done".
+    // finalizeIfDone will collect the best result and clean up.
+    // runTokenRef is kept so isStillActive() returns true for partial results.
+    // Safety timeout to force terminate old workers after 30s as fallback
+    cancelTimeoutRef.current = setTimeout(() => {
+      cancelTimeoutRef.current = null;
+      for (const w of oldWorkers) {
+        try {
+          w.terminate();
+        } catch {
+          // ignore
+        }
+      }
+    }, 30000);
+  }, []);
 
   const run = useCallback(
     async (
@@ -137,21 +160,15 @@ export function useIdealGearOptimize(
           const finalizeIfDone = () => {
             if (!isStillActive()) return;
             if (completedJobs < workerCount) return;
-            const valid = results.filter((r) => Number.isFinite(r.maxDamage));
-            if (valid.length === 0) {
-              setError("Ideal gear failed");
-              setLoading(false);
-              terminateWorkers();
-              return;
-            }
-            const best = valid.reduce((acc, cur) =>
-              cur.maxDamage > acc.maxDamage ? cur : acc,
-            );
             try {
+              // Pick the best result from all workers (worker returns partial on cancel)
+              const best = results.reduce((acc, cur) =>
+                cur.maxDamage > acc.maxDamage ? cur : acc,
+              );
               // eslint-disable-next-line no-console
               console.debug("idealHook: finalize best", { best });
+              setResult(best);
             } catch {}
-            setResult(best);
             setLoading(false);
             terminateWorkers();
           };

@@ -21,7 +21,24 @@ import {
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
 import { CandidateStat, DamageEvalResult, RuleSet } from "./types";
-import { CANDIDATE_STATS, SINGLE_LINE_STATS, SPECIAL_LINE_POOLS, RANDOM_LINES_COUNT } from "./gearConstants";
+import {
+  CANDIDATE_STATS,
+  SINGLE_LINE_STATS,
+  SPECIAL_LINE_POOLS,
+  RANDOM_LINES_COUNT,
+} from "./gearConstants";
+
+// Giới hạn kích thước Cache để tránh tràn RAM (Out of Memory)
+const MAX_CACHE_SIZE = 10000;
+
+// Thuật toán hash chuỗi siêu tốc (djb2 biến thể) chuyển đổi string dài thành chuỗi base36 cực ngắn
+export function fastHash(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 33) ^ str.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(36);
+}
 
 export function stableSerialize(value: unknown): string {
   if (value === null || value === undefined) return String(value);
@@ -61,35 +78,31 @@ export function createDamageCacheKey(
   baseElementStats: ElementStats | undefined,
   scopeKey: string,
 ): string {
-  return `${stableSerialize({
+  // Thay vì lưu cả cục JSON, ta băm nó thành một chuỗi cực ngắn (VD: "k3x9a2")
+  const serializedData = stableSerialize({
     path,
     rotation: rotation ?? null,
     baseStats: baseStats ?? null,
     baseElementStats: baseElementStats ?? null,
-  })}|${scopeKey}`;
+  });
+
+  return `${fastHash(serializedData)}|${scopeKey}`;
 }
 
-export function evaluateDamageCached(
-  cache: Map<string, DamageEvalResult>,
-  cacheKey: string,
-  gearBonus: Record<string, number>,
+// 2. Hàm sinh Static Key (Chỉ gọi 1 lần duy nhất trước khi chạy Beam Search)
+export function buildStaticHashKey(
   path: ElementKey,
-  rotation?: Rotation,
-  baseStats?: InputStats,
-  baseElementStats?: ElementStats,
-): DamageEvalResult {
-  const cached = cache.get(cacheKey);
-  if (cached) return cached;
-
-  const result = evaluateDamage(
-    gearBonus,
+  rotation: Rotation | undefined,
+  baseStats: InputStats | undefined,
+  baseElementStats: ElementStats | undefined,
+): string {
+  const serializedData = stableSerialize({
     path,
-    rotation,
-    baseStats,
-    baseElementStats,
-  );
-  cache.set(cacheKey, result);
-  return result;
+    rotation: rotation ?? null,
+    baseStats: baseStats ?? null,
+    baseElementStats: baseElementStats ?? null,
+  });
+  return fastHash(serializedData);
 }
 
 export function evaluateDamage(
@@ -164,6 +177,67 @@ export function evaluateDamage(
   }
 
   return { dmg: calculateDamage(ctx).normal, totalRate, critRate };
+}
+
+export function evaluateDamageCached(
+  cache: Map<string, DamageEvalResult>,
+  cacheKey: string,
+  gearBonus: Record<string, number>,
+  path: ElementKey,
+  rotation?: Rotation,
+  baseStats?: InputStats,
+  baseElementStats?: ElementStats,
+): DamageEvalResult {
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const result = evaluateDamage(
+    gearBonus,
+    path,
+    rotation,
+    baseStats,
+    baseElementStats,
+  );
+  cache.set(cacheKey, result);
+  return result;
+}
+
+// 1. Tạo một Object chứa key tĩnh đã băm sẵn
+export interface FixedOptimizerContext {
+  path: ElementKey;
+  rotation?: Rotation;
+  baseStats?: InputStats;
+  baseElementStats?: ElementStats;
+  staticHashKey: string; // Key này chỉ tính 1 lần
+}
+
+// 3. Hàm Evaluate tối ưu, nhận context tĩnh và chỉ tạo cache key dựa trên gearBonus
+export function evaluateDamageCachedOptimized(
+  cache: Map<string, DamageEvalResult>,
+  ctx: FixedOptimizerContext,
+  gearBonus: Record<string, number>,
+): DamageEvalResult {
+  // Chỉ serialize phần thay đổi duy nhất là Gear Bonus (Chuỗi này rất ngắn)
+  const scopeKey = serializeNumberMap(gearBonus);
+  const cacheKey = `${ctx.staticHashKey}|${scopeKey}`;
+
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const result = evaluateDamage(
+    gearBonus,
+    ctx.path,
+    ctx.rotation,
+    ctx.baseStats,
+    ctx.baseElementStats,
+  );
+
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey) cache.delete(firstKey);
+  }
+
+  cache.set(cacheKey, result);
+  return result;
 }
 
 export function getValPerLine(stat: string): number {
@@ -292,6 +366,7 @@ export function enumerateSpecialGroupPlans(
   candidateStats: readonly CandidateStat[],
   pool: readonly number[],
   slotCount: number,
+  fixedLineStats: Record<string, { lines: number }> = {}, // <-- Đã thêm param này
 ): number[][] {
   const plans: number[][] = [];
   const current = Array.from({ length: candidateStats.length }, () => 0);
@@ -304,7 +379,13 @@ export function enumerateSpecialGroupPlans(
 
     const statIndex = pool[poolIndex];
     const stat = candidateStats[statIndex];
-    const cap = SINGLE_LINE_STATS.has(stat) ? 1 : slotCount;
+
+    // Tính toán lại Cap để cover trường hợp có sẵn Fixed Lines
+    let cap = slotCount;
+    if (SINGLE_LINE_STATS.has(stat)) {
+      const fixedCount = fixedLineStats[stat]?.lines || 0;
+      cap = Math.max(0, 1 - fixedCount);
+    }
     const max = Math.min(cap, remaining);
 
     for (let count = 0; count <= max; count += 1) {

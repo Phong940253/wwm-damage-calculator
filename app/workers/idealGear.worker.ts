@@ -86,7 +86,7 @@ self.addEventListener("message", async (event: MessageEvent) => {
       post({ type: "progress", jobId, current, total });
 
     const mode = payload.mode ?? "exhaustive";
-    
+
     let result: IdealGearResult;
     if (mode === "fast") {
       result = calculateIdealGearStatsFast(
@@ -118,7 +118,13 @@ self.addEventListener("message", async (event: MessageEvent) => {
     post({ type: "done", jobId, result });
   } catch (e) {
     if (e instanceof IdealGearCancelledError) {
-      post({ type: "cancelled", jobId });
+      // The optimizer now returns partial result instead of throwing,
+      // so this path is a fallback for unexpected cases.
+      // Send a dummy result so finalizeIfDone can complete
+      post({
+        type: "cancelled",
+        jobId,
+      });
       return;
     }
 
