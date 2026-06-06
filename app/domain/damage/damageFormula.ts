@@ -25,6 +25,7 @@ const buildDamageCache = (g: (k: string) => number): DamageCache => ({
   affinityDmgBonus: g("AffinityDMGBonus"),
   dmgBoost: g("DamageBoost"),
   bossDmgBoost: g("CombatBoostAgainstBossUnits"),
+  namelessSwordCharged: g("NamelessSwordChargedSkillDMGBoost"),
 });
 
 export interface CalcExpectedNormalSteps {

@@ -24,6 +24,7 @@ const MESSAGES = {
             equippedGear: "Equipped Gear",
             compareGear: "Compare Gear",
             idealGear: "Ideal Gear",
+            gearLab: "Gear Lab",
         },
         settings: {
             language: "Language",
@@ -74,6 +75,7 @@ const MESSAGES = {
             equippedGear: "Đang trang bị",
             compareGear: "So sánh trang bị",
             idealGear: "Trang bị lý tưởng",
+            gearLab: "Phòng thí nghiệm",
         },
         settings: {
             language: "Ngôn ngữ",

@@ -661,7 +661,8 @@ export function buildDamageContext(
       return { key: k, total, lines: explainElementStat(k as ElementStatKey) };
     }
 
-    return { key: k, total, lines: [] };
+    const bonusLines = explainBonusLines(k);
+    return { key: k, total, lines: bonusLines };
   };
 
   return { get, explain };

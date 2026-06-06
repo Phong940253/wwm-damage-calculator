@@ -28,6 +28,7 @@ export type TuneStatKey =
   | "CombatBoostAgainstBossUnits"
   | "AllMartialArtsBoost"
   | "ArtOfSwordDMGBoost"
+  | "NamelessSwordChargedSkillDMGBoost"
   | "Power"
   | "Momentum"
   | "Agility";
@@ -72,6 +73,7 @@ const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
   CombatBoostAgainstBossUnits: { minPerLine: 2.6, maxPerLine: 2.6 },
   AllMartialArtsBoost: { minPerLine: 2.6, maxPerLine: 2.6 },
   ArtOfSwordDMGBoost: { minPerLine: 5.2, maxPerLine: 5.2 },
+  NamelessSwordChargedSkillDMGBoost: { minPerLine: 5.0, maxPerLine: 5.0 },
   Power: { minPerLine: 20.2, maxPerLine: 40.4 },
   Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
   Agility: { minPerLine: 20.2, maxPerLine: 40.4 },
