@@ -1,6 +1,12 @@
 import { ElementKey, Rotation } from "@/app/types";
 import { InputStats, ElementStats } from "@/app/types";
-import { IdealGearResult, IdealGear, RuleSet, SearchState, DamageEvalResult } from "./types";
+import {
+  IdealGearResult,
+  IdealGear,
+  RuleSet,
+  SearchState,
+  DamageEvalResult,
+} from "./types";
 import { TuneStatKey, getPlayerTuneStatRange } from "./tuneAdvisor";
 import {
   evaluateDamageCached,
@@ -58,7 +64,7 @@ export function calculateIdealGearStats(
   const candidateIndexByStat = new Map<CandidateStat, number>(
     candidateStats.map((stat, index) => [stat, index]),
   );
-  
+
   const specialLinePools = ruleSpecialLinePools.map((pool) =>
     pool
       .map((stat) => candidateIndexByStat.get(stat) ?? -1)
@@ -185,7 +191,8 @@ export function calculateIdealGearStats(
     const stat = candidateStats[statIndex];
     allocations[statIndex] += delta;
     currentBonus[stat] =
-      (currentBonus[stat] || 0) + delta * (getPlayerTuneStatRange(stat as any, 91).maxPerLine);
+      (currentBonus[stat] || 0) +
+      delta * getPlayerTuneStatRange(stat as any, 91).maxPerLine;
   };
 
   const snapshotAllocations = () => {
@@ -245,7 +252,10 @@ export function calculateIdealGearStats(
 
   const randomComboCount =
     randomLineCount > 0
-      ? countRandomCombinations(candidateStats.map(() => MAX_LINES_PER_STAT), randomLineCount)
+      ? countRandomCombinations(
+          candidateStats.map(() => MAX_LINES_PER_STAT),
+          randomLineCount,
+        )
       : 1;
   progressTotal = activeSpecialPlans.length * randomComboCount;
   reportProgress(true);
@@ -626,7 +636,7 @@ export async function calculateIdealGearStatsBeamSearch(
   const { candidateStats, randomLineCount, baseGearBonus } = ruleSet;
   const perLineValues = candidateStats.map((stat) => getValPerLine(stat));
   const candidateCount = candidateStats.length;
-  
+
   const damageCache = new Map<string, DamageEvalResult>();
   const evaluateCurrentDamage = (gearBonus: Record<string, number>) =>
     evaluateDamageCached(
@@ -651,7 +661,7 @@ export async function calculateIdealGearStatsBeamSearch(
 
   type SpecialPlan = {
     lines: string[];
-    counts: number[]; 
+    counts: number[];
   };
 
   const specialPlans: SpecialPlan[] = [];
@@ -670,8 +680,9 @@ export async function calculateIdealGearStatsBeamSearch(
     const pool = specialLinePoolsIndices[slot];
     for (const statIndex of pool) {
       const stat = candidateStats[statIndex];
-      if (SINGLE_LINE_STATS.has(stat) && currentSpecialCounts[statIndex] >= 1) continue;
-      
+      if (SINGLE_LINE_STATS.has(stat) && currentSpecialCounts[statIndex] >= 1)
+        continue;
+
       currentSpecialLines.push(stat);
       currentSpecialCounts[statIndex]++;
       generateSpecialPlans(slot + 1);
@@ -691,51 +702,83 @@ export async function calculateIdealGearStatsBeamSearch(
       tuning: number[];
       bonus: Record<string, number>;
       score: number;
+      lastAddedIndex: number; // TRỌNG TÂM: Khử trùng lặp
     };
-    
-    let beam: BeamState[] = [{
-      tuning: new Array(candidateCount).fill(0),
-      bonus: { ...baseGearBonus },
-      score: 0,
-    }];
-    
-    for(let i=0; i<candidateCount; i++) {
-        beam[0].bonus[candidateStats[i]] = (beam[0].bonus[candidateStats[i]] || 0) + plan.counts[i] * perLineValues[i];
+
+    let beam: BeamState[] = [
+      {
+        tuning: new Array(candidateCount).fill(0),
+        bonus: { ...baseGearBonus },
+        score: 0,
+        lastAddedIndex: 0,
+      },
+    ];
+
+    for (let i = 0; i < candidateCount; i++) {
+      beam[0].bonus[candidateStats[i]] =
+        (beam[0].bonus[candidateStats[i]] || 0) +
+        plan.counts[i] * perLineValues[i];
     }
     beam[0].score = evaluateCurrentDamage(beam[0].bonus).dmg;
 
     for (let i = 0; i < randomLineCount; i++) {
       let nextBeam: BeamState[] = [];
+
       for (const state of beam) {
-        for (let statIndex = 0; statIndex < candidateCount; statIndex++) {
-          const totalCount = state.tuning[statIndex] + plan.counts[statIndex] + (ruleSet.fixedLineStats[candidateStats[statIndex]]?.lines ?? 0);
-          if (totalCount >= MAX_LINES_PER_STAT && !SINGLE_LINE_STATS.has(candidateStats[statIndex])) continue;
-          if (SINGLE_LINE_STATS.has(candidateStats[statIndex]) && totalCount >= 1) continue;
+        // Chỉ duyệt từ lastAddedIndex trở đi để tránh sinh hoán vị trùng lặp
+        for (
+          let statIndex = state.lastAddedIndex;
+          statIndex < candidateCount;
+          statIndex++
+        ) {
+          const fixedCount =
+            ruleSet.fixedLineStats[candidateStats[statIndex]]?.lines ?? 0;
+          const stat = candidateStats[statIndex];
+
+          // Tối ưu hóa check Limit 8 (bao gồm cả Fixed Lines)
+          if (
+            !SINGLE_LINE_STATS.has(stat) &&
+            state.tuning[statIndex] + fixedCount >= MAX_LINES_PER_STAT
+          ) {
+            continue;
+          }
+
+          // Check Exclusive (giữ nguyên logic chuẩn của bạn)
+          const totalExclusiveCount =
+            state.tuning[statIndex] + plan.counts[statIndex] + fixedCount;
+          if (SINGLE_LINE_STATS.has(stat) && totalExclusiveCount >= 1) continue;
 
           const nextTuning = [...state.tuning];
           nextTuning[statIndex]++;
-          const nextBonus = {...state.bonus};
-          nextBonus[candidateStats[statIndex]] = (nextBonus[candidateStats[statIndex]] || 0) + perLineValues[statIndex];
-          
+
+          const nextBonus = { ...state.bonus };
+          nextBonus[stat] = (nextBonus[stat] || 0) + perLineValues[statIndex];
+
           nextBeam.push({
             tuning: nextTuning,
             bonus: nextBonus,
-            score: evaluateCurrentDamage(nextBonus).dmg
+            score: evaluateCurrentDamage(nextBonus).dmg,
+            lastAddedIndex: statIndex, // Lưu lại vị trí để ép thứ tự tổ hợp
           });
         }
       }
-      nextBeam.sort((a,b) => b.score - a.score);
+
+      nextBeam.sort((a, b) => b.score - a.score);
       beam = nextBeam.slice(0, beamWidth);
     }
-    
+
     if (beam.length > 0 && beam[0].score > bestDamage) {
-        bestDamage = beam[0].score;
-        bestBonus = beam[0].bonus;
-        bestSpecialLines = plan.lines;
-        bestAllocations = buildTotalCountsSnapshot(candidateStats, beam[0].tuning.map((count, idx) => count + plan.counts[idx]), ruleSet.fixedLineStats);
+      bestDamage = beam[0].score;
+      bestBonus = beam[0].bonus;
+      bestSpecialLines = plan.lines;
+      bestAllocations = buildTotalCountsSnapshot(
+        candidateStats,
+        beam[0].tuning.map((count, idx) => count + plan.counts[idx]),
+        ruleSet.fixedLineStats,
+      );
     }
   }
-  
+
   return {
     path,
     maxDamage: bestDamage,

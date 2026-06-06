@@ -1,7 +1,7 @@
 import type { ElementStats, InputStats, Rotation } from "@/app/types";
 import type { ElementKey } from "@/app/constants";
 import {
-  calculateIdealGearStats,
+  calculateIdealGearStatsBeamSearch,
   calculateIdealGearStatsFast,
   IdealGearCancelledError,
   type IdealGearResult,
@@ -63,7 +63,7 @@ function post(
   (self as unknown as { postMessage: (m: unknown) => void }).postMessage(msg);
 }
 
-self.addEventListener("message", (event: MessageEvent) => {
+self.addEventListener("message", async (event: MessageEvent) => {
   const msg = event.data as InMessage;
 
   if (!msg || typeof msg !== "object" || !("type" in msg)) return;
@@ -86,34 +86,34 @@ self.addEventListener("message", (event: MessageEvent) => {
       post({ type: "progress", jobId, current, total });
 
     const mode = payload.mode ?? "exhaustive";
-    const result =
-      mode === "fast"
-        ? calculateIdealGearStatsFast(
-            payload.path,
-            payload.rotation,
-            payload.stats,
-            payload.elementStats,
-            {
-              onProgress,
-              signal: controller.signal,
-              timeMs: payload.timeMs,
-              seed: payload.seed,
-              initialResult: payload.initialResult,
-            },
-          )
-        : calculateIdealGearStats(
-            payload.path,
-            payload.rotation,
-            payload.stats,
-            payload.elementStats,
-            {
-              onProgress,
-              signal: controller.signal,
-              shardIndex: payload.shardIndex,
-              shardCount: payload.shardCount,
-              initialResult: payload.initialResult,
-            },
-          );
+    
+    let result: IdealGearResult;
+    if (mode === "fast") {
+      result = calculateIdealGearStatsFast(
+        payload.path,
+        payload.rotation,
+        payload.stats,
+        payload.elementStats,
+        {
+          onProgress,
+          signal: controller.signal,
+          timeMs: payload.timeMs,
+          seed: payload.seed,
+          initialResult: payload.initialResult,
+        },
+      );
+    } else {
+      result = await calculateIdealGearStatsBeamSearch(
+        payload.path,
+        payload.rotation,
+        payload.stats,
+        payload.elementStats,
+        {
+          onProgress,
+          signal: controller.signal,
+        },
+      );
+    }
 
     post({ type: "done", jobId, result });
   } catch (e) {
