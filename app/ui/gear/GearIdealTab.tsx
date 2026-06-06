@@ -37,6 +37,7 @@ function formatLineValue(value: number | null | undefined): string | null {
 
 export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
   const [path, setPath] = useState<ElementKey>("bellstrike");
+  const [hoveredStat, setHoveredStat] = useState<string | null>(null);
   const maxWorkers =
     typeof navigator !== "undefined" && navigator.hardwareConcurrency
       ? Math.max(1, navigator.hardwareConcurrency)
@@ -304,6 +305,9 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                   <TrendingUp size={24} className="text-amber-500" />
                   {result ? Math.floor(damageResult.normal.value).toLocaleString() : "-"}
                 </div>
+                <div className="text-xs text-zinc-400 mt-1">
+                  Total Lines: {Object.values(result.allocations).reduce((a, b) => a + Number(b), 0)} / 48
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -315,7 +319,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                 {[0, 1, 2, 3].map((idx) => {
                   const gear = gears[idx];
                   if (!gear) return null;
-                  return <IdealGearCard key={idx} gear={gear} getStatLabel={getStatLabel} />;
+                  return <IdealGearCard key={idx} gear={gear} getStatLabel={getStatLabel} hoveredStat={hoveredStat} setHoveredStat={setHoveredStat} />;
                 })}
               </div>
               {/* Right Side: Gears 5, 6, 7, 8 */}
@@ -323,7 +327,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
                 {[4, 5, 6, 7].map((idx) => {
                   const gear = gears[idx];
                   if (!gear) return null;
-                  return <IdealGearCard key={idx} gear={gear} getStatLabel={getStatLabel} />;
+                  return <IdealGearCard key={idx} gear={gear} getStatLabel={getStatLabel} hoveredStat={hoveredStat} setHoveredStat={setHoveredStat} />;
                 })}
               </div>
             </div>
@@ -395,7 +399,17 @@ const getStatColor = (key: string) => {
   return "text-zinc-400";
 };
 
-function IdealGearCard({ gear, getStatLabel }: { gear: IdealGearDisplay, getStatLabel: (k: string) => string }) {
+function IdealGearCard({ 
+  gear, 
+  getStatLabel, 
+  hoveredStat, 
+  setHoveredStat 
+}: { 
+  gear: IdealGearDisplay, 
+  getStatLabel: (k: string) => string,
+  hoveredStat: string | null,
+  setHoveredStat: (stat: string | null) => void
+}) {
   return (
     <div className="flex flex-col rounded-xl bg-zinc-900/40 border border-zinc-800/60 shadow-sm hover:border-emerald-500/30 transition-all duration-300 group overflow-hidden h-full">
       {/* Header */}
@@ -409,7 +423,11 @@ function IdealGearCard({ gear, getStatLabel }: { gear: IdealGearDisplay, getStat
 
       <div className="p-3 space-y-2.5 flex-grow">
         {/* Slot 1: Special Line (The "Primary") */}
-        <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent p-2.5 border border-amber-500/20 shadow-[inset_0_0_12px_rgba(245,158,11,0.05)]">
+        <div 
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent p-2.5 border border-amber-500/20 shadow-[inset_0_0_12px_rgba(245,158,11,0.05)] transition-all ${hoveredStat === gear.specialLine ? 'ring-2 ring-emerald-500/50' : ''}`}
+            onMouseEnter={() => setHoveredStat(gear.specialLine)}
+            onMouseLeave={() => setHoveredStat(null)}
+        >
           <div className="flex items-center gap-2.5 relative z-10">
             <div className="p-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
               <Zap size={14} className="fill-amber-400/20" />
@@ -438,6 +456,7 @@ function IdealGearCard({ gear, getStatLabel }: { gear: IdealGearDisplay, getStat
           {gear.tuningLines.map((stat, i) => {
             const isFixed = i === 4; // Slot 6
             const statColor = isFixed ? "text-blue-300" : getStatColor(stat);
+            const isHighlighted = hoveredStat === stat;
 
             return (
               <div
@@ -446,9 +465,13 @@ function IdealGearCard({ gear, getStatLabel }: { gear: IdealGearDisplay, getStat
                   flex items-center justify-between px-2.5 py-2 rounded-md text-[11px] font-medium transition-all duration-200
                   ${isFixed
                     ? "bg-blue-500/10 border border-blue-500/20 shadow-[inset_0_0_8px_rgba(59,130,246,0.05)]"
-                    : "bg-zinc-950/40 border border-zinc-800/40 hover:bg-zinc-800/60 hover:border-zinc-700/60"
+                    : isHighlighted 
+                      ? "bg-emerald-500/20 border border-emerald-500/40"
+                      : "bg-zinc-950/40 border border-zinc-800/40 hover:bg-zinc-800/60 hover:border-zinc-700/60"
                   }
                 `}
+                onMouseEnter={() => setHoveredStat(stat)}
+                onMouseLeave={() => setHoveredStat(null)}
               >
                 <div className="flex items-center gap-2.5">
                   {isFixed ? (
