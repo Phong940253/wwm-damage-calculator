@@ -19,26 +19,28 @@ const LEVEL_EFFECTS: Record<
   {
     bossResistancePct: number;
   }
-> = {
-  71: { bossResistancePct: 0 },
-  81: { bossResistancePct: 13 },
-  91: { bossResistancePct: 31 },
-  95: { bossResistancePct: 31 },
-};
+> = {};
 
-export const SUPPORTED_PLAYER_LEVELS = [71, 81, 91, 95];
-export const SUPPORTED_ENEMY_LEVELS = [71, 81, 85, 90, 95, 100];
+export const SUPPORTED_PLAYER_LEVELS = [71, 81, 86, 91, 96, 101];
+export const SUPPORTED_ENEMY_LEVELS = [71, 81, 86, 91, 96, 101];
 
 export const SUPPORTED_LEVELS = Array.from(
   new Set([...SUPPORTED_PLAYER_LEVELS, ...SUPPORTED_ENEMY_LEVELS]),
 ).sort((a, b) => a - b);
 
 export function getBossResistancePct(enemyLevel: number): number {
-  if (enemyLevel >= 81 && enemyLevel <= 85) return 13;
-  if (enemyLevel >= 86 && enemyLevel <= 90) return 30;
-  if (enemyLevel >= 91 && enemyLevel <= 95) return 31;
-  if (enemyLevel >= 96 && enemyLevel <= 100) return 65;
-  return LEVEL_EFFECTS[enemyLevel]?.bossResistancePct ?? 0;
+  if (enemyLevel < 81) return calculateDamageReduction(0);
+  if (enemyLevel >= 81 && enemyLevel <= 85) return calculateDamageReduction(15);
+  if (enemyLevel >= 86 && enemyLevel <= 90) return calculateDamageReduction(30);
+  if (enemyLevel >= 91 && enemyLevel <= 95) return calculateDamageReduction(45);
+  if (enemyLevel >= 96 && enemyLevel <= 99) return calculateDamageReduction(65);
+  if (enemyLevel >= 100) return calculateDamageReduction(115);
+  return calculateDamageReduction(LEVEL_EFFECTS[enemyLevel]?.bossResistancePct ?? 0);
+}
+
+export function calculateDamageReduction(resistance: number): number {
+  if (resistance < 0) return 0;
+  return resistance / (resistance + 100);
 }
 
 export function clampToSupportedPlayerLevel(level: number): number {
