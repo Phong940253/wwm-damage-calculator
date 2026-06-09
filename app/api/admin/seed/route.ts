@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/app/utils/supabase/server";
+import { createAdminClient } from "@/app/utils/supabase/server";
 
-// Import current static data
+// Import current static data from JSON files
 import skillsData from "@/app/domain/skill/data/skills.json";
 import passiveSkillsData from "@/app/domain/skill/data/passiveSkills.json";
 import innerWaysData from "@/app/domain/skill/data/innerWays.json";
 import defaultRotationsData from "@/app/domain/skill/data/defaultRotations.json";
 import martialArtsData from "@/app/domain/skill/data/martialArts.json";
 
-const ADMIN_SECRET = "my-secret-admin-key";
+const ADMIN_SECRET = process.env.ADMIN_SECRET || "my-secret-admin-key";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const dataToSeed = [
       { key: "skills", data: skillsData },
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       .upsert(dataToSeed, { onConflict: "key" });
 
     if (error) {
-      console.error("Supabase Error during seed:", error);
+      console.error("Supabase Seed Error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

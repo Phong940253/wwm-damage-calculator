@@ -8,6 +8,13 @@ import { InnerWayModal } from "./components/InnerWayModal";
 import { MartialArtModal } from "./components/MartialArtModal";
 import { DefaultRotationModal } from "./components/DefaultRotationModal";
 
+// Import setters to sync memory with UI changes
+import { setSkills } from "@/app/domain/skill/skills";
+import { setPassiveSkills } from "@/app/domain/skill/passiveSkills";
+import { setInnerWays } from "@/app/domain/skill/innerWays";
+import { setMartialArts } from "@/app/domain/skill/types";
+import { setDefaultRotations } from "@/app/domain/skill/defaultRotations";
+
 export default function AdminPage() {
   const [secretKey, setSecretKey] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -68,9 +75,17 @@ export default function AdminPage() {
           throw new Error(error.message);
         }
       } else if (data) {
-        setParsedData(data.data || []);
-        setRawJsonText(JSON.stringify(data.data || [], null, 2));
+        const items = data.data || [];
+        setParsedData(items);
+        setRawJsonText(JSON.stringify(items, null, 2));
         setStatus("Data loaded successfully.");
+
+        // Sync with global memory stores so other components reflect changes immediately
+        if (dataKey === "skills") setSkills(items);
+        else if (dataKey === "passiveSkills") setPassiveSkills(items);
+        else if (dataKey === "innerWays") setInnerWays(items);
+        else if (dataKey === "martialArts") setMartialArts(items);
+        else if (dataKey === "defaultRotations") setDefaultRotations(items);
       }
     } catch (err: any) {
       setStatus(`Error: ${err.message}`);
@@ -113,6 +128,13 @@ export default function AdminPage() {
         setStatus(`Error: ${resData.error}`);
       } else {
         setStatus("Saved successfully!");
+
+        // Sync with global memory stores after successful save
+        if (dataKey === "skills") setSkills(dataToSave);
+        else if (dataKey === "passiveSkills") setPassiveSkills(dataToSave);
+        else if (dataKey === "innerWays") setInnerWays(dataToSave);
+        else if (dataKey === "martialArts") setMartialArts(dataToSave);
+        else if (dataKey === "defaultRotations") setDefaultRotations(dataToSave);
       }
     } catch (err: any) {
       setStatus(`Error: ${err.message}`);

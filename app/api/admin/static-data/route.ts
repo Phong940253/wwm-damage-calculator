@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/app/utils/supabase/server";
+import { createAdminClient } from "@/app/utils/supabase/server";
 
-const ADMIN_SECRET = "my-secret-admin-key"; // The user can change this later or we can put it in .env
+const ADMIN_SECRET = process.env.ADMIN_SECRET || "my-secret-admin-key";
 
 export async function POST(request: Request) {
   try {
@@ -15,8 +15,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing key or data" }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
+    // Supabase UPSERT
     const { error } = await supabase
       .from("static_data")
       .upsert({ key, data }, { onConflict: "key" });
@@ -33,12 +34,16 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.from("static_data").select("*");
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from("static_data").select("*");
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-
-  return NextResponse.json({ data });
 }
