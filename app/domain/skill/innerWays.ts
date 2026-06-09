@@ -1,11 +1,10 @@
 import { InnerWay } from "./passiveSkillTypes";
-
 import innerWaysData from "./data/innerWays.json";
 
 export const SWORD_MORPH_T3_INNER_WAY_ID = "iw_bellstrike_sword_morph_t3";
 
-/**
- * Database Inner Ways
- * Có thể áp dụng cho cụ thể martial art hoặc tất cả
- */
-export const INNER_WAYS: InnerWay[] = [...(innerWaysData as InnerWay[])];
+export let INNER_WAYS: InnerWay[] = innerWaysData as InnerWay[];
+
+export function setInnerWays(data: InnerWay[]) {
+  INNER_WAYS = data;
+}

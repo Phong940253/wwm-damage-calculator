@@ -5,6 +5,7 @@ import { ThemeProvider } from "../components/theme-provider"; // Adjust path if 
 import "katex/dist/katex.min.css";
 import { GearProvider } from "./providers/GearContext";
 import { I18nProvider } from "./providers/I18nProvider";
+import { StaticDataProvider } from "./providers/StaticDataProvider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -110,14 +111,16 @@ export default function RootLayout({
       >
         <GearProvider>
           <I18nProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
+            <StaticDataProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="dark"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
+            </StaticDataProvider>
           </I18nProvider>
         </GearProvider>
         <Analytics />
