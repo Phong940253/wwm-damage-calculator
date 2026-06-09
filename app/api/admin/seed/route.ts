@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
 
-    const dataToSeed = [
+    const dataToSeed: Array<{ key: string; data: unknown }> = [
       { key: "skills", data: skillsData },
       { key: "passiveSkills", data: passiveSkillsData },
       { key: "innerWays", data: innerWaysData },
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, message: "Database seeded successfully!" });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

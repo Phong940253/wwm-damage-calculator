@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/app/utils/supabase/client";
 import { SkillModal } from "./components/SkillModal";
 import { PassiveSkillModal } from "./components/PassiveSkillModal";
@@ -19,19 +19,19 @@ export default function AdminPage() {
   const [secretKey, setSecretKey] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [dataKey, setDataKey] = useState("skills");
-  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [parsedData, setParsedData] = useState<unknown[]>([]);
   const [status, setStatus] = useState("");
   const [showRawJson, setShowRawJson] = useState(false);
   const [rawJsonText, setRawJsonText] = useState("");
 
   // Modal states
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<unknown>(null);
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
   const [isPassiveModalOpen, setIsPassiveModalOpen] = useState(false);
   const [isInnerWayModalOpen, setIsInnerWayModalOpen] = useState(false);
   const [isMartialArtModalOpen, setIsMartialArtModalOpen] = useState(false);
   const [isDefaultRotationModalOpen, setIsDefaultRotationModalOpen] = useState(false);
-  
+
   useEffect(() => {
     const savedKey = localStorage.getItem("wwm_admin_key");
     if (savedKey) {
@@ -44,7 +44,6 @@ export default function AdminPage() {
     if (secretKey) {
       localStorage.setItem("wwm_admin_key", secretKey);
       setIsAuthenticated(true);
-      fetchData();
     }
   };
 
@@ -56,7 +55,7 @@ export default function AdminPage() {
     setRawJsonText("");
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setStatus("Loading...");
     try {
       const supabase = createClient();
@@ -65,7 +64,7 @@ export default function AdminPage() {
         .select("data")
         .eq("key", dataKey)
         .single();
-        
+
       if (error) {
         if (error.code === "PGRST116") {
           setStatus("No data found for this key.");
@@ -75,28 +74,28 @@ export default function AdminPage() {
           throw new Error(error.message);
         }
       } else if (data) {
-        const items = data.data || [];
+        const items = (data.data as unknown[]) || [];
         setParsedData(items);
         setRawJsonText(JSON.stringify(items, null, 2));
         setStatus("Data loaded successfully.");
 
-        // Sync with global memory stores so other components reflect changes immediately
-        if (dataKey === "skills") setSkills(items);
-        else if (dataKey === "passiveSkills") setPassiveSkills(items);
-        else if (dataKey === "innerWays") setInnerWays(items);
-        else if (dataKey === "martialArts") setMartialArts(items);
-        else if (dataKey === "defaultRotations") setDefaultRotations(items);
+        // Sync with global memory stores
+        if (dataKey === "skills") setSkills(items as import("@/app/domain/skill/types").Skill[]);
+        else if (dataKey === "passiveSkills") setPassiveSkills(items as import("@/app/domain/skill/passiveSkillTypes").PassiveSkill[]);
+        else if (dataKey === "innerWays") setInnerWays(items as import("@/app/domain/skill/passiveSkillTypes").InnerWay[]);
+        else if (dataKey === "martialArts") setMartialArts(items as import("@/app/domain/skill/types").MartialArt[]);
+        else if (dataKey === "defaultRotations") setDefaultRotations(items as import("@/app/types").Rotation[]);
       }
-    } catch (err: any) {
-      setStatus(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      setStatus(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
-  };
+  }, [dataKey]);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchData();
     }
-  }, [dataKey, isAuthenticated]);
+  }, [dataKey, isAuthenticated, fetchData]);
 
   const handleSave = async () => {
     setStatus("Saving to database...");
@@ -130,14 +129,14 @@ export default function AdminPage() {
         setStatus("Saved successfully!");
 
         // Sync with global memory stores after successful save
-        if (dataKey === "skills") setSkills(dataToSave);
-        else if (dataKey === "passiveSkills") setPassiveSkills(dataToSave);
-        else if (dataKey === "innerWays") setInnerWays(dataToSave);
-        else if (dataKey === "martialArts") setMartialArts(dataToSave);
-        else if (dataKey === "defaultRotations") setDefaultRotations(dataToSave);
+        if (dataKey === "skills") setSkills(dataToSave as import("@/app/domain/skill/types").Skill[]);
+        else if (dataKey === "passiveSkills") setPassiveSkills(dataToSave as import("@/app/domain/skill/passiveSkillTypes").PassiveSkill[]);
+        else if (dataKey === "innerWays") setInnerWays(dataToSave as import("@/app/domain/skill/passiveSkillTypes").InnerWay[]);
+        else if (dataKey === "martialArts") setMartialArts(dataToSave as import("@/app/domain/skill/types").MartialArt[]);
+        else if (dataKey === "defaultRotations") setDefaultRotations(dataToSave as import("@/app/types").Rotation[]);
       }
-    } catch (err: any) {
-      setStatus(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      setStatus(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -156,12 +155,12 @@ export default function AdminPage() {
         setStatus("Database seeded successfully!");
         fetchData();
       }
-    } catch (err: any) {
-      setStatus(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      setStatus(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
-  const handleEditItem = (item: any) => {
+  const handleEditItem = (item: unknown) => {
     setEditingItem(item);
     if (dataKey === "skills") setIsSkillModalOpen(true);
     else if (dataKey === "passiveSkills") setIsPassiveModalOpen(true);
@@ -189,15 +188,16 @@ export default function AdminPage() {
 
   const handleDeleteItem = (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-    const newData = parsedData.filter(item => item.id !== id);
+    const newData = parsedData.filter((item) => (item as { id: string }).id !== id);
     setParsedData(newData);
     setRawJsonText(JSON.stringify(newData, null, 2));
     setStatus(`Deleted item ${id}. Remember to click Save Changes to push to database.`);
   };
 
-  const handleModalSave = (updatedItem: any) => {
-    let newData = [...parsedData];
-    const idx = newData.findIndex(item => item.id === updatedItem.id);
+  const handleModalSave = (updatedItem: unknown) => {
+    const newData = [...parsedData];
+    const item = updatedItem as { id: string };
+    const idx = newData.findIndex((i) => (i as { id: string }).id === item.id);
     if (idx >= 0 && editingItem) {
       newData[idx] = updatedItem;
     } else {
@@ -212,8 +212,8 @@ export default function AdminPage() {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background text-foreground">
         <h1 className="mb-4 text-2xl font-bold">Admin Login</h1>
-        <input 
-          type="password" 
+        <input
+          type="password"
           value={secretKey}
           onChange={(e) => setSecretKey(e.target.value)}
           placeholder="Enter Secret Key"
@@ -247,11 +247,10 @@ export default function AdminPage() {
             <button
               key={item.key}
               onClick={() => setDataKey(item.key)}
-              className={`text-left px-4 py-3 rounded-md transition-colors ${
-                dataKey === item.key 
-                  ? "bg-primary text-primary-foreground font-medium shadow-sm" 
+              className={`text-left px-4 py-3 rounded-md transition-colors ${dataKey === item.key
+                  ? "bg-primary text-primary-foreground font-medium shadow-sm"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               {item.label}
             </button>
@@ -270,7 +269,7 @@ export default function AdminPage() {
           <h2 className="text-2xl font-bold">
             {NAV_ITEMS.find(i => i.key === dataKey)?.label}
           </h2>
-          
+
           <div className="flex gap-3 items-center">
             <button onClick={fetchData} className="rounded bg-secondary px-4 py-2 text-secondary-foreground text-sm font-medium hover:opacity-90">
               Refresh DB
@@ -280,10 +279,10 @@ export default function AdminPage() {
             </button>
             <div className="w-px h-6 bg-border mx-2"></div>
             <label className="flex items-center gap-2 text-sm cursor-pointer border px-3 py-2 rounded hover:bg-muted transition-colors">
-              <input 
-                type="checkbox" 
-                checked={showRawJson} 
-                onChange={(e) => setShowRawJson(e.target.checked)} 
+              <input
+                type="checkbox"
+                checked={showRawJson}
+                onChange={(e) => setShowRawJson(e.target.checked)}
               />
               Raw Editor
             </label>
@@ -298,83 +297,86 @@ export default function AdminPage() {
           <div className="text-foreground font-medium bg-background px-3 py-1 rounded border shadow-sm">Total Items: {parsedData.length}</div>
         </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col min-h-0 border rounded">
-        {showRawJson ? (
-          <textarea
-            value={rawJsonText}
-            onChange={(e) => setRawJsonText(e.target.value)}
-            className="flex-1 w-full bg-background p-4 text-foreground font-mono text-sm resize-none focus:outline-none"
-            placeholder="JSON data..."
-          />
-        ) : (
-          <div className="flex-1 overflow-auto bg-card">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-muted sticky top-0 z-10">
-                <tr>
-                  <th className="p-3 border-b">ID</th>
-                  <th className="p-3 border-b">Name</th>
-                  <th className="p-3 border-b">Martial Art</th>
-                  <th className="p-3 border-b text-right">
-                    <button onClick={handleAddNew} className="text-primary hover:underline font-semibold">+ Add New</button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {parsedData.map((item: any) => (
-                  <tr key={item.id} className="border-b hover:bg-muted/50">
-                    <td className="p-3 font-mono text-xs">{item.id}</td>
-                    <td className="p-3">{item.name}</td>
-                    <td className="p-3 opacity-70">{item.martialArtId || item.applicableToMartialArtId || "Universal"}</td>
-                    <td className="p-3 text-right">
-                      <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:underline mr-4">Edit</button>
-                      <button onClick={() => handleDeleteItem(item.id)} className="text-destructive hover:underline">Delete</button>
-                    </td>
-                  </tr>
-                ))}
-                {parsedData.length === 0 && (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 border rounded">
+          {showRawJson ? (
+            <textarea
+              value={rawJsonText}
+              onChange={(e) => setRawJsonText(e.target.value)}
+              className="flex-1 w-full bg-background p-4 text-foreground font-mono text-sm resize-none focus:outline-none"
+              placeholder="JSON data..."
+            />
+          ) : (
+            <div className="flex-1 overflow-auto bg-card">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted sticky top-0 z-10">
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                      No data found.
-                    </td>
+                    <th className="p-3 border-b">ID</th>
+                    <th className="p-3 border-b">Name</th>
+                    <th className="p-3 border-b">Martial Art</th>
+                    <th className="p-3 border-b text-right">
+                      <button onClick={handleAddNew} className="text-primary hover:underline font-semibold">+ Add New</button>
+                    </th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {parsedData.map((item) => {
+                    const typedItem = item as { id: string; name: string; martialArtId?: string; applicableToMartialArtId?: string };
+                    return (
+                      <tr key={typedItem.id} className="border-b hover:bg-muted/50">
+                        <td className="p-3 font-mono text-xs">{typedItem.id}</td>
+                        <td className="p-3">{typedItem.name}</td>
+                        <td className="p-3 opacity-70">{typedItem.martialArtId || typedItem.applicableToMartialArtId || "Universal"}</td>
+                        <td className="p-3 text-right">
+                          <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:underline mr-4">Edit</button>
+                          <button onClick={() => handleDeleteItem(typedItem.id)} className="text-destructive hover:underline">Delete</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {parsedData.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                        No data found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Modals */}
-      <SkillModal 
-        isOpen={isSkillModalOpen} 
-        onClose={() => setIsSkillModalOpen(false)} 
-        skill={editingItem} 
-        onSave={handleModalSave} 
+      <SkillModal
+        isOpen={isSkillModalOpen}
+        onClose={() => setIsSkillModalOpen(false)}
+        skill={editingItem as import("@/app/domain/skill/types").Skill}
+        onSave={handleModalSave}
       />
-      <PassiveSkillModal 
-        isOpen={isPassiveModalOpen} 
-        onClose={() => setIsPassiveModalOpen(false)} 
-        skill={editingItem} 
-        onSave={handleModalSave} 
+      <PassiveSkillModal
+        isOpen={isPassiveModalOpen}
+        onClose={() => setIsPassiveModalOpen(false)}
+        skill={editingItem as import("@/app/domain/skill/passiveSkillTypes").PassiveSkill}
+        onSave={handleModalSave}
       />
-      <InnerWayModal 
-        isOpen={isInnerWayModalOpen} 
-        onClose={() => setIsInnerWayModalOpen(false)} 
-        innerWay={editingItem} 
-        onSave={handleModalSave} 
+      <InnerWayModal
+        isOpen={isInnerWayModalOpen}
+        onClose={() => setIsInnerWayModalOpen(false)}
+        innerWay={editingItem as import("@/app/domain/skill/passiveSkillTypes").InnerWay}
+        onSave={handleModalSave}
       />
-      <MartialArtModal 
-        isOpen={isMartialArtModalOpen} 
-        onClose={() => setIsMartialArtModalOpen(false)} 
-        martialArt={editingItem} 
-        onSave={handleModalSave} 
+      <MartialArtModal
+        isOpen={isMartialArtModalOpen}
+        onClose={() => setIsMartialArtModalOpen(false)}
+        martialArt={editingItem as import("@/app/domain/skill/types").MartialArt}
+        onSave={handleModalSave}
       />
-      <DefaultRotationModal 
-        isOpen={isDefaultRotationModalOpen} 
-        onClose={() => setIsDefaultRotationModalOpen(false)} 
-        rotation={editingItem} 
-        onSave={handleModalSave} 
+      <DefaultRotationModal
+        isOpen={isDefaultRotationModalOpen}
+        onClose={() => setIsDefaultRotationModalOpen(false)}
+        rotation={editingItem as import("@/app/types").Rotation}
+        onSave={handleModalSave}
       />
     </div>
   );

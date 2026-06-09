@@ -7,7 +7,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MartialArt, MartialArtWeaponType } from "@/app/domain/skill/types";
+import { 
+  MartialArt, 
+  MartialArtId,
+  MartialArtWeaponType
+} from "@/app/domain/skill/types";
+import { ElementKey } from "@/app/constants";
 
 interface MartialArtModalProps {
   isOpen: boolean;
@@ -17,7 +22,7 @@ interface MartialArtModalProps {
 }
 
 const DEFAULT_MA: MartialArt = {
-  id: "new_martial_art" as any,
+  id: "bellstrike_splendor" as MartialArtId,
   name: "",
   element: "bellstrike",
   role: "dps",
@@ -36,7 +41,7 @@ export function MartialArtModal({ isOpen, onClose, martialArt, onSave }: Martial
     }
   }, [martialArt, isOpen]);
 
-  const handleChange = (field: keyof MartialArt, value: any) => {
+  const handleChange = <K extends keyof MartialArt>(field: K, value: MartialArt[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -55,17 +60,17 @@ export function MartialArtModal({ isOpen, onClose, martialArt, onSave }: Martial
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium">ID</label>
-            <Input 
-              value={formData.id} 
-              onChange={(e) => handleChange("id", e.target.value)} 
+            <Input
+              value={formData.id}
+              onChange={(e) => handleChange("id", e.target.value as MartialArtId)}
             />
           </div>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Name</label>
-            <Input 
-              value={formData.name} 
-              onChange={(e) => handleChange("name", e.target.value)} 
+            <Input
+              value={formData.name}
+              onChange={(e) => handleChange("name", e.target.value)}
             />
           </div>
 
@@ -74,8 +79,9 @@ export function MartialArtModal({ isOpen, onClose, martialArt, onSave }: Martial
             <select
               className="rounded border border-input bg-background p-2"
               value={formData.element}
-              onChange={(e) => handleChange("element", e.target.value)}
+              onChange={(e) => handleChange("element", e.target.value as ElementKey)}
             >
+
               <option value="bellstrike">Bellstrike</option>
               <option value="silkbind">Silkbind</option>
               <option value="stonesplit">Stonesplit</option>
@@ -89,7 +95,7 @@ export function MartialArtModal({ isOpen, onClose, martialArt, onSave }: Martial
             <select
               className="rounded border border-input bg-background p-2"
               value={formData.role}
-              onChange={(e) => handleChange("role", e.target.value)}
+              onChange={(e) => handleChange("role", e.target.value as "dps" | "support" | "tank")}
             >
               <option value="dps">DPS</option>
               <option value="support">Support</option>
@@ -102,7 +108,7 @@ export function MartialArtModal({ isOpen, onClose, martialArt, onSave }: Martial
             <select
               className="rounded border border-input bg-background p-2"
               value={formData.weapon_1}
-              onChange={(e) => handleChange("weapon_1", e.target.value)}
+              onChange={(e) => handleChange("weapon_1", e.target.value as MartialArtWeaponType)}
             >
               <option value="sword">Sword</option>
               <option value="spear">Spear</option>
@@ -120,7 +126,7 @@ export function MartialArtModal({ isOpen, onClose, martialArt, onSave }: Martial
             <select
               className="rounded border border-input bg-background p-2"
               value={formData.weapon_2}
-              onChange={(e) => handleChange("weapon_2", e.target.value)}
+              onChange={(e) => handleChange("weapon_2", e.target.value as MartialArtWeaponType)}
             >
               <option value="sword">Sword</option>
               <option value="spear">Spear</option>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InnerWay, PassiveModifier } from "@/app/domain/skill/passiveSkillTypes";
-import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
+import { LIST_MARTIAL_ARTS, MartialArtId } from "@/app/domain/skill/types";
 import { STAT_LABELS } from "@/app/constants";
 
 interface InnerWayModalProps {
@@ -27,7 +27,7 @@ const DEFAULT_INNER_WAY: InnerWay = {
 };
 
 const STAT_OPTIONS = Object.entries(STAT_LABELS)
-  .map(([key, label]) => ({ key, label }))
+  .map(([key, label]) => ({ key, label: label || "" }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
 export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayModalProps) {
@@ -43,7 +43,7 @@ export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayMod
     }
   }, [innerWay, isOpen]);
 
-  const handleChange = (field: keyof InnerWay, value: any) => {
+  const handleChange = <K extends keyof InnerWay>(field: K, value: InnerWay[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -54,10 +54,12 @@ export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayMod
     }));
   };
 
-  const handleModifierChange = (index: number, field: string, value: any) => {
+  const handleModifierChange = (index: number, field: string, value: string | number | boolean | undefined) => {
     setFormData((prev) => {
       const newMods = [...prev.modifiers];
-      newMods[index] = { ...newMods[index], [field]: value } as any;
+      const mod = { ...newMods[index] } as Record<string, unknown>;
+      mod[field] = value;
+      newMods[index] = mod as unknown as PassiveModifier;
       return { ...prev, modifiers: newMods };
     });
   };
@@ -135,8 +137,9 @@ export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayMod
             <select
               className="rounded border border-input bg-background p-2"
               value={formData.applicableToMartialArtId || ""}
-              onChange={(e) => handleChange("applicableToMartialArtId", e.target.value || undefined)}
+              onChange={(e) => handleChange("applicableToMartialArtId", (e.target.value as MartialArtId) || undefined)}
             >
+
               <option value="">-- Universal (None) --</option>
               {LIST_MARTIAL_ARTS.map((ma) => (
                 <option key={ma.id} value={ma.id}>{ma.name}</option>

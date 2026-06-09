@@ -59,7 +59,7 @@ export function SkillModal({ isOpen, onClose, skill, onSave }: SkillModalProps) 
     }
   }, [skill, isOpen]);
 
-  const handleChange = (field: keyof Skill, value: any) => {
+  const handleChange = <K extends keyof Skill>(field: K, value: Skill[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -81,7 +81,7 @@ export function SkillModal({ isOpen, onClose, skill, onSave }: SkillModalProps) 
     }));
   };
 
-  const handleHitChange = (index: number, field: keyof SkillHit, value: any) => {
+  const handleHitChange = <K extends keyof SkillHit>(index: number, field: K, value: string) => {
     setFormData((prev) => {
       const newHits = [...prev.hits];
       newHits[index] = { ...newHits[index], [field]: Number(value) };

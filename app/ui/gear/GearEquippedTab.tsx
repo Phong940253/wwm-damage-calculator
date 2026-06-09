@@ -263,9 +263,6 @@ export default function GearEquippedTab() {
     }
     parts.push("el:", es.selected ?? "");
 
-    // es has explicit type ElementStats, but we need to access its properties safely if they are nested or not in the type definition, 
-    // but based on typical usage, it seems safe. The previous 'any' was likely for flexibility in key access.
-    // Let's use Object.entries to iterate safely.
     Object.entries(es).sort(([k1], [k2]) => k1.localeCompare(k2)).forEach(([k, v]) => {
       if (v && typeof v === "object") {
         parts.push(k, Number(v.current ?? 0), Number(v.increase ?? 0));

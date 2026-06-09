@@ -9,7 +9,6 @@ import { setMartialArts } from "@/app/domain/skill/types";
 
 export function StaticDataProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -19,33 +18,33 @@ export function StaticDataProvider({ children }: { children: React.ReactNode }) 
         if (!res.ok) {
           throw new Error("Failed to fetch static data");
         }
-        
-        const { data } = await res.json();
 
-        if (data && data.length > 0) {
-          for (const row of data) {
+        const { data } = await res.json();
+        if (data && Array.isArray(data)) {
+          // Process each key and update the mutable stores
+          for (const row of data as Array<{ key: string; data: unknown }>) {
             switch (row.key) {
               case "skills":
-                setSkills(row.data);
+                setSkills(row.data as import("@/app/domain/skill/types").Skill[]);
                 break;
               case "passiveSkills":
-                setPassiveSkills(row.data);
+                setPassiveSkills(row.data as import("@/app/domain/skill/passiveSkillTypes").PassiveSkill[]);
                 break;
               case "innerWays":
-                setInnerWays(row.data);
+                setInnerWays(row.data as import("@/app/domain/skill/passiveSkillTypes").InnerWay[]);
                 break;
               case "defaultRotations":
-                setDefaultRotations(row.data);
+                setDefaultRotations(row.data as import("@/app/types").Rotation[]);
                 break;
               case "martialArts":
-                setMartialArts(row.data);
+                setMartialArts(row.data as import("@/app/domain/skill/types").MartialArt[]);
                 break;
             }
           }
         } else {
           console.warn("No static data found in database. Using local JSON fallbacks.");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to load static data from API:", err);
         // Fallback to local JSON on error is handled by the initial state of the domain files
       } finally {

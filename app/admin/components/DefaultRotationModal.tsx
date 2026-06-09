@@ -51,7 +51,7 @@ export function DefaultRotationModal({ isOpen, onClose, rotation, onSave }: Defa
     }
   }, [rotation, isOpen]);
 
-  const handleChange = (field: keyof Rotation, value: any) => {
+  const handleChange = <K extends keyof Rotation>(field: K, value: Rotation[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -70,7 +70,7 @@ export function DefaultRotationModal({ isOpen, onClose, rotation, onSave }: Defa
     }));
   };
 
-  const handleSkillChange = (index: number, field: keyof RotationSkill, value: any) => {
+  const handleSkillChange = <K extends keyof RotationSkill>(index: number, field: K, value: RotationSkill[K]) => {
     setFormData((prev) => {
       const newSkills = [...prev.skills];
       newSkills[index] = { ...newSkills[index], [field]: value };

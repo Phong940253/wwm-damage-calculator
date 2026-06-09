@@ -8,8 +8,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PassiveSkill, PassiveModifier, StatKey } from "@/app/domain/skill/passiveSkillTypes";
-import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
+import { PassiveSkill, PassiveModifier } from "@/app/domain/skill/passiveSkillTypes";
+import { LIST_MARTIAL_ARTS, MartialArtId } from "@/app/domain/skill/types";
 import { STAT_LABELS } from "@/app/constants";
 
 interface PassiveSkillModalProps {
@@ -27,7 +27,7 @@ const DEFAULT_PASSIVE: PassiveSkill = {
 };
 
 const STAT_OPTIONS = Object.entries(STAT_LABELS)
-  .map(([key, label]) => ({ key, label }))
+  .map(([key, label]) => ({ key, label: label || "" }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
 export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSkillModalProps) {
@@ -43,7 +43,7 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
     }
   }, [skill, isOpen]);
 
-  const handleChange = (field: keyof PassiveSkill, value: any) => {
+  const handleChange = <K extends keyof PassiveSkill>(field: K, value: PassiveSkill[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -54,10 +54,12 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
     }));
   };
 
-  const handleModifierChange = (index: number, field: string, value: any) => {
+  const handleModifierChange = (index: number, field: string, value: string | number | boolean | undefined) => {
     setFormData((prev) => {
       const newMods = [...prev.modifiers];
-      newMods[index] = { ...newMods[index], [field]: value } as any;
+      const mod = { ...newMods[index] } as Record<string, unknown>;
+      mod[field] = value;
+      newMods[index] = mod as unknown as PassiveModifier;
       return { ...prev, modifiers: newMods };
     });
   };
@@ -86,28 +88,28 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <label className="text-sm font-medium">ID</label>
-              <Input 
-                value={formData.id} 
-                onChange={(e) => handleChange("id", e.target.value)} 
+              <Input
+                value={formData.id}
+                onChange={(e) => handleChange("id", e.target.value)}
                 placeholder="ps_bellstrike_core"
               />
             </div>
 
             <div className="grid gap-2">
               <label className="text-sm font-medium">Name</label>
-              <Input 
-                value={formData.name} 
-                onChange={(e) => handleChange("name", e.target.value)} 
+              <Input
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
               />
             </div>
           </div>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Description</label>
-            <textarea 
+            <textarea
               className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              value={formData.description} 
-              onChange={(e) => handleChange("description", e.target.value)} 
+              value={formData.description}
+              onChange={(e) => handleChange("description", e.target.value)}
             />
           </div>
 
@@ -117,7 +119,7 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
               <select
                 className="rounded border border-input bg-background p-2"
                 value={formData.martialArtId || ""}
-                onChange={(e) => handleChange("martialArtId", e.target.value || undefined)}
+                onChange={(e) => handleChange("martialArtId", (e.target.value as MartialArtId) || undefined)}
               >
                 <option value="">-- Universal (None) --</option>
                 {LIST_MARTIAL_ARTS.map((ma) => (
@@ -128,17 +130,17 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
 
             <div className="grid gap-2">
               <label className="text-sm font-medium">Default Uptime (%)</label>
-              <Input 
+              <Input
                 type="number"
-                value={formData.defaultUptimePercent || 0} 
-                onChange={(e) => handleChange("defaultUptimePercent", Number(e.target.value))} 
+                value={formData.defaultUptimePercent || 0}
+                onChange={(e) => handleChange("defaultUptimePercent", Number(e.target.value))}
               />
             </div>
           </div>
 
           <div className="flex gap-6">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox 
+              <Checkbox
                 checked={formData.includedInStats}
                 onCheckedChange={(checked) => handleChange("includedInStats", !!checked)}
               />
@@ -154,15 +156,15 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
             <div className="space-y-4">
               {formData.modifiers.map((mod, idx) => (
                 <div key={idx} className="rounded border p-4 flex flex-col gap-3 relative bg-muted/30">
-                  <Button 
-                    size="sm" 
-                    variant="destructive" 
-                    className="absolute top-2 right-2 h-6 px-2 text-xs" 
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="absolute top-2 right-2 h-6 px-2 text-xs"
                     onClick={() => handleRemoveModifier(idx)}
                   >
                     Remove
                   </Button>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-1">
                       <label className="text-[10px] font-bold uppercase text-muted-foreground">Type</label>
@@ -194,13 +196,13 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
                         <Input type="number" step="0.1" value={mod.value || 0} onChange={(e) => handleModifierChange(idx, "value", Number(e.target.value))} />
                       </div>
                       <div className="grid gap-1 place-content-center">
-                         <label className="flex items-center gap-2 text-xs cursor-pointer mt-4">
-                            <Checkbox 
-                                checked={mod.applyUptime !== false}
-                                onCheckedChange={(checked) => handleModifierChange(idx, "applyUptime", !!checked)}
-                            />
-                            Apply Uptime
-                         </label>
+                        <label className="flex items-center gap-2 text-xs cursor-pointer mt-4">
+                          <Checkbox
+                            checked={mod.applyUptime !== false}
+                            onCheckedChange={(checked) => handleModifierChange(idx, "applyUptime", !!checked)}
+                          />
+                          Apply Uptime
+                        </label>
                       </div>
                     </div>
                   ) : (
@@ -220,13 +222,13 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
                         <Input type="number" step="0.001" value={mod.ratio || 0} onChange={(e) => handleModifierChange(idx, "ratio", Number(e.target.value))} />
                       </div>
                       <div className="grid gap-1 place-content-center">
-                         <label className="flex items-center gap-2 text-xs cursor-pointer mt-4">
-                            <Checkbox 
-                                checked={mod.applyUptime !== false}
-                                onCheckedChange={(checked) => handleModifierChange(idx, "applyUptime", !!checked)}
-                            />
-                            Apply Uptime
-                         </label>
+                        <label className="flex items-center gap-2 text-xs cursor-pointer mt-4">
+                          <Checkbox
+                            checked={mod.applyUptime !== false}
+                            onCheckedChange={(checked) => handleModifierChange(idx, "applyUptime", !!checked)}
+                          />
+                          Apply Uptime
+                        </label>
                       </div>
                     </div>
                   )}
@@ -248,10 +250,10 @@ export function PassiveSkillModal({ isOpen, onClose, skill, onSave }: PassiveSki
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Notes</label>
-            <Input 
-              value={formData.notes || ""} 
-              onChange={(e) => handleChange("notes", e.target.value)} 
-              placeholder="Internal notes..." 
+            <Input
+              value={formData.notes || ""}
+              onChange={(e) => handleChange("notes", e.target.value)}
+              placeholder="Internal notes..."
             />
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/app/utils/supabase/server";
+import { createAdminClient, createClient } from "@/app/utils/supabase/server";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "my-secret-admin-key";
 
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     // Supabase UPSERT
     const { error } = await supabase
       .from("static_data")
-      .upsert({ key, data }, { onConflict: "key" });
+      .upsert({ key, data } as { key: string; data: unknown }, { onConflict: "key" });
 
     if (error) {
       console.error("Supabase Error:", error);
@@ -28,8 +28,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
 
@@ -43,7 +43,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
