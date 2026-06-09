@@ -269,7 +269,7 @@
     {
         "id": "iw_bellstrike_sword_morph_t3",
         "name": "Sword Morph (Tier 3)",
-        "description": "Sword energy attacks do not cause Abrasion against Exhausted targets; against Exhausted non-player targets, the 3rd sword energy hit is guaranteed Affinity.",
+        "description": "Sword energy attacks do not cause Abrasion against Exhausted targets; against Exhausted non-player targets, the 3rd sword energy hit is guaranteed Affinity. (Exhausted uptime: 28.57%)",
         "tierGroupId": "iw_bellstrike_sword_morph",
         "applicableToMartialArtId": "bellstrike_splendor",
         "defaultEnabledForMartialArtIds": [
@@ -277,7 +277,7 @@
         ],
         "modifiers": [],
         "level": 3,
-        "notes": "Exhausted means target has depleted Qi. This calculator does not yet model abrasion suppression or guaranteed affinity hits; assumed Exhausted uptime is 20% for future approximation."
+        "notes": "Exhausted means target has depleted Qi. Experimental data: 25s to exhaust, 10s duration (10/35 = 28.57% uptime). During this window, sword energy hits (Homeless Charge: Stage 3) suppress abrasion and the 3rd hit is guaranteed Affinity."
     },
     {
         "id": "iw_bellstrike_sword_morph_t5",

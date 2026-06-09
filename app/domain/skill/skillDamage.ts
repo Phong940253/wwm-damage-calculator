@@ -5,7 +5,10 @@ import { Skill } from "./types";
 import { createSkillContext } from "./skillContext";
 import { DamageResult, SkillDamageResult } from "../damage/type";
 import { calcExpectedNormalBreakdown } from "../damage/damageFormula";
-import { SWORD_MORPH_T3_INNER_WAY_ID } from "./innerWays";
+import {
+  SWORD_MORPH_T3_INNER_WAY_ID,
+  SWORD_MORPH_T5_INNER_WAY_ID,
+} from "./innerWays";
 
 export const SCARLET_SPIN_SKILL_ID = "bamboocut_dust_umbrella_scarlet_spin";
 export const HOMELESS_CHARGE_STAGE_3_SKILL_ID = "nameless_homeless_charge_3";
@@ -198,6 +201,97 @@ function applyScaleToSkillDamageResult(
   };
 }
 
+const resolveSwordMorphExhaustedLogic = ({
+  ctx,
+  skill,
+  current,
+}: InnerWaySkillDamageResolverCtx): SkillDamageResult => {
+  if (skill.id !== HOMELESS_CHARGE_STAGE_3_SKILL_ID) return current;
+
+  // "Sword energy attacks do not cause Abrasion against Exhausted targets;
+  // against Exhausted non-player targets, the 3rd sword energy hit is guaranteed Affinity."
+  // Exhausted uptime: 28.57% (10s duration / 35s cycle)
+  const uptime = 10 / 35;
+  const g = ctx.get;
+
+  // Calculate approximate ratio of Normal (Average) damage vs Abrasion (Min) damage.
+  // Abrasion damage uses min attack and has a 1.02 multiplier.
+  const minPhys = g("MinPhysicalAttack");
+  const maxPhys = g("MaxPhysicalAttack");
+  const minAttr = g("MINAttributeAttackOfYOURType");
+  const maxAttr = g("MAXAttributeAttackOfYOURType");
+  const avgPhys = (minPhys + maxPhys) / 2;
+  const avgAttr = (minAttr + maxAttr) / 2;
+  const baseRatio =
+    (avgPhys + avgAttr) / Math.max(1, (minPhys + minAttr) * 1.02);
+
+  const nextPerHit = current.perHit.map((h, idx) => {
+    if (!h.averageBreakdown) return h;
+
+    // Hit 3: Guaranteed Affinity during uptime
+    if (idx === 2) {
+      return {
+        ...h,
+        normal: {
+          ...h.normal,
+          value: (1 - uptime) * h.normal.value + uptime * h.affinity.value,
+        },
+        averageBreakdown: {
+          normal: (1 - uptime) * h.averageBreakdown.normal,
+          critical: (1 - uptime) * h.averageBreakdown.critical,
+          abrasion: (1 - uptime) * h.averageBreakdown.abrasion,
+          affinity:
+            (1 - uptime) * h.averageBreakdown.affinity +
+            uptime * h.affinity.value,
+        },
+      };
+    }
+
+    // Hits 1 & 2: Abrasion suppression during uptime
+    // Abrasion hits (minDamage) become Normal hits (baseDamage)
+    const abrasionWeight = h.averageBreakdown.abrasion / Math.max(1, h.min.value);
+    const suppressedAbrasionBonus =
+      uptime * abrasionWeight * (h.min.value * baseRatio - h.min.value);
+
+    return {
+      ...h,
+      normal: {
+        ...h.normal,
+        value: h.normal.value + suppressedAbrasionBonus,
+      },
+      averageBreakdown: {
+        ...h.averageBreakdown,
+        normal:
+          h.averageBreakdown.normal +
+          uptime * abrasionWeight * (h.min.value * baseRatio),
+        abrasion: (1 - uptime) * h.averageBreakdown.abrasion,
+      },
+    };
+  });
+
+  // Recalculate total
+  const nextTotal: DamageResult = {
+    ...current.total,
+    normal: { ...current.total.normal, value: 0 },
+    averageBreakdown: { normal: 0, critical: 0, abrasion: 0, affinity: 0 },
+  };
+
+  for (const h of nextPerHit) {
+    nextTotal.normal.value += h.normal.value;
+    if (nextTotal.averageBreakdown && h.averageBreakdown) {
+      nextTotal.averageBreakdown.normal += h.averageBreakdown.normal;
+      nextTotal.averageBreakdown.critical += h.averageBreakdown.critical;
+      nextTotal.averageBreakdown.abrasion += h.averageBreakdown.abrasion;
+      nextTotal.averageBreakdown.affinity += h.averageBreakdown.affinity;
+    }
+  }
+
+  return {
+    total: nextTotal,
+    perHit: nextPerHit,
+  };
+};
+
 const INNER_WAY_SKILL_DAMAGE_RESOLVERS: InnerWaySkillDamageResolver[] = [
   {
     innerWayId: PHANTOM_RALLY_T0_INNER_WAY_ID,
@@ -228,58 +322,11 @@ const INNER_WAY_SKILL_DAMAGE_RESOLVERS: InnerWaySkillDamageResolver[] = [
   },
   {
     innerWayId: SWORD_MORPH_T3_INNER_WAY_ID,
-    apply: ({ skill, current }) => {
-      if (skill.id !== HOMELESS_CHARGE_STAGE_3_SKILL_ID) return current;
-      if (current.perHit.length < 3) return current;
-
-      // "against Exhausted non-player targets, the 3rd sword energy hit is guaranteed Affinity."
-      // Approximation: 20% exhausted uptime.
-      const uptime = 0.2;
-      const h3 = current.perHit[2];
-
-      const nextH3: DamageResult = {
-        ...h3,
-        normal: {
-          ...h3.normal,
-          value: (1 - uptime) * h3.normal.value + uptime * h3.affinity.value,
-        },
-        averageBreakdown: h3.averageBreakdown
-          ? {
-              normal: (1 - uptime) * h3.averageBreakdown.normal,
-              critical: (1 - uptime) * h3.averageBreakdown.critical,
-              abrasion: (1 - uptime) * h3.averageBreakdown.abrasion,
-              affinity:
-                uptime * h3.affinity.value +
-                (1 - uptime) * h3.averageBreakdown.affinity,
-            }
-          : h3.averageBreakdown,
-      };
-
-      const nextPerHit = [...current.perHit];
-      nextPerHit[2] = nextH3;
-
-      // Recalculate total
-      const nextTotal: DamageResult = {
-        ...current.total,
-        normal: { ...current.total.normal, value: 0 },
-        averageBreakdown: { normal: 0, critical: 0, abrasion: 0, affinity: 0 },
-      };
-
-      for (const h of nextPerHit) {
-        nextTotal.normal.value += h.normal.value;
-        if (nextTotal.averageBreakdown && h.averageBreakdown) {
-          nextTotal.averageBreakdown.normal += h.averageBreakdown.normal;
-          nextTotal.averageBreakdown.critical += h.averageBreakdown.critical;
-          nextTotal.averageBreakdown.abrasion += h.averageBreakdown.abrasion;
-          nextTotal.averageBreakdown.affinity += h.averageBreakdown.affinity;
-        }
-      }
-
-      return {
-        total: nextTotal,
-        perHit: nextPerHit,
-      };
-    },
+    apply: resolveSwordMorphExhaustedLogic,
+  },
+  {
+    innerWayId: SWORD_MORPH_T5_INNER_WAY_ID,
+    apply: resolveSwordMorphExhaustedLogic,
   },
 ];
 

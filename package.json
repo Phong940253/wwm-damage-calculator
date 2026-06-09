@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "dev:webpack": "next dev",
+    "test": "vitest",
+    "dev": "next dev",
+    "dev:turbopack": "next --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -37,6 +38,10 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "ts-node": "^10",
+    "vite": "^5",
+    "vitest": "^1",
+    "tsconfig-paths": "^4",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "19.0.10",

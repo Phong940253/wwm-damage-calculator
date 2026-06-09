@@ -473,6 +473,11 @@ export function SkillDamageBackpropDialog({
                                                 unit="percent"
                                             />
                                             <StatValue
+                                                statKey="NamelessSwordChargedSkillDMGBoost"
+                                                value={ctx.get("NamelessSwordChargedSkillDMGBoost")}
+                                                unit="percent"
+                                            />
+                                            <StatValue
                                                 statKey="PrecisionRate"
                                                 value={steps.P_raw * 100}
                                                 unit="percent"

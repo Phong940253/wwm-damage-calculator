@@ -5,6 +5,7 @@ import GearCustomizeTab from "../gear/GearCustomizeTab";
 import GearEquippedTab from "../gear/GearEquippedTab";
 import GearCompareTab from "../gear/GearCompareTab";
 import GearIdealTab from "../gear/GearIdealTab";
+import GearLabTab from "../gear/GearLabTab";
 import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
 import { useRotation } from "@/app/hooks/useRotation";
 import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "@/app/constants";
@@ -43,6 +44,8 @@ export default function GearTabLayout() {
       )}
 
       {tab === "ideal" && <GearIdealTab rotation={selectedRotation} />}
+
+      {tab === "lab" && <GearLabTab rotation={selectedRotation} />}
     </div>
   );
 }

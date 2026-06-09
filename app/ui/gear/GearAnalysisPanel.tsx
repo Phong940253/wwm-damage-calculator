@@ -31,7 +31,6 @@ import { useI18n } from "@/app/providers/I18nProvider";
 import { getStatLabel } from "@/app/utils/statLabel";
 import { STAT_GROUPS, GEAR_SLOTS } from "@/app/constants";
 import { analyzeEquippedGear } from "@/app/domain/gear/gearAggregate";
-import { getStatTheoreticalMaxPercentage } from "@/app/domain/gear/tuneAdvisor";
 import { CustomGear, GearSlot, ElementStats } from "@/app/types";
 import { exportElementToPNG } from "@/app/utils/exportPng";
 import { cn } from "@/lib/utils";

@@ -279,5 +279,7 @@ export function createSkillContext(
     return value;
   };
 
-  return { get };
+  const explain = (key: string) => baseCtx.explain?.(key) || null;
+
+  return { get, explain };
 }

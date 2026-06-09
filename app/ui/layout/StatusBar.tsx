@@ -13,6 +13,7 @@ import {
   GitCompare,
   Zap,
   Settings,
+  Beaker,
 } from "lucide-react";
 import { useI18n } from "@/app/providers/I18nProvider";
 
@@ -141,6 +142,15 @@ export function StatusBar() {
               title={t("status.idealGear")}
             >
               <Zap size={18} />
+            </TabButton>
+
+            <TabButton
+              active={tab === "lab"}
+              onClick={() => set("gear", "lab")}
+              label={t("status.gearLab")}
+              title={t("status.gearLab")}
+            >
+              <Beaker size={18} />
             </TabButton>
           </>
         )}
