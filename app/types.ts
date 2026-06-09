@@ -154,4 +154,4 @@ export type RootTabKey = "main" | "gear";
 export type MainTabKey = "stats" | "import-export" | "rotation";
 export type GearTabKey = "equipped" | "custom" | "compare";
 
-export { ElementKey };
+export type { ElementKey };

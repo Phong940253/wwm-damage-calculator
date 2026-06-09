@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ElementStats, InputStats, Rotation } from "@/app/types";
 import type { ElementKey } from "@/app/constants";
 import {
-  calculateIdealGearStats,
+  calculateIdealGearStatsBeamSearch,
   calculateIdealGearStatsFast,
   IdealGearCancelledError,
   type IdealGearResult,
@@ -165,7 +165,6 @@ export function useIdealGearOptimize(
               const best = results.reduce((acc, cur) =>
                 cur.maxDamage > acc.maxDamage ? cur : acc,
               );
-              // eslint-disable-next-line no-console
               console.debug("idealHook: finalize best", { best });
               setResult(best);
             } catch {}
@@ -196,7 +195,6 @@ export function useIdealGearOptimize(
               if (msg.type === "done") {
                 // Debug: log worker result for tracing specialLines
                 try {
-                  // eslint-disable-next-line no-console
                   console.debug("idealWorker: done", {
                     jobId: msg.jobId,
                     result: msg.result,
@@ -279,14 +277,14 @@ export function useIdealGearOptimize(
                 stats,
                 elementStats,
                 {
-                  onProgress: (current, total) => setProgress({ current, total }),
+                  onProgress: (current, total) =>
+                    setProgress({ current, total }),
                   signal: controller.signal,
                 },
               );
 
         if (!controller.signal.aborted) {
           try {
-            // eslint-disable-next-line no-console
             console.debug("idealHook: sync result", { res });
           } catch {}
           setResult(res);
@@ -301,7 +299,7 @@ export function useIdealGearOptimize(
         setLoading(false);
       }
     },
-    [cancel, elementStats, rotation, stats, terminateWorkers],
+    [cancel, elementStats, result, rotation, stats, terminateWorkers],
   );
 
   return {

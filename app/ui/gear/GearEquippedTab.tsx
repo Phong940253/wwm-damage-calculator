@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { PencilLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -249,7 +249,7 @@ export default function GearEquippedTab() {
     damageCacheRef.current.clear();
   }, [stats, elementStats, bonus, selectedRotation]);
 
-  const makeDamageKey = (
+  const makeDamageKey = useCallback((
     s: InputStats,
     es: ElementStats,
     b: Record<string, number>,
@@ -283,9 +283,9 @@ export default function GearEquippedTab() {
       : "no-rot";
     parts.push("rot:", rotKey);
     return parts.join("|");
-  };
+  }, []);
 
-  const calcWithCache = (
+  const calcWithCache = useCallback((
     s: InputStats,
     es: ElementStats,
     b: Record<string, number>,
@@ -298,11 +298,11 @@ export default function GearEquippedTab() {
     const val = calcRotationAwareNormalDamage(s, es, b, rot);
     cache.set(key, val);
     return val;
-  };
+  }, [makeDamageKey]);
 
   const fullDamage = useMemo(() => {
     return calcWithCache(stats, elementStats, bonus, selectedRotation);
-  }, [stats, elementStats, bonus, selectedRotation]);
+  }, [stats, elementStats, bonus, selectedRotation, calcWithCache]);
 
   const slotsWithImpact = useMemo(() => {
     const rows = GEAR_SLOTS.map(({ key, label }) => {
@@ -390,7 +390,7 @@ export default function GearEquippedTab() {
       .sort((a, b) => a.percent - b.percent)[0]?.key;
 
     return { rows, worstKey: worst };
-  }, [customGears, equipped, stats, elementStats, selectedRotation, fullDamage]);
+  }, [customGears, equipped, stats, elementStats, selectedRotation, fullDamage, calcWithCache]);
 
   const rowsByKey = useMemo(() => {
     const map = new Map<GearSlot, (typeof slotsWithImpact.rows)[number]>();

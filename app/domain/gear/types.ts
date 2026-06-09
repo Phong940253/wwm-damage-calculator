@@ -1,5 +1,6 @@
-import { ElementKey, Rotation } from "@/app/types";
-import { InputStats, ElementStats } from "@/app/types";
+import { ElementKey } from "@/app/types";
+
+export type StatType = "main" | "sub" | "bonus";
 
 export interface IdealGearResult {
   path: ElementKey;
@@ -19,7 +20,7 @@ export class IdealGearCancelledError extends Error {
   }
 }
 
-export type CandidateStat = 
+export type CandidateStat =
   | "MaxPhysicalAttack"
   | "bellstrikeMax"
   | "CriticalRate"

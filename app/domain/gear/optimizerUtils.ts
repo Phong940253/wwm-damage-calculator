@@ -264,9 +264,8 @@ export function getValPerLine(stat: string): number {
   return getPlayerTuneStatRange(stat as TuneStatKey, 91).maxPerLine;
 }
 
-export function getIdealGearBaseBonus(
-  path: ElementKey,
-): Record<string, number> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function getIdealGearBaseBonus(_path?: ElementKey): Record<string, number> {
   const baseGearBonus: Record<string, number> = {
     MinPhysicalAttack: 71 + 53 + 53,
     MaxPhysicalAttack: 106 + 124 + 124,
@@ -290,7 +289,7 @@ export function buildRuleSet(path: ElementKey): RuleSet {
         }
       : {};
 
-  const baseGearBonus = getIdealGearBaseBonus(path);
+  const baseGearBonus = getIdealGearBaseBonus();
 
   for (const [stat, { lines, valuePerLine }] of Object.entries(
     fixedLineStats,

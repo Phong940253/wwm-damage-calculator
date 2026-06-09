@@ -3,18 +3,16 @@ import { InputStats, ElementStats } from "@/app/types";
 import {
   IdealGearResult,
   IdealGear,
-  RuleSet,
   SearchState,
   DamageEvalResult,
+  CandidateStat,
 } from "./types";
-import { TuneStatKey, getPlayerTuneStatRange } from "./tuneAdvisor";
+import { getPlayerTuneStatRange, type TuneStatKey } from "./tuneAdvisor";
 import {
-  evaluateDamageCached,
   createDamageCacheKey,
   serializeNumberMap,
   buildRuleSet,
   buildTotalCountsSnapshot,
-  evaluateDamage,
   buildBonusFromCounts,
   countSpecialLines,
   buildSpecialSequence,
@@ -24,13 +22,9 @@ import {
   FixedOptimizerContext,
   evaluateDamageCachedOptimized,
   evaluateDamageCachedWithKey,
+  evaluateDamageCached,
 } from "./optimizerUtils";
-import {
-  CANDIDATE_STATS,
-  SINGLE_LINE_STATS,
-  MAX_LINES_PER_STAT,
-  RANDOM_LINES_COUNT,
-} from "./gearConstants";
+import { SINGLE_LINE_STATS, MAX_LINES_PER_STAT } from "./gearConstants";
 
 export class IdealGearCancelledError extends Error {
   constructor() {
@@ -196,7 +190,7 @@ export function calculateIdealGearStats(
     allocations[statIndex] += delta;
     currentBonus[stat] =
       (currentBonus[stat] || 0) +
-      delta * getPlayerTuneStatRange(stat as any, 91).maxPerLine;
+      delta * getPlayerTuneStatRange(stat as TuneStatKey, 91).maxPerLine;
   };
 
   const snapshotAllocations = () => {
@@ -681,22 +675,6 @@ export async function calculateIdealGearStatsBeamSearch(
   };
 
   const damageCache = new Map<string, DamageEvalResult>();
-  const evaluateCurrentDamage = (gearBonus: Record<string, number>) =>
-    evaluateDamageCached(
-      damageCache,
-      createDamageCacheKey(
-        path,
-        rotation,
-        baseStats,
-        baseElementStats,
-        serializeNumberMap(gearBonus),
-      ),
-      gearBonus,
-      path,
-      rotation,
-      baseStats,
-      baseElementStats,
-    );
 
   const specialLinePoolsIndices = ruleSet.specialLinePools.map((pool) =>
     pool.map((stat) => candidateStats.indexOf(stat)).filter((i) => i >= 0),
@@ -707,7 +685,7 @@ export async function calculateIdealGearStatsBeamSearch(
     counts: number[];
   };
 
-  let allSpecialPlans: SpecialPlan[] = [];
+  const allSpecialPlans: SpecialPlan[] = [];
   const currentSpecialLines: string[] = [];
   const currentSpecialCounts = new Array(candidateCount).fill(0);
   const seenPlans = new Set<string>();
@@ -741,9 +719,10 @@ export async function calculateIdealGearStatsBeamSearch(
   generateSpecialPlans(0);
 
   // SHARDING: Chia nhỏ các special plans cho từng worker
-  const specialPlans = shardCount > 1
-    ? allSpecialPlans.filter((_, idx) => idx % shardCount === shardIndex)
-    : allSpecialPlans;
+  const specialPlans =
+    shardCount > 1
+      ? allSpecialPlans.filter((_, idx) => idx % shardCount === shardIndex)
+      : allSpecialPlans;
 
   let bestDamage = -Infinity;
   let bestBonus: Record<string, number> | null = null;
@@ -781,8 +760,11 @@ export async function calculateIdealGearStatsBeamSearch(
         tuning: new Array(candidateCount).fill(0),
         planIndex,
         bonus: planBaseBonus,
-        score: evaluateDamageCachedOptimized(damageCache, fixedCtx, planBaseBonus)
-          .dmg,
+        score: evaluateDamageCachedOptimized(
+          damageCache,
+          fixedCtx,
+          planBaseBonus,
+        ).dmg,
       };
     });
 
@@ -874,7 +856,7 @@ export async function calculateIdealGearStatsBeamSearch(
         }
       }
 
-      let nextBeam = Array.from(nextBeamMap.values());
+      const nextBeam = Array.from(nextBeamMap.values());
       nextBeam.sort((a, b) => b.score - a.score);
       beam = nextBeam.slice(0, beamWidth);
 
@@ -891,10 +873,15 @@ export async function calculateIdealGearStatsBeamSearch(
             stepBest.tuning.map((count, idx) => count + plan.counts[idx]),
             ruleSet.fixedLineStats,
           );
-          
+
           if (shardIndex === 0) {
-             const totalLines = Object.values(bestAllocations).reduce((a, b) => a + b, 0);
-             console.log(`Step ${i + 1}: Best Damage = ${bestDamage.toFixed(2)} (Lines: ${totalLines})`);
+            const totalLines = Object.values(bestAllocations).reduce(
+              (a, b) => a + b,
+              0,
+            );
+            console.log(
+              `Step ${i + 1}: Best Damage = ${bestDamage.toFixed(2)} (Lines: ${totalLines})`,
+            );
           }
         }
       }
@@ -1052,7 +1039,7 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
   const source = 0;
   let targetAssignments = 0;
 
-  remainingStats.forEach(({ stat, count }, statIndex) => {
+  remainingStats.forEach(({ count }, statIndex) => {
     addEdge(source, 1 + statIndex, count, { statIndex });
     targetAssignments += count;
   });

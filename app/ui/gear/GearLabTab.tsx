@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { ELEMENT_TYPES, ElementKey, STAT_LABELS } from "@/app/constants";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Beaker, Target, TrendingUp, Cpu, Trash2, AlertCircle } from "lucide-react";
+import { Beaker, Target, TrendingUp, Trash2, AlertCircle } from "lucide-react";
 import { useDamage } from "@/app/hooks/useDamage";
 import { Rotation } from "@/app/types";
 import { useStats } from "@/app/hooks/useStats";
@@ -20,13 +20,17 @@ import DamagePanel from "@/app/ui/damage/DamagePanel";
 import {
   distributeStatsToGears,
   getIdealGearBaseBonus,
-  IdealGear,
   buildRuleSet,
   getValPerLine,
 } from "@/app/domain/gear/idealOptimizer";
 import { CANDIDATE_STATS, SINGLE_LINE_STATS } from "@/app/domain/gear/gearConstants";
+import { IdealGear, IdealGearResult } from "@/app/domain/gear/types";
 
 // --- Utilities ---
+
+interface IdealGearWithValues extends IdealGear {
+  lineValues: Record<string, number | null>;
+}
 
 /**
  * Finds a valid sequence of 8 special lines from the total allocations that satisfies pool rules.
@@ -68,7 +72,7 @@ function IdealGearCard({
   hoveredStat,
   setHoveredStat,
 }: {
-  gear: any;
+  gear: IdealGearWithValues;
   getStatLabel: (k: string) => string;
   hoveredStat: string | null;
   setHoveredStat: (stat: string | null) => void;
@@ -101,10 +105,10 @@ function IdealGearCard({
       </div>
 
       <div className="p-3 space-y-2.5 flex-grow">
-        <div 
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent p-2.5 border border-amber-500/20 shadow-[inset_0_0_12px_rgba(245,158,11,0.05)] transition-all ${hoveredStat === gear.specialLine ? 'ring-2 ring-emerald-500/50' : ''}`}
-            onMouseEnter={() => setHoveredStat(gear.specialLine)}
-            onMouseLeave={() => setHoveredStat(null)}
+        <div
+          className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent p-2.5 border border-amber-500/20 shadow-[inset_0_0_12px_rgba(245,158,11,0.05)] transition-all ${hoveredStat === gear.specialLine ? 'ring-2 ring-emerald-500/50' : ''}`}
+          onMouseEnter={() => setHoveredStat(gear.specialLine)}
+          onMouseLeave={() => setHoveredStat(null)}
         >
           <div className="flex items-center gap-2.5 relative z-10">
             <div className="p-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
@@ -128,7 +132,7 @@ function IdealGearCard({
 
         <div className="space-y-1">
           {gear.tuningLines.map((stat: string, i: number) => {
-            const isFixed = i === 4; 
+            const isFixed = i === 4;
             const statColor = isFixed ? "text-blue-300" : getStatColor(stat);
             const isHighlighted = hoveredStat === stat;
 
@@ -139,7 +143,7 @@ function IdealGearCard({
                   flex items-center justify-between px-2.5 py-2 rounded-md text-[11px] font-medium transition-all duration-200
                   ${isFixed
                     ? "bg-blue-500/10 border border-blue-500/20 shadow-[inset_0_0_8px_rgba(59,130,246,0.05)]"
-                    : isHighlighted 
+                    : isHighlighted
                       ? "bg-emerald-500/20 border border-emerald-500/40"
                       : "bg-zinc-950/40 border border-zinc-800/40 hover:bg-zinc-800/60 hover:border-zinc-700/60"
                   }
@@ -183,7 +187,7 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
   });
   const [hoveredStat, setHoveredStat] = useState<string | null>(null);
   const [solveError, setSolveError] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<IdealGearResult | null>(null);
 
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
@@ -206,7 +210,7 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
   const handleDistribute = () => {
     setSolveError(null);
     const ruleSet = buildRuleSet(path);
-    
+
     // Validate exclusive stats
     const exclusiveStats = ["CombatBoostAgainstBossUnits", "ArtOfSwordDMGBoost", "AllMartialArtsBoost"];
     for (const stat of exclusiveStats) {
@@ -238,8 +242,8 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
     const finalStats: Record<string, number> = {};
     const baseGearBonus = getIdealGearBaseBonus(path);
     for (const stat of Object.keys(allocations)) {
-       const val = getValPerLine(stat);
-       finalStats[stat] = (baseGearBonus[stat] || 0) + allocations[stat] * val;
+      const val = getValPerLine(stat);
+      finalStats[stat] = (baseGearBonus[stat] || 0) + allocations[stat] * val;
     }
 
     setResult({
@@ -253,7 +257,6 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
 
   const gears = React.useMemo(() => {
     if (!result) return [];
-    const baseGearBonus = getIdealGearBaseBonus(result.path);
     const distributed = distributeStatsToGears(result);
     return distributed.map((gear) => {
       const lineValues: Record<string, number | null> = {
@@ -279,7 +282,7 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
     );
 
     const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
-    
+
     const breakdown = computeRotationBonusesWithBreakdown(
       stats,
       elementStats,
@@ -329,69 +332,69 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-             <div className="flex flex-col sm:flex-row gap-4 items-end">
-                <div className="w-full sm:w-64 space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Elemental Path</label>
-                    <select
-                        className="flex h-10 w-full items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        value={path}
-                        onChange={(e) => setPath(e.target.value as ElementKey)}
-                    >
-                        {ELEMENT_TYPES.map((el) => (
-                        <option key={el.key} value={el.key}>
-                            {el.label}
-                        </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                    <Button onClick={handleDistribute} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white">
-                        Distribute
-                    </Button>
-                    <Button onClick={clearAll} variant="outline" className="flex-1 sm:flex-none border-red-500/40 text-red-200 hover:bg-red-500/10">
-                        <Trash2 size={16} className="mr-2" />
-                        Clear
-                    </Button>
-                </div>
-             </div>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="w-full sm:w-64 space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Elemental Path</label>
+                <select
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  value={path}
+                  onChange={(e) => setPath(e.target.value as ElementKey)}
+                >
+                  {ELEMENT_TYPES.map((el) => (
+                    <option key={el.key} value={el.key}>
+                      {el.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button onClick={handleDistribute} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white">
+                  Distribute
+                </Button>
+                <Button onClick={clearAll} variant="outline" className="flex-1 sm:flex-none border-red-500/40 text-red-200 hover:bg-red-500/10">
+                  <Trash2 size={16} className="mr-2" />
+                  Clear
+                </Button>
+              </div>
+            </div>
 
-             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                {CANDIDATE_STATS.map(stat => (
-                    <div key={stat} className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-zinc-500 uppercase truncate block">
-                            {STAT_LABELS[stat] || stat}
-                        </label>
-                        <Input 
-                            type="number" 
-                            value={userCounts[stat]} 
-                            onChange={(e) => handleStatChange(stat, e.target.value)}
-                            className="bg-zinc-950 border-zinc-800 focus:ring-emerald-500/50 h-9"
-                        />
-                    </div>
-                ))}
-             </div>
-
-             <div className="flex items-center justify-between p-3 rounded-md bg-zinc-950/50 border border-zinc-800">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-zinc-400">Total lines:</span>
-                    <Badge className={`${totalLines === 40 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                        {totalLines} / 40
-                    </Badge>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {CANDIDATE_STATS.map(stat => (
+                <div key={stat} className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase truncate block">
+                    {STAT_LABELS[stat] || stat}
+                  </label>
+                  <Input
+                    type="number"
+                    value={userCounts[stat]}
+                    onChange={(e) => handleStatChange(stat, e.target.value)}
+                    className="bg-zinc-950 border-zinc-800 focus:ring-emerald-500/50 h-9"
+                  />
                 </div>
-                {solveError && (
-                    <div className="flex items-center gap-1.5 text-xs text-red-400">
-                        <AlertCircle size={14} />
-                        {solveError}
-                    </div>
-                )}
-             </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-md bg-zinc-950/50 border border-zinc-800">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-zinc-400">Total lines:</span>
+                <Badge className={`${totalLines === 40 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                  {totalLines} / 40
+                </Badge>
+              </div>
+              {solveError && (
+                <div className="flex items-center gap-1.5 text-xs text-red-400">
+                  <AlertCircle size={14} />
+                  {solveError}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {result && (
         <Card className="bg-zinc-900/80 border-emerald-900/50 shadow-lg shadow-emerald-900/10">
-           <CardHeader className="border-b border-zinc-800/50 bg-zinc-950/30">
+          <CardHeader className="border-b border-zinc-800/50 bg-zinc-950/30">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-emerald-400 flex items-center gap-2">
@@ -429,19 +432,19 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
             </div>
 
             {finalCtx && (
-                <div className="mt-8 space-y-4">
-                    <div className="text-sm text-amber-400 mb-4 bg-amber-500/10 p-3 rounded-md border border-amber-500/20">
-                      Note: The stats below INCLUDE the buffs from your active Rotation (Passive Skills & Inner Ways).
-                    </div>
-                    <DamagePanel
-                        ctx={finalCtx}
-                        result={damageResult}
-                        showFormula={false}
-                        toggleFormula={() => { }}
-                        elementStats={elementStats}
-                        rotation={rotation}
-                    />
+              <div className="mt-8 space-y-4">
+                <div className="text-sm text-amber-400 mb-4 bg-amber-500/10 p-3 rounded-md border border-amber-500/20">
+                  Note: The stats below INCLUDE the buffs from your active Rotation (Passive Skills & Inner Ways).
                 </div>
+                <DamagePanel
+                  ctx={finalCtx}
+                  result={damageResult}
+                  showFormula={false}
+                  toggleFormula={() => { }}
+                  elementStats={elementStats}
+                  rotation={rotation}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
