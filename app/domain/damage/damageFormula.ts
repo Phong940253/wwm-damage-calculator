@@ -7,26 +7,29 @@ import { clamp01 } from "@/app/utils/clamp";
 // Cache for frequently accessed values to reduce getter calls
 type DamageCache = Record<string, number>;
 
-const buildDamageCache = (g: (k: string) => number): DamageCache => ({
-  minPhysAtk: g("MinPhysicalAttack"),
-  maxPhysAtk: g("MaxPhysicalAttack"),
-  physPenetration: g("PhysicalPenetration"),
-  physDmgBonus: g("PhysicalDMGBonus"),
-  minOtherAttr: g("MINAttributeAttackOfOtherType"),
-  maxOtherAttr: g("MAXAttributeAttackOfOtherType"),
-  physAtkMult: g("PhysicalAttackMultiplier"),
-  flatDmg: g("FlatDamage"),
-  minYourAttr: g("MINAttributeAttackOfYOURType"),
-  maxYourAttr: g("MAXAttributeAttackOfYOURType"),
-  elementMult: g("MainElementMultiplier"),
-  attrPenetration: g("AttributeAttackPenetrationOfYOURType"),
-  attrDmgBonus: g("AttributeAttackDMGBonusOfYOURType"),
-  critDmgBonus: g("CriticalDMGBonus"),
-  affinityDmgBonus: g("AffinityDMGBonus"),
-  dmgBoost: g("DamageBoost"),
-  bossDmgBoost: g("CombatBoostAgainstBossUnits"),
-  namelessSwordCharged: g("NamelessSwordChargedSkillDMGBoost"),
-});
+const buildDamageCache = (g: (k: string) => number): DamageCache => {
+  const $ = (k: string) => { const v = g(k); return Number.isFinite(v) ? v : 0; };
+  return {
+    minPhysAtk: $("MinPhysicalAttack"),
+    maxPhysAtk: $("MaxPhysicalAttack"),
+    physPenetration: $("PhysicalPenetration"),
+    physDmgBonus: $("PhysicalDMGBonus"),
+    minOtherAttr: $("MINAttributeAttackOfOtherType"),
+    maxOtherAttr: $("MAXAttributeAttackOfOtherType"),
+    physAtkMult: $("PhysicalAttackMultiplier"),
+    flatDmg: $("FlatDamage"),
+    minYourAttr: $("MINAttributeAttackOfYOURType"),
+    maxYourAttr: $("MAXAttributeAttackOfYOURType"),
+    elementMult: $("MainElementMultiplier"),
+    attrPenetration: $("AttributeAttackPenetrationOfYOURType"),
+    attrDmgBonus: $("AttributeAttackDMGBonusOfYOURType"),
+    critDmgBonus: $("CriticalDMGBonus"),
+    affinityDmgBonus: $("AffinityDMGBonus"),
+    dmgBoost: $("DamageBoost"),
+    bossDmgBoost: $("CombatBoostAgainstBossUnits"),
+    namelessSwordCharged: $("NamelessSwordChargedSkillDMGBoost"),
+  };
+};
 
 export interface CalcExpectedNormalSteps {
   cache: DamageCache;

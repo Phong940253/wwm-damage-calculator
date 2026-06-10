@@ -623,9 +623,16 @@ export function calculateSkillDamage(
         ? hitDamageBase
         : scaleDamageResult(hitDamageBase, durationScale);
 
-    // Add hit count times instead of creating separate objects
     for (let i = 0; i < hit.hits; i++) {
-      perHit.push(hitDamage);
+      perHit.push({
+        min: { ...hitDamage.min },
+        normal: { ...hitDamage.normal },
+        critical: { ...hitDamage.critical },
+        affinity: { ...hitDamage.affinity },
+        averageBreakdown: hitDamage.averageBreakdown
+          ? { ...hitDamage.averageBreakdown }
+          : undefined,
+      });
     }
   }
 

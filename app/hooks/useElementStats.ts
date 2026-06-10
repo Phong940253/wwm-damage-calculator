@@ -46,7 +46,7 @@ export const useElementStats = (initial: ElementStats) => {
           ) {
             (next as Record<string, unknown>)[key] = {
               ...(value as { current: number | ""; increase: number | "" }),
-              current: savedValue,
+              current: Number(savedValue || 0),
             };
           }
         }
