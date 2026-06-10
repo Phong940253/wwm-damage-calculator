@@ -14,7 +14,7 @@ describe("Beam Search Gear Optimization", () => {
     
     // Check for exclusive boost constraints (max 1 line for these)
     expect(result.allocations["CombatBoostAgainstBossUnits"]).toBeLessThanOrEqual(1);
-    expect(result.allocations["AllMartialArtsBoost"]).toBeLessThanOrEqual(1);
+    expect(result.allocations["AllMartialArtsBoost"]).toBeLessThanOrEqual(2);
     expect(result.allocations["ArtOfSwordDMGBoost"]).toBeLessThanOrEqual(1);
     
     expect(result.maxDamage).toBeGreaterThan(0);

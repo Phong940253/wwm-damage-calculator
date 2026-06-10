@@ -18,9 +18,12 @@ export const CANDIDATE_STATS: CandidateStat[] = [
 
 export const SINGLE_LINE_STATS = new Set<CandidateStat>([
   "CombatBoostAgainstBossUnits",
-  "AllMartialArtsBoost",
   "ArtOfSwordDMGBoost",
 ]);
+
+export const MAX_LINES_PER_STAT_OVERRIDES: Partial<Record<CandidateStat, number>> = {
+  AllMartialArtsBoost: 2,
+};
 
 export const SPECIAL_LINE_POOLS: CandidateStat[][] = [
   // 1-2: bellstrikeMax, MaxPhysicalAttack, Power, Momentum

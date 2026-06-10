@@ -6,8 +6,8 @@
     "test": "vitest --run",
     "dev": "next dev",
     "dev:turbopack": "next --turbopack",
-    "build": "next build",
-    "start": "next start",
+    "build": "cross-env IS_BUILDING=true next build",
+    "start": "cross-env IS_BUILDING=true next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -42,6 +42,7 @@
     "@types/node": "^20",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "postcss": "^8",

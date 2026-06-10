@@ -24,7 +24,11 @@ import {
   evaluateDamageCachedWithKey,
   evaluateDamageCached,
 } from "./optimizerUtils";
-import { SINGLE_LINE_STATS, MAX_LINES_PER_STAT } from "./gearConstants";
+import {
+  SINGLE_LINE_STATS,
+  MAX_LINES_PER_STAT,
+  MAX_LINES_PER_STAT_OVERRIDES,
+} from "./gearConstants";
 
 export class IdealGearCancelledError extends Error {
   constructor() {
@@ -213,19 +217,13 @@ export function calculateIdealGearStats(
     progressCurrent += 1;
     reportProgress();
 
-    for (const stat of SINGLE_LINE_STATS) {
-      const statIndex = candidateStats.indexOf(stat as CandidateStat);
-      if (statIndex !== -1) {
-        if (allocations[statIndex] > 1) return;
-      }
-    }
-
     for (let i = 0; i < candidateCount; i++) {
       const stat = candidateStats[i];
-      if (SINGLE_LINE_STATS.has(stat)) continue;
-
+      const cap =
+        MAX_LINES_PER_STAT_OVERRIDES[stat] ??
+        (SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT);
       const tuningLinesOnly = allocations[i] - specialCountsPlan[i];
-      if (tuningLinesOnly > MAX_LINES_PER_STAT) return;
+      if (tuningLinesOnly > cap) return;
     }
 
     const evalResult = evaluateCurrentDamage(currentBonus);
@@ -396,7 +394,8 @@ export function calculateIdealGearStatsFast(
   const fixedLineStats = ruleSet.fixedLineStats;
   const perLineValues = candidateStats.map((stat) => getValPerLine(stat));
   const maxCaps = candidateStats.map((stat) =>
-    SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT,
+    MAX_LINES_PER_STAT_OVERRIDES[stat] ??
+    (SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT),
   );
   const specialPools = ruleSet.specialLinePools.map((pool) =>
     pool.map((stat) => candidateStats.indexOf(stat)).filter((i) => i >= 0),
@@ -518,7 +517,13 @@ export function calculateIdealGearStatsFast(
       candidateStats,
     );
     const specialCounts = countSpecialLines(candidateStats, specialLines);
-    const caps = maxCaps.map((cap, index) => cap - specialCounts[index]);
+    const caps = maxCaps.map((cap, index) => {
+      const stat = candidateStats[index];
+      return MAX_LINES_PER_STAT_OVERRIDES[stat] !== undefined ||
+        SINGLE_LINE_STATS.has(stat)
+        ? cap - specialCounts[index]
+        : cap;
+    });
     if (caps.some((cap) => cap < 0)) return null;
 
     const availableLines = caps.reduce((sum, cap) => sum + cap, 0);
@@ -815,18 +820,22 @@ export async function calculateIdealGearStatsBeamSearch(
             ruleSet.fixedLineStats[candidateStats[statIndex]]?.lines ?? 0;
           const stat = candidateStats[statIndex];
 
-          // Limit 8 check
-          if (
-            !SINGLE_LINE_STATS.has(stat) &&
-            state.tuning[statIndex] + fixedCount >= MAX_LINES_PER_STAT
-          ) {
+          const statCap =
+            MAX_LINES_PER_STAT_OVERRIDES[stat] ??
+            (SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT);
+
+          if (state.tuning[statIndex] + fixedCount >= statCap) {
             continue;
           }
 
-          // Exclusive check
-          const totalExclusiveCount =
-            state.tuning[statIndex] + plan.counts[statIndex] + fixedCount;
-          if (SINGLE_LINE_STATS.has(stat) && totalExclusiveCount >= 1) continue;
+          const isHardCap =
+            MAX_LINES_PER_STAT_OVERRIDES[stat] !== undefined ||
+            SINGLE_LINE_STATS.has(stat);
+          if (isHardCap) {
+            const totalExclusiveCount =
+              state.tuning[statIndex] + plan.counts[statIndex] + fixedCount;
+            if (totalExclusiveCount >= statCap) continue;
+          }
 
           const nextTuning = [...state.tuning];
           nextTuning[statIndex]++;
@@ -993,7 +1002,6 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
 
   const exclusivePlacements: Record<string, number> = {
     ArtOfSwordDMGBoost: 1,
-    AllMartialArtsBoost: 3,
     CombatBoostAgainstBossUnits: 7,
   };
 
@@ -1048,6 +1056,8 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
     gears.forEach((gear, gearIndex) => {
       if (remainingCapacity[gearIndex] <= 0) return;
       if (gear.tuningLines.includes(stat)) return;
+      // AllMartialArtsBoost only allowed on gears 3 and 4
+      if (stat === "AllMartialArtsBoost" && gearIndex !== 2 && gearIndex !== 3) return;
       addEdge(1 + statIndex, gearNodeOffset + gearIndex, 1, {
         statIndex,
         gearIndex,
@@ -1119,6 +1129,7 @@ export function distributeStatsToGears(result: IdealGearResult): IdealGear[] {
         for (let i = 0; i < gears.length; i += 1) {
           if (cap[i] <= 0) continue;
           if (gears[i].tuningLines.includes(stat)) continue;
+          if (stat === "AllMartialArtsBoost" && i !== 2 && i !== 3) continue;
           if (cap[i] > bestCap) {
             bestCap = cap[i];
             bestGear = i;
