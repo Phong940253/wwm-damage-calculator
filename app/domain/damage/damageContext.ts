@@ -118,7 +118,7 @@ export function buildDamageContext(
       ? levelContext.enemyLevel
       : storedLevels.enemyLevel;
 
-  const bossResistance = getBossResistancePct(enemyLevel) / 100;
+  const bossResistance = getBossResistancePct(enemyLevel);
 
   const AFFINITY_RATE_CAP_PCT = 40;
   const CRITICAL_RATE_CAP_PCT = 80;

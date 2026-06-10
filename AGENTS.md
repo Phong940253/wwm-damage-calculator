@@ -10,7 +10,7 @@ pnpm test         # vitest (tests in tests/**/*.spec.ts, node env, globals)
 pnpm build        # next build
 ```
 
-`gearBeamSearch.spec.ts` has a 60s timeout. Single test: `pnpm test -- tests/someFile.spec.ts`.
+`gearBeamSearch.spec.ts` has a 60s timeout. Single test: `pnpm test -- tests/someFile.spec.ts` (uses `--run`, exits immediately).
 
 ## Architecture
 
@@ -46,7 +46,8 @@ Gear optimizer uses Web Workers (`app/workers/gearOptimize.worker.ts`). Turbopac
 ## Integrations
 
 - **Gemini OCR:** `lib/gemini.ts` reads API key from `NEXT_PUBLIC_GEMINI_API_KEY` env or `localStorage("wwm_gemini_settings")`.
-- **Supabase:** static game data (skills, passives, inner ways) stored in Supabase `static_data` table; admin panel at `/admin`.
+- **Supabase:** static game data (skills, passives, inner ways) stored in Supabase `static_data` table (5 rows, ~101KB total); admin panel at `/admin`.
+- **Static data cache:** localStorage `wwm_static_data_cache` + Supabase Realtime subscription. On page load, cached data renders immediately (no loading spinner). Realtime pushes propagate admin edits to all clients instantly.
 
 ## Common Changes
 

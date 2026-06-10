@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "vitest",
+    "test": "vitest --run",
     "dev": "next dev",
     "dev:turbopack": "next --turbopack",
     "build": "next build",
