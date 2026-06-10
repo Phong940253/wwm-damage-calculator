@@ -1,9 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Nếu biến IS_BUILDING=true, đổi thư mục dist sang '.next-prod'
-  distDir: process.env.IS_BUILDING === "true" ? ".next-prod" : ".next",
+  // 1. Nếu đang build trên Vercel: Luôn dùng mặc định '.next'
+  // 2. Nếu đang build ở Local (có IS_BUILDING): Dùng '.next-prod'
+  // 3. Nếu đang chạy dev: Dùng '.next'
+  distDir: process.env.VERCEL
+    ? ".next"
+    : process.env.IS_BUILDING === "true"
+      ? ".next-prod"
+      : ".next",
 
-  // Các cấu hình khác của bạn giữ nguyên...
+  // Các cấu hình khác...
 };
 
 export default nextConfig;
