@@ -92,7 +92,19 @@ export default function FinalStatPanel({
     const explain = ctx.explain;
     if (!explain) return [];
     return selected.keys
-      .map((k) => explain(k))
+      .map((k) => {
+        const ex = explain(k);
+        if (!ex) return null;
+        // For MinPhysicalAttack / MaxPhysicalAttack, exclude passive & Boss PhysDef
+        if (k === "MinPhysicalAttack" || k === "MaxPhysicalAttack") {
+          const filtered = ex.lines.filter(
+            (l) => l.kind !== "passive" && !(l.kind === "derived" && l.label === "Boss PhysDef"),
+          );
+          const newTotal = filtered.reduce((s, l) => s + l.value, 0);
+          return { ...ex, total: newTotal, lines: filtered };
+        }
+        return ex;
+      })
       .filter((x): x is StatExplanation => Boolean(x));
   }, [ctx, open, selected]);
 

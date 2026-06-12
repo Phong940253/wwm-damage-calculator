@@ -242,6 +242,10 @@ export function SkillDamageBackpropDialog({
             crit: "chí mạng",
             aff: "affinity",
             baseStats: "Chỉ số gốc (di chuột để xem tên chỉ số)",
+            physAtkDerivation: "Tính toán Min/MaxPhysicalAttack",
+            dmgBoostBreakdown: "Phân rã Damage Boost",
+            maxInnerPhysDerivation: "Phân tích maxInnerPhys",
+            maxYourAttrContribution: "Đóng góp maxYourAttr",
             substitutedNumbers: "Thay số (dạng số)",
             expectedNumbers: "Kỳ vọng (dạng số)",
             baseWhenPrecision: "Base (dùng khi có Precision)",
@@ -267,6 +271,10 @@ export function SkillDamageBackpropDialog({
             crit: "crit",
             aff: "aff",
             baseStats: "Base stats (hover for stat name)",
+            physAtkDerivation: "Min/MaxPhysicalAttack derivation",
+            dmgBoostBreakdown: "Damage Boost breakdown",
+            maxInnerPhysDerivation: "maxInnerPhys derivation",
+            maxYourAttrContribution: "maxYourAttr contribution",
             substitutedNumbers: "Substituted (numbers)",
             expectedNumbers: "Expected (numbers)",
             baseWhenPrecision: "Base (used when Precision)",
@@ -292,6 +300,51 @@ export function SkillDamageBackpropDialog({
 
             const damage = calculateDamage(hitCtx);
             const steps = explainCalcExpectedNormal(hitCtx.get, damage.affinity);
+            const minPhysExplain = hitCtx.explain!("MinPhysicalAttack") ?? { key: "MinPhysicalAttack", total: 0, lines: [] };
+            const maxPhysExplain = hitCtx.explain!("MaxPhysicalAttack") ?? { key: "MaxPhysicalAttack", total: 0, lines: [] };
+            const bossPhysDefExplain = hitCtx.explain!("BossPhysDef") ?? { key: "BossPhysDef", total: 0, lines: [] };
+            const dmgBoostExplain = hitCtx.explain!("DamageBoost") ?? { key: "DamageBoost", total: 0, lines: [] };
+            const maxYourAttrExplain = hitCtx.explain!("MAXAttributeAttackOfYOURType") ?? { key: "MAXAttributeAttackOfYOURType", total: 0, lines: [] };
+
+            // Collect non-zero skill-type-specific damage boost components
+            const boostComponents: { key: string; value: number }[] = [];
+            const allMartial = ctx.get("AllMartialArtsBoost");
+            if (allMartial > 0) boostComponents.push({ key: "AllMartialArtsBoost", value: allMartial });
+            if (skill.category === "martial-art-skill") {
+              const v = ctx.get("MartialArtSkillDamageBoost");
+              if (v > 0) boostComponents.push({ key: "MartialArtSkillDamageBoost", value: v });
+            }
+            if (damageSkillTypes.includes("charged")) {
+              const v = ctx.get("ChargeSkillDamageBoost");
+              if (v > 0) boostComponents.push({ key: "ChargeSkillDamageBoost", value: v });
+            }
+            if (damageSkillTypes.includes("ballistic")) {
+              const v = ctx.get("BallisticSkillDamageBoost");
+              if (v > 0) boostComponents.push({ key: "BallisticSkillDamageBoost", value: v });
+            }
+            if (damageSkillTypes.includes("pursuit")) {
+              const v = ctx.get("PursuitSkillDamageBoost");
+              if (v > 0) boostComponents.push({ key: "PursuitSkillDamageBoost", value: v });
+            }
+            const weaponArtMap: Record<string, string> = {
+              Sword: "ArtOfSwordDMGBoost",
+              Spear: "ArtOfSpearDMGBoost",
+              Fan: "ArtOfFanDMGBoost",
+              Umbrella: "ArtOfUmbrellaDMGBoost",
+              "Horizontal Blade": "ArtOfHorizontalBladeDMGBoost",
+              "Mo Blade": "ArtOfMoBladeDMGBoost",
+              "Dual Blades": "ArtOfDualBladesDMGBoost",
+              "Rope Dart": "ArtOfRopeDartDMGBoost",
+            };
+            const weaponArtKey = skill.weaponType ? weaponArtMap[skill.weaponType] : null;
+            if (weaponArtKey) {
+              const v = ctx.get(weaponArtKey);
+              if (v > 0) boostComponents.push({ key: weaponArtKey, value: v });
+            }
+            if (skill.id && ["vernal_umbrella_light_spring_away"].includes(skill.id)) {
+              const v = ctx.get("SpringAwayDamageBoost");
+              if (v > 0) boostComponents.push({ key: "SpringAwayDamageBoost", value: v });
+            }
 
             return {
                 hitIndex,
@@ -299,6 +352,12 @@ export function SkillDamageBackpropDialog({
                 hit,
                 damage,
                 steps,
+                minPhysExplain,
+                maxPhysExplain,
+                bossPhysDefExplain,
+                dmgBoostExplain,
+                boostComponents,
+                maxYourAttrExplain,
             };
         });
     }, [ctx, skill]);
@@ -339,7 +398,7 @@ export function SkillDamageBackpropDialog({
                             clamp={text.clamp}
                         />
 
-                        {hitExplains.map(({ hitIndex, hitCount, hit, damage, steps }) => {
+                        {hitExplains.map(({ hitIndex, hitCount, hit, damage, steps, minPhysExplain, maxPhysExplain, bossPhysDefExplain, dmgBoostExplain, boostComponents, maxYourAttrExplain }) => {
                             const physAtkMult = steps.cache.physAtkMult / 100;
                             const elemMult = steps.cache.elementMult / 100;
                             const physPenFactor = 1 + steps.cache.physPenetration / 200;
@@ -405,7 +464,7 @@ export function SkillDamageBackpropDialog({
                                     <Separator className="bg-white/10" />
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-foreground/85">
+                                        <div className="text-sm font-semibold text-foreground">
                                             {text.baseStats}
                                         </div>
 
@@ -496,7 +555,237 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-foreground/85">{text.substitutedNumbers}</div>
+                                        <div className="text-sm font-semibold text-foreground">{text.physAtkDerivation}</div>
+
+                                        <ExprRow>
+                                            <Name>MinPhysAtk</Name>
+                                            <Op tone="eq">=</Op>
+                                            {minPhysExplain.lines.map((line, i) => (
+                                                <React.Fragment key={i}>
+                                                    {i > 0 && <Op tone="add">+</Op>}
+                                                    <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
+                                                </React.Fragment>
+                                            ))}
+                                            <Op tone="eq">=</Op>
+                                            <Num n={minPhysExplain.total} />
+                                        </ExprRow>
+                                        <ExprRow>
+                                            <Name>MaxPhysAtk</Name>
+                                            <Op tone="eq">=</Op>
+                                            {maxPhysExplain.lines.map((line, i) => (
+                                                <React.Fragment key={i}>
+                                                    {i > 0 && <Op tone="add">+</Op>}
+                                                    <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
+                                                </React.Fragment>
+                                            ))}
+                                            <Op tone="eq">=</Op>
+                                            <Num n={maxPhysExplain.total} />
+                                        </ExprRow>
+
+                                        {bossPhysDefExplain && bossPhysDefExplain.total > 0 && (
+                                            <ExprRow>
+                                                <Name>BossPhysDef</Name>
+                                                <Op tone="eq">=</Op>
+                                                {bossPhysDefExplain.lines.map((line, i) => (
+                                                    <React.Fragment key={i}>
+                                                        {i > 0 && <Op tone="add">+</Op>}
+                                                        <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
+                                                    </React.Fragment>
+                                                ))}
+                                                <Op tone="eq">=</Op>
+                                                <Num n={bossPhysDefExplain.total} />
+                                            </ExprRow>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="text-sm font-semibold text-foreground">{text.dmgBoostBreakdown}</div>
+
+                                        <ExprRow>
+                                            <Name>dmgBoost (stats)</Name>
+                                            <Op tone="eq">=</Op>
+                                            {dmgBoostExplain.lines.length > 0 && (
+                                                <>
+                                                    <DerivedValue name={dmgBoostExplain.lines[0].label} value={dmgBoostExplain.lines[0].value} explain={dmgBoostExplain.lines[0].note || ""} />
+                                                    {dmgBoostExplain.lines.slice(1).map((line, i) => (
+                                                        <React.Fragment key={i}>
+                                                            <Op tone="add">+</Op>
+                                                            <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
+                                                        </React.Fragment>
+                                                    ))}
+                                                </>
+                                            )}
+                                            <Op tone="eq">=</Op>
+                                            <Num n={dmgBoostExplain.total} />
+                                        </ExprRow>
+
+                                        {boostComponents.length > 0 && (
+                                            <ExprRow>
+                                                <Name>Skill‑type‑specific</Name>
+                                                <Op tone="eq">=</Op>
+                                                {boostComponents.map((c, i) => (
+                                                    <React.Fragment key={c.key}>
+                                                        {i > 0 && <Op tone="add">+</Op>}
+                                                        <StatValue statKey={c.key} value={c.value} unit="percent" />
+                                                    </React.Fragment>
+                                                ))}
+                                            </ExprRow>
+                                        )}
+
+                                        <ExprRow>
+                                            <Name>dmgBoost (total)</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.dmgBoost} />
+                                            <span className="text-xs text-muted-foreground">
+                                                (factor: {fmt(steps.dmgBoost, 4)})
+                                            </span>
+                                        </ExprRow>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="text-sm font-semibold text-foreground">{text.maxInnerPhysDerivation}</div>
+
+                                        <ExprRow>
+                                            <Name>MaxPhysicalAttack (base)</Name>
+                                            <Op tone="eq">=</Op>
+                                            {maxPhysExplain.lines.map((line, i) => (
+                                                <React.Fragment key={i}>
+                                                    {i > 0 && <Op tone="add">+</Op>}
+                                                    <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
+                                                </React.Fragment>
+                                            ))}
+                                            <Op tone="eq">=</Op>
+                                            <Num n={maxPhysExplain.total} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>× physicalMultiplier</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={maxPhysExplain.total} />
+                                            <Op tone="mul">×</Op>
+                                            <Num n={hit.physicalMultiplier} />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.maxPhysAtk} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>physPortion</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.maxPhysAtk} />
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="physPenFactor"
+                                                value={physPenFactor}
+                                                explain="1 + physPen/200"
+                                            />
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="physBonusFactor"
+                                                value={physBonusFactor}
+                                                explain="1 + physDmgBonus/100"
+                                            />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.maxPhysAtk * physPenFactor * physBonusFactor} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>otherAttr</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Op tone="paren">max(</Op>
+                                            <Num n={steps.cache.minOtherAttr} />
+                                            <span className="font-mono text-xs text-muted-foreground px-0.5">,</span>
+                                            <Num n={steps.cache.maxOtherAttr} />
+                                            <Op tone="paren">)</Op>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={maxOtherAttr} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>maxInnerPhys</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.maxPhysAtk * physPenFactor * physBonusFactor} />
+                                            <Op tone="add">+</Op>
+                                            <Num n={maxOtherAttr} />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={maxInnerPhys} />
+                                        </ExprRow>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="text-sm font-semibold text-foreground">{text.maxYourAttrContribution}</div>
+
+                                        <ExprRow>
+                                            <Name>MAXAttributeAttackOfYOURType (base)</Name>
+                                            <Op tone="eq">=</Op>
+                                            {maxYourAttrExplain.lines.map((line, i) => (
+                                                <React.Fragment key={i}>
+                                                    {i > 0 && <Op tone="add">+</Op>}
+                                                    <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
+                                                </React.Fragment>
+                                            ))}
+                                            <Op tone="eq">=</Op>
+                                            <Num n={maxYourAttrExplain.total} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>maxYourAttr (skill)</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={maxYourAttrExplain.total} />
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="elementMultiplier"
+                                                value={hit.elementMultiplier}
+                                                explain="skill-specific elementMultiplier"
+                                            />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.maxYourAttr} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>× elemMult</Name>
+                                            <Op tone="eq">=</Op>
+                                            <DerivedValue
+                                                name="MainElementMultiplier"
+                                                value={steps.cache.elementMult}
+                                                explain="MainElementMultiplier"
+                                            />
+                                            <Op tone="div">/</Op>
+                                            <Num n={100} />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={elemMult} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>× elemFactor</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={1} />
+                                            <Op tone="add">+</Op>
+                                            <Num n={steps.cache.attrPenetration} />
+                                            <Op tone="div">/</Op>
+                                            <Num n={200} />
+                                            <Op tone="add">+</Op>
+                                            <Num n={steps.cache.attrDmgBonus} />
+                                            <Op tone="div">/</Op>
+                                            <Num n={100} />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={elemFactor} />
+                                        </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>maxYourAttr contribution</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.maxYourAttr} />
+                                            <Op tone="mul">×</Op>
+                                            <Num n={elemMult} />
+                                            <Op tone="mul">×</Op>
+                                            <Num n={elemFactor} />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={steps.cache.maxYourAttr * elemMult * elemFactor} />
+                                        </ExprRow>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="text-sm font-semibold text-foreground">{text.substitutedNumbers}</div>
 
                                         <ExprRow>
                                             <Name>Base</Name>
@@ -510,9 +799,9 @@ export function SkillDamageBackpropDialog({
                                             />
                                             <Op tone="mul">×</Op>
                                             <DerivedValue
-                                                name="physModifier"
-                                                value={steps.physModifier}
-                                                explain="physModifier = 1 + PhysicalPenetration / 200"
+                                                name="physPenModifier"
+                                                value={steps.physPenModifier}
+                                                explain="physPenModifier = (physPen <= effectiveRes) ? 1 + (physPen - effectiveRes)/200 : 1 + (physPen - effectiveRes)/100"
                                             />
                                             <Op tone="mul">×</Op>
                                             <DerivedValue
@@ -673,10 +962,61 @@ export function SkillDamageBackpropDialog({
                                                 (raw≈{fmt(critDamageApprox, 2)})
                                             </span>
                                         </ExprRow>
+
+                                        <ExprRow>
+                                            <Name>affinity</Name>
+                                            <Op tone="eq">=</Op>
+                                            <Op tone="paren">(</Op>
+                                            <DerivedValue
+                                                name="maxInnerPhys"
+                                                value={maxInnerPhys}
+                                                explain="maxInnerPhys = MaxPhysicalAttack*physPenFactor*physBonusFactor + max(MINAttributeAttackOfOtherType, MAXAttributeAttackOfOtherType)"
+                                            />
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="physAtkMult"
+                                                value={physAtkMult}
+                                                explain="physAtkMult = PhysicalAttackMultiplier / 100"
+                                            />
+                                            <Op tone="add">+</Op>
+                                            <StatValue statKey="FlatDamage" value={steps.cache.flatDmg} />
+                                            <Op tone="add">+</Op>
+                                            <StatValue
+                                                statKey="MAXAttributeAttackOfYOURType"
+                                                value={steps.cache.maxYourAttr}
+                                            />
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="elemMult"
+                                                value={elemMult}
+                                                explain="elemMult = MainElementMultiplier / 100"
+                                            />
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="elemFactor"
+                                                value={elemFactor}
+                                                explain="elemFactor = 1 + AttributeAttackPenetrationOfYOURType/200 + AttributeAttackDMGBonusOfYOURType/100"
+                                            />
+                                            <Op tone="paren">)</Op>
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="affinityBonus"
+                                                value={affinityBonus}
+                                                explain="affinityBonus = 1 + AffinityDMGBonus / 100"
+                                            />
+                                            <Op tone="mul">×</Op>
+                                            <DerivedValue
+                                                name="dmgBoost"
+                                                value={dmgBoost}
+                                                explain="dmgBoost = 1 + DamageBoost / 100"
+                                            />
+                                            <Op tone="eq">=</Op>
+                                            <Num n={damage.affinity} />
+                                        </ExprRow>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-foreground/85">{text.expectedNumbers}</div>
+                                        <div className="text-sm font-semibold text-foreground">{text.expectedNumbers}</div>
 
                                         <ExprRow>
                                             <Name>P</Name>
@@ -731,7 +1071,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-foreground/85">
+                                        <div className="text-sm font-semibold text-foreground">
                                             {text.baseWhenPrecision}
                                         </div>
 
@@ -743,7 +1083,7 @@ export function SkillDamageBackpropDialog({
                                                 (
                                                 <span className="text-sky-200">avgPhysAtk</span>
                                                 <Op tone="mul">×</Op>
-                                                <span className="text-sky-200">physModifier</span>
+                                                <span className="text-sky-200">physPenModifier</span>
                                                 <Op tone="mul">×</Op>
                                                 <span className="text-sky-200">physBonus</span>
                                                 <Op tone="add">+</Op>
@@ -782,7 +1122,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-foreground/85">
+                                        <div className="text-sm font-semibold text-foreground">
                                             {text.probabilities}
                                         </div>
 
@@ -862,7 +1202,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-xs font-medium text-foreground/85">
+                                        <div className="text-sm font-semibold text-foreground">
                                             {text.expectedFromFormula}
                                         </div>
 

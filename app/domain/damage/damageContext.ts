@@ -11,6 +11,8 @@ import {
 } from "../stats/derivedStats";
 import {
   getBossResistancePct,
+  getBossPhysDef,
+  getBossResistance,
   getStoredLevelContext,
   type LevelContext,
 } from "../level/levelSettings";
@@ -119,6 +121,10 @@ export function buildDamageContext(
       : storedLevels.enemyLevel;
 
   const bossResistance = getBossResistancePct(enemyLevel);
+  const bossPhysDef = getBossPhysDef(enemyLevel);
+  const bossResist = getBossResistance(enemyLevel);
+  const penRes = cur("PenetrationPhysicalResistance");
+  const effectiveResistance = bossResist - penRes;
 
   const AFFINITY_RATE_CAP_PCT = 40;
   const CRITICAL_RATE_CAP_PCT = 80;
@@ -184,10 +190,14 @@ export function buildDamageContext(
 
     /* ---------- Derived ---------- */
 
-    if (k === "MinPhysicalAttack")
-      return cur("MinPhysicalAttack") + derived.minAtk;
-    if (k === "MaxPhysicalAttack")
-      return cur("MaxPhysicalAttack") + derived.maxAtk;
+    if (k === "MinPhysicalAttack") {
+      const total = cur("MinPhysicalAttack") + derived.minAtk;
+      return Math.max(0, total - bossPhysDef);
+    }
+    if (k === "MaxPhysicalAttack") {
+      const total = cur("MaxPhysicalAttack") + derived.maxAtk;
+      return Math.max(0, total - bossPhysDef);
+    }
 
     // Boss resistance applies only to: PrecisionRate, CriticalRate, AffinityRate
     // - Precision: final = 65 + (base - 65) * (1 - bossResistance)
@@ -223,6 +233,12 @@ export function buildDamageContext(
         direct
       );
     }
+
+    /* ---------- Boss Physical Stats ---------- */
+
+    if (k === "BossPhysDef") return bossPhysDef;
+    if (k === "BossResistance") return bossResist;
+    if (k === "EffectiveResistance") return effectiveResistance;
 
     /* ---------- Fallback ---------- */
 
@@ -612,7 +628,7 @@ export function buildDamageContext(
       return {
         key: k,
         total,
-        formula: `Agility×${DERIVED_COEFFICIENTS.minAtk.agility} + Power×${DERIVED_COEFFICIENTS.minAtk.power}`,
+        formula: `(Agility×${DERIVED_COEFFICIENTS.minAtk.agility} + Power×${DERIVED_COEFFICIENTS.minAtk.power} + base) - BossPhysDef`,
         lines: [
           ...explainInputStat("MinPhysicalAttack"),
           makeLine(
@@ -625,6 +641,16 @@ export function buildDamageContext(
             "From Power",
             power * DERIVED_COEFFICIENTS.minAtk.power,
           ),
+          ...(bossPhysDef > 0
+            ? [
+                makeLine(
+                  "derived",
+                  "Boss PhysDef",
+                  -bossPhysDef,
+                  `Enemy Lv ${enemyLevel}`,
+                ),
+              ]
+            : []),
         ].filter((x) => x.value !== 0),
       };
     }
@@ -636,7 +662,7 @@ export function buildDamageContext(
       return {
         key: k,
         total,
-        formula: `Momentum×${DERIVED_COEFFICIENTS.maxAtk.momentum} + Power×${DERIVED_COEFFICIENTS.maxAtk.power}`,
+        formula: `(Momentum×${DERIVED_COEFFICIENTS.maxAtk.momentum} + Power×${DERIVED_COEFFICIENTS.maxAtk.power} + base) - BossPhysDef`,
         lines: [
           ...explainInputStat("MaxPhysicalAttack"),
           makeLine(
@@ -649,7 +675,70 @@ export function buildDamageContext(
             "From Power",
             power * DERIVED_COEFFICIENTS.maxAtk.power,
           ),
+          ...(bossPhysDef > 0
+            ? [
+                makeLine(
+                  "derived",
+                  "Boss PhysDef",
+                  -bossPhysDef,
+                  `Enemy Lv ${enemyLevel}`,
+                ),
+              ]
+            : []),
         ].filter((x) => x.value !== 0),
+      };
+    }
+
+    if (k === "BossPhysDef") {
+      return {
+        key: k,
+        total: bossPhysDef,
+        lines: [
+          makeLine(
+            "derived",
+            "Boss Physical Defense",
+            bossPhysDef,
+            `Enemy Lv ${enemyLevel}`,
+          ),
+        ],
+        formula: "round(106 + 0.275 × level)",
+      };
+    }
+
+    if (k === "BossResistance") {
+      return {
+        key: k,
+        total: bossResist,
+        lines: [
+          makeLine(
+            "derived",
+            "Boss Resistance",
+            bossResist,
+            `Enemy Lv ${enemyLevel}`,
+          ),
+        ],
+      };
+    }
+
+    if (k === "EffectiveResistance") {
+      const lines: StatSourceLine[] = [
+        makeLine("derived", "Boss Resistance", bossResist),
+      ];
+      if (penRes !== 0) {
+        lines.push(
+          makeLine(
+            "base",
+            "PenRes (hidden)",
+            -penRes,
+            "from passives & inner ways",
+          ),
+        );
+      }
+      return {
+        key: k,
+        total: effectiveResistance,
+        lines,
+        formula: "BossResistance - PenetrationPhysicalResistance",
       };
     }
 

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { calculateDamageReduction, getBossResistancePct } from "../app/domain/level/levelSettings";
+import {
+  calculateDamageReduction,
+  getBossResistancePct,
+  getBossPhysDef,
+  getBossResistance,
+} from "../app/domain/level/levelSettings";
 
 describe("levelSettings", () => {
   describe("calculateDamageReduction", () => {
@@ -16,6 +21,66 @@ describe("levelSettings", () => {
 
     it("should handle negative resistance", () => {
       expect(calculateDamageReduction(-10)).toBe(0);
+    });
+  });
+
+  describe("getBossPhysDef", () => {
+    it("should follow round(106 + 0.275 × level)", () => {
+      expect(getBossPhysDef(16)).toBe(Math.round(106 + 0.275 * 16));
+      expect(getBossPhysDef(31)).toBe(Math.round(106 + 0.275 * 31));
+      expect(getBossPhysDef(41)).toBe(Math.round(106 + 0.275 * 41));
+      expect(getBossPhysDef(51)).toBe(Math.round(106 + 0.275 * 51));
+      expect(getBossPhysDef(56)).toBe(Math.round(106 + 0.275 * 56));
+      expect(getBossPhysDef(61)).toBe(Math.round(106 + 0.275 * 61));
+      expect(getBossPhysDef(66)).toBe(Math.round(106 + 0.275 * 66));
+      expect(getBossPhysDef(71)).toBe(Math.round(106 + 0.275 * 71));
+      expect(getBossPhysDef(76)).toBe(Math.round(106 + 0.275 * 76));
+      expect(getBossPhysDef(81)).toBe(Math.round(106 + 0.275 * 81));
+      expect(getBossPhysDef(86)).toBe(Math.round(106 + 0.275 * 86));
+      expect(getBossPhysDef(91)).toBe(Math.round(106 + 0.275 * 91));
+      expect(getBossPhysDef(96)).toBe(Math.round(106 + 0.275 * 96));
+      expect(getBossPhysDef(101)).toBe(Math.round(106 + 0.275 * 101));
+    });
+
+    it("should return 0 for NaN or Infinity", () => {
+      expect(getBossPhysDef(NaN)).toBe(0);
+      expect(getBossPhysDef(Infinity)).toBe(0);
+    });
+  });
+
+  describe("getBossResistance", () => {
+    it("should return correct values for known levels", () => {
+      expect(getBossResistance(16)).toBe(30);
+      expect(getBossResistance(31)).toBe(36);
+      expect(getBossResistance(41)).toBe(40);
+      expect(getBossResistance(51)).toBe(44);
+      expect(getBossResistance(56)).toBe(46);
+      expect(getBossResistance(61)).toBe(48);
+      expect(getBossResistance(66)).toBe(50);
+      expect(getBossResistance(71)).toBe(52);
+      expect(getBossResistance(76)).toBe(54);
+      expect(getBossResistance(81)).toBe(45);
+      expect(getBossResistance(86)).toBe(48);
+      expect(getBossResistance(91)).toBe(51);
+      expect(getBossResistance(96)).toBe(65);
+      expect(getBossResistance(101)).toBe(65);
+    });
+
+    it("should use bracket values for 81+", () => {
+      expect(getBossResistance(82)).toBe(45);
+      expect(getBossResistance(87)).toBe(48);
+      expect(getBossResistance(92)).toBe(51);
+      expect(getBossResistance(97)).toBe(65);
+    });
+
+    it("should return 30 for levels below 16", () => {
+      expect(getBossResistance(1)).toBe(30);
+      expect(getBossResistance(10)).toBe(30);
+    });
+
+    it("should return 0 for NaN or Infinity", () => {
+      expect(getBossResistance(NaN)).toBe(0);
+      expect(getBossResistance(Infinity)).toBe(0);
     });
   });
 

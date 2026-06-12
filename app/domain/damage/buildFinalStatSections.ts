@@ -84,9 +84,17 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
       rows: [
         {
           label: "Physical Attack",
-          value: `${pctNP(ctx.get("MinPhysicalAttack"))} – ${pctNP(
-            ctx.get("MaxPhysicalAttack"),
-          )}`,
+          value: (() => {
+            const filterLines = (k: string) => {
+              const ex = ctx.explain?.(k);
+              if (!ex) return ctx.get(k);
+              const filtered = ex.lines.filter(
+                (l) => l.kind !== "passive" && !(l.kind === "derived" && l.label === "Boss PhysDef"),
+              );
+              return filtered.reduce((s, l) => s + l.value, 0);
+            };
+            return `${pctNP(filterLines("MinPhysicalAttack"))} – ${pctNP(filterLines("MaxPhysicalAttack"))}`;
+          })(),
           highlight: true,
           ctxKeys: ["MinPhysicalAttack", "MaxPhysicalAttack"],
         },

@@ -33,7 +33,7 @@ export default function FormulaPanel({
     const physAtkMult = steps.cache.physAtkMult / 100;
     const elemMult = steps.cache.elementMult / 100;
     const physPartInner =
-      steps.avgPhysAtk * steps.physModifier * steps.physBonus +
+      steps.avgPhysAtk * steps.physPenModifier * steps.physBonus +
       steps.avgOtherAttr;
     const physPart = physPartInner * physAtkMult;
     const elemPart = steps.avgYourAttr * elemMult * steps.elementModifier;
@@ -158,7 +158,7 @@ M_{max}
               math={`\\textbf{Modifiers}\\;\\; dmgBoost=1+\\frac{${fmt(
                 steps.cache.dmgBoost
               )}}{100}=${fmt(steps.dmgBoost)},\\; physMod=${fmt(
-                steps.physModifier
+                steps.physPenModifier
               )},\\; physBonus=${fmt(steps.physBonus)},\\; elemMod=${fmt(
                 steps.elementModifier
               )}`}
@@ -194,7 +194,7 @@ M_{max}
                 <BlockMath
                   math={`\\textbf{Thế\u0020số}\\; base=\\Big((${fmt(
                     steps.avgPhysAtk
-                  )}\\cdot ${fmt(steps.physModifier)}\\cdot ${fmt(
+                  )}\\cdot ${fmt(steps.physPenModifier)}\\cdot ${fmt(
                     steps.physBonus
                   )}+${fmt(steps.avgOtherAttr)})\\cdot\\frac{${fmt(
                     steps.cache.physAtkMult
@@ -209,7 +209,7 @@ M_{max}
 
                 <BlockMath
                   math={`physPartInner=${fmt(steps.avgPhysAtk)}\\cdot ${fmt(
-                    steps.physModifier
+                    steps.physPenModifier
                   )}\\cdot ${fmt(steps.physBonus)}+${fmt(
                     steps.avgOtherAttr
                   )}=${fmt(baseParts.physPartInner)}`}

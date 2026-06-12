@@ -28,14 +28,18 @@ const buildDamageCache = (g: (k: string) => number): DamageCache => {
     dmgBoost: $("DamageBoost"),
     bossDmgBoost: $("CombatBoostAgainstBossUnits"),
     namelessSwordCharged: $("NamelessSwordChargedSkillDMGBoost"),
+    effectiveResistance: $("EffectiveResistance"),
+    bossPhysDef: $("BossPhysDef"),
   };
 };
 
 export interface CalcExpectedNormalSteps {
   cache: DamageCache;
+  effectiveRes: number;
   dmgBoost: number;
-  physModifier: number;
+  physPenModifier: number;
   physBonus: number;
+  otherElemPenModifier: number;
   elementModifier: number;
   avgPhysAtk: number;
   avgOtherAttr: number;
@@ -64,9 +68,15 @@ export const explainCalcExpectedNormal = (
   affinityDamage: number
 ): CalcExpectedNormalSteps => {
   const cache = buildDamageCache(g);
+  const effectiveRes = cache.effectiveResistance;
   const dmgBoost = 1 + (cache.dmgBoost + cache.bossDmgBoost) / 100;
-  const physModifier = 1 + cache.physPenetration / 200;
+  const physPen = cache.physPenetration;
+  const physPenModifier =
+    physPen <= effectiveRes
+      ? 1 + (physPen - effectiveRes) / 200
+      : 1 + (physPen - effectiveRes) / 100;
   const physBonus = 1 + cache.physDmgBonus / 100;
+  const otherElemPenModifier = 1 - effectiveRes / 200;
   const elementModifier =
     1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100;
 
@@ -74,13 +84,13 @@ export const explainCalcExpectedNormal = (
   const avgOtherAttrMode: "min" | "avg" =
     cache.minOtherAttr >= cache.maxOtherAttr ? "min" : "avg";
   const avgOtherAttr =
-    avgOtherAttrMode === "min"
+    (avgOtherAttrMode === "min"
       ? cache.minOtherAttr
-      : (cache.minOtherAttr + cache.maxOtherAttr) / 2;
+      : (cache.minOtherAttr + cache.maxOtherAttr) / 2) * otherElemPenModifier;
   const avgYourAttr = (cache.minYourAttr + cache.maxYourAttr) / 2;
 
   const base =
-    ((avgPhysAtk * physModifier * physBonus + avgOtherAttr) *
+    ((avgPhysAtk * physPenModifier * physBonus + avgOtherAttr) *
       (cache.physAtkMult / 100) +
       cache.flatDmg +
       avgYourAttr * (cache.elementMult / 100) * elementModifier) *
@@ -109,9 +119,11 @@ export const explainCalcExpectedNormal = (
 
   return {
     cache,
+    effectiveRes,
     dmgBoost,
-    physModifier,
+    physPenModifier,
     physBonus,
+    otherElemPenModifier,
     elementModifier,
     avgPhysAtk,
     avgOtherAttr,
@@ -141,12 +153,21 @@ export const explainCalcExpectedNormal = (
 ========================= */
 export const calcMinimumDamage = (g: (k: string) => number) => {
   const cache = buildDamageCache(g);
+  const effectiveRes = cache.effectiveResistance;
+  const physPen = cache.physPenetration;
+  const physPenModifier =
+    physPen <= effectiveRes
+      ? 1 + (physPen - effectiveRes) / 200
+      : 1 + (physPen - effectiveRes) / 100;
+  const otherElemPenModifier = 1 - effectiveRes / 200;
+
+  const physical =
+    cache.minPhysAtk *
+    physPenModifier *
+    (1 + cache.physDmgBonus / 100);
 
   const dmg =
-    ((cache.minPhysAtk *
-      (1 + cache.physPenetration / 200) *
-      (1 + cache.physDmgBonus / 100) +
-      cache.minOtherAttr) *
+    ((physical + cache.minOtherAttr * otherElemPenModifier) *
       (cache.physAtkMult / 100) +
       cache.flatDmg +
       cache.minYourAttr *
@@ -163,12 +184,21 @@ export const calcMinimumDamage = (g: (k: string) => number) => {
 ========================= */
 export const calcCriticalDamage = (g: (k: string) => number) => {
   const cache = buildDamageCache(g);
+  const effectiveRes = cache.effectiveResistance;
+  const physPen = cache.physPenetration;
+  const physPenModifier =
+    physPen <= effectiveRes
+      ? 1 + (physPen - effectiveRes) / 200
+      : 1 + (physPen - effectiveRes) / 100;
+  const otherElemPenModifier = 1 - effectiveRes / 200;
+
+  const physical =
+    cache.maxPhysAtk *
+    physPenModifier *
+    (1 + cache.physDmgBonus / 100);
 
   return (
-    ((cache.maxPhysAtk *
-      (1 + cache.physPenetration / 200) *
-      (1 + cache.physDmgBonus / 100) +
-      Math.max(cache.minOtherAttr, cache.maxOtherAttr)) *
+    ((physical + Math.max(cache.minOtherAttr, cache.maxOtherAttr) * otherElemPenModifier) *
       (cache.physAtkMult / 100) +
       cache.flatDmg +
       cache.maxYourAttr *
@@ -184,12 +214,21 @@ export const calcCriticalDamage = (g: (k: string) => number) => {
 ========================= */
 export const calcAffinityDamage = (g: (k: string) => number) => {
   const cache = buildDamageCache(g);
+  const effectiveRes = cache.effectiveResistance;
+  const physPen = cache.physPenetration;
+  const physPenModifier =
+    physPen <= effectiveRes
+      ? 1 + (physPen - effectiveRes) / 200
+      : 1 + (physPen - effectiveRes) / 100;
+  const otherElemPenModifier = 1 - effectiveRes / 200;
+
+  const physical =
+    cache.maxPhysAtk *
+    physPenModifier *
+    (1 + cache.physDmgBonus / 100);
 
   return (
-    ((cache.maxPhysAtk *
-      (1 + cache.physPenetration / 200) *
-      (1 + cache.physDmgBonus / 100) +
-      Math.max(cache.minOtherAttr, cache.maxOtherAttr)) *
+    ((physical + Math.max(cache.minOtherAttr, cache.maxOtherAttr) * otherElemPenModifier) *
       (cache.physAtkMult / 100) +
       cache.flatDmg +
       cache.maxYourAttr *
@@ -207,22 +246,28 @@ export const calcAffinityDamage = (g: (k: string) => number) => {
 // Helper to calculate base damage components (shared by breakdown and expected)
 const calcBaseDamageComponents = (g: (k: string) => number) => {
   const cache = buildDamageCache(g);
+  const effectiveRes = cache.effectiveResistance;
   const dmgBoost = 1 + (cache.dmgBoost + cache.bossDmgBoost) / 100;
-  const physModifier = 1 + cache.physPenetration / 200;
+  const physPen = cache.physPenetration;
+  const physPenModifier =
+    physPen <= effectiveRes
+      ? 1 + (physPen - effectiveRes) / 200
+      : 1 + (physPen - effectiveRes) / 100;
   const physBonus = 1 + cache.physDmgBonus / 100;
+  const otherElemPenModifier = 1 - effectiveRes / 200;
   const elementModifier =
     1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100;
 
   const avgPhysAtk = (cache.minPhysAtk + cache.maxPhysAtk) / 2;
   const avgOtherAttr =
-    cache.minOtherAttr >= cache.maxOtherAttr
+    (cache.minOtherAttr >= cache.maxOtherAttr
       ? cache.minOtherAttr
-      : (cache.minOtherAttr + cache.maxOtherAttr) / 2;
+      : (cache.minOtherAttr + cache.maxOtherAttr) / 2) * otherElemPenModifier;
   const avgYourAttr = (cache.minYourAttr + cache.maxYourAttr) / 2;
 
   return {
     base:
-      ((avgPhysAtk * physModifier * physBonus + avgOtherAttr) *
+      ((avgPhysAtk * physPenModifier * physBonus + avgOtherAttr) *
         (cache.physAtkMult / 100) +
         cache.flatDmg +
         avgYourAttr * (cache.elementMult / 100) * elementModifier) *
@@ -236,9 +281,15 @@ export const calcExpectedNormal = (
   affinityDamage: number
 ) => {
   const cache = buildDamageCache(g);
+  const effectiveRes = cache.effectiveResistance;
   const dmgBoost = 1 + (cache.dmgBoost + cache.bossDmgBoost) / 100;
-  const physModifier = 1 + cache.physPenetration / 200;
+  const physPen = cache.physPenetration;
+  const physPenModifier =
+    physPen <= effectiveRes
+      ? 1 + (physPen - effectiveRes) / 200
+      : 1 + (physPen - effectiveRes) / 100;
   const physBonus = 1 + cache.physDmgBonus / 100;
+  const otherElemPenModifier = 1 - effectiveRes / 200;
   const elementModifier =
     1 + cache.attrPenetration / 200 + cache.attrDmgBonus / 100;
 
@@ -247,16 +298,16 @@ export const calcExpectedNormal = (
 
   // Average attribute attack from other types
   const avgOtherAttr =
-    cache.minOtherAttr >= cache.maxOtherAttr
+    (cache.minOtherAttr >= cache.maxOtherAttr
       ? cache.minOtherAttr
-      : (cache.minOtherAttr + cache.maxOtherAttr) / 2;
+      : (cache.minOtherAttr + cache.maxOtherAttr) / 2) * otherElemPenModifier;
 
   // Average attribute attack of your type
   const avgYourAttr = (cache.minYourAttr + cache.maxYourAttr) / 2;
 
   // Base damage calculation (optimized)
   const base =
-    ((avgPhysAtk * physModifier * physBonus + avgOtherAttr) *
+    ((avgPhysAtk * physPenModifier * physBonus + avgOtherAttr) *
       (cache.physAtkMult / 100) +
       cache.flatDmg +
       avgYourAttr * (cache.elementMult / 100) * elementModifier) *
