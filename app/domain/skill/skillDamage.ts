@@ -9,6 +9,12 @@ import {
   SWORD_MORPH_T3_INNER_WAY_ID,
   SWORD_MORPH_T5_INNER_WAY_ID,
 } from "./innerWays";
+import type { RotationSkill } from "@/app/types";
+import {
+  applySkillHitScaling,
+  getSkillDurationScale,
+  computeRotationPartyBuff,
+} from "./skillBehaviors";
 
 export const SCARLET_SPIN_SKILL_ID = "bamboocut_dust_umbrella_scarlet_spin";
 export const HOMELESS_CHARGE_STAGE_3_SKILL_ID = "nameless_homeless_charge_3";
@@ -42,6 +48,19 @@ export interface SkillDamageOptions {
    * keyed by skill id. Supports chain-based passive effects.
    */
   priorHitsInRotationBySkill?: Record<string, number>;
+
+  /**
+   * Extra DamageBoost % from external sources (e.g. Tides distance party buff).
+   * Applied on top of all other DamageBoost components.
+   */
+  extraDmgBoost?: number;
+
+  /**
+   * Full rotation skill entries for automatic party buff computation.
+   * If provided, calculateSkillDamage will apply rotation-level buffs
+   * (e.g. Flute of the Tides distance buff) internally.
+   */
+  rotationSkills?: RotationSkill[];
 }
 
 export interface RotationSkillRuntimeState {
@@ -502,35 +521,13 @@ function getEffectiveSkillHits(skill: Skill, opts?: SkillDamageOptions) {
   const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-  // Unfaded Flower: model as a time-based projectile skill.
-  // Tooltip: consumes 10 Blossoms per second; user can input Blossoms to scale duration.
-  if (skill.id === "vernal_unfaded_flower") {
-    const blossomsRaw = opts?.params?.blossoms;
-    const blossoms = Math.max(
-      0,
-      Number.isFinite(blossomsRaw as number) ? (blossomsRaw as number) : 100,
-    );
-    const seconds = Math.max(1, Math.floor(blossoms / 10));
-
-    // Interpret the first hit entry as "one projectile" and scale its hit count by duration seconds.
-    const template = baseHits[0] ?? {
-      physicalMultiplier: 1,
-      elementMultiplier: 1,
-      hits: 1,
-    };
-
-    return [
-      {
-        ...template,
-        hits: seconds,
-      },
-    ];
-  }
+  // Per-skill hit scaling (e.g. Blossoms → time-based hits).
+  const skillScaledHits = applySkillHitScaling(skill, baseHits, opts?.params);
 
   // Generic per-hit scaling, driven entirely by JSON (SkillHit.scale).
-  if (!opts?.params) return baseHits;
+  if (!opts?.params) return skillScaledHits;
 
-  return baseHits.map((hit) => {
+  return skillScaledHits.map((hit) => {
     if (!hit.scale) return hit;
 
     const raw = opts.params?.[hit.scale.paramKey];
@@ -584,14 +581,13 @@ export function calculateSkillDamage(
 
   const effectiveHits = getEffectiveSkillHits(skill, opts);
 
-  // Umbrella - Spring Away: DPS-based skill.
-  // Interpret the JSON hit template as "damage per second", then scale linearly by Duration seconds (float).
-  const durationScale = (() => {
-    if (skill.id !== "vernal_umbrella_light_spring_away") return 1;
-    const raw = opts?.params?.duration;
-    const v = Number.isFinite(raw as number) ? (raw as number) : 1;
-    return Math.max(0, v);
-  })();
+  // Per-skill duration scaling (e.g. DPS-based skills).
+  const durationScale = getSkillDurationScale(skill, opts?.params);
+
+  // Party buffs from other skills in rotation (e.g. Tides distance buff).
+  const partyBuff = opts?.rotationSkills
+    ? computeRotationPartyBuff(opts.rotationSkills)
+    : 0;
 
   // Process each hit type and multiply by hit count
   for (const hit of effectiveHits) {
@@ -604,6 +600,8 @@ export function calculateSkillDamage(
       flatAttribute: hit.flatAttribute,
       damageSkillTypes,
       weaponType: skill.weaponType,
+      buffDmgBoostPct: opts?.params?.buffDmgBoostPct ?? skill.selfDamageBoostPct ?? 0,
+      extraDmgBoost: (opts?.extraDmgBoost ?? 0) + partyBuff,
     });
 
     const damage = calculateDamage(hitCtx);

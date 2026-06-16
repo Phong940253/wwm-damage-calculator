@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { getSkillParamSchema } from "@/app/domain/skill/skillBehaviors";
 import { Rotation, RotationSkill } from "@/app/types";
 import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
 import { SKILLS } from "@/app/domain/skill/skills";
@@ -267,20 +268,65 @@ export function DefaultRotationModal({ isOpen, onClose, rotation, onSave }: Defa
                     </div>
 
                     <div className="grid gap-2 bg-muted/40 p-2 rounded">
-                      <div className="text-[10px] font-bold uppercase text-muted-foreground">Params (Key: Value)</div>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(rs.params || {}).map(([key, val]) => (
-                          <div key={key} className="flex items-center gap-1 bg-background rounded border px-2 py-1">
-                            <span className="text-[10px] font-medium">{key}:</span>
-                            <input 
-                              type="number" 
-                              className="w-12 bg-transparent text-[10px] outline-none" 
-                              value={val} 
-                              onChange={(e) => handleUpdateSkillParam(idx, key, Number(e.target.value))}
-                            />
-                            <button onClick={() => handleRemoveSkillParam(idx, key)} className="text-[10px] text-red-500 ml-1">×</button>
-                          </div>
-                        ))}
+                      <div className="text-[10px] font-bold uppercase text-muted-foreground">Params</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Buff DMG Boost — available for all skills */}
+                        <div className="flex items-center gap-1 bg-background rounded border px-2 py-1">
+                          <span className="text-[10px] font-medium">buffDmgBoostPct:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            className="w-12 bg-transparent text-[10px] outline-none"
+                            value={rs.params?.buffDmgBoostPct ?? 0}
+                            onChange={(e) => handleUpdateSkillParam(idx, "buffDmgBoostPct", Math.max(0, Number(e.target.value)))}
+                          />
+                        </div>
+
+                        {/* Skill params driven by schema in skillBehaviors.ts */}
+                        {(() => {
+                          const skill = availableSkills.find(s => s.id === rs.id);
+                          if (!skill) return null;
+                          const schema = getSkillParamSchema(skill);
+                          return schema.map(p => (
+                            <div key={p.key} className="flex items-center gap-1 bg-background rounded border px-2 py-1">
+                              <span className="text-[10px] font-medium">{p.label}:</span>
+                              <input
+                                type="number"
+                                min={p.min}
+                                max={p.max}
+                                step={p.step ?? "1"}
+                                className="w-12 bg-transparent text-[10px] outline-none"
+                                value={rs.params?.[p.key] ?? p.default ?? 0}
+                                onChange={(e) => {
+                                  let v = Number(e.target.value);
+                                  if (!Number.isFinite(v)) v = p.default ?? 0;
+                                  if (typeof p.min === "number") v = Math.max(p.min, v);
+                                  if (typeof p.max === "number") v = Math.min(p.max, v);
+                                  handleUpdateSkillParam(idx, p.key, v);
+                                }}
+                              />
+                            </div>
+                          ));
+                        })()}
+
+                        {/* Custom params (not in schema) */}
+                        {(() => {
+                          const skill = availableSkills.find(s => s.id === rs.id);
+                          const schemaKeys = skill ? getSkillParamSchema(skill).map(p => p.key) : [];
+                          return Object.entries(rs.params || {}).filter(([key]) => !schemaKeys.includes(key)).map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-1 bg-background rounded border px-2 py-1">
+                              <span className="text-[10px] font-medium">{key}:</span>
+                              <input 
+                                type="number" 
+                                className="w-12 bg-transparent text-[10px] outline-none" 
+                                value={val} 
+                                onChange={(e) => handleUpdateSkillParam(idx, key, Number(e.target.value))}
+                              />
+                              <button onClick={() => handleRemoveSkillParam(idx, key)} className="text-[10px] text-red-500 ml-1">×</button>
+                            </div>
+                          ));
+                        })()}
                         <Button 
                           size="sm" 
                           variant="ghost" 

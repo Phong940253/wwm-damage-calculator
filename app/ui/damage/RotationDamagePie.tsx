@@ -115,6 +115,7 @@ export default function RotationDamagePie({
       rotation.activePassiveSkills,
       runtimeState.priorHitsBySkill,
     );
+    entryOpts.rotationSkills = rotation.skills;
 
     const skillDamage = calculateSkillDamage(
       ctx,
@@ -128,15 +129,19 @@ export default function RotationDamagePie({
         ? calculateSkillDamage(
           ctx,
           skill,
-          buildRotationSkillDamageOptions(
-            rotSkill.id,
-            rotSkill.params,
-            [],
-            skillUseCountsInRotation,
-            rotSkill.count,
-            rotation.activePassiveSkills,
-            runtimeState.priorHitsBySkill,
-          ),
+          (() => {
+            const baseOpts = buildRotationSkillDamageOptions(
+              rotSkill.id,
+              rotSkill.params,
+              [],
+              skillUseCountsInRotation,
+              rotSkill.count,
+              rotation.activePassiveSkills,
+              runtimeState.priorHitsBySkill,
+            );
+            baseOpts.rotationSkills = rotation.skills;
+            return baseOpts;
+          })(),
         )
         : skillDamage;
 

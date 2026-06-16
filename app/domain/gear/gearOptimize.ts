@@ -268,6 +268,7 @@ export async function computeOptimizeResultsAsync(
 
       let rotationTotal = 0;
       const runtimeState = createRotationSkillRuntimeState();
+
       for (const rotSkill of rotationPlan) {
         throwIfCancelled();
         const skill = rotSkill.skill;
@@ -282,6 +283,7 @@ export async function computeOptimizeResultsAsync(
           rotation?.activePassiveSkills,
           runtimeState.priorHitsBySkill,
         );
+        entryOpts.rotationSkills = rotation?.skills;
 
         const skillDamage = calculateSkillDamage(ctx, skill, entryOpts);
         if (!rotSkill.cancelled) {

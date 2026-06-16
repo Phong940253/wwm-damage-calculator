@@ -189,6 +189,7 @@ export function useDamage(
           rotation.activePassiveSkills,
           runtimeState.priorHitsBySkill,
         );
+        entryOpts.rotationSkills = rotation.skills;
 
         const baseSkillDamage = calculateSkillDamage(
           baseCtxWithModifiers,

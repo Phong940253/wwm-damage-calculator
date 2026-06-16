@@ -160,6 +160,7 @@ export function evaluateDamage(
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
       );
+      entryOpts.rotationSkills = rotation.skills;
 
       const skillDmg = calculateSkillDamage(ctx, skill, entryOpts);
       if (!rotSkill.cancelled) {

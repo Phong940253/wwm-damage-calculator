@@ -7,6 +7,7 @@ import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
 import { DEFAULT_ROTATIONS } from "@/app/domain/rotation/defaultRotations";
+import { getSkillParamSchema } from "@/app/domain/skill/skillBehaviors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -110,10 +111,6 @@ export default function RotationPanel({
       noMatchingSkills: "Không có kỹ năng phù hợp",
       allSkillsAdded: "Đã thêm tất cả kỹ năng",
       noSkillsAdded: "Chưa thêm kỹ năng",
-      blossoms: "Hoa",
-      duration: "Thời lượng (s)",
-      charge: "Tích lực (%)",
-      distanceBonus: "Bonus khoảng cách (%)",
       moveUp: "Di chuyển lên",
       moveDown: "Di chuyển xuống",
       remove: "Xóa",
@@ -153,10 +150,6 @@ export default function RotationPanel({
       noMatchingSkills: "No matching skills",
       allSkillsAdded: "All skills added",
       noSkillsAdded: "No skills added",
-      blossoms: "Blossoms",
-      duration: "Duration (s)",
-      charge: "Charge (%)",
-      distanceBonus: "Distance bonus (%)",
       moveUp: "Move up",
       moveDown: "Move down",
       remove: "Remove",
@@ -894,99 +887,33 @@ export default function RotationPanel({
                         />
                       </div>
 
-                      {skill.id === "vernal_unfaded_flower" && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{text.blossoms}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={rotSkill.params?.blossoms ?? 100}
-                            disabled={selectedIsDefault}
-                            onChange={(e) => {
-                              if (selectedIsDefault) return;
-                              const next = Number(e.target.value);
-                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
-                                blossoms: Number.isFinite(next) ? next : 0,
-                              });
-                            }}
-                            className="w-16 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
-                            title="Unfaded Flower scaling: duration ~= Blossoms / 10s"
-                          />
-                        </div>
-                      )}
-
-                      {skill.id === "vernal_umbrella_light_spring_away" && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{text.duration}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.1"
-                            value={rotSkill.params?.duration ?? 1}
-                            disabled={selectedIsDefault}
-                            onChange={(e) => {
-                              if (selectedIsDefault) return;
-                              const next = Number(e.target.value);
-                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
-                                duration: Number.isFinite(next) ? next : 1,
-                              });
-                            }}
-                            className="w-14 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
-                            title="Spring Away is DPS-based: total = DPS × duration"
-                          />
-                        </div>
-                      )}
-
-                      {skill.id === "vernal_apricot_heaven" && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{text.charge}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value={rotSkill.params?.chargePct ?? 100}
-                            disabled={selectedIsDefault}
-                            onChange={(e) => {
-                              if (selectedIsDefault) return;
-                              const next = Number(e.target.value);
-                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
-                                chargePct: Number.isFinite(next) ? next : 100,
-                              });
-                            }}
-                            className="w-14 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
-                            title="Apricot Heaven: 2nd-stage damage scales linearly Min→Max by charge %"
-                          />
-                        </div>
-                      )}
-
-                      {skill.id === "mystic_flute_of_the_tides" && (
-                        <div className="flex items-center gap-1">
+                      {/* Skill params — driven by schema in skillBehaviors.ts */}
+                      {getSkillParamSchema(skill).map((param) => (
+                        <div key={param.key} className="flex items-center gap-1">
                           <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {text.distanceBonus}
+                            {param.label}
                           </span>
                           <input
                             type="number"
-                            min="0"
-                            max="20"
-                            step="1"
-                            value={rotSkill.params?.distanceBonusPct ?? 0}
+                            min={param.min}
+                            max={param.max}
+                            step={param.step ?? "1"}
+                            value={rotSkill.params?.[param.key] ?? param.default ?? 0}
                             disabled={selectedIsDefault}
                             onChange={(e) => {
                               if (selectedIsDefault) return;
                               const next = Number(e.target.value);
-                              const clamped = Number.isFinite(next)
-                                ? Math.min(20, Math.max(0, next))
-                                : 0;
+                              let clamped = Number.isFinite(next) ? next : (param.default ?? 0);
+                              if (typeof param.min === "number") clamped = Math.max(param.min, clamped);
+                              if (typeof param.max === "number") clamped = Math.min(param.max, clamped);
                               onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
-                                distanceBonusPct: clamped,
+                                [param.key]: clamped,
                               });
                             }}
-                            className="w-16 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
-                            title="Flute of the Tides: distance-based damage bonus"
+                            className="w-14 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
                           />
                         </div>
-                      )}
+                      ))}
 
                       <Button
                         variant="ghost"

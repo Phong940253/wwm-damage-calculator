@@ -1,13 +1,7 @@
 // app/domain/skill/skillContext.ts
 import { DamageContext } from "../damage/damageContext";
 import { CategorySkill, DamageSkillType, WeaponType } from "./types";
-
-const MOONLIT_SHATTER_SPRING_SKILL_IDS = new Set([
-  "inkwell_moonlit_shatter_spring",
-  "inkwell_moonlit_shatter_spring_enhanced",
-]);
-
-const SPRING_AWAY_SKILL_IDS = new Set(["vernal_umbrella_light_spring_away"]);
+import { getSkillConditionalModifiers } from "./skillBehaviors";
 
 function skillStartsWith(skillId: string | undefined, prefix: string): boolean {
   return !!skillId && skillId.startsWith(`${prefix}_`);
@@ -186,6 +180,10 @@ export function createSkillContext(
     weaponType?: WeaponType;
     skillId?: string;
     category?: CategorySkill;
+    /** Extra DamageBoost % applied only to this skill (from rotation self-buff). */
+    buffDmgBoostPct?: number;
+    /** Extra DamageBoost % from external party buffs (e.g. Tides distance). */
+    extraDmgBoost?: number;
   },
 ): DamageContext {
   // Pre-calculate combined flat damage outside getter to avoid recalculation
@@ -224,9 +222,20 @@ export function createSkillContext(
       if (isBallisticSkill) value += baseCtx.get("BallisticSkillDamageBoost");
       if (isPursuitSkill) value += baseCtx.get("PursuitSkillDamageBoost");
       if (weaponArtKey) value += baseCtx.get(weaponArtKey);
-      // Conditional: Spring Away damage boost (e.g. Inner Ways)
-      if (opts.skillId && SPRING_AWAY_SKILL_IDS.has(opts.skillId)) {
-        value += baseCtx.get("SpringAwayDamageBoost");
+      // Conditional modifiers from skillBehaviors (e.g. Spring Away damage boost)
+      if (opts.skillId) {
+        const mods = getSkillConditionalModifiers(opts.skillId, (k) => baseCtx.get(k));
+        for (const m of mods) {
+          if (m.stat === "DamageBoost") value += m.value;
+        }
+      }
+      // Per-skill self-buff from rotation params
+      if (opts.buffDmgBoostPct) {
+        value += opts.buffDmgBoostPct;
+      }
+      // Extra external party buff (e.g. Tides distance)
+      if (opts.extraDmgBoost) {
+        value += opts.extraDmgBoost;
       }
     }
     else if (key === "FamilyDMGBoost") {
@@ -246,12 +255,11 @@ export function createSkillContext(
       }
 
       // Conditional: specific pursuit skill crit dmg bonus (Moonlit Shatter Spring)
-      if (
-        isPursuitSkill &&
-        opts.skillId &&
-        MOONLIT_SHATTER_SPRING_SKILL_IDS.has(opts.skillId)
-      ) {
-        value += baseCtx.get("MoonlitShatterSpringPursuitCriticalDMGBonus");
+      if (isPursuitSkill && opts.skillId) {
+        const mods = getSkillConditionalModifiers(opts.skillId, (k) => baseCtx.get(k));
+        for (const m of mods) {
+          if (m.stat === "CriticalDMGBonus") value += m.value;
+        }
       }
     }
     // Skill multipliers exposed as separate keys; applied in damageFormula
@@ -270,7 +278,35 @@ export function createSkillContext(
     return value;
   };
 
-  const explain = (key: string) => baseCtx.explain?.(key) || null;
+  const explain = (key: string) => {
+    const base = baseCtx.explain?.(key);
+    if (key === "DamageBoost") {
+      let total = base?.total ?? 0;
+      const lines = base?.lines ? [...base.lines] : [];
+      if (opts.buffDmgBoostPct) {
+        total += opts.buffDmgBoostPct;
+        lines.push({
+          kind: "derived" as const,
+          label: "Buff DMG Boost",
+          value: opts.buffDmgBoostPct,
+          note: "Skill self-buff from rotation params",
+        });
+      }
+      if (opts.extraDmgBoost) {
+        total += opts.extraDmgBoost;
+        lines.push({
+          kind: "derived" as const,
+          label: "Tides Party Buff",
+          value: opts.extraDmgBoost,
+          note: "Distance-based party buff from Flute of the Tides",
+        });
+      }
+      if (opts.buffDmgBoostPct || opts.extraDmgBoost) {
+        return { key: "DamageBoost", total, lines };
+      }
+    }
+    return base || null;
+  };
 
   return { get, explain };
 }

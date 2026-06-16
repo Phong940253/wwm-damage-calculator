@@ -44,6 +44,7 @@ export function useStatImpact(
 
         let totalNormal = 0;
         const runtimeState = createRotationSkillRuntimeState();
+
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
@@ -57,6 +58,7 @@ export function useStatImpact(
             rotation.activePassiveSkills,
             runtimeState.priorHitsBySkill,
           );
+          entryOpts.rotationSkills = rotation.skills;
 
           const dmg = calculateSkillDamage(ctx, skill, entryOpts);
           if (!rotSkill.cancelled) {

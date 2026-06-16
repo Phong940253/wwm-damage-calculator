@@ -390,6 +390,7 @@ export function SkillDamageBackpropDialog({
                 flatAttribute: hit.flatAttribute,
                 damageSkillTypes,
                 weaponType: skill.weaponType,
+                buffDmgBoostPct: skill.selfDamageBoostPct ?? 0,
             });
 
             const damage = calculateDamage(hitCtx);
