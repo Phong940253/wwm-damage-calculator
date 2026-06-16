@@ -6,12 +6,14 @@ type DamageCache = Record<string, number>;
    Formula Pipeline types
    ========================= */
 
+export type BinOpType = "+" | "×" | "−" | "/" | "=";
+
 export type ExprNode =
   | { t: "num"; v: number }
   | { t: "stat"; key: string; value: number }
   | { t: "comp"; label: string; value: number; explain: string }
   | { t: "name"; label: string }
-  | { t: "binop"; op: "+" | "×" | "−" | "/" | "="; left: ExprNode; right: ExprNode }
+  | { t: "binop"; op: BinOpType; left: ExprNode; right: ExprNode }
   | { t: "call"; name: string; args: ExprNode[] }
   | { t: "text"; text: string }
   | { t: "clamp01"; arg: ExprNode };
@@ -20,7 +22,7 @@ export const num = (v: number): ExprNode => ({ t: "num", v });
 export const stat = (key: string, value: number): ExprNode => ({ t: "stat", key, value });
 export const comp = (label: string, value: number, explain: string): ExprNode => ({ t: "comp", label, value, explain });
 export const name = (label: string): ExprNode => ({ t: "name", label });
-export const binop = (op: ExprNode["op"], left: ExprNode, right: ExprNode): ExprNode => ({ t: "binop", op, left, right });
+export const binop = (op: BinOpType, left: ExprNode, right: ExprNode): ExprNode => ({ t: "binop", op, left, right });
 export const call = (fn: string, ...args: ExprNode[]): ExprNode => ({ t: "call", name: fn, args });
 export const text = (s: string): ExprNode => ({ t: "text", text: s });
 export const clamp01_ = (arg: ExprNode): ExprNode => ({ t: "clamp01", arg });
