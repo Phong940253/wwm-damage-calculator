@@ -24,6 +24,8 @@ const buildDamageCache = (g: (k: string) => number): DamageCache => {
     critDmgBonus: $("CriticalDMGBonus"),
     affinityDmgBonus: $("AffinityDMGBonus"),
     bossDef: $("BossDef"),
+    skillPhysMult: $("SkillPhysicalMultiplier") || 1,
+    skillElemMult: $("SkillElementMultiplier") || 1,
   };
 };
 
@@ -34,22 +36,23 @@ const buildDamageCache = (g: (k: string) => number): DamageCache => {
 const calcPhysComp = (
   physAtk: number,
   otherAttr: number,
+  skillPhysMult: number,
   mul: number,
   pen: number,
   dmgBonus: number,
   flat: number,
 ): number => {
-  return (physAtk + otherAttr) * (mul / 100) * (1 + pen / 173) * (1 + dmgBonus / 100) + flat;
+  return (physAtk + otherAttr) * skillPhysMult * (mul / 100) * (1 + pen / 173) * (1 + dmgBonus / 100) + flat;
 };
 
 const calcEleComp = (
   attr: number,
+  skillElemMult: number,
   mul: number,
   pen: number,
   dmgBonus: number,
 ): number => {
-  const raw = attr * (mul / 100) * (1 + pen / 173);
-  return raw * (1 + dmgBonus / 100);
+  return attr * skillElemMult * (mul / 100) * (1 + pen / 173) * (1 + dmgBonus / 100);
 };
 
 const calcBaseDamage = (
@@ -58,8 +61,8 @@ const calcBaseDamage = (
   yourAttr: number,
   cache: DamageCache,
 ): number => {
-  const physComp = calcPhysComp(physAtk, otherAttr, cache.physMul, cache.physPen, cache.physDmgBonus, cache.flatDmg);
-  const eleComp = calcEleComp(yourAttr, cache.eleMul, cache.elePen, cache.attrDmgBonus);
+  const physComp = calcPhysComp(physAtk, otherAttr, cache.skillPhysMult, cache.physMul, cache.physPen, cache.physDmgBonus, cache.flatDmg);
+  const eleComp = calcEleComp(yourAttr, cache.skillElemMult, cache.eleMul, cache.elePen, cache.attrDmgBonus);
   const basePhys = Math.max(0, physComp - cache.bossDef);
   return basePhys + eleComp;
 };
@@ -252,8 +255,8 @@ export const explainCalcExpectedNormal = (
       : (cache.minOtherAttr + cache.maxOtherAttr) / 2;
   const avgYourAttr = (cache.minYourAttr + cache.maxYourAttr) / 2;
 
-  const physComp = calcPhysComp(avgPhysAtk, avgOtherAttr, cache.physMul, cache.physPen, cache.physDmgBonus, cache.flatDmg);
-  const eleComp = calcEleComp(avgYourAttr, cache.eleMul, cache.elePen, cache.attrDmgBonus);
+  const physComp = calcPhysComp(avgPhysAtk, avgOtherAttr, cache.skillPhysMult, cache.physMul, cache.physPen, cache.physDmgBonus, cache.flatDmg);
+  const eleComp = calcEleComp(avgYourAttr, cache.skillElemMult, cache.eleMul, cache.elePen, cache.attrDmgBonus);
   const basePhys = Math.max(0, physComp - cache.bossDef);
   const base = basePhys + eleComp;
 

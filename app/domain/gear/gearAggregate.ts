@@ -15,7 +15,8 @@ export function aggregateEquippedGearBonus(
     [gear.main, ...gear.mains, ...gear.subs, gear.addition]
       .filter(Boolean)
       .forEach((a) => {
-        bonus[a!.stat] = (bonus[a!.stat] || 0) + a!.value;
+        const val = typeof a!.value === "number" ? a!.value : 0;
+        bonus[a!.stat] = (bonus[a!.stat] || 0) + val;
       });
   });
 

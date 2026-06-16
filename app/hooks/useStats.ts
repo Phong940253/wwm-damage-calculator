@@ -13,6 +13,7 @@ export const useStats = (initial: InputStats) => {
     try {
       const saved = JSON.parse(raw);
       saved.PhysicalAttackMultiplier = 100;
+      saved.FlatDamage = 0;
 
       setStats((prev) =>
         Object.fromEntries(

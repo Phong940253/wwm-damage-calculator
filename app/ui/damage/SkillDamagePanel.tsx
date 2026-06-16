@@ -99,7 +99,7 @@ export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEve
                     "
                     title={hitsTooltip}
                 >
-                    <span className="text-sm font-semibold leading-tight text-muted-foreground">{skill.name}</span>
+                    <span className="text-sm font-semibold leading-tight text-muted-foreground truncate">{skill.name}</span>
                 </div>
 
                 <div className="justify-self-end flex items-center" title={hitTooltipByType.min}>

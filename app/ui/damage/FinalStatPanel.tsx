@@ -167,7 +167,7 @@ export default function FinalStatPanel({
                       )}
                     </div>
                     <Badge className="bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 shrink-0">
-                      {ex.total.toFixed(4)}
+                      {Number.isFinite(ex.total) ? ex.total.toFixed(4) : "0.0000"}
                     </Badge>
                   </div>
 
@@ -318,6 +318,7 @@ function Section({
 }
 
 function formatSigned(v: number) {
+  if (typeof v !== "number" || !Number.isFinite(v)) return "+0.0000";
   const abs = Math.abs(v);
   const s = abs >= 1000 ? abs.toFixed(2) : abs.toFixed(4);
   return `${v >= 0 ? "+" : "-"}${s}`;

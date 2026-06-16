@@ -254,23 +254,13 @@ export function createSkillContext(
         value += baseCtx.get("MoonlitShatterSpringPursuitCriticalDMGBonus");
       }
     }
-    // Physical ATK multiplied by skill multiplier
-    else if (key === "MinPhysicalAttack" || key === "MaxPhysicalAttack") {
-      value = baseCtx.get(key) * opts.physicalMultiplier;
+    // Skill multipliers exposed as separate keys; applied in damageFormula
+    else if (key === "SkillPhysicalMultiplier") {
+      value = opts.physicalMultiplier;
+    } else if (key === "SkillElementMultiplier") {
+      value = opts.elementMultiplier;
     }
-    // YOUR element only multiplied by skill multiplier
-    else if (
-      key === "MINAttributeAttackOfYOURType" ||
-      key === "MAXAttributeAttackOfYOURType"
-    ) {
-      value = baseCtx.get(key) * opts.elementMultiplier;
-    } else if (
-      key === "MINAttributeAttackOfOtherType" ||
-      key === "MAXAttributeAttackOfOtherType"
-    ) {
-      value = baseCtx.get(key) * opts.physicalMultiplier;
-    }
-    // Other attributes pass through unchanged
+    // Physical ATK / OtherAttr / YourType pass through base value (no pre-multiply)
     else {
       value = baseCtx.get(key);
     }

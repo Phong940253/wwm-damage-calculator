@@ -231,7 +231,7 @@ export const INITIAL_STATS: InputStats = {
   MinPhysicalAttack: { current: 500, increase: 0 },
   MaxPhysicalAttack: { current: 1000, increase: 0 },
   PhysicalAttackMultiplier: { current: 100, increase: 0 },
-  FlatDamage: { current: 378, increase: 0 },
+  FlatDamage: { current: 0, increase: 0 },
 
   PrecisionRate: { current: 85, increase: 0 },
   CriticalRate: { current: 35, increase: 0 },

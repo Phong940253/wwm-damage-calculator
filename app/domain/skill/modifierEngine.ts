@@ -34,6 +34,7 @@ function isInnerWayApplicableToMartialArt(
 }
 
 function clamp(value: number, min?: number, max?: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
   if (typeof min === "number") value = Math.max(min, value);
   if (typeof max === "number") value = Math.min(max, value);
   return value;
@@ -44,6 +45,7 @@ function sumRecords(...records: Array<Record<string, number> | undefined>) {
   for (const record of records) {
     if (!record) continue;
     for (const [key, value] of Object.entries(record)) {
+      if (typeof value !== "number" || !Number.isFinite(value)) continue;
       out[key] = (out[key] || 0) + value;
     }
   }
@@ -278,7 +280,7 @@ export function computeRotationBonuses(
         derivedForScale,
       );
 
-      const addRaw = sourceValue * modifier.ratio;
+      const addRaw = sourceValue * (typeof modifier.ratio === "number" ? modifier.ratio : 0);
       const addCapped = clamp(addRaw, modifier.min, modifier.max);
       const add = addCapped * f;
       scaleBonus[targetKey] = (scaleBonus[targetKey] || 0) + add;
@@ -304,7 +306,7 @@ export function computeRotationBonuses(
         derivedForScale,
       );
 
-      const addRaw = sourceValue * modifier.ratio;
+      const addRaw = sourceValue * (typeof modifier.ratio === "number" ? modifier.ratio : 0);
       const add = clamp(addRaw, modifier.min, modifier.max);
       scaleBonus[targetKey] = (scaleBonus[targetKey] || 0) + add;
     }
@@ -445,7 +447,7 @@ export function computeRotationBonusesWithBreakdown(
         derivedForScale,
       );
 
-      const addRaw = sourceValue * modifier.ratio;
+      const addRaw = sourceValue * (typeof modifier.ratio === "number" ? modifier.ratio : 0);
       const addCapped = clamp(addRaw, modifier.min, modifier.max);
       const add = addCapped * f;
       addTo(bucket, targetKey, add);
@@ -472,7 +474,7 @@ export function computeRotationBonusesWithBreakdown(
         derivedForScale,
       );
 
-      const addRaw = sourceValue * modifier.ratio;
+      const addRaw = sourceValue * (typeof modifier.ratio === "number" ? modifier.ratio : 0);
       const add = clamp(addRaw, modifier.min, modifier.max);
       addTo(bucket, targetKey, add);
     }

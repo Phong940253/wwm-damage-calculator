@@ -127,12 +127,12 @@ export default function DamagePanel({
       className="
         flex flex-col
         bg-gradient-to-b from-card/95 to-card/60
-        border-none
+        border-none overflow-x-hidden
       "
     >
       <CardContent
         className="
-          flex-1 overflow-y-auto space-y-4 p-3 sm:space-y-6 sm:p-4 lg:p-5
+          flex-1 overflow-y-auto overflow-x-hidden space-y-4 p-3 sm:space-y-6 sm:p-4 lg:p-5
           scrollbar-thin scrollbar-thumb-zinc-600/40
         "
       >
