@@ -89,7 +89,7 @@ export function buildFinalStatSections(ctx: DamageContext): FinalStatSection[] {
               const ex = ctx.explain?.(k);
               if (!ex) return ctx.get(k);
               const filtered = ex.lines.filter(
-                (l) => l.kind !== "passive" && !(l.kind === "derived" && l.label === "Boss PhysDef"),
+                (l) => l.kind !== "passive",
               );
               return filtered.reduce((s, l) => s + l.value, 0);
             };

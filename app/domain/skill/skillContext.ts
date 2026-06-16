@@ -224,18 +224,19 @@ export function createSkillContext(
       if (isBallisticSkill) value += baseCtx.get("BallisticSkillDamageBoost");
       if (isPursuitSkill) value += baseCtx.get("PursuitSkillDamageBoost");
       if (weaponArtKey) value += baseCtx.get(weaponArtKey);
-      value += getFamilySpecificDamageBoost(baseCtx, {
+      // Conditional: Spring Away damage boost (e.g. Inner Ways)
+      if (opts.skillId && SPRING_AWAY_SKILL_IDS.has(opts.skillId)) {
+        value += baseCtx.get("SpringAwayDamageBoost");
+      }
+    }
+    else if (key === "FamilyDMGBoost") {
+      value = getFamilySpecificDamageBoost(baseCtx, {
         skillId: opts.skillId,
         weaponType: opts.weaponType,
         category: opts.category,
         isChargedSkill,
         isPursuitSkill,
       });
-
-      // Conditional: Spring Away damage boost (e.g. Inner Ways)
-      if (opts.skillId && SPRING_AWAY_SKILL_IDS.has(opts.skillId)) {
-        value += baseCtx.get("SpringAwayDamageBoost");
-      }
     }
     // Conditional: ballistic umbrella crit dmg bonus (e.g. Vernal Umbrella passives)
     else if (key === "CriticalDMGBonus") {

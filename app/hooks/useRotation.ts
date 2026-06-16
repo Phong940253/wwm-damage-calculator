@@ -4,6 +4,11 @@ import { Rotation, RotationSkill } from "../types";
 import { DEFAULT_ROTATIONS } from "@/app/domain/rotation/defaultRotations";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
+import {
+  collapseInnerWayTiers,
+  INNER_WAY_BY_ID,
+  INNER_WAY_GROUP_IDS,
+} from "@/app/domain/skill/innerWayUtils";
 import { MartialArtId } from "@/app/domain/skill/types";
 
 const STORAGE_KEY = "wwm_rotations";
@@ -20,51 +25,6 @@ const PASSIVE_ID_ALIASES: Record<string, string> = {
   ps_universal_included_critical_rate_up_agility:
     "ps_silkbind_jade_included_critical_rate_up_agility",
 };
-
-const INNER_BY_ID = new Map(INNER_WAYS.map((iw) => [iw.id, iw] as const));
-const INNER_GROUP_IDS = (() => {
-  const groupToIds = new Map<string, string[]>();
-  for (const iw of INNER_WAYS) {
-    const gid = iw.tierGroupId;
-    if (!gid) continue;
-    const arr = groupToIds.get(gid) ?? [];
-    arr.push(iw.id);
-    groupToIds.set(gid, arr);
-  }
-  return groupToIds;
-})();
-
-function collapseInnerWayTiers(activeIds: string[]): string[] {
-  if (!activeIds || activeIds.length === 0) return [];
-
-  const active = new Set(activeIds);
-
-  for (const [, ids] of INNER_GROUP_IDS.entries()) {
-    const enabledInGroup = ids
-      .filter((id) => active.has(id))
-      .map((id) => INNER_BY_ID.get(id))
-      .filter(Boolean) as NonNullable<(typeof INNER_WAYS)[number]>[];
-
-    if (enabledInGroup.length <= 1) continue;
-
-    // Keep the highest tier/level. If level is missing, treat as 0.
-    enabledInGroup.sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
-    const keep = enabledInGroup[enabledInGroup.length - 1]!.id;
-
-    for (const id of ids) active.delete(id);
-    active.add(keep);
-  }
-
-  // Preserve original-ish ordering: keep ids that remain, in input order, plus any kept ids.
-  const out: string[] = [];
-  for (const id of activeIds) {
-    if (active.has(id) && !out.includes(id)) out.push(id);
-  }
-  for (const id of active) {
-    if (!out.includes(id)) out.push(id);
-  }
-  return out;
-}
 
 function generateId() {
   return Math.random().toString(36).substring(2, 15);
@@ -549,12 +509,12 @@ export const useRotation = () => {
   };
 
   const toggleInnerWay = (rotationId: string, innerId: string) => {
-    const iw = INNER_BY_ID.get(innerId);
+    const iw = INNER_WAY_BY_ID.get(innerId);
     const tierGroupId = iw?.tierGroupId;
 
     // If this is a tiered inner way, toggling it means selecting/deselecting that tier.
     if (tierGroupId) {
-      const groupIds = INNER_GROUP_IDS.get(tierGroupId) ?? [];
+      const groupIds = INNER_WAY_GROUP_IDS.get(tierGroupId) ?? [];
       setRotations((prev) =>
         prev.map((r) => {
           if (r.id !== rotationId) return r;
@@ -595,7 +555,7 @@ export const useRotation = () => {
     tierGroupId: string,
     innerWayId: string | null,
   ) => {
-    const groupIds = INNER_GROUP_IDS.get(tierGroupId) ?? [];
+    const groupIds = INNER_WAY_GROUP_IDS.get(tierGroupId) ?? [];
 
     setRotations((prev) =>
       prev.map((r) => {

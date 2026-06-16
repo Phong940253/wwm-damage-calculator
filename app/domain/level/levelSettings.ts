@@ -31,6 +31,11 @@ export function getBossPhysDef(level: number): number {
   return Math.round(106 + 0.275 * level);
 }
 
+export function getBossDef(level: number): number {
+  if (!Number.isFinite(level)) return 0;
+  return Math.max(0, 119 - 10 * level + 0.184 * level * level);
+}
+
 export function getBossResistance(level: number): number {
   return 30;
   if (!Number.isFinite(level)) return 0;

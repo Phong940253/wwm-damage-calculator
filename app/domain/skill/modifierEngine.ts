@@ -4,6 +4,7 @@ import { PASSIVE_SKILLS } from "./passiveSkills";
 import { PassiveModifier, StatKey } from "./passiveSkillTypes";
 import { computeDerivedStats } from "../stats/derivedStats";
 import { SKILLS } from "./skills";
+import { collapseInnerWayTiers } from "./innerWayUtils";
 
 export interface RotationBonusBreakdown {
   /** Total bonus = sum of all sources (passives + inner ways) */
@@ -174,7 +175,8 @@ export function collectRotationModifiers(
     modifiers.push(...passive.modifiers);
   }
 
-  for (const innerId of rotation.activeInnerWays) {
+  const collapsedInnerIds = collapseInnerWayTiers(rotation.activeInnerWays);
+  for (const innerId of collapsedInnerIds) {
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
@@ -234,7 +236,8 @@ export function computeRotationBonuses(
     }
   }
 
-  for (const innerId of rotation.activeInnerWays) {
+  const collapsedInnerIds = collapseInnerWayTiers(rotation.activeInnerWays);
+  for (const innerId of collapsedInnerIds) {
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
@@ -282,7 +285,7 @@ export function computeRotationBonuses(
     }
   }
 
-  for (const innerId of rotation.activeInnerWays) {
+  for (const innerId of collapsedInnerIds) {
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
@@ -382,7 +385,8 @@ export function computeRotationBonusesWithBreakdown(
     }
   }
 
-  for (const innerId of rotation.activeInnerWays) {
+  const collapsedInnerIds = collapseInnerWayTiers(rotation.activeInnerWays);
+  for (const innerId of collapsedInnerIds) {
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
@@ -448,7 +452,7 @@ export function computeRotationBonusesWithBreakdown(
     }
   }
 
-  for (const innerId of rotation.activeInnerWays) {
+  for (const innerId of collapsedInnerIds) {
     const inner = INNER_WAYS.find((i) => i.id === innerId);
     if (!inner) continue;
 
