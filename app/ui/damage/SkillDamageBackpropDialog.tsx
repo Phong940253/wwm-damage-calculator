@@ -12,7 +12,14 @@ import { Skill } from "@/app/domain/skill/types";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import { createSkillContext } from "@/app/domain/skill/skillContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
-import { explainCalcExpectedNormal } from "@/app/domain/damage/damageFormula";
+import {
+  explainCalcExpectedNormal,
+  buildFormulaPipeline,
+  text as exprText,
+  type ExprNode,
+  type StepDef,
+  type FormulaGroup,
+} from "@/app/domain/damage/damageFormula";
 import { Separator } from "@/components/ui/separator";
 import {
     HoverCard,
@@ -212,6 +219,90 @@ function Legend({
     );
 }
 
+/* =============================
+   Generic formula pipeline renderer
+   ============================= */
+
+function mapOp(op: string): "add" | "mul" | "div" | "eq" | "paren" | "cmp" {
+  switch (op) {
+    case "+": return "add";
+    case "×": return "mul";
+    case "−": return "add";
+    case "/": return "div";
+    case "=": return "eq";
+    case "(": case ")": return "paren";
+    default: return "eq";
+  }
+}
+
+function RenderExpr({ node }: { node: ExprNode }) {
+  switch (node.t) {
+    case "num":
+      return <Num n={node.v} />;
+    case "stat":
+      return <StatValue statKey={node.key} value={node.value} />;
+    case "comp":
+      return <DerivedValue name={node.label} value={node.value} explain={node.explain} />;
+    case "name":
+      return <Name>{node.label}</Name>;
+    case "binop":
+      return (
+        <>
+          <RenderExpr node={node.left} />
+          <Op tone={mapOp(node.op)}>{node.op}</Op>
+          <RenderExpr node={node.right} />
+        </>
+      );
+    case "call":
+      return (
+        <>
+          <Name>{node.name}</Name>
+          <Op tone="paren">(</Op>
+          {node.args.map((a, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <span className="text-muted-foreground font-mono text-xs px-0.5">,</span>}
+              <RenderExpr node={a} />
+            </React.Fragment>
+          ))}
+          <Op tone="paren">)</Op>
+        </>
+      );
+    case "text":
+      return <span className="text-xs text-muted-foreground">{node.text}</span>;
+    case "clamp01":
+      return (
+        <>
+          <Name>clamp01(</Name>
+          <RenderExpr node={node.arg} />
+          <Op tone="paren">)</Op>
+        </>
+      );
+  }
+}
+
+function FormulaStepRow({ step }: { step: StepDef }) {
+  return (
+    <ExprRow>
+      <Name>{step.label}</Name>
+      <Op tone="eq">=</Op>
+      <RenderExpr node={step.expr} />
+      <Op tone="eq">=</Op>
+      <Num n={step.result} />
+    </ExprRow>
+  );
+}
+
+function FormulaGroupSection({ group }: { group: FormulaGroup }) {
+  return (
+    <div className="space-y-2">
+      <div className="text-sm font-semibold text-foreground">{group.title}</div>
+      {group.steps.map((step, i) => (
+        <FormulaStepRow key={i} step={step} />
+      ))}
+    </div>
+  );
+}
+
 export function SkillDamageBackpropDialog({
     open,
     onOpenChange,
@@ -244,17 +335,13 @@ export function SkillDamageBackpropDialog({
             baseStats: "Chỉ số gốc (di chuột để xem tên chỉ số)",
             physAtkDerivation: "Tính toán Min/MaxPhysicalAttack",
             dmgBoostBreakdown: "Phân rã Damage Boost",
-            maxInnerPhysDerivation: "Phân tích maxInnerPhys",
-            maxYourAttrContribution: "Đóng góp maxYourAttr",
             flatDmgBreakdown: "Phân rã FlatDamage",
             baseFlatDmg: "FlatDamage (gốc)",
             flatPhysical: "flatPhysical (kỹ năng)",
             flatAttribute: "flatAttribute (kỹ năng)",
             totalFlatDmg: "Tổng FlatDamage",
-            substitutedNumbers: "Thay số (dạng số)",
             expectedNumbers: "Kỳ vọng (dạng số)",
             baseWhenPrecision: "Base (dùng khi có Precision)",
-            substitutedMultipliers: "Hệ số thay số",
             probabilities: "Xác suất (clamp + chuẩn hóa)",
             expectedFromFormula: "Sát thương kỳ vọng (từ damageFormula)",
             perHitGroupNote: "Đây là Expected Normal (trung bình) cho mỗi nhóm hit trước khi nhân số hit.",
@@ -278,17 +365,13 @@ export function SkillDamageBackpropDialog({
             baseStats: "Base stats (hover for stat name)",
             physAtkDerivation: "Min/MaxPhysicalAttack derivation",
             dmgBoostBreakdown: "Damage Boost breakdown",
-            maxInnerPhysDerivation: "maxInnerPhys derivation",
-            maxYourAttrContribution: "maxYourAttr contribution",
             flatDmgBreakdown: "FlatDamage breakdown",
             baseFlatDmg: "base FlatDamage",
             flatPhysical: "flatPhysical (skill)",
             flatAttribute: "flatAttribute (skill)",
             totalFlatDmg: "total FlatDamage",
-            substitutedNumbers: "Substituted (numbers)",
             expectedNumbers: "Expected (numbers)",
             baseWhenPrecision: "Base (used when Precision)",
-            substitutedMultipliers: "Substituted multipliers",
             probabilities: "Probabilities (clamp + normalize)",
             expectedFromFormula: "Expected damage (from damageFormula)",
             perHitGroupNote: "This is the per-hit-group Expected Normal (avg) before hit count.",
@@ -315,7 +398,6 @@ export function SkillDamageBackpropDialog({
             const maxPhysExplain = hitCtx.explain!("MaxPhysicalAttack") ?? { key: "MaxPhysicalAttack", total: 0, lines: [] };
             const bossPhysDefExplain = hitCtx.explain!("BossPhysDef") ?? { key: "BossPhysDef", total: 0, lines: [] };
             const dmgBoostExplain = hitCtx.explain!("DamageBoost") ?? { key: "DamageBoost", total: 0, lines: [] };
-            const maxYourAttrExplain = hitCtx.explain!("MAXAttributeAttackOfYOURType") ?? { key: "MAXAttributeAttackOfYOURType", total: 0, lines: [] };
             const flatDmgExplain = ctx.explain!("FlatDamage") ?? { key: "FlatDamage", total: 0, lines: [] };
 
             // Collect non-zero skill-type-specific damage boost components
@@ -358,18 +440,20 @@ export function SkillDamageBackpropDialog({
               if (v > 0) boostComponents.push({ key: "SpringAwayDamageBoost", value: v });
             }
 
+            const formulaGroups = buildFormulaPipeline(steps.cache);
+
             return {
                 hitIndex,
                 hitCount: hit.hits,
                 hit,
                 damage,
                 steps,
+                formulaGroups,
                 minPhysExplain,
                 maxPhysExplain,
                 bossPhysDefExplain,
                 dmgBoostExplain,
                 boostComponents,
-                maxYourAttrExplain,
                 flatDmgExplain,
             };
         });
@@ -411,42 +495,8 @@ export function SkillDamageBackpropDialog({
                             clamp={text.clamp}
                         />
 
-                        {hitExplains.map(({ hitIndex, hitCount, hit, damage, steps, minPhysExplain, maxPhysExplain, bossPhysDefExplain, dmgBoostExplain, boostComponents, maxYourAttrExplain, flatDmgExplain }) => {
-                             const skillPhysMult = steps.cache.skillPhysMult;
-                            const skillElemMult = steps.cache.skillElemMult;
-                            const physAtkMult = steps.cache.physMul / 100;
-                            const elemMult = steps.cache.eleMul / 100;
-                            const physPenFactor = 1 + steps.cache.physPen / 173;
-                            const physBonusFactor = 1 + steps.cache.physDmgBonus / 100;
-                            const elePenFactor = 1 + steps.cache.elePen / 173;
-                            const eleDmgBonusFactor = 1 + steps.cache.attrDmgBonus / 100;
-                            const dmgMultTotal = 1 + (steps.cache.dmgBoost + steps.cache.bossDmgBoost) / 100;
-                            const familyMult = 1 + steps.cache.familyDmgBonus / 100;
-                            const maxOtherAttr = Math.max(steps.cache.minOtherAttr, steps.cache.maxOtherAttr);
-                            const affinityBonus = 1 + steps.cache.affinityDmgBonus / 100;
-                            const criticalBonus = 1 + steps.cache.critDmgBonus / 100;
+                        {hitExplains.map(({ hitIndex, hitCount, hit, damage, steps, formulaGroups, minPhysExplain, maxPhysExplain, bossPhysDefExplain, dmgBoostExplain, boostComponents, flatDmgExplain }) => {
                             const cd = steps.CD;
-
-                            // PhysComp = (physAtk + otherAttr) * skillPhysMult * (mul/100) * (1 + pen/173) * (1 + dmgBonus/100) + flatDmg
-                            const minPhysComp =
-                                (steps.cache.minPhysAtk + steps.cache.minOtherAttr) * skillPhysMult * physAtkMult * physPenFactor * physBonusFactor +
-                                steps.cache.flatDmg;
-                            const maxPhysComp =
-                                (steps.cache.maxPhysAtk + maxOtherAttr) * skillPhysMult * physAtkMult * physPenFactor * physBonusFactor +
-                                steps.cache.flatDmg;
-
-                            // EleComp = yourAttr * skillElemMult * (mul/100) * (1 + pen/173) * (1 + dmgBonus/100)
-                            const minEleComp = steps.cache.minYourAttr * skillElemMult * elemMult * elePenFactor * eleDmgBonusFactor;
-                            const maxEleComp = steps.cache.maxYourAttr * skillElemMult * elemMult * elePenFactor * eleDmgBonusFactor;
-
-                            // base = max(0, PhysComp - bossDef) + EleComp
-                            const minBaseApprox = Math.max(0, minPhysComp - steps.cache.bossDef) + minEleComp;
-                            const maxBaseApprox = Math.max(0, maxPhysComp - steps.cache.bossDef) + maxEleComp;
-
-                            // final = base * familyMult * dmgMult
-                            const minDamageApprox = minBaseApprox * familyMult * dmgMultTotal;
-                            const critDamageApprox = maxBaseApprox * familyMult * dmgMultTotal * criticalBonus;
-                            const affDamageApprox = maxBaseApprox * familyMult * dmgMultTotal * affinityBonus;
 
                             return (
                                 <div
@@ -719,333 +769,9 @@ export function SkillDamageBackpropDialog({
                                         </ExprRow>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">{text.maxInnerPhysDerivation}</div>
-
-                                        <ExprRow>
-                                            <Name>MaxPhysicalAttack (base)</Name>
-                                            <Op tone="eq">=</Op>
-                                            {maxPhysExplain.lines.map((line, i) => (
-                                                <React.Fragment key={i}>
-                                                    {i > 0 && <Op tone="add">+</Op>}
-                                                    <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
-                                                </React.Fragment>
-                                            ))}
-                                            <Op tone="eq">=</Op>
-                                            <Num n={maxPhysExplain.total} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>physComp</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Op tone="paren">(</Op>
-                                            <Num n={steps.cache.maxPhysAtk} />
-                                            <Op tone="add">+</Op>
-                                            <Num n={maxOtherAttr} />
-                                            <Op tone="paren">)</Op>
-                                            <Op tone="mul">×</Op>
-                                            <DerivedValue
-                                                name="skillPhysMult"
-                                                value={skillPhysMult}
-                                                explain="skill physicalMultiplier"
-                                            />
-                                            <Op tone="mul">×</Op>
-                                            <DerivedValue
-                                                name="physAtkMult"
-                                                value={physAtkMult}
-                                                explain="PhysicalAttackMultiplier / 100"
-                                            />
-                                            <Op tone="mul">×</Op>
-                                            <DerivedValue
-                                                name="physPenFactor"
-                                                value={physPenFactor}
-                                                explain="1 + PhysPen/173"
-                                            />
-                                            <Op tone="mul">×</Op>
-                                            <DerivedValue
-                                                name="physBonusFactor"
-                                                value={physBonusFactor}
-                                                explain="1 + PhysDmgBonus/100"
-                                            />
-                                            <Op tone="add">+</Op>
-                                            <StatValue statKey="FlatDamage" value={steps.cache.flatDmg} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={maxPhysComp} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>otherAttr</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Op tone="paren">max(</Op>
-                                            <Num n={steps.cache.minOtherAttr} />
-                                            <span className="font-mono text-xs text-muted-foreground px-0.5">,</span>
-                                            <Num n={steps.cache.maxOtherAttr} />
-                                            <Op tone="paren">)</Op>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={maxOtherAttr} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>maxPhysComp (raw)</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={maxPhysComp} />
-                                        </ExprRow>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">{text.maxYourAttrContribution}</div>
-
-                                        <ExprRow>
-                                            <Name>MAXAttributeAttackOfYOURType (base)</Name>
-                                            <Op tone="eq">=</Op>
-                                            {maxYourAttrExplain.lines.map((line, i) => (
-                                                <React.Fragment key={i}>
-                                                    {i > 0 && <Op tone="add">+</Op>}
-                                                    <DerivedValue name={line.label} value={line.value} explain={line.note || ""} />
-                                                </React.Fragment>
-                                            ))}
-                                            <Op tone="eq">=</Op>
-                                            <Num n={maxYourAttrExplain.total} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>× skillElemMult</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.cache.maxYourAttr} />
-                                            <Op tone="mul">×</Op>
-                                            <DerivedValue
-                                                name="skillElemMult"
-                                                value={skillElemMult}
-                                                explain="skill elementMultiplier"
-                                            />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.cache.maxYourAttr * skillElemMult} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>× elemMult</Name>
-                                            <Op tone="eq">=</Op>
-                                            <DerivedValue
-                                                name="MainElementMultiplier"
-                                                value={steps.cache.eleMul}
-                                                explain="MainElementMultiplier"
-                                            />
-                                            <Op tone="div">/</Op>
-                                            <Num n={100} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={elemMult} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>× elePenFactor</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={1} />
-                                            <Op tone="add">+</Op>
-                                            <Num n={steps.cache.elePen} />
-                                            <Op tone="div">/</Op>
-                                            <Num n={173} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={elePenFactor} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>× eleDmgBonusFactor</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={1} />
-                                            <Op tone="add">+</Op>
-                                            <Num n={steps.cache.attrDmgBonus} />
-                                            <Op tone="div">/</Op>
-                                            <Num n={100} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={eleDmgBonusFactor} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>maxYourAttr contribution</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.cache.maxYourAttr} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={skillElemMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={elemMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={elePenFactor} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={eleDmgBonusFactor} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={maxEleComp} />
-                                        </ExprRow>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">{text.substitutedNumbers}</div>
-
-                                        <ExprRow>
-                                            <Name>PhysComp</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Op tone="paren">(</Op>
-                                            <Num n={steps.avgPhysAtk} />
-                                            <Op tone="add">+</Op>
-                                            <Num n={steps.avgOtherAttr} />
-                                            <Op tone="paren">)</Op>
-                                            <Op tone="mul">×</Op>
-                                            <Num n={skillPhysMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={physAtkMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={physPenFactor} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={physBonusFactor} />
-                                            <Op tone="add">+</Op>
-                                            <Num n={steps.cache.flatDmg} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.physComp} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>EleComp</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.avgYourAttr} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={skillElemMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={elemMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={elePenFactor} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={eleDmgBonusFactor} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.eleComp} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>basePhys</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Name>max(</Name>
-                                            <Num n={0} />
-                                            <span className="font-mono text-xs text-muted-foreground px-0.5">,</span>
-                                            <Num n={steps.physComp} />
-                                            <Op tone="sub">−</Op>
-                                            <Num n={steps.cache.bossDef} />
-                                            <Op tone="paren">)</Op>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.basePhys} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>base</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.basePhys} />
-                                            <Op tone="add">+</Op>
-                                            <Num n={steps.eleComp} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.base} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>× familyMult</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.base} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={familyMult} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.base * familyMult} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>× dmgMult</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.base * familyMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={dmgMultTotal} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.baseHit} />
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>minDamage</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Op tone="paren">(</Op>
-                                            <DerivedValue
-                                                name="minPhysComp"
-                                                value={minPhysComp}
-                                                explain="minPhysComp = (MinPhysicalAttack + minOtherAttr) * skillPhysMult * physAtkMult * (1 + PhysPen/173) * (1 + PhysDmgBonus/100) + FlatDmg"
-                                            />
-                                            <Op tone="sub">−</Op>
-                                            <DerivedValue
-                                                name="bossDef"
-                                                value={steps.cache.bossDef}
-                                                explain="BossDef = max(0, 119 - 10*lv + 0.184*lv²)"
-                                            />
-                                            <Op tone="paren">)</Op>
-                                            <Op tone="add">+</Op>
-                                            <DerivedValue
-                                                name="minEleComp"
-                                                value={minEleComp}
-                                                explain="minEleComp = minYourAttr * skillElemMult * elemMult * (1 + elePen/173) * (1 + attrDmgBonus/100)"
-                                            />
-                                            <Op tone="mul">×</Op>
-                                            <DerivedValue
-                                                name="familyMult"
-                                                value={familyMult}
-                                                explain="familyMult = 1 + FamilyDMGBoost/100"
-                                            />
-                                            <Op tone="mul">×</Op>
-                                            <DerivedValue
-                                                name="dmgMultTotal"
-                                                value={dmgMultTotal}
-                                                explain="dmgMultTotal = 1 + (DamageBoost + CombatBoostAgainstBossUnits) / 100"
-                                            />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.minDamage} />
-                                            <span className="text-xs text-muted-foreground">
-                                                (raw≈{fmt(minDamageApprox, 2)})
-                                            </span>
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>critical</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Op tone="paren">(</Op>
-                                            <Num n={maxPhysComp} />
-                                            <Op tone="sub">−</Op>
-                                            <Num n={steps.cache.bossDef} />
-                                            <Op tone="paren">)</Op>
-                                            <Op tone="add">+</Op>
-                                            <Num n={maxEleComp} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={familyMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={dmgMultTotal} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={criticalBonus} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={damage.critical} />
-                                            <span className="text-xs text-muted-foreground">
-                                                (raw≈{fmt(critDamageApprox, 2)})
-                                            </span>
-                                        </ExprRow>
-
-                                        <ExprRow>
-                                            <Name>affinity</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Op tone="paren">(</Op>
-                                            <Num n={maxPhysComp} />
-                                            <Op tone="sub">−</Op>
-                                            <Num n={steps.cache.bossDef} />
-                                            <Op tone="paren">)</Op>
-                                            <Op tone="add">+</Op>
-                                            <Num n={maxEleComp} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={familyMult} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={dmgMultTotal} />
-                                            <Op tone="mul">×</Op>
-                                            <Num n={affinityBonus} />
-                                            <Op tone="eq">=</Op>
-                                            <Num n={damage.affinity} />
-                                        </ExprRow>
-                                    </div>
+                                    {formulaGroups.map((g) => (
+                                        <FormulaGroupSection key={g.id} group={g} />
+                                    ))}
 
                                     <div className="space-y-2">
                                         <div className="text-sm font-semibold text-foreground">{text.expectedNumbers}</div>
@@ -1096,32 +822,20 @@ export function SkillDamageBackpropDialog({
                                             <Name>affinity (maxDamage)</Name>
                                             <Op tone="eq">=</Op>
                                             <Num n={damage.affinity} />
-                                            <span className="text-xs text-muted-foreground">
-                                                (raw≈{fmt(affDamageApprox, 2)})
-                                            </span>
                                         </ExprRow>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">
-                                            {text.baseWhenPrecision}
-                                        </div>
-
-                                        <ExprRow>
-                                            <Name>base</Name>
-                                            <Op tone="eq">=</Op>
-                                            <Name>
-                                                [ (avgPhysAtk + avgOtherAttr) × skillPhysMult × physAtkMult × physPenFactor × physBonusFactor + flatDmg + avgYourAttr × skillElemMult × elemMult × elePenFactor × eleDmgBonusFactor − bossDef ] × familyMult × dmgMult
-                                            </Name>
-                                            <Op tone="eq">=</Op>
-                                            <Num n={steps.base} />
-                                        </ExprRow>
-
-                                        <div className="text-xs text-muted-foreground">
-                                            {text.substitutedMultipliers}: physAtkMult={fmt(physAtkMult)} ·
-                                            elemMult={fmt(elemMult)}
-                                        </div>
-                                    </div>
+                                    <FormulaGroupSection group={{
+                                        id: "baseWhenPrecision",
+                                        title: text.baseWhenPrecision,
+                                        steps: [
+                                            {
+                                                label: "base (summary)",
+                                                result: steps.base,
+                                                expr: exprText("(PhysComp + EleComp − BossDef) × familyMult × dmgMult"),
+                                            },
+                                        ],
+                                    }} />
 
                                     <div className="space-y-2">
                                         <div className="text-sm font-semibold text-foreground">
