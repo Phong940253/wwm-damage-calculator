@@ -20,6 +20,7 @@ export interface ParamsSchemaItem {
 export function getSkillParamSchema(skill: Skill): ParamsSchemaItem[] {
   const common: ParamsSchemaItem[] = [
     { key: "buffDmgBoostPct", label: "Buff DMG Boost (%)", min: 0, default: 0 },
+    { key: "distance", label: "Distance (m)", min: 0, max: 9, step: 0.1, default: 0 },
   ];
 
   switch (skill.id) {
@@ -37,11 +38,6 @@ export function getSkillParamSchema(skill: Skill): ParamsSchemaItem[] {
       return [
         ...common,
         { key: "chargePct", label: "Charge (%)", min: 0, max: 100, default: 100 },
-      ];
-    case "mystic_flute_of_the_tides":
-      return [
-        ...common,
-        { key: "tidesDistance", label: "Distance (m)", min: 0, max: 9, step: 0.1, default: 0 },
       ];
     default:
       return common;
@@ -118,31 +114,22 @@ export function getSkillConditionalModifiers(
 }
 
 /**
- * Compute the total extra DamageBoost % from rotation party buffs
- * (e.g. Flute of the Tides distance-based buff applies to all skills
- * including tides itself).
- * Called inside calculateSkillDamage, so callers never need tides-specific code.
+ * Compute extra DamageBoost % from Flute of the Tides' distance-based party buff
+ * for a specific skill. Each skill has its own distance parameter.
+ * Buff is only active when Tides is in the rotation.
+ * Formula: 0→5m = 0→50/9%, 5→9m = 50/9%→20%.
  */
 export function computeRotationPartyBuff(
+  currentSkillParams: Record<string, number> | undefined,
   rotationSkills: RotationSkill[] | undefined,
 ): number {
-  if (!rotationSkills || rotationSkills.length === 0) return 0;
+  if (!rotationSkills) return 0;
+  const hasTides = rotationSkills.some(
+    (rs) => rs.id === "mystic_flute_of_the_tides" && !rs.cancelled,
+  );
+  if (!hasTides) return 0;
 
-  let total = 0;
-
-  for (const rs of rotationSkills) {
-    if (rs.cancelled) continue;
-
-    if (rs.id === "mystic_flute_of_the_tides") {
-      const distance = rs.params?.tidesDistance ?? 0;
-      const d = Math.max(0, Math.min(9, distance));
-      if (d <= 5) {
-        total += (d / 5) * (50 / 9);
-      } else {
-        total += (50 / 9) + ((d - 5) / 4) * (20 - 50 / 9);
-      }
-    }
-  }
-
-  return total;
+  const d = Math.max(0, Math.min(9, Number(currentSkillParams?.distance ?? 0)));
+  if (d <= 5) return (d / 5) * (50 / 9);
+  return Math.min(20, (50 / 9) + ((d - 5) / 4) * (20 - 50 / 9));
 }

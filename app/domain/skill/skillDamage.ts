@@ -586,7 +586,7 @@ export function calculateSkillDamage(
 
   // Party buffs from other skills in rotation (e.g. Tides distance buff).
   const partyBuff = opts?.rotationSkills
-    ? computeRotationPartyBuff(opts.rotationSkills)
+    ? computeRotationPartyBuff(opts?.params, opts.rotationSkills)
     : 0;
 
   // Process each hit type and multiply by hit count

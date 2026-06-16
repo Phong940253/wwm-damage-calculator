@@ -1,7 +1,10 @@
 // app/hooks/useRotation.ts
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Rotation, RotationSkill } from "../types";
-import { DEFAULT_ROTATIONS } from "@/app/domain/rotation/defaultRotations";
+import {
+  DEFAULT_ROTATIONS,
+  subscribeToDefaultRotations,
+} from "@/app/domain/skill/defaultRotations";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
 import {
@@ -203,6 +206,13 @@ export const useRotation = () => {
   const [rotations, setRotations] = useState<Rotation[]>([]);
   const [selectedRotationId, setSelectedRotationId] = useState<string>("");
 
+  // Subscribe to external (mutable) DEFAULT_ROTATIONS so admin updates propagate to UI
+  const reactiveDefaults = useSyncExternalStore(
+    subscribeToDefaultRotations,
+    () => DEFAULT_ROTATIONS,
+    () => DEFAULT_ROTATIONS,
+  );
+
   // Load từ localStorage
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -214,7 +224,7 @@ export const useRotation = () => {
         savedRotations = JSON.parse(raw) as Rotation[];
       } catch {
         // Fallback to default only
-        const normalized = DEFAULT_ROTATIONS.map((r) =>
+        const normalized = reactiveDefaults.map((r) =>
           normalizeRotation(r, r.martialArtId as MartialArtId),
         );
         setRotations(normalized);
@@ -226,11 +236,11 @@ export const useRotation = () => {
     // Merge default rotations with saved rotations.
     // IMPORTANT: default rotations are treated as immutable templates.
     // If a saved rotation has the same id as a default rotation, we always prefer
-    // the current DEFAULT_ROTATIONS version (so defaults can be updated over time).
-    const defaultIds = new Set(DEFAULT_ROTATIONS.map((r) => r.id));
+    // the current reactiveDefaults version (so defaults can be updated over time).
+    const defaultIds = new Set(reactiveDefaults.map((r) => r.id));
     const uniqueSaved = savedRotations.filter((r) => !defaultIds.has(r.id));
 
-    const mergedRotations = [...DEFAULT_ROTATIONS, ...uniqueSaved].map((r) =>
+    const mergedRotations = [...reactiveDefaults, ...uniqueSaved].map((r) =>
       normalizeRotation(r, r.martialArtId as MartialArtId),
     );
 
@@ -240,7 +250,7 @@ export const useRotation = () => {
     setSelectedRotationId(
       exists ? savedSelectedId : (mergedRotations[0]?.id ?? ""),
     );
-  }, []);
+  }, [reactiveDefaults]);
 
   // Persist vào localStorage mỗi khi rotations thay đổi
   useEffect(() => {

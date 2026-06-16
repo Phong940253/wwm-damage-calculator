@@ -6,8 +6,8 @@ import { SKILLS } from "@/app/domain/skill/skills";
 import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
 import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
 import { INNER_WAYS } from "@/app/domain/skill/innerWays";
-import { DEFAULT_ROTATIONS } from "@/app/domain/rotation/defaultRotations";
-import { getSkillParamSchema } from "@/app/domain/skill/skillBehaviors";
+import { DEFAULT_ROTATIONS } from "@/app/domain/skill/defaultRotations";
+import ParamPopover from "./ParamPopover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -888,32 +888,15 @@ export default function RotationPanel({
                       </div>
 
                       {/* Skill params — driven by schema in skillBehaviors.ts */}
-                      {getSkillParamSchema(skill).map((param) => (
-                        <div key={param.key} className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {param.label}
-                          </span>
-                          <input
-                            type="number"
-                            min={param.min}
-                            max={param.max}
-                            step={param.step ?? "1"}
-                            value={rotSkill.params?.[param.key] ?? param.default ?? 0}
-                            disabled={selectedIsDefault}
-                            onChange={(e) => {
-                              if (selectedIsDefault) return;
-                              const next = Number(e.target.value);
-                              let clamped = Number.isFinite(next) ? next : (param.default ?? 0);
-                              if (typeof param.min === "number") clamped = Math.max(param.min, clamped);
-                              if (typeof param.max === "number") clamped = Math.min(param.max, clamped);
-                              onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, {
-                                [param.key]: clamped,
-                              });
-                            }}
-                            className="w-14 bg-accent text-xs border border-zinc-600 rounded px-1 py-0.5 text-foreground text-center"
-                          />
-                        </div>
-                      ))}
+                      <ParamPopover
+                        skill={skill}
+                        params={rotSkill.params}
+                        rotationSkills={selectedRotation.skills}
+                        disabled={selectedIsDefault}
+                        onParamChange={(key, value) =>
+                          onUpdateSkillParams(selectedRotation.id, rotSkill.entryId, { [key]: value })
+                        }
+                      />
 
                       <Button
                         variant="ghost"
