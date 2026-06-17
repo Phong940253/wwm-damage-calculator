@@ -49,6 +49,7 @@ export function useGearOptimize(
     autoReduceIfOverCombos?: number;
     reduceTargetCombos?: number;
     reducePerSlotCap?: number;
+    considerTune?: boolean;
   },
 ) {
   const { levelContext } = useLevelContext();

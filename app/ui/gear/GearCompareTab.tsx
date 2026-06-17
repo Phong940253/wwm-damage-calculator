@@ -356,35 +356,33 @@ export default function GearCompareTab({
                           rotSkill.count,
                           rotation.activePassiveSkills,
                           runtimeState.priorHitsBySkill,
+                          rotSkill.cancelled,
                         );
+                        entryOpts.rotationSkills = rotation.skills;
 
                         const skillDmgA = calculateSkillDamage(
                           ctxA,
                           skill,
                           entryOpts,
                         );
-                        if (!rotSkill.cancelled) {
-                          totalMinA +=
-                            skillDmgA.total.min.value * rotSkill.count;
-                          totalNormalA +=
-                            skillDmgA.total.normal.value * rotSkill.count;
-                          totalAffinityA +=
-                            skillDmgA.total.affinity.value * rotSkill.count;
-                        }
+                        totalMinA +=
+                          skillDmgA.total.min.value * rotSkill.count;
+                        totalNormalA +=
+                          skillDmgA.total.normal.value * rotSkill.count;
+                        totalAffinityA +=
+                          skillDmgA.total.affinity.value * rotSkill.count;
 
                         const skillDmgB = calculateSkillDamage(
                           ctxB,
                           skill,
                           entryOpts,
                         );
-                        if (!rotSkill.cancelled) {
-                          totalMinB +=
-                            skillDmgB.total.min.value * rotSkill.count;
-                          totalNormalB +=
-                            skillDmgB.total.normal.value * rotSkill.count;
-                          totalAffinityB +=
-                            skillDmgB.total.affinity.value * rotSkill.count;
-                        }
+                        totalMinB +=
+                          skillDmgB.total.min.value * rotSkill.count;
+                        totalNormalB +=
+                          skillDmgB.total.normal.value * rotSkill.count;
+                        totalAffinityB +=
+                          skillDmgB.total.affinity.value * rotSkill.count;
 
                         advanceRotationSkillRuntimeState(
                           runtimeState,

@@ -116,6 +116,8 @@ function calcRotationAwareNormalDamage(
     rotation
   );
 
+  console.log('=== DEBUG EQUIPPED includedAbs+ ===', {includedAbs: {...includedAbs}, effectiveGearBonus: {...effectiveGearBonus}, rotationBonuses: {...rotationBonuses}});
+
   const ctx = buildDamageContext(
     stats,
     elementStats,
@@ -141,18 +143,31 @@ function calcRotationAwareNormalDamage(
         rotSkill.count,
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
+        rotSkill.cancelled,
       );
+      entryOpts.rotationSkills = rotation.skills;
 
       const dmg = calculateSkillDamage(
         ctx,
         skill,
         entryOpts,
       );
-      if (!rotSkill.cancelled) {
-        totalNormal += dmg.total.normal.value * rotSkill.count;
-      }
+      totalNormal += dmg.total.normal.value * rotSkill.count;
 
       advanceRotationSkillRuntimeState(runtimeState, skill, entryOpts, rotSkill.count);
+    }
+    if (typeof window !== 'undefined') {
+      console.log('=== DEBUG EQUIPPED TAB ===', {
+        totalNormal,
+        rotationSkillsLen: rotation.skills?.length,
+        hasTides: rotation.skills?.some((rs) => rs.id === 'mystic_flute_of_the_tides' && !rs.cancelled),
+        activeInnerWays: rotation.activeInnerWays,
+        activePassiveSkills: rotation.activePassiveSkills,
+        passiveUptimes: rotation.passiveUptimes,
+        stats: Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, typeof v === 'object' && v !== null && 'current' in v ? v.current : v])),
+        elementStats: { selected: elementStats.selected, martialArtsId: elementStats.martialArtsId },
+        gearBonus: {...gearBonus},
+      });
     }
     return totalNormal;
   }

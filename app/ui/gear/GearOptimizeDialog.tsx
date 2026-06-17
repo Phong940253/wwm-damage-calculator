@@ -27,6 +27,9 @@ import {
 import GearHoverDetail from "./GearHoverDetail";
 import { useI18n } from "@/app/providers/I18nProvider";
 
+type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string };
+const getTuneMeta = (g: CustomGear | undefined): GearWithTune | undefined => g as GearWithTune;
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -90,6 +93,7 @@ export default function GearOptimizeDialog({
       damage: "Sát thương",
       gain: "Tăng",
       changes: "Thay đổi",
+      tune: "Tune",
       action: "Hành động",
       empty: "Không có kết quả. Hãy đổi bộ lọc hoặc chạy lại tối ưu.",
       equip: "Trang bị",
@@ -115,6 +119,7 @@ export default function GearOptimizeDialog({
       damage: "Damage",
       gain: "Gain",
       changes: "Changes",
+      tune: "Tune",
       action: "Action",
       empty: "No results found. Try changing filters or running the optimizer.",
       equip: "Equip",
@@ -302,6 +307,7 @@ export default function GearOptimizeDialog({
                             <th className="text-center p-3 font-semibold whitespace-nowrap">
                               {text.changes}
                             </th>
+                            <th className="text-center p-3 font-semibold">{text.tune}</th>
                             {GEAR_SLOTS.map(({ label }) => (
                               <th
                                 key={label}
@@ -355,6 +361,19 @@ export default function GearOptimizeDialog({
                                     {changeCount}
                                   </Badge>
                                 </td>
+                                <td className="p-3 text-center">
+                                  {(() => {
+                                    const tuneCount = GEAR_SLOTS.reduce((sum, { key }) => {
+                                      const g = r.selection[key];
+                                      return sum + (getTuneMeta(g)?.__tuneId ? 1 : 0);
+                                    }, 0);
+                                    return tuneCount > 0 ? (
+                                      <Badge variant="outline" className="tabular-nums text-amber-600 border-amber-300 bg-amber-500/10">
+                                        {tuneCount}
+                                      </Badge>
+                                    ) : null;
+                                  })()}
+                                </td>
                                 {GEAR_SLOTS.map(({ key }) => {
                                   const g = r.selection[key];
                                   const currentEquipped = equipped[key];
@@ -370,8 +389,13 @@ export default function GearOptimizeDialog({
                                         isNew ? (
                                           <HoverCard openDelay={150}>
                                             <HoverCardTrigger asChild>
-                                              <span className="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-700 cursor-help underline decoration-dotted hover:bg-emerald-500/20 transition-colors truncate max-w-[140px]">
+                                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-700 cursor-help underline decoration-dotted hover:bg-emerald-500/20 transition-colors truncate max-w-[140px]">
                                                 {g.name}
+                                                {getTuneMeta(g)?.__tuneId ? (
+                                                  <span className="text-[10px] font-bold text-amber-600 bg-amber-200/40 rounded-sm px-1 leading-tight" title={getTuneMeta(g)?.__tuneLabel}>
+                                                    T
+                                                  </span>
+                                                ) : null}
                                               </span>
                                             </HoverCardTrigger>
                                             <HoverCardContent
@@ -391,8 +415,13 @@ export default function GearOptimizeDialog({
                                             </HoverCardContent>
                                           </HoverCard>
                                         ) : (
-                                          <span className="text-muted-foreground truncate inline-block max-w-[140px]">
+                                          <span className="text-muted-foreground truncate inline-flex items-center gap-1 max-w-[140px]">
                                             {g.name}
+                                            {getTuneMeta(g)?.__tuneId ? (
+                                              <span className="text-[10px] font-bold text-amber-600 bg-amber-200/40 rounded-sm px-1 leading-tight" title={getTuneMeta(g)?.__tuneLabel}>
+                                                T
+                                              </span>
+                                            ) : null}
                                           </span>
                                         )
                                       ) : (

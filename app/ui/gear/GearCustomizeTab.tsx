@@ -3,6 +3,7 @@
 import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useGear } from "../../providers/GearContext";
 import GearCard from "./GearCard";
 import GearForm from "./GearForm";
@@ -266,14 +267,16 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
   }, [customGears, slotFilter, statFilter]);
 
   const [perSlotCap, setPerSlotCap] = useState<number>(0);
+  const [considerTune, setConsiderTune] = useState(false);
 
   const optimizeOptions = useMemo(() => {
     return {
       candidateGears: filteredGears,
       slotsToOptimize: slotFilter.size > 0 ? Array.from(slotFilter) : undefined,
       reducePerSlotCap: perSlotCap,
+      considerTune,
     };
-  }, [filteredGears, slotFilter, perSlotCap]);
+  }, [filteredGears, slotFilter, perSlotCap, considerTune]);
 
   const opt = useGearOptimize(
     stats,
@@ -407,6 +410,10 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold">{text.customGear}</h3>
         <div className="flex flex-wrap gap-2">
+          <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none px-2 py-1 rounded-md border border-border/40 hover:bg-muted/40 transition-colors">
+            <Checkbox checked={considerTune} onCheckedChange={(v) => setConsiderTune(Boolean(v))} />
+            <span className="text-muted-foreground">Consider Tune</span>
+          </label>
           <Button data-tour="gear-optimize-open" variant="outline" onClick={() => setOptOpen(true)}>
             {text.optimize}
           </Button>

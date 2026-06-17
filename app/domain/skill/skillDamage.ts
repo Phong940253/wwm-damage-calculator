@@ -61,6 +61,15 @@ export interface SkillDamageOptions {
    * (e.g. Flute of the Tides distance buff) internally.
    */
   rotationSkills?: RotationSkill[];
+
+  /**
+   * Whether this skill entry is cancelled. calculateSkillDamage
+   * handles cancellation internally so callers always accumulate the result.
+   * - Most skills: cancelled → zero damage
+   * - Tides (mystic_flute_of_the_tides): cancelled → skip initial hit,
+   *   keep 5 ripple hits
+   */
+  cancelled?: boolean;
 }
 
 export interface RotationSkillRuntimeState {
@@ -94,6 +103,7 @@ export function buildRotationSkillDamageOptions(
   currentEntryUseCount?: number,
   activePassiveSkills?: string[],
   priorHitsInRotationBySkill?: Record<string, number>,
+  cancelled?: boolean,
 ): SkillDamageOptions {
   const entryCount = Math.max(0, Number(currentEntryUseCount) || 0);
   return {
@@ -102,6 +112,7 @@ export function buildRotationSkillDamageOptions(
     activePassiveSkills,
     skillUseCountsInRotation,
     priorHitsInRotationBySkill,
+    cancelled,
     // Per-entry usage count is preferred for effects that are scoped to each
     // rotation entry (column), while map stays available for cross-skill rules.
     skillUseCountInRotation:
@@ -496,6 +507,13 @@ function applyPassiveSkillDamageResolvers(
   return next;
 }
 
+const ZERO_DAMAGE_RESULT: DamageResult = {
+  min: { value: 0, percent: 0 },
+  normal: { value: 0, percent: 0 },
+  critical: { value: 0, percent: 0 },
+  affinity: { value: 0, percent: 0 },
+};
+
 function scaleDamageResult(dmg: DamageResult, scale: number): DamageResult {
   const s = Number.isFinite(scale) ? scale : 1;
   return {
@@ -581,16 +599,32 @@ export function calculateSkillDamage(
 
   const effectiveHits = getEffectiveSkillHits(skill, opts);
 
+  // Cancellation handling: calculateSkillDamage handles it internally
+  // so callers can always accumulate the returned result.
+  if (opts?.cancelled) {
+    if (skill.id === "mystic_flute_of_the_tides") {
+      // Tides: skip initial hit (group 1), keep only ripple hits (group 2+)
+      return calculateSkillDamage(ctx, skill, { ...opts, cancelled: false, _skipHitGroups: [0] } as SkillDamageOptions & { _skipHitGroups: number[] });
+    }
+    return { total: ZERO_DAMAGE_RESULT, perHit: [] };
+  }
+
+  // Skip hit groups by index (internal mechanism for partial cancellation).
+  // _skipHitGroups is set internally above; callers should only set `cancelled`.
+  const skipGroups = (opts as Record<string, unknown>)?.["_skipHitGroups"] as number[] | undefined;
+  const filteredHits = skipGroups?.length
+    ? effectiveHits.filter((_, i) => !skipGroups.includes(i))
+    : effectiveHits;
+
   // Per-skill duration scaling (e.g. DPS-based skills).
   const durationScale = getSkillDurationScale(skill, opts?.params);
-
   // Party buffs from other skills in rotation (e.g. Tides distance buff).
   const partyBuff = opts?.rotationSkills
     ? computeRotationPartyBuff(opts?.params, opts.rotationSkills)
     : 0;
 
   // Process each hit type and multiply by hit count
-  for (const hit of effectiveHits) {
+  for (const hit of filteredHits) {
     const hitCtx = createSkillContext(ctx, {
       skillId: skill.id,
       category: skill.category,

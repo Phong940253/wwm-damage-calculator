@@ -1,4 +1,5 @@
 import { ElementKey } from "@/app/constants";
+import type { CustomGear } from "@/app/types";
 
 export type TuneHistoryEntry = {
   subIndex: number;
@@ -332,6 +333,59 @@ export function hasUsedTune(
   } | null,
 ): boolean {
   return getGearTuneHistory(gear).length > 0;
+}
+
+/* =======================
+   Tune variant generation for optimizer
+======================= */
+
+export interface TuneVariant {
+  label: string;
+  subIndex: number;
+  targetStat: string;
+  targetValue: number;
+  overrideSubs: Array<{ stat: string | number; value: number }>;
+}
+
+/** Generate all eligible tune variants for a gear piece.
+ *  Only gears with tunedSubIndex > 0 produce variants.
+ *  Each variant replaces the substat at tunedSubIndex with a different
+ *  eligible stat at max per-line value.
+ */
+export function generateTuneVariants(
+  gear: Pick<CustomGear, "subs" | "tunedSubIndex">,
+  elementKey: ElementKey,
+): TuneVariant[] {
+  const tunedSubIndex = gear.tunedSubIndex;
+  if (typeof tunedSubIndex !== "number" || tunedSubIndex <= 0) return [];
+  const subs = gear.subs;
+  if (!subs || tunedSubIndex >= subs.length) return [];
+
+  const pool = getTuneSystemStatPool(elementKey);
+  const subStatKeys = subs.map((s) => String(s.stat ?? ""));
+
+  const variants: TuneVariant[] = [];
+
+  for (const targetStat of pool) {
+    if (!isTuneTargetAllowedBySubRules(subStatKeys, tunedSubIndex, targetStat)) continue;
+
+    const range = getPlayerTuneStatRange(targetStat);
+    const targetValue = range.maxPerLine;
+
+    const overrideSubs = subs.map((s, i) =>
+      i === tunedSubIndex ? { stat: targetStat, value: targetValue } : { ...s },
+    );
+
+    variants.push({
+      label: `→ ${targetStat} (+${targetValue})`,
+      subIndex: tunedSubIndex,
+      targetStat,
+      targetValue,
+      overrideSubs,
+    });
+  }
+
+  return variants;
 }
 
 export function getStatTheoreticalMaxPercentage(

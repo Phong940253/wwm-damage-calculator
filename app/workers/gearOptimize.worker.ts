@@ -30,6 +30,7 @@ type OptimizeWorkerOptions = {
   autoReduceIfOverCombos?: number;
   reduceTargetCombos?: number;
   reducePerSlotCap?: number;
+  considerTune?: boolean;
 };
 
 type StaticDataPayload = {

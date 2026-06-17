@@ -65,13 +65,12 @@ export function useStatHeatmap(
             rotSkill.count,
             rotation.activePassiveSkills,
             runtimeState.priorHitsBySkill,
+            rotSkill.cancelled,
           );
           entryOpts.rotationSkills = rotation.skills;
 
           const dmg = calculateSkillDamage(ctx, skill, entryOpts);
-          if (!rotSkill.cancelled) {
-            totalNormal += dmg.total.normal.value * rotSkill.count;
-          }
+          totalNormal += dmg.total.normal.value * rotSkill.count;
 
           advanceRotationSkillRuntimeState(
             runtimeState,

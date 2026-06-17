@@ -96,11 +96,11 @@ function calcRotationAwareNormalDamage(
         rotSkill.count,
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
+        rotSkill.cancelled,
       );
+      entryOpts.rotationSkills = rotation.skills;
 const dmg = calculateSkillDamage(ctx, skill, entryOpts);
-if (!rotSkill.cancelled) {
-  totalNormal += dmg.total.normal.value * rotSkill.count;
-}
+totalNormal += dmg.total.normal.value * rotSkill.count;
 
 advanceRotationSkillRuntimeState(
   runtimeState,
@@ -866,7 +866,7 @@ function StatLine({
   impactPct?: number;
   isTuned?: boolean;
 }) {
-  console.log(`StatLine ${stat}: isTuned =`, isTuned);
+  // console.log(`StatLine ${stat}: isTuned =`, isTuned);
   const key = String(stat);
   const showPct =
     typeof impactPct === "number" &&

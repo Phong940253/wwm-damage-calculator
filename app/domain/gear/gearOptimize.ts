@@ -21,6 +21,7 @@ import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
 import type { LevelContext } from "../level/levelSettings";
 import { computeIncludedInStatsGearBonus } from "../skill/includedInStatsImpact";
 import { LIST_MARTIAL_ARTS, MartialArtWeaponType } from "../skill/types";
+import { generateTuneVariants } from "./tuneAdvisor";
 
 /* =======================
    Types
@@ -50,6 +51,8 @@ export class OptimizeCancelledError extends Error {
 }
 
 type StatDelta = { stat: string | number; value: number };
+
+type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string };
 
 function compareOptimizeResults(a: OptimizeResult, b: OptimizeResult) {
   // Ascending: "worse" first. Used for min-heap.
@@ -167,6 +170,8 @@ export async function computeOptimizeResultsAsync(
     reduceTargetCombos?: number;
     /** Hard cap per slot after reduction (minimum 2). */
     reducePerSlotCap?: number;
+    /** If true, expand gear candidates with tune variants for slots that have tunable gears. */
+    considerTune?: boolean;
   },
   onProgress?: (current: number, total: number) => void,
   signal?: AbortSignal,
@@ -188,12 +193,14 @@ export async function computeOptimizeResultsAsync(
 
   const deltasByGearId = new Map<string, StatDelta[]>();
   const getGearDeltas = (gear: CustomGear): StatDelta[] => {
-    const cached = deltasByGearId.get(gear.id);
+    const tuneKey = (gear as GearWithTune).__tuneId ?? "";
+    const cacheKey = gear.id + tuneKey;
+    const cached = deltasByGearId.get(cacheKey);
     if (cached) return cached;
     const deltas: StatDelta[] = [...gear.mains, ...gear.subs, gear.addition]
       .filter(Boolean)
       .map((a) => ({ stat: a!.stat, value: a!.value }));
-    deltasByGearId.set(gear.id, deltas);
+    deltasByGearId.set(cacheKey, deltas);
     return deltas;
   };
 
@@ -283,13 +290,12 @@ export async function computeOptimizeResultsAsync(
           rotSkill.count,
           rotation?.activePassiveSkills,
           runtimeState.priorHitsBySkill,
+          rotSkill.cancelled,
         );
         entryOpts.rotationSkills = rotation?.skills;
 
         const skillDamage = calculateSkillDamage(ctx, skill, entryOpts);
-        if (!rotSkill.cancelled) {
-          rotationTotal += skillDamage.total.normal.value * rotSkill.count;
-        }
+        rotationTotal += skillDamage.total.normal.value * rotSkill.count;
 
         advanceRotationSkillRuntimeState(
           runtimeState,
@@ -385,6 +391,28 @@ export async function computeOptimizeResultsAsync(
       equippedGear,
     };
   });
+
+  // Expand gear candidates with tune variants when considerTune is enabled.
+  if (options?.considerTune) {
+    for (const slotDef of slotOptions) {
+      const expanded: Array<CustomGear | null> = [];
+      for (const item of slotDef.items) {
+        expanded.push(item);
+        if (item && item.tunedSubIndex && item.tunedSubIndex > 0) {
+          for (const v of generateTuneVariants(item, elementStats.selected)) {
+            const variantGear: GearWithTune = {
+              ...item,
+              subs: v.overrideSubs,
+              __tuneId: `::tune::${v.subIndex}::${v.targetStat}`,
+              __tuneLabel: v.label,
+            };
+            expanded.push(variantGear);
+          }
+        }
+      }
+      slotDef.items = expanded;
+    }
+  }
 
   const estimated = slotOptions.reduce(
     (acc, { items }) => acc * items.length,

@@ -139,24 +139,24 @@ export default function GearHoverDetail({
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
 
-          const entryOpts = buildRotationSkillDamageOptions(
-            rotSkill.id,
-            rotSkill.params,
-            rotation.activeInnerWays,
-            skillUseCountsInRotation,
-            rotSkill.count,
-            rotation.activePassiveSkills,
-            runtimeState.priorHitsBySkill,
-          );
+      const entryOpts = buildRotationSkillDamageOptions(
+        rotSkill.id,
+        rotSkill.params,
+        rotation.activeInnerWays,
+        skillUseCountsInRotation,
+        rotSkill.count,
+        rotation.activePassiveSkills,
+        runtimeState.priorHitsBySkill,
+        rotSkill.cancelled,
+      );
+      entryOpts.rotationSkills = rotation.skills;
 
-          const dmg = calculateSkillDamage(
+      const dmg = calculateSkillDamage(
             ctx,
             skill,
             entryOpts,
           );
-          if (!rotSkill.cancelled) {
-            totalNormal += dmg.total.normal.value * rotSkill.count;
-          }
+          totalNormal += dmg.total.normal.value * rotSkill.count;
 
           advanceRotationSkillRuntimeState(
             runtimeState,

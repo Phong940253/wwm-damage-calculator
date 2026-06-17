@@ -90,7 +90,7 @@ export default function DamagePanel({
 
   const skills = Array.from(skillById.values());
 
-  const skillDamages = useSkillDamage(ctx, skills);
+  const skillDamages = useSkillDamage(ctx, skills, rotation?.skills ? { rotationSkills: rotation.skills } : undefined);
   const completedSkillDamages = skillDamages.filter(
     (entry): entry is { skill: Skill; result: NonNullable<typeof entry.result> } =>
       Boolean(entry.result)

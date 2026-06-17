@@ -114,6 +114,7 @@ export default function RotationDamagePie({
       rotSkill.count,
       rotation.activePassiveSkills,
       runtimeState.priorHitsBySkill,
+      rotSkill.cancelled,
     );
     entryOpts.rotationSkills = rotation.skills;
 
@@ -138,6 +139,7 @@ export default function RotationDamagePie({
               rotSkill.count,
               rotation.activePassiveSkills,
               runtimeState.priorHitsBySkill,
+              rotSkill.cancelled,
             );
             baseOpts.rotationSkills = rotation.skills;
             return baseOpts;
@@ -159,10 +161,7 @@ export default function RotationDamagePie({
     const totalHits = hitsPerCast * rotSkill.count;
 
     // Average damage = normal damage nhân với count
-    // IF cancelled, damage is 0 but we still count hits/usage
-    const avgDamage = rotSkill.cancelled
-      ? 0
-      : baseSkillDamage.total.normal.value * rotSkill.count;
+    const avgDamage = baseSkillDamage.total.normal.value * rotSkill.count;
 
     // Merge by groupKey (or skillId when ungrouped)
     const existing = skillDamageMap.get(groupKey);
@@ -188,9 +187,7 @@ export default function RotationDamagePie({
     if (rotSkill.id === SCARLET_SPIN_SKILL_ID && scarletSpinUseCount > 0) {
       const resonancePerCast =
         skillDamage.total.normal.value - baseSkillDamage.total.normal.value;
-      const resonanceDamage = rotSkill.cancelled
-        ? 0
-        : Math.max(0, resonancePerCast) * rotSkill.count;
+      const resonanceDamage = Math.max(0, resonancePerCast) * rotSkill.count;
 
       if (resonanceDamage > 0 || resonanceHits > 0) {
         const resonanceExisting = skillDamageMap.get(SCARLET_SPIN_RESONANCE_KEY);

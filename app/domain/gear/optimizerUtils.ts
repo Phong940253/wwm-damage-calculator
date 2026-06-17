@@ -159,13 +159,12 @@ export function evaluateDamage(
         rotSkill.count,
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
+        rotSkill.cancelled,
       );
       entryOpts.rotationSkills = rotation.skills;
 
       const skillDmg = calculateSkillDamage(ctx, skill, entryOpts);
-      if (!rotSkill.cancelled) {
-        totalNormal += skillDmg.total.normal.value * rotSkill.count;
-      }
+      totalNormal += skillDmg.total.normal.value * rotSkill.count;
 
       advanceRotationSkillRuntimeState(
         runtimeState,
