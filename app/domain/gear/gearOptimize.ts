@@ -392,12 +392,47 @@ export async function computeOptimizeResultsAsync(
     };
   });
 
-  // Expand gear candidates with tune variants when considerTune is enabled.
+  // Expand gear candidates with tune + addition swap variants when considerTune is enabled.
   if (options?.considerTune) {
+    // Pre-compute the best addition stat per slot (marginal gain vs equipped addition)
+    const bestSwapStatBySlot = new Map<GearSlot, { stat: string; value: number }>();
+    for (const slotDef of slotOptions) {
+      const eqGear = slotDef.equippedGear;
+      const eqAddition = eqGear && typeof eqGear === "object" ? eqGear.addition : undefined;
+      const seen = new Set<string>();
+      let best: { stat: string; value: number; dmg: number } | null = null;
+      // Use ALL candidate gears for this slot (not just slotDef.items which may be
+      // restricted by sharding) so the best addition pre-computation is not fragmented.
+      const slotItems = candidateGears.filter(g => g.slot === slotDef.slot) ?? slotDef.items;
+      for (const item of slotItems) {
+        if (!item?.addition) continue;
+        const key = `${item.addition.stat}:${item.addition.value}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        // Start from baseBonus (includes equipped gear's addition).
+        // Remove equipped gear's addition, then apply candidate addition
+        // to measure the true marginal gain of swapping.
+        const scratch = { ...baseBonus };
+        if (eqAddition) {
+          const s = String(eqAddition.stat);
+          scratch[s] = (scratch[s] || 0) - eqAddition.value;
+        }
+        scratch[String(item.addition.stat)] = (scratch[String(item.addition.stat)] || 0) + item.addition.value;
+        const dmg = computeTotalDamage(scratch);
+        if (!best || dmg > best.dmg) {
+          best = { stat: String(item.addition.stat), value: item.addition.value, dmg };
+        }
+      }
+      if (best) {
+        bestSwapStatBySlot.set(slotDef.slot, { stat: best.stat, value: best.value });
+      }
+    }
+
     for (const slotDef of slotOptions) {
       const expanded: Array<CustomGear | null> = [];
       for (const item of slotDef.items) {
         expanded.push(item);
+        // Tune variants
         if (item && item.tunedSubIndex && item.tunedSubIndex > 0) {
           for (const v of generateTuneVariants(item, elementStats.selected)) {
             const variantGear: GearWithTune = {
@@ -407,6 +442,23 @@ export async function computeOptimizeResultsAsync(
               __tuneLabel: v.label,
             };
             expanded.push(variantGear);
+          }
+        }
+        // Addition swap variant (only if best stat differs from current)
+        if (item && item.addition) {
+          const best = bestSwapStatBySlot.get(slotDef.slot);
+          if (best) {
+            const currentStat = String(item.addition.stat);
+            if (currentStat !== best.stat || item.addition.value !== best.value) {
+              const swapGear: GearWithTune = {
+                ...item,
+                addition: { stat: best.stat, value: best.value },
+                __tuneId: `::swap::${best.stat}`,
+                __tuneLabel: `Swap → ${best.stat}`,
+              };
+              expanded.push(swapGear);
+            } else {
+            }
           }
         }
       }
@@ -471,9 +523,11 @@ export async function computeOptimizeResultsAsync(
         const kept: Array<CustomGear | null> = [];
         const seen = new Set<string>();
         const keep = (g: CustomGear | null) => {
-          const id = g ? g.id : "__null__";
-          if (seen.has(id)) return;
-          seen.add(id);
+          const tuneId = (g as GearWithTune).__tuneId ?? "";
+          const baseId = g ? g.id : "__null__";
+          const key = baseId + tuneId;
+          if (seen.has(key)) return;
+          seen.add(key);
           kept.push(g);
         };
 
@@ -567,18 +621,24 @@ export async function computeOptimizeResultsAsync(
 
       // IMPORTANT: always fill the heap up to `limit` first.
       // Only once full, apply the "better than current worst" check.
-      if (heap.size < limit) {
-        candidate.key = finalSlotOptions
-          .map(({ slot }) => selection[slot]?.id ?? "none")
+      const buildKey = () =>
+        finalSlotOptions
+          .map(({ slot }) => {
+            const g = selection[slot];
+            if (!g) return "none";
+            const tuneId = (g as GearWithTune).__tuneId ?? "";
+            return g.id + tuneId;
+          })
           .join("|");
+
+      if (heap.size < limit) {
+        candidate.key = buildKey();
         candidate.selection = { ...selection };
         heap.push(candidate);
       } else {
         const worst = heap.peek();
         if (worst && compareOptimizeResults(candidate, worst) > 0) {
-          candidate.key = finalSlotOptions
-            .map(({ slot }) => selection[slot]?.id ?? "none")
-            .join("|");
+          candidate.key = buildKey();
           candidate.selection = { ...selection };
           heap.push(candidate);
         }

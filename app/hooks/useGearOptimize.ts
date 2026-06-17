@@ -408,11 +408,11 @@ export function useGearOptimize(
 
           return;
         } catch {
-          // Construction can throw synchronously in some bundler/runtime combos.
-          terminateWorkers();
-          multiRunTokenRef.current = null;
-          return runOnMainThread();
-        }
+            // Construction can throw synchronously in some bundler/runtime combos.
+            terminateWorkers();
+            multiRunTokenRef.current = null;
+            return runOnMainThread();
+          }
       }
 
       // Fallback: run on main thread (older browsers / environments)

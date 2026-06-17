@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
   generateTuneVariants,
+  generateAdditionSwapVariants,
   type TuneVariant,
 } from "@/app/domain/gear/tuneAdvisor";
-import type { CustomGear, ElementStats, InputStats } from "@/app/types";
+import type { CustomGear, ElementStats, InputStats, GearSlot } from "@/app/types";
 import { computeOptimizeResultsAsync } from "@/app/domain/gear/gearOptimize";
 import { ElementKey } from "@/app/constants";
+import { LEFT_ADDITION_STATS, RIGHT_ADDITION_STATS } from "@/app/domain/gear/additionRules";
 
 // ============================================================
 // Helpers
@@ -325,4 +327,136 @@ describe("computeOptimizeResultsAsync with considerTune", () => {
     });
     expect(hasTune).toBe(false);
   }); // 0 tunable gear → same as false
+});
+
+// ============================================================
+// Unit tests: generateAdditionSwapVariants
+// ============================================================
+
+describe("generateAdditionSwapVariants", () => {
+  it("returns empty array for gear without addition", () => {
+    const gear = makeGear({ id: "g_a1", slot: "head" });
+    const variants = generateAdditionSwapVariants(gear, "head");
+    expect(variants).toEqual([]);
+  });
+
+  it("uses LEFT_ADDITION_STATS for left slot", () => {
+    const gear = makeGear({
+      id: "g_a2",
+      slot: "disc",
+      addition: { stat: "PhysicalPenetration", value: 8.9 },
+    });
+    const variants = generateAdditionSwapVariants(gear, "disc");
+    for (const v of variants) {
+      expect(LEFT_ADDITION_STATS).toContain(v.targetStat);
+    }
+  });
+
+  it("uses RIGHT_ADDITION_STATS for right slot", () => {
+    const gear = makeGear({
+      id: "g_a3",
+      slot: "head",
+      addition: { stat: "NamelessSwordChargedSkillDMGBoost", value: 5 },
+    });
+    const variants = generateAdditionSwapVariants(gear, "head");
+    for (const v of variants) {
+      expect(RIGHT_ADDITION_STATS).toContain(v.targetStat);
+    }
+  });
+
+  it("excludes current addition stat from variants", () => {
+    const gear = makeGear({
+      id: "g_a4",
+      slot: "disc",
+      addition: { stat: "PhysicalPenetration", value: 8.9 },
+    });
+    const variants = generateAdditionSwapVariants(gear, "disc");
+    for (const v of variants) {
+      expect(v.targetStat).not.toBe("PhysicalPenetration");
+    }
+  });
+
+  it("preserves the original value in overrideAddition", () => {
+    const gear = makeGear({
+      id: "g_a5",
+      slot: "disc",
+      addition: { stat: "PhysicalPenetration", value: 8.9 },
+    });
+    const variants = generateAdditionSwapVariants(gear, "disc");
+    for (const v of variants) {
+      expect(v.overrideAddition.value).toBe(8.9);
+    }
+  });
+
+  it("sets overrideAddition stat to the target stat", () => {
+    const gear = makeGear({
+      id: "g_a6",
+      slot: "head",
+      addition: { stat: "NamelessSwordChargedSkillDMGBoost", value: 5 },
+    });
+    const variants = generateAdditionSwapVariants(gear, "head");
+    for (const v of variants) {
+      expect(v.overrideAddition.stat).toBe(v.targetStat);
+    }
+  });
+});
+
+// ============================================================
+// Integration tests: addition swap variants in optimizer
+// ============================================================
+
+describe("computeOptimizeResultsAsync with addition swap", () => {
+  it("considerTune = true includes addition swap variants when a better addition exists", async () => {
+    const gears: CustomGear[] = [
+      makeGear({
+        id: "g_disc_low",
+        name: "Low addition disc",
+        slot: "disc",
+        addition: { stat: "PhysicalPenetration", value: 8.9 },
+      }),
+      makeGear({
+        id: "g_disc_high",
+        name: "High addition disc",
+        slot: "disc",
+        addition: { stat: "bellstrikePenetration", value: 10.8 },
+      }),
+    ];
+    const equipped: Partial<Record<string, string>> = {};
+
+    const r = await computeOptimizeResultsAsync(
+      baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
+      { candidateGears: gears, slotsToOptimize: ["disc"], considerTune: true },
+    );
+
+    expect(r.results.length).toBeGreaterThan(0);
+    // The low-addition gear should have a swap variant pointing to the high addition
+    const hasSwapResult = r.results.some((res) => {
+      const g = res.selection["disc"];
+      return g && (g as any).__tuneId?.startsWith("::swap::");
+    });
+    expect(hasSwapResult).toBe(true);
+  });
+
+  it("considerTune = true with gear without addition produces no swap variant", async () => {
+    const gears: CustomGear[] = [
+      makeGear({
+        id: "g_head_noswap",
+        name: "No addition head",
+        slot: "head",
+        // no addition property
+      }),
+    ];
+    const equipped: Partial<Record<string, string>> = {};
+
+    const r = await computeOptimizeResultsAsync(
+      baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
+      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+    );
+
+    const hasSwap = r.results.some((res) => {
+      const g = res.selection["head"];
+      return g && (g as any).__tuneId?.startsWith("::swap::");
+    });
+    expect(hasSwap).toBe(false);
+  });
 });

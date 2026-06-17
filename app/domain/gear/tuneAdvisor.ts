@@ -1,5 +1,6 @@
 import { ElementKey } from "@/app/constants";
-import type { CustomGear } from "@/app/types";
+import type { CustomGear, GearSlot } from "@/app/types";
+import { getAdditionStatsBySlot } from "./additionRules";
 
 export type TuneHistoryEntry = {
   subIndex: number;
@@ -421,4 +422,42 @@ export function getStatTheoreticalMaxPercentage(
   if (theoreticalMax <= 0) return null;
 
   return Math.min(100, (actualValue / theoreticalMax) * 100);
+}
+
+/* =======================
+   Addition swap variants for optimizer
+======================= */
+
+export interface AdditionSwapVariant {
+  label: string;
+  targetStat: string;
+  overrideAddition: { stat: string; value: number };
+}
+
+/** Generate addition swap variants for a gear piece.
+ *  Only gears with addition produce variants.
+ *  Each variant swaps the addition to a different eligible stat
+ *  from the same slot's addition pool, keeping the original value.
+ */
+export function generateAdditionSwapVariants(
+  gear: Pick<CustomGear, "addition">,
+  slot: GearSlot,
+): AdditionSwapVariant[] {
+  if (!gear.addition) return [];
+
+  const currentStat = String(gear.addition.stat);
+  const pool = getAdditionStatsBySlot(slot);
+  const variants: AdditionSwapVariant[] = [];
+
+  for (const targetStat of pool) {
+    if (targetStat === currentStat) continue;
+
+    variants.push({
+      label: `Swap → ${targetStat}`,
+      targetStat,
+      overrideAddition: { stat: targetStat, value: gear.addition.value },
+    });
+  }
+
+  return variants;
 }
