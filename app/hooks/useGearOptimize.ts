@@ -13,6 +13,10 @@ import {
 } from "@/app/domain/gear/gearOptimize";
 import { GEAR_SLOTS } from "@/app/constants";
 import { useLevelContext } from "@/app/hooks/useLevelContext";
+import { SKILLS } from "@/app/domain/skill/skills";
+import { PASSIVE_SKILLS } from "@/app/domain/skill/passiveSkills";
+import { INNER_WAYS } from "@/app/domain/skill/innerWays";
+import { LIST_MARTIAL_ARTS } from "@/app/domain/skill/types";
 
 // type LockedSlots = Partial<Record<GearSlot, string | null>>;
 type RestrictSlots = Partial<Record<GearSlot, Array<string | null>>>;
@@ -290,6 +294,12 @@ export function useGearOptimize(
                 desiredDisplay: maxDisplay,
                 rotation,
                 levelContext,
+                staticData: {
+                  skills: SKILLS,
+                  passiveSkills: PASSIVE_SKILLS,
+                  innerWays: INNER_WAYS,
+                  martialArts: LIST_MARTIAL_ARTS,
+                },
                 options: {
                   ...options,
                   restrictSlots,

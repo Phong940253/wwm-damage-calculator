@@ -6,11 +6,20 @@ import type {
   Rotation,
 } from "@/app/types";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
+import type {
+  Skill,
+  MartialArt,
+} from "@/app/domain/skill/types";
+import type { PassiveSkill, InnerWay } from "@/app/domain/skill/passiveSkillTypes";
 import {
   computeOptimizeResultsAsync,
   OptimizeCancelledError,
   type OptimizeComputation,
 } from "@/app/domain/gear/gearOptimize";
+import { setSkills } from "@/app/domain/skill/skills";
+import { setPassiveSkills } from "@/app/domain/skill/passiveSkills";
+import { setInnerWays } from "@/app/domain/skill/innerWays";
+import { setMartialArts } from "@/app/domain/skill/types";
 
 type OptimizeWorkerOptions = {
   candidateGears?: CustomGear[];
@@ -21,6 +30,13 @@ type OptimizeWorkerOptions = {
   autoReduceIfOverCombos?: number;
   reduceTargetCombos?: number;
   reducePerSlotCap?: number;
+};
+
+type StaticDataPayload = {
+  skills: Skill[];
+  passiveSkills: PassiveSkill[];
+  innerWays: InnerWay[];
+  martialArts: MartialArt[];
 };
 
 type StartMessage = {
@@ -34,6 +50,7 @@ type StartMessage = {
     desiredDisplay: number;
     rotation?: Rotation;
     levelContext?: LevelContext;
+    staticData?: StaticDataPayload;
     options?: OptimizeWorkerOptions;
   };
 };
@@ -98,6 +115,15 @@ self.addEventListener("message", async (event: MessageEvent) => {
   controllers.set(jobId, controller);
 
   try {
+    // Apply static data from main thread so the worker uses the same definitions
+    if (payload.staticData) {
+      const { skills, passiveSkills, innerWays, martialArts } = payload.staticData;
+      setSkills(skills);
+      setPassiveSkills(passiveSkills);
+      setInnerWays(innerWays);
+      setMartialArts(martialArts);
+    }
+
     const result = await computeOptimizeResultsAsync(
       payload.stats,
       payload.elementStats,

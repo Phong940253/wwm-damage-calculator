@@ -254,6 +254,7 @@ export async function computeOptimizeResultsAsync(
       effectiveGearBonus,
       rotation,
     );
+
     const ctx = buildDamageContext(
       stats,
       elementStats,
