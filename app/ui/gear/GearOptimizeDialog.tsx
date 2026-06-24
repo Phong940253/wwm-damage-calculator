@@ -1,7 +1,7 @@
 // app/gear/GearOptimizeDialog.tsx
 "use client";
 
-import { useMemo, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -200,6 +200,26 @@ export default function GearOptimizeDialog({
     dispatchSort({ type: "setCol", col });
   };
 
+  /* ===== Virtual scrolling ===== */
+  const ROW_H = 36;
+  const OVERSCAN = 20;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewH, setViewH] = useState(800);
+
+  useEffect(() => {
+    setViewH(scrollRef.current?.clientHeight ?? 800);
+  }, []);
+
+  const onScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (el) setScrollTop(el.scrollTop);
+  }, []);
+
+  const startIdx = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN);
+  const endIdx = Math.min(displayedResults.length, Math.ceil((scrollTop + viewH) / ROW_H) + OVERSCAN);
+  const visibleRows = displayedResults.slice(startIdx, endIdx);
+
   return (
     <Dialog open={open && !loading} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-7xl md:max-h-[85vh] p-0 overflow-hidden">
@@ -328,9 +348,9 @@ export default function GearOptimizeDialog({
                   </div>
                 </div>
               </div>
-              <div className="px-6 pb-6 flex-1 min-h-0 overflow-auto">
+              <div ref={scrollRef} onScroll={onScroll} className="px-6 pb-6 flex-1 min-h-0 overflow-auto">
                 {displayedResults.length > 0 ? (
-                  <div key={`${sort.col}-${sort.dir}`} className="rounded-lg border bg-card" style={{ minWidth: 1950 }}>
+                  <div className="rounded-lg border bg-card" style={{ minWidth: 1950 }}>
                     <table className="w-full text-xs border-collapse">
                         <thead className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
                           <tr>
@@ -360,7 +380,8 @@ export default function GearOptimizeDialog({
                           </tr>
                         </thead>
                         <tbody>
-                          {displayedResults.map((r, i) => {
+                          <tr style={{ height: startIdx * ROW_H, display: 'block' }} />
+                          {visibleRows.map((r, i) => {
                             const gainLabel = `${r.percentGain >= 0 ? "+" : ""}${r.percentGain.toFixed(2)}%`;
                             const gainTone =
                               r.percentGain > 0
@@ -380,7 +401,7 @@ export default function GearOptimizeDialog({
                                 key={r.key}
                                 className="border-b hover:bg-muted/40 transition-colors even:bg-muted/10"
                               >
-                                <td style={{ position: "sticky", left: 0, zIndex: 20, width: 60, backgroundColor: "hsl(var(--card))" }} className="p-3 font-medium">{i + 1}</td>
+                                <td style={{ position: "sticky", left: 0, zIndex: 20, width: 60, backgroundColor: "hsl(var(--card))" }} className="p-3 font-medium">{startIdx + i + 1}</td>
                                 <td style={{ position: "sticky", left: 60, zIndex: 20, width: 120, backgroundColor: "hsl(var(--card))" }} className="text-right p-3 font-bold text-base tabular-nums">
                                   {r.damage.toFixed(1)}
                                 </td>
@@ -562,6 +583,7 @@ export default function GearOptimizeDialog({
                               </tr>
                             );
                           })}
+                          <tr style={{ height: (displayedResults.length - endIdx) * ROW_H, display: 'block' }} />
                         </tbody>
                         </table>
                   </div>
