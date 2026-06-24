@@ -1,7 +1,7 @@
 // app/gear/GearOptimizeDialog.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,10 +24,17 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import GearHoverDetail from "./GearHoverDetail";
 import { useI18n } from "@/app/providers/I18nProvider";
+import { getTuneSuccessRateToneClass, getTuneSystemStatPool } from "@/app/domain/gear/tuneAdvisor";
 
-type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string };
+type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string; __tuneFrom?: string };
 const getTuneMeta = (g: CustomGear | undefined): GearWithTune | undefined => g as GearWithTune;
 
 interface Props {
@@ -81,7 +88,7 @@ export default function GearOptimizeDialog({
       hoverHint: "Di chuột vào tên trang bị được tô sáng để so sánh.",
       calculating: "Đang tính mọi tổ hợp trang bị...",
       controls: "Điều khiển",
-      controlsHint: "Điều chỉnh số kết quả tối đa rồi tính lại để cập nhật bảng.",
+      controlsHint: "Thay đổi số KQ tối đa để ẩn/bớt kết quả ngay lập tức. Bấm 'Tính lại' để tối ưu với bộ lọc mới.",
       maxResults: "KQ tối đa",
       itemPerSlotCap: "Giới hạn/ô",
       recalculate: "Tính lại",
@@ -107,7 +114,7 @@ export default function GearOptimizeDialog({
       hoverHint: "Hover a highlighted gear name to compare.",
       calculating: "Calculating every gear combination...",
       controls: "Controls",
-      controlsHint: "Adjust max results then recalculate to update the table.",
+      controlsHint: "Change max results to show/hide results instantly. Click 'Recalculate' to re-run with new filters.",
       maxResults: "Max results",
       itemPerSlotCap: "Items/slot cap",
       recalculate: "Recalculate",
@@ -133,8 +140,19 @@ export default function GearOptimizeDialog({
 
   const [resultQuery, setResultQuery] = useState("");
   const [upgradesOnly, setUpgradesOnly] = useState(true);
-  const [resultSort, setResultSort] = useState<"gain" | "damage">("gain");
-  const [resultDir, setResultDir] = useState<"desc" | "asc">("desc");
+  type SortCol = "gain" | "damage" | "changes" | "tune";
+  type SortAction = { type: "setCol"; col: SortCol } | { type: "toggleDir" };
+  const [sort, dispatchSort] = useReducer(
+    (prev: { col: SortCol; dir: "desc" | "asc" }, action: SortAction): typeof prev => {
+      if (action.type === "setCol") {
+        return prev.col === action.col
+          ? { ...prev, dir: prev.dir === "desc" ? "asc" : "desc" }
+          : { col: action.col, dir: "desc" };
+      }
+      return { ...prev, dir: prev.dir === "desc" ? "asc" : "desc" };
+    },
+    { col: "gain", dir: "desc" }
+  );
 
   const displayedResults = useMemo(() => {
     let list = results;
@@ -156,20 +174,31 @@ export default function GearOptimizeDialog({
       });
     }
 
-    const dir = resultDir === "asc" ? 1 : -1;
+    const changeCount = (r: OptimizeResult) =>
+      GEAR_SLOTS.reduce((acc, { key }) => acc + (r.selection[key] && r.selection[key]!.id !== equipped[key] ? 1 : 0), 0);
+
+    const tuneSwapCount = (r: OptimizeResult) =>
+      GEAR_SLOTS.reduce((acc, { key }) => acc + ((r.selection[key] as GearWithTune)?.__tuneId ? 1 : 0), 0);
+
+    const dir = sort.dir === "asc" ? 1 : -1;
     const sorted = [...list].sort((a, b) => {
-      const primary =
-        resultSort === "gain"
-          ? a.percentGain - b.percentGain
-          : a.damage - b.damage;
+      let primary = 0;
+      if (sort.col === "gain") primary = a.percentGain - b.percentGain;
+      else if (sort.col === "damage") primary = a.damage - b.damage;
+      else if (sort.col === "changes") primary = changeCount(a) - changeCount(b);
+      else if (sort.col === "tune") primary = tuneSwapCount(a) - tuneSwapCount(b);
       if (primary !== 0) return primary * dir;
       // deterministic tie-breakers
       if (a.damage !== b.damage) return (a.damage - b.damage) * dir;
       return a.key.localeCompare(b.key);
     });
 
-    return sorted;
-  }, [results, upgradesOnly, resultQuery, resultSort, resultDir]);
+    return sorted.slice(0, maxDisplay);
+  }, [results, upgradesOnly, resultQuery, sort.col, sort.dir, equipped, maxDisplay]);
+
+  const handleSort = (col: SortCol) => {
+    dispatchSort({ type: "setCol", col });
+  };
 
   return (
     <Dialog open={open && !loading} onOpenChange={onOpenChange}>
@@ -191,22 +220,25 @@ export default function GearOptimizeDialog({
 
         <Separator />
 
-        <div className="max-h-[70vh] overflow-y-auto">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-pulse text-sm text-muted-foreground">
-                {text.calculating}
+        {loading ? (
+            <div className="max-h-[70vh] overflow-y-auto">
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-pulse text-sm text-muted-foreground">
+                  {text.calculating}
+                </div>
               </div>
             </div>
           ) : error ? (
-            <div className="p-6">
-              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
-                {error}
+            <div className="max-h-[70vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+                  {error}
+                </div>
               </div>
             </div>
           ) : (
-            <>
-              <div className="p-6 space-y-4">
+            <div className="flex flex-col max-h-[70vh] overflow-hidden">
+              <div className="p-6 pb-4 flex-shrink-0">
                 {/* Controls */}
                 <div className="rounded-lg border bg-muted/30 p-4 flex flex-col gap-3">
                   <div className="flex flex-wrap items-end justify-between gap-3">
@@ -272,53 +304,59 @@ export default function GearOptimizeDialog({
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        variant={resultSort === "gain" ? "default" : "outline"}
-                        onClick={() => setResultSort("gain")}
+                        variant={sort.col === "gain" ? "default" : "outline"}
+                        onClick={() => dispatchSort({ type: "setCol", col: "gain" })}
                       >
                         {text.sortGain}
                       </Button>
                       <Button
                         size="sm"
-                        variant={resultSort === "damage" ? "default" : "outline"}
-                        onClick={() => setResultSort("damage")}
+                        variant={sort.col === "damage" ? "default" : "outline"}
+                        onClick={() => dispatchSort({ type: "setCol", col: "damage" })}
                       >
                         {text.sortDamage}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setResultDir((d) => (d === "desc" ? "asc" : "desc"))}
+                        onClick={() => dispatchSort({ type: "toggleDir" })}
                         title="Toggle sort direction"
                       >
-                        {resultDir === "desc" ? "↓" : "↑"}
+                        {sort.dir === "desc" ? "↓" : "↑"}
                       </Button>
                     </div>
                   </div>
                 </div>
-
-                {/* Results Table */}
+              </div>
+              <div className="px-6 pb-6 flex-1 min-h-0 overflow-auto">
                 {displayedResults.length > 0 ? (
-                  <div className="rounded-lg border overflow-hidden bg-card">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
+                  <div key={`${sort.col}-${sort.dir}`} className="rounded-lg border bg-card" style={{ minWidth: 1950 }}>
+                    <table className="w-full text-xs border-collapse">
+                        <thead className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
                           <tr>
-                            <th className="text-left p-3 font-semibold">{text.row}</th>
-                            <th className="text-right p-3 font-semibold">{text.damage}</th>
-                            <th className="text-right p-3 font-semibold">{text.gain}</th>
-                            <th className="text-center p-3 font-semibold whitespace-nowrap">
-                              {text.changes}
+                            <th style={{ position: "sticky", left: 0, zIndex: 30, width: 60, backgroundColor: "hsl(var(--background))" }} className="text-left p-3 font-semibold">{text.row}</th>
+                            <th style={{ position: "sticky", left: 60, zIndex: 30, width: 120, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-right p-3 font-semibold select-none" onClick={() => handleSort("damage")}>
+                              {text.damage}{sort.col === "damage" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
-                            <th className="text-center p-3 font-semibold">{text.tune}</th>
+                            <th style={{ position: "sticky", left: 180, zIndex: 30, width: 110, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-right p-3 font-semibold select-none" onClick={() => handleSort("gain")}>
+                              {text.gain}{sort.col === "gain" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                            </th>
+                            <th style={{ position: "sticky", left: 290, zIndex: 30, width: 80, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("changes")}>
+                              {text.changes}{sort.col === "changes" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                            </th>
+                            <th style={{ position: "sticky", left: 370, zIndex: 30, width: 120, boxShadow: "inset -1px 0 0 0 hsl(var(--border))", backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("tune")}>
+                              {text.tune}{sort.col === "tune" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                            </th>
                             {GEAR_SLOTS.map(({ label }) => (
                               <th
                                 key={label}
+                                style={{ backgroundColor: "hsl(var(--background))" }}
                                 className="text-left p-3 font-semibold whitespace-nowrap"
                               >
                                 {label}
                               </th>
                             ))}
-                            <th className="text-center p-3 font-semibold">{text.action}</th>
+                            <th style={{ backgroundColor: "hsl(var(--background))" }} className="text-center p-3 font-semibold">{text.action}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -342,11 +380,11 @@ export default function GearOptimizeDialog({
                                 key={r.key}
                                 className="border-b hover:bg-muted/40 transition-colors even:bg-muted/10"
                               >
-                                <td className="p-3 font-medium">{i + 1}</td>
-                                <td className="text-right p-3 font-bold text-base tabular-nums">
+                                <td style={{ position: "sticky", left: 0, zIndex: 20, width: 60, backgroundColor: "hsl(var(--card))" }} className="p-3 font-medium">{i + 1}</td>
+                                <td style={{ position: "sticky", left: 60, zIndex: 20, width: 120, backgroundColor: "hsl(var(--card))" }} className="text-right p-3 font-bold text-base tabular-nums">
                                   {r.damage.toFixed(1)}
                                 </td>
-                                <td className="text-right p-3">
+                                <td style={{ position: "sticky", left: 180, zIndex: 20, width: 110, backgroundColor: "hsl(var(--card))" }} className="text-right p-3">
                                   <Badge
                                     variant="outline"
                                     className={`ml-auto tabular-nums ${gainTone}`}
@@ -354,7 +392,7 @@ export default function GearOptimizeDialog({
                                     {gainLabel}
                                   </Badge>
                                 </td>
-                                <td className="p-3 text-center">
+                                <td style={{ position: "sticky", left: 290, zIndex: 20, width: 80, backgroundColor: "hsl(var(--card))" }} className="p-3 text-center">
                                   <Badge
                                     variant="secondary"
                                     className="tabular-nums"
@@ -363,21 +401,85 @@ export default function GearOptimizeDialog({
                                     {changeCount}
                                   </Badge>
                                 </td>
-                                <td className="p-3 text-center">
+                                <td style={{ position: "sticky", left: 370, zIndex: 20, width: 120, boxShadow: "inset -1px 0 0 0 hsl(var(--border))", backgroundColor: "hsl(var(--card))" }} className="p-3 text-center">
                                   {(() => {
                                     let tune = 0, swap = 0;
-                                    for (const { key } of GEAR_SLOTS) {
-                                      const id = getTuneMeta(r.selection[key])?.__tuneId;
-                                      if (id?.startsWith("::tune::")) tune++;
-                                      else if (id?.startsWith("::swap::")) swap++;
+                                    interface TuneDetailItem {
+                                      slot: string;
+                                      type: string;
+                                      fromText: string;
+                                      toText: string;
+                                      successRate: number;
+                                    }
+                                    const tuneDetail: TuneDetailItem[] = [];
+                                    const tunePoolSize = getTuneSystemStatPool(elementStats.selected).length;
+                                    for (const { key, label } of GEAR_SLOTS) {
+                                      const meta = getTuneMeta(r.selection[key]);
+                                      const id = meta?.__tuneId;
+                                      if (meta && id?.startsWith("::tune::")) {
+                                        tune++;
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "T",
+                                          fromText: meta.__tuneFrom ?? "",
+                                          toText: meta.__tuneLabel?.replace(/^→ /, "") ?? "",
+                                          successRate: tunePoolSize > 0 ? (1 / tunePoolSize) * 100 : 0,
+                                        });
+                                      } else if (meta && id?.startsWith("::swap::")) {
+                                        swap++;
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "A",
+                                          fromText: meta.__tuneFrom ?? "",
+                                          toText: meta.__tuneLabel?.replace(/^Swap → /, "") ?? "",
+                                          successRate: 100,
+                                        });
+                                      }
                                     }
                                     const parts: string[] = [];
                                     if (tune > 0) parts.push(`${tune}T`);
                                     if (swap > 0) parts.push(`${swap}A`);
                                     return parts.length > 0 ? (
-                                      <Badge variant="outline" className="tabular-nums text-amber-600 border-amber-300 bg-amber-500/10">
-                                        {parts.join(" + ")}
-                                      </Badge>
+                                      <div className="inline-flex items-center gap-1">
+                                        <Badge variant="outline" className="tabular-nums text-amber-600 border-amber-300 bg-amber-500/10">
+                                          {parts.join(" + ")}
+                                        </Badge>
+                                        {tuneDetail.length > 0 && (
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-full text-xs text-muted-foreground hover:text-foreground">
+                                                i
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent side="right" align="start" className="w-72 p-3 text-xs">
+                                              <div className="font-medium mb-2">Tune/Swap Details</div>
+                                              <div className="space-y-2">
+                                                {tuneDetail.map((d, i) => (
+                                                  <div key={i} className="border-b border-border/40 pb-1.5 last:border-0 last:pb-0">
+                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                      <span className="text-muted-foreground font-medium">{d.slot}</span>
+                                                      <span className={`text-[10px] font-bold rounded-sm px-1 leading-tight ${d.type === "T" ? "text-amber-600 bg-amber-200/40" : "text-sky-600 bg-sky-200/40"}`}>
+                                                        {d.type}
+                                                      </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-muted-foreground pl-1">
+                                                      <span className="text-foreground">{d.fromText}</span>
+                                                      <span className="text-muted-foreground/50">→</span>
+                                                      <span className="text-foreground">{d.toText}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 pl-1 mt-0.5">
+                                                      <span className="text-muted-foreground">Tỉ lệ:</span>
+                                                      <Badge variant="outline" className={`tabular-nums text-[10px] px-1.5 py-0 ${getTuneSuccessRateToneClass(d.successRate)}`}>
+                                                        {d.successRate.toFixed(d.successRate === 100 ? 0 : 1)}%
+                                                      </Badge>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </PopoverContent>
+                                          </Popover>
+                                        )}
+                                      </div>
                                     ) : null;
                                   })()}
                                 </td>
@@ -461,18 +563,16 @@ export default function GearOptimizeDialog({
                             );
                           })}
                         </tbody>
-                      </table>
-                    </div>
+                        </table>
                   </div>
                 ) : (
-                  <div className="rounded-lg border bg-muted/20 p-10 text-center text-muted-foreground">
+                  <div className="rounded-lg border bg-muted/20 p-10 text-center text-muted-foreground flex items-center justify-center">
                     {text.empty}
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
-        </div>
       </DialogContent>
     </Dialog>
   );

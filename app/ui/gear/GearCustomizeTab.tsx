@@ -289,7 +289,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
 
   useEffect(() => {
     if (optOpen) {
-      opt.run(maxDisplay);
+      opt.run();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [optOpen]);
@@ -701,7 +701,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         setMaxDisplay={setMaxDisplay}
         perSlotCap={perSlotCap}
         setPerSlotCap={setPerSlotCap}
-        onRecalculate={() => opt.run(maxDisplay)}
+        onRecalculate={() => opt.run()}
         onApply={apply}
         equipped={equipped}
         customGears={customGears}

@@ -8,6 +8,7 @@ import {
 } from "@/app/types";
 import {
   computeOptimizeResultsAsync,
+  MAX_RESULTS_CAP,
   OptimizeResult,
   OptimizeCancelledError,
 } from "@/app/domain/gear/gearOptimize";
@@ -162,7 +163,7 @@ export function useGearOptimize(
   );
 
   const run = useCallback(
-    async (maxDisplay: number) => {
+    async () => {
       // Cancel any previous run before starting a new one.
       cancel();
 
@@ -183,7 +184,7 @@ export function useGearOptimize(
             elementStats,
             customGears,
             equipped,
-            maxDisplay,
+            MAX_RESULTS_CAP,
             rotation,
             levelContext,
             options,
@@ -292,7 +293,7 @@ export function useGearOptimize(
                 elementStats,
                 customGears,
                 equipped,
-                desiredDisplay: maxDisplay,
+                desiredDisplay: MAX_RESULTS_CAP,
                 rotation,
                 levelContext,
                 staticData: {
@@ -373,13 +374,21 @@ export function useGearOptimize(
 
                 // All shards complete when no active jobs.
                 if (activeJobIdsRef.current.size === 0) {
+                  // Dedup by key across shards
+                  const seenKeys = new Set<string>();
+                  const deduped: OptimizeResult[] = [];
+                  for (const r of allResults) {
+                    if (seenKeys.has(r.key)) continue;
+                    seenKeys.add(r.key);
+                    deduped.push(r);
+                  }
                   // Merge top-K across shards
-                  const sorted = [...allResults].sort((a, b) =>
+                  const sorted = [...deduped].sort((a, b) =>
                     b.percentGain === a.percentGain
                       ? b.damage - a.damage
                       : b.percentGain - a.percentGain,
                   );
-                  const merged = sorted.slice(0, maxDisplay);
+                  const merged = sorted.slice(0, MAX_RESULTS_CAP);
 
                   setResults(merged);
                   setBaseDamage(baseDamageSeen ?? 0);

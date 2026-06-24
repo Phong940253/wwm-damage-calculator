@@ -52,7 +52,7 @@ export class OptimizeCancelledError extends Error {
 
 type StatDelta = { stat: string | number; value: number };
 
-type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string };
+type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string; __tuneFrom?: string };
 
 function compareOptimizeResults(a: OptimizeResult, b: OptimizeResult) {
   // Ascending: "worse" first. Used for min-heap.
@@ -440,6 +440,7 @@ export async function computeOptimizeResultsAsync(
               subs: v.overrideSubs,
               __tuneId: `::tune::${v.subIndex}::${v.targetStat}`,
               __tuneLabel: v.label,
+              __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}`,
             };
             expanded.push(variantGear);
           }
@@ -454,7 +455,8 @@ export async function computeOptimizeResultsAsync(
                 ...item,
                 addition: { stat: best.stat, value: best.value },
                 __tuneId: `::swap::${best.stat}`,
-                __tuneLabel: `Swap → ${best.stat}`,
+                __tuneLabel: `Swap → ${best.stat} +${best.value}`,
+                __tuneFrom: `${String(item.addition.stat)} +${item.addition.value}`,
               };
               expanded.push(swapGear);
             } else {
@@ -694,9 +696,18 @@ export async function computeOptimizeResultsAsync(
         : b.percentGain - a.percentGain,
     );
 
+  // Safety dedup — prevents duplicate keys reaching React
+  const seenKeys = new Set<string>();
+  const deduped: OptimizeResult[] = [];
+  for (const r of results) {
+    if (seenKeys.has(r.key)) continue;
+    seenKeys.add(r.key);
+    deduped.push(r);
+  }
+
   return {
     baseDamage,
     totalCombos: total,
-    results,
+    results: deduped,
   };
 }
