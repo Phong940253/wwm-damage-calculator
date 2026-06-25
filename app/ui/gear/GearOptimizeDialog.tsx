@@ -101,6 +101,7 @@ export default function GearOptimizeDialog({
       gain: "Tăng",
       changes: "Thay đổi",
       tune: "Tune/Swap",
+      rate: "Tỉ lệ",
       action: "Hành động",
       empty: "Không có kết quả. Hãy đổi bộ lọc hoặc chạy lại tối ưu.",
       equip: "Trang bị",
@@ -127,6 +128,7 @@ export default function GearOptimizeDialog({
       gain: "Gain",
       changes: "Changes",
       tune: "Tune/Swap",
+      rate: "Rate",
       action: "Action",
       empty: "No results found. Try changing filters or running the optimizer.",
       equip: "Equip",
@@ -138,9 +140,40 @@ export default function GearOptimizeDialog({
     [customGears, equipped]
   );
 
+  const tunePoolSize = useMemo(
+    () => getTuneSystemStatPool(elementStats.selected).length,
+    [elementStats.selected],
+  );
+  const compositeSuccessRate = useCallback((r: OptimizeResult): number => {
+    let composite = 1;
+    for (const { key } of GEAR_SLOTS) {
+      const meta = getTuneMeta(r.selection[key]);
+      const id = meta?.__tuneId;
+      if (!id) continue;
+      if (id.startsWith("::swap::")) continue;
+      if (id.startsWith("::tune::")) {
+        const parts = id.split("::");
+        const subIndex = parseInt(parts[2], 10);
+        const currentStat = String(meta.subs?.[subIndex]?.stat ?? "");
+        const excluded = new Set<string>();
+        if (currentStat) excluded.add(currentStat);
+        const hist = (meta as CustomGear).tuneHistory ?? [];
+        for (const entry of hist) {
+          if (entry.subIndex === subIndex && entry.stat) {
+            excluded.add(entry.stat);
+          }
+        }
+        const effectivePool = tunePoolSize - excluded.size;
+        if (effectivePool <= 0) return 0;
+        composite *= (1 / effectivePool);
+      }
+    }
+    return composite;
+  }, [tunePoolSize]);
+
   const [resultQuery, setResultQuery] = useState("");
   const [upgradesOnly, setUpgradesOnly] = useState(true);
-  type SortCol = "gain" | "damage" | "changes" | "tune";
+  type SortCol = "gain" | "damage" | "changes" | "tune" | "rate";
   type SortAction = { type: "setCol"; col: SortCol } | { type: "toggleDir" };
   const [sort, dispatchSort] = useReducer(
     (prev: { col: SortCol; dir: "desc" | "asc" }, action: SortAction): typeof prev => {
@@ -187,6 +220,7 @@ export default function GearOptimizeDialog({
       else if (sort.col === "damage") primary = a.damage - b.damage;
       else if (sort.col === "changes") primary = changeCount(a) - changeCount(b);
       else if (sort.col === "tune") primary = tuneSwapCount(a) - tuneSwapCount(b);
+      else if (sort.col === "rate") primary = compositeSuccessRate(a) - compositeSuccessRate(b);
       if (primary !== 0) return primary * dir;
       // tie-breaker: Gain always descending
       if (a.percentGain !== b.percentGain) return b.percentGain - a.percentGain;
@@ -194,7 +228,7 @@ export default function GearOptimizeDialog({
     });
 
     return sorted.slice(0, maxDisplay);
-  }, [results, upgradesOnly, resultQuery, sort.col, sort.dir, equipped, maxDisplay]);
+  }, [results, upgradesOnly, resultQuery, sort.col, sort.dir, equipped, maxDisplay, compositeSuccessRate]);
 
   const handleSort = (col: SortCol) => {
     dispatchSort({ type: "setCol", col });
@@ -350,7 +384,7 @@ export default function GearOptimizeDialog({
               </div>
               <div ref={scrollRef} onScroll={onScroll} className="px-6 pb-6 flex-1 min-h-0 overflow-auto">
                 {displayedResults.length > 0 ? (
-                  <div className="rounded-lg border bg-card" style={{ minWidth: 1950 }}>
+                  <div className="rounded-lg border bg-card" style={{ minWidth: 2040 }}>
                     <table className="w-full text-xs border-collapse">
                         <thead className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
                           <tr>
@@ -364,8 +398,11 @@ export default function GearOptimizeDialog({
                             <th style={{ position: "sticky", left: 290, zIndex: 30, width: 80, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("changes")}>
                               {text.changes}{sort.col === "changes" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
-                            <th style={{ position: "sticky", left: 370, zIndex: 30, width: 120, boxShadow: "inset -1px 0 0 0 hsl(var(--border))", backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("tune")}>
+                            <th style={{ position: "sticky", left: 370, zIndex: 30, width: 120, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("tune")}>
                               {text.tune}{sort.col === "tune" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                            </th>
+                            <th style={{ position: "sticky", left: 490, zIndex: 30, width: 90, boxShadow: "inset -1px 0 0 0 hsl(var(--border))", backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("rate")}>
+                              {text.rate}{sort.col === "rate" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
                             {GEAR_SLOTS.map(({ label }) => (
                               <th
@@ -422,7 +459,7 @@ export default function GearOptimizeDialog({
                                     {changeCount}
                                   </Badge>
                                 </td>
-                                <td style={{ position: "sticky", left: 370, zIndex: 20, width: 120, boxShadow: "inset -1px 0 0 0 hsl(var(--border))", backgroundColor: "hsl(var(--card))" }} className="p-3 text-center">
+                                <td style={{ position: "sticky", left: 370, zIndex: 20, width: 120, backgroundColor: "hsl(var(--card))" }} className="p-3 text-center">
                                   {(() => {
                                     let tune = 0, swap = 0;
                                     interface TuneDetailItem {
@@ -514,6 +551,19 @@ export default function GearOptimizeDialog({
                                         )}
                                       </div>
                                     ) : null;
+                                  })()}
+                                </td>
+                                <td style={{ position: "sticky", left: 490, zIndex: 20, width: 90, boxShadow: "inset -1px 0 0 0 hsl(var(--border))", backgroundColor: "hsl(var(--card))" }} className="p-3 text-center">
+                                  {(() => {
+                                    const rate = compositeSuccessRate(r);
+                                    const hasAny = GEAR_SLOTS.some(({ key }) => (r.selection[key] as GearWithTune)?.__tuneId);
+                                    if (!hasAny) return <span className="text-muted-foreground">—</span>;
+                                    const pct = rate * 100;
+                                    return (
+                                      <Badge variant="outline" className={`tabular-nums ${getTuneSuccessRateToneClass(pct)}`}>
+                                        {pct.toFixed(pct === 100 ? 0 : 1)}%
+                                      </Badge>
+                                    );
                                   })()}
                                 </td>
                                 {GEAR_SLOTS.map(({ key }) => {
