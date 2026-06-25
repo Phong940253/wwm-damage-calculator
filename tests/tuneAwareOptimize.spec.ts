@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   generateTuneVariants,
   generateAdditionSwapVariants,
+  computeSingleTuneSuccessRate,
   type TuneVariant,
 } from "@/app/domain/gear/tuneAdvisor";
 import type { CustomGear, ElementStats, InputStats, GearSlot } from "@/app/types";
@@ -273,6 +274,164 @@ describe("generateTuneVariants", () => {
       expect(v.label).toContain("→");
       expect(v.label).toContain(v.targetStat);
     }
+  });
+});
+
+// ============================================================
+// Unit tests: computeSingleTuneSuccessRate
+// ============================================================
+
+describe("computeSingleTuneSuccessRate", () => {
+  it("returns 1/eligibleCount for any target in the eligible pool", () => {
+    // Bellstrike pool: [MaxPhysicalAttack, bellstrikeMax, CriticalRate, AffinityRate, Power, Momentum] → 6
+    // tunedSubIndex=2, subs=[Momentum, CriticalRate, MaxPhysicalAttack, AffinityRate, bellstrikeMax]
+    // current at index 2: MaxPhysicalAttack → excluded
+    // Rules (rerollIndex=2): CriticalRate(index1), AffinityRate(index3), bellstrikeMax(index4) rejected
+    // Eligible: Power, Momentum → 2 → rate = 1/2 = 0.5
+    const gear = makeGear({
+      id: "r1",
+      slot: "head",
+      tunedSubIndex: 2,
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "MaxPhysicalAttack", value: 60 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    const ratePower = computeSingleTuneSuccessRate(gear, 2, "Power", bellstrikeElement);
+    const rateMomentum = computeSingleTuneSuccessRate(gear, 2, "Momentum", bellstrikeElement);
+    expect(ratePower).toBeCloseTo(0.5);
+    expect(rateMomentum).toBeCloseTo(0.5);
+  });
+
+  it("excludes tuneHistory stats on the same subIndex from eligible pool", () => {
+    // tunedSubIndex=2, subs=[Momentum, CriticalRate, MaxPhysicalAttack, ...]
+    // current stat: MaxPhysicalAttack → excluded
+    // tuneHistory: [{subIndex:2, stat:"Power"}, {subIndex:2, stat:"CriticalRate"}] → Power, CriticalRate excluded
+    // pool: [MaxPhysicalAttack, bellstrikeMax, CriticalRate, AffinityRate, Power, Momentum]
+    // excluded: MaxPhysicalAttack, Power, CriticalRate.
+    // Rules (rerollIndex=2): bellstrikeMax (index4), AffinityRate (index3) rejected.
+    // Eligible: only Momentum → 1
+    // rate = 1/1 = 1
+    const gear = makeGear({
+      id: "r3",
+      slot: "head",
+      tunedSubIndex: 2,
+      tuneHistory: [
+        { subIndex: 2, stat: "Power" },
+        { subIndex: 2, stat: "CriticalRate" },
+        { subIndex: 2, stat: "MaxPhysicalAttack" },
+      ],
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "MaxPhysicalAttack", value: 60 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    const rate = computeSingleTuneSuccessRate(gear, 2, "Momentum", bellstrikeElement);
+    expect(rate).toBe(1);
+  });
+
+  it("tuneHistory on a different subIndex does NOT affect rate", () => {
+    // tunedSubIndex=3, tuneHistory on subIndex=1 should be ignored.
+    // subs=[Momentum, CriticalRate, MaxPhysicalAttack, AffinityRate, bellstrikeMax]
+    // current at index 3: AffinityRate → excluded
+    // tuneHistory on subIndex=1: Power, CriticalRate → ignored for subIndex=3
+    // pool: [MaxPhysicalAttack, bellstrikeMax, CriticalRate, AffinityRate, Power, Momentum]
+    // excluded: AffinityRate (current)
+    // Rules (rerollIndex=3): bellstrikeMax (index4), CriticalRate (index1), MaxPhysicalAttack (index2) rejected.
+    // Eligible: Power, Momentum → 2
+    // rate = 1/2 = 0.5
+    const gear = makeGear({
+      id: "r4",
+      slot: "hand",
+      tunedSubIndex: 3,
+      tuneHistory: [
+        { subIndex: 1, stat: "Power" },
+        { subIndex: 1, stat: "CriticalRate" },
+      ],
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "MaxPhysicalAttack", value: 60 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    const rate = computeSingleTuneSuccessRate(gear, 3, "Power", bellstrikeElement);
+    expect(rate).toBeCloseTo(0.5);
+  });
+
+  it("returns 0 when no eligible stats remain", () => {
+    // tunedSubIndex=1, subs=[Momentum, CriticalRate, MaxPhysicalAttack, AffinityRate, bellstrikeMax]
+    // current at index 1: CriticalRate → excluded
+    // tuneHistory: [{subIndex:1, stat:"Power"}, {subIndex:1, stat:"Momentum"}, {subIndex:1, stat:"AffinityRate"}, {subIndex:1, stat:"bellstrikeMax"}, {subIndex:1, stat:"MaxPhysicalAttack"}, {subIndex:1, stat:"CriticalRate"}]
+    // excluded: CriticalRate, Power, Momentum, AffinityRate, bellstrikeMax, MaxPhysicalAttack → all 6 pool stats
+    // eligible: 0
+    const gear = makeGear({
+      id: "r5",
+      slot: "hand",
+      tunedSubIndex: 1,
+      tuneHistory: [
+        { subIndex: 1, stat: "Power" },
+        { subIndex: 1, stat: "Momentum" },
+        { subIndex: 1, stat: "AffinityRate" },
+        { subIndex: 1, stat: "bellstrikeMax" },
+        { subIndex: 1, stat: "MaxPhysicalAttack" },
+        { subIndex: 1, stat: "CriticalRate" },
+      ],
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "MaxPhysicalAttack", value: 60 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    const rate = computeSingleTuneSuccessRate(gear, 1, "MaxPhysicalAttack", bellstrikeElement);
+    expect(rate).toBe(0);
+  });
+
+  it("uses tuneHistory (not overridden subs) to determine current stat on variant gears", () => {
+    // Simulate a tune variant gear: subs[1] overridden to target "Power",
+    // but tuneHistory records the real current stat = bellstrikeMax.
+    // Bellstrike pool: [MaxPhysicalAttack, bellstrikeMax, CriticalRate, AffinityRate, Power, Momentum] → 6
+    // current (from history): bellstrikeMax → excluded
+    // history on subIndex=1: AffinityRate, bellstrikeMax → AffinityRate excluded
+    // Rules (rerollIndex=1): silkbindMin(index2), MaxPhysicalAttack(index3), CriticalRate(index4) rejected
+    // Eligible: Power, Momentum → 2 → rate = 0.5
+    const variantGear: CustomGear = {
+      ...makeGear({
+        id: "r6",
+        slot: "chest",
+        tunedSubIndex: 1,
+        tuneHistory: [
+          { subIndex: 1, stat: "AffinityRate" },
+          { subIndex: 1, stat: "bellstrikeMax" },
+        ],
+        subs: [
+          { stat: "CriticalRate", value: 7.4 },
+          { stat: "bellstrikeMax", value: 36.2 },
+          { stat: "silkbindMin", value: 33.7 },
+          { stat: "MaxPhysicalAttack", value: 62.6 },
+          { stat: "CriticalRate", value: 7.4 },
+        ],
+      }),
+      // subs overridden as a tune variant would have (target stat at tunedSubIndex)
+      subs: [
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "Power", value: 40.4 },
+        { stat: "silkbindMin", value: 33.7 },
+        { stat: "MaxPhysicalAttack", value: 62.6 },
+        { stat: "CriticalRate", value: 7.4 },
+      ],
+    };
+    const rate = computeSingleTuneSuccessRate(variantGear, 1, "Power", bellstrikeElement);
+    expect(rate).toBeCloseTo(0.5);
   });
 });
 

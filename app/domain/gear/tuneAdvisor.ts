@@ -348,6 +348,45 @@ export interface TuneVariant {
   overrideSubs: Array<{ stat: string | number; value: number }>;
 }
 
+/** Compute the success rate (0-1) for tuning a specific subIndex to a specific target stat.
+ *  Accounts for:
+ *  - Current stat on that line (excluded)
+ *  - Tune history stats on that subIndex (excluded)
+ *  - Sub rules (lines 2-5 cannot duplicate each other)
+ */
+export function computeSingleTuneSuccessRate(
+  gear: Pick<CustomGear, "subs" | "tuneHistory">,
+  subIndex: number,
+  targetStat: string,
+  elementKey: ElementKey,
+): number {
+  const pool = getTuneSystemStatPool(elementKey);
+  const subStatKeys = gear.subs?.map((s) => String(s.stat ?? "")) ?? [];
+
+  const excludedStats = new Set<string>();
+  const currentFromHistory = getGearTuneHistory(gear)
+    .filter((e) => e.subIndex === subIndex)
+    .at(-1)?.stat;
+  const currentStat = currentFromHistory || subStatKeys[subIndex];
+  if (currentStat) excludedStats.add(currentStat);
+  const history = gear.tuneHistory ?? [];
+  for (const entry of history) {
+    if (entry.subIndex === subIndex && entry.stat) {
+      excludedStats.add(entry.stat);
+    }
+  }
+
+  let eligibleCount = 0;
+  for (const stat of pool) {
+    if (excludedStats.has(stat)) continue;
+    if (!isTuneTargetAllowedBySubRules(subStatKeys, subIndex, stat)) continue;
+    eligibleCount++;
+  }
+
+  if (eligibleCount <= 0) return 0;
+  return 1 / eligibleCount;
+}
+
 /** Generate all eligible tune variants for a gear piece.
  *  Only gears with tunedSubIndex > 0 produce variants.
  *  Each variant replaces the substat at tunedSubIndex with a different
