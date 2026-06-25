@@ -188,8 +188,8 @@ export default function GearOptimizeDialog({
       else if (sort.col === "changes") primary = changeCount(a) - changeCount(b);
       else if (sort.col === "tune") primary = tuneSwapCount(a) - tuneSwapCount(b);
       if (primary !== 0) return primary * dir;
-      // deterministic tie-breakers
-      if (a.damage !== b.damage) return (a.damage - b.damage) * dir;
+      // tie-breaker: Gain always descending
+      if (a.percentGain !== b.percentGain) return b.percentGain - a.percentGain;
       return a.key.localeCompare(b.key);
     });
 
