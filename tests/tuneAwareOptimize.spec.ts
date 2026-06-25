@@ -120,11 +120,11 @@ describe("generateTuneVariants", () => {
     expect(generateTuneVariants(gear, bellstrikeElement)).toEqual([]);
   });
 
-  it("includes only eligible stats (excluding duplicates with lines 2-5)", () => {
+  it("includes only eligible stats (excluding current stat + duplicates with lines 2-5)", () => {
     // Bellstrike pool: ["MaxPhysicalAttack", "bellstrikeMax", "CriticalRate", "AffinityRate", "Power", "Momentum"]
     // rerollIndex = 2 (line 3, currently MaxPhysicalAttack).
+    // Excluded (current stat): "MaxPhysicalAttack"
     // isTuneTargetAllowedBySubRules checks indices 1-4 but skips index 2.
-    // - "MaxPhysicalAttack": no other line 1-4 has it (skip index 2) → ALLOWED
     // - "bellstrikeMax": line 5 (index 4) has bellstrikeMax → NOT allowed
     // - "CriticalRate": line 2 (index 1) has CriticalRate → NOT allowed
     // - "AffinityRate": line 4 (index 3) has AffinityRate → NOT allowed
@@ -143,11 +143,68 @@ describe("generateTuneVariants", () => {
       ],
     });
     const variants = generateTuneVariants(gear, bellstrikeElement);
-    expect(variants.length).toBe(3);
+    expect(variants.length).toBe(2);
     const statLabels = variants.map((v) => v.targetStat);
     expect(statLabels).toContain("Power");
     expect(statLabels).toContain("Momentum");
-    expect(statLabels).toContain("MaxPhysicalAttack");
+  });
+
+  it("excludes tuneHistory stats on the same subIndex", () => {
+    // tuneHistory records previously tuned stats on subIndex=2.
+    // Excluded: current stat "MaxPhysicalAttack" + history stats (Power, CriticalRate).
+    // Remaining: "bellstrikeMax", "AffinityRate", "Momentum"
+    // After isTuneTargetAllowedBySubRules (rerollIndex=2): bellstrikeMax (index 4) and AffinityRate (index 3) rejected.
+    // Only "Momentum" remains → 1 variant.
+    const gear = makeGear({
+      id: "g5b",
+      slot: "head",
+      tunedSubIndex: 2,
+      tuneHistory: [
+        { subIndex: 2, stat: "Power" },
+        { subIndex: 2, stat: "CriticalRate" },
+      ],
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "MaxPhysicalAttack", value: 60 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    const variants = generateTuneVariants(gear, bellstrikeElement);
+    const statLabels = variants.map((v) => v.targetStat);
+    expect(statLabels).not.toContain("MaxPhysicalAttack");
+    expect(statLabels).not.toContain("Power");
+    expect(statLabels).not.toContain("CriticalRate");
+    expect(statLabels).toContain("Momentum");
+  });
+
+  it("excludes tuneHistory only on matching subIndex (different subIndex unaffected)", () => {
+    // tuneHistory on subIndex=1 should NOT affect subIndex=3 variant generation.
+    const gear = makeGear({
+      id: "g5c",
+      slot: "hand",
+      tunedSubIndex: 3,
+      tuneHistory: [
+        { subIndex: 1, stat: "Power" },
+        { subIndex: 1, stat: "CriticalRate" },
+      ],
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "MaxPhysicalAttack", value: 60 },
+        { stat: "AffinityRate", value: 3.5 },  // current, excluded
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    const variants = generateTuneVariants(gear, bellstrikeElement);
+    // Excluded: AffinityRate (current). History on subIndex 1 does NOT affect subIndex 3.
+    // Rules (rerollIndex=3): bellstrikeMax (index 4), CriticalRate (index 1), MaxPhysicalAttack (index 2) rejected.
+    // Remaining: Power, Momentum → 2 variants.
+    expect(variants.length).toBe(2);
+    const statLabels = variants.map((v) => v.targetStat);
+    expect(statLabels).toContain("Power");
+    expect(statLabels).toContain("Momentum");
   });
 
   it("produces overrideSubs that keep untouched subs unchanged", () => {

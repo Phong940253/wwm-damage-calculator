@@ -354,7 +354,7 @@ export interface TuneVariant {
  *  eligible stat at max per-line value.
  */
 export function generateTuneVariants(
-  gear: Pick<CustomGear, "subs" | "tunedSubIndex">,
+  gear: Pick<CustomGear, "subs" | "tunedSubIndex" | "tuneHistory">,
   elementKey: ElementKey,
 ): TuneVariant[] {
   const tunedSubIndex = gear.tunedSubIndex;
@@ -365,9 +365,21 @@ export function generateTuneVariants(
   const pool = getTuneSystemStatPool(elementKey);
   const subStatKeys = subs.map((s) => String(s.stat ?? ""));
 
+  // Exclude current stat on this line + any stat previously tuned on this subIndex
+  const excludedStats = new Set<string>();
+  const currentStat = subStatKeys[tunedSubIndex];
+  if (currentStat) excludedStats.add(currentStat);
+  const history = gear.tuneHistory ?? [];
+  for (const entry of history) {
+    if (entry.subIndex === tunedSubIndex && entry.stat) {
+      excludedStats.add(entry.stat);
+    }
+  }
+
   const variants: TuneVariant[] = [];
 
   for (const targetStat of pool) {
+    if (excludedStats.has(targetStat)) continue;
     if (!isTuneTargetAllowedBySubRules(subStatKeys, tunedSubIndex, targetStat)) continue;
 
     const range = getPlayerTuneStatRange(targetStat);

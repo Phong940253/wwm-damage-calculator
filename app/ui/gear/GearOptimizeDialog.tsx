@@ -439,12 +439,24 @@ export default function GearOptimizeDialog({
                                       const id = meta?.__tuneId;
                                       if (meta && id?.startsWith("::tune::")) {
                                         tune++;
+                                        const parts = id.split("::");
+                                        const subIndex = parseInt(parts[2], 10);
+                                        const currentStat = String(meta.subs?.[subIndex]?.stat ?? "");
+                                        const excludedLocal = new Set<string>();
+                                        if (currentStat) excludedLocal.add(currentStat);
+                                        const hist = (meta as CustomGear).tuneHistory ?? [];
+                                        for (const entry of hist) {
+                                          if (entry.subIndex === subIndex && entry.stat) {
+                                            excludedLocal.add(entry.stat);
+                                          }
+                                        }
+                                        const effectivePool = tunePoolSize - excludedLocal.size;
                                         tuneDetail.push({
                                           slot: label,
                                           type: "T",
                                           fromText: meta.__tuneFrom ?? "",
                                           toText: meta.__tuneLabel?.replace(/^→ /, "") ?? "",
-                                          successRate: tunePoolSize > 0 ? (1 / tunePoolSize) * 100 : 0,
+                                          successRate: effectivePool > 0 ? (1 / effectivePool) * 100 : 0,
                                         });
                                       } else if (meta && id?.startsWith("::swap::")) {
                                         swap++;
