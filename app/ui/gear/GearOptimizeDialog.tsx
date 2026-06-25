@@ -32,7 +32,7 @@ import {
 
 import GearHoverDetail from "./GearHoverDetail";
 import { useI18n } from "@/app/providers/I18nProvider";
-import { getTuneSuccessRateToneClass, getTuneSystemStatPool } from "@/app/domain/gear/tuneAdvisor";
+import { getTuneSuccessRateToneClass, computeSingleTuneSuccessRate } from "@/app/domain/gear/tuneAdvisor";
 
 type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string; __tuneFrom?: string };
 const getTuneMeta = (g: CustomGear | undefined): GearWithTune | undefined => g as GearWithTune;
@@ -140,10 +140,6 @@ export default function GearOptimizeDialog({
     [customGears, equipped]
   );
 
-  const tunePoolSize = useMemo(
-    () => getTuneSystemStatPool(elementStats.selected).length,
-    [elementStats.selected],
-  );
   const compositeSuccessRate = useCallback((r: OptimizeResult): number => {
     let composite = 1;
     for (const { key } of GEAR_SLOTS) {
@@ -154,22 +150,19 @@ export default function GearOptimizeDialog({
       if (id.startsWith("::tune::")) {
         const parts = id.split("::");
         const subIndex = parseInt(parts[2], 10);
-        const currentStat = String(meta.subs?.[subIndex]?.stat ?? "");
-        const excluded = new Set<string>();
-        if (currentStat) excluded.add(currentStat);
-        const hist = (meta as CustomGear).tuneHistory ?? [];
-        for (const entry of hist) {
-          if (entry.subIndex === subIndex && entry.stat) {
-            excluded.add(entry.stat);
-          }
-        }
-        const effectivePool = tunePoolSize - excluded.size;
-        if (effectivePool <= 0) return 0;
-        composite *= (1 / effectivePool);
+        const targetStat = parts[3];
+        const rate = computeSingleTuneSuccessRate(
+          meta as CustomGear,
+          subIndex,
+          targetStat,
+          elementStats.selected,
+        );
+        if (rate <= 0) return 0;
+        composite *= rate;
       }
     }
     return composite;
-  }, [tunePoolSize]);
+  }, [elementStats.selected]);
 
   const [resultQuery, setResultQuery] = useState("");
   const [upgradesOnly, setUpgradesOnly] = useState(true);
@@ -211,7 +204,7 @@ export default function GearOptimizeDialog({
       GEAR_SLOTS.reduce((acc, { key }) => acc + (r.selection[key] && r.selection[key]!.id !== equipped[key] ? 1 : 0), 0);
 
     const tuneSwapCount = (r: OptimizeResult) =>
-      GEAR_SLOTS.reduce((acc, { key }) => acc + ((r.selection[key] as GearWithTune)?.__tuneId ? 1 : 0), 0);
+      GEAR_SLOTS.reduce((acc, { key }) => acc + (((r.selection[key] as GearWithTune)?.__tuneId?.startsWith("::tune::")) ? 1 : 0), 0);
 
     const dir = sort.dir === "asc" ? 1 : -1;
     const sorted = [...list].sort((a, b) => {
@@ -470,7 +463,6 @@ export default function GearOptimizeDialog({
                                       successRate: number;
                                     }
                                     const tuneDetail: TuneDetailItem[] = [];
-                                    const tunePoolSize = getTuneSystemStatPool(elementStats.selected).length;
                                     for (const { key, label } of GEAR_SLOTS) {
                                       const meta = getTuneMeta(r.selection[key]);
                                       const id = meta?.__tuneId;
@@ -478,22 +470,19 @@ export default function GearOptimizeDialog({
                                         tune++;
                                         const parts = id.split("::");
                                         const subIndex = parseInt(parts[2], 10);
-                                        const currentStat = String(meta.subs?.[subIndex]?.stat ?? "");
-                                        const excludedLocal = new Set<string>();
-                                        if (currentStat) excludedLocal.add(currentStat);
-                                        const hist = (meta as CustomGear).tuneHistory ?? [];
-                                        for (const entry of hist) {
-                                          if (entry.subIndex === subIndex && entry.stat) {
-                                            excludedLocal.add(entry.stat);
-                                          }
-                                        }
-                                        const effectivePool = tunePoolSize - excludedLocal.size;
+                                        const targetStat = parts[3];
+                                        const rate = computeSingleTuneSuccessRate(
+                                          meta as CustomGear,
+                                          subIndex,
+                                          targetStat,
+                                          elementStats.selected,
+                                        );
                                         tuneDetail.push({
                                           slot: label,
                                           type: "T",
                                           fromText: meta.__tuneFrom ?? "",
                                           toText: meta.__tuneLabel?.replace(/^→ /, "") ?? "",
-                                          successRate: effectivePool > 0 ? (1 / effectivePool) * 100 : 0,
+                                          successRate: rate * 100,
                                         });
                                       } else if (meta && id?.startsWith("::swap::")) {
                                         swap++;
