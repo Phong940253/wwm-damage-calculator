@@ -26,7 +26,7 @@ import {
   buildDamageCache,
 } from "@/app/domain/damage/damageFormula";
 import { Button } from "@/components/ui/button";
-import SimulationOutcomePie from "./SimulationOutcomePie";
+import AverageDamagePie from "@/app/ui/damage/AverageDamagePie";
 import SimulationSkillBar from "./SimulationSkillBar";
 
 interface SimulationTabProps {
@@ -43,6 +43,7 @@ interface SimHit {
 }
 
 interface SkillSimData {
+  skillId: string;
   skillName: string;
   cancelled: boolean;
   exhausted: boolean;
@@ -276,6 +277,7 @@ function computeSimulation(rotation: Rotation, ctx: DamageContext): {
     totalAffinity += subtotalAffinity;
 
     allSkills.push({
+      skillId: rotSkill.id,
       skillName: skill.name,
       cancelled,
       exhausted,
@@ -349,6 +351,7 @@ export default function SimulationTab({ rotation, ctx }: SimulationTabProps) {
   const dps = grandTotal / DEFAULT_ROTATION_SECONDS;
 
   const skillBarData = data.skills.map((sk) => ({
+    skillId: sk.skillId,
     skillName: sk.skillName,
     subtotal:
       sk.subtotalNormal +
@@ -376,11 +379,13 @@ export default function SimulationTab({ rotation, ctx }: SimulationTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="rounded border border-border p-3">
           <h4 className="text-xs font-semibold mb-2 text-foreground">Outcome Breakdown</h4>
-          <SimulationOutcomePie
-            totalNormal={data.totalNormal}
-            totalAbrasion={data.totalAbrasion}
-            totalCritical={data.totalCritical}
-            totalAffinity={data.totalAffinity}
+          <AverageDamagePie
+            data={{
+              normal: data.totalNormal,
+              abrasion: data.totalAbrasion,
+              critical: data.totalCritical,
+              affinity: data.totalAffinity,
+            }}
           />
         </div>
         <div className="rounded border border-border p-3">
