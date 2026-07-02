@@ -16,6 +16,7 @@ import {
 import type { LevelContext } from "@/app/domain/level/levelSettings";
 import {
   computeRotationBonusesWithBreakdown,
+  computeExhaustedBonuses,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
@@ -173,6 +174,11 @@ export function useDamage(
       let weightedBreakdownAffinity = 0;
       let weightedBreakdownCritical = 0;
 
+      const exhaustedBonuses = computeExhaustedBonuses(
+        rotation,
+        elementStats.martialArtsId,
+      );
+
       const runtimeState = createRotationSkillRuntimeState();
 
       for (const rotSkill of rotation.skills) {
@@ -189,6 +195,8 @@ export function useDamage(
           rotation.activePassiveSkills,
           runtimeState.priorHitsBySkill,
           rotSkill.cancelled,
+          rotSkill.exhausted,
+          exhaustedBonuses,
         );
         entryOpts.rotationSkills = rotation.skills;
 

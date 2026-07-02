@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InnerWay, PassiveModifier } from "@/app/domain/skill/passiveSkillTypes";
 import { LIST_MARTIAL_ARTS, MartialArtId } from "@/app/domain/skill/types";
-import { STAT_LABELS } from "@/app/constants";
+import { getGroupedStatOptions } from "@/app/utils/statLabel";
 
 interface InnerWayModalProps {
   isOpen: boolean;
@@ -26,9 +26,7 @@ const DEFAULT_INNER_WAY: InnerWay = {
   modifiers: [],
 };
 
-const STAT_OPTIONS = Object.entries(STAT_LABELS)
-  .map(([key, label]) => ({ key, label: label || "" }))
-  .sort((a, b) => a.label.localeCompare(b.label));
+const STAT_GROUPS = getGroupedStatOptions();
 
 export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayModalProps) {
   const [formData, setFormData] = useState<InnerWay>(DEFAULT_INNER_WAY);
@@ -183,7 +181,13 @@ export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayMod
                         value={mod.stat as string}
                         onChange={(e) => handleModifierChange(idx, "stat", e.target.value)}
                       >
-                        {STAT_OPTIONS.map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
+                        {STAT_GROUPS.map((g) => (
+                          <optgroup key={g.group} label={g.group}>
+                            {g.options.map((opt) => (
+                              <option key={opt.key} value={opt.key}>{opt.label}</option>
+                            ))}
+                          </optgroup>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -213,7 +217,13 @@ export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayMod
                           value={mod.sourceStat as string}
                           onChange={(e) => handleModifierChange(idx, "sourceStat", e.target.value)}
                         >
-                          {STAT_OPTIONS.map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
+                          {STAT_GROUPS.map((g) => (
+                            <optgroup key={g.group} label={g.group}>
+                              {g.options.map((opt) => (
+                                <option key={opt.key} value={opt.key}>{opt.label}</option>
+                              ))}
+                            </optgroup>
+                          ))}
                         </select>
                       </div>
                       <div className="grid gap-1">
@@ -232,7 +242,7 @@ export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayMod
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="grid gap-1">
                       <label className="text-[10px] font-bold uppercase text-muted-foreground">Max Bonus (Optional)</label>
                       <Input type="number" value={mod.max || ""} onChange={(e) => handleModifierChange(idx, "max", e.target.value ? Number(e.target.value) : undefined)} />
@@ -240,6 +250,10 @@ export function InnerWayModal({ isOpen, onClose, innerWay, onSave }: InnerWayMod
                     <div className="grid gap-1">
                       <label className="text-[10px] font-bold uppercase text-muted-foreground">Min Bonus (Optional)</label>
                       <Input type="number" value={mod.min || ""} onChange={(e) => handleModifierChange(idx, "min", e.target.value ? Number(e.target.value) : undefined)} />
+                    </div>
+                    <div className="grid gap-1">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Exhausted Extra (Optional)</label>
+                      <Input type="number" step="0.1" value={mod.exhaustedExtra ?? ""} onChange={(e) => handleModifierChange(idx, "exhaustedExtra", e.target.value ? Number(e.target.value) : undefined)} />
                     </div>
                   </div>
                 </div>

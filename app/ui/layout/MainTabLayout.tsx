@@ -5,6 +5,7 @@ import StatsPanel from "../stats/StatsPanel";
 import ImportExportTab from "../import-export/ImportExportTab";
 import RotationPanel from "../rotation/RotationPanel";
 import SettingsTab from "../settings/SettingsTab";
+import SimulationTab from "../simulation/SimulationTab";
 import DamagePanel from "../damage/DamagePanel";
 import FormulaPanel from "../formula/FormulaPanel";
 import { useDMGOptimizer } from "@/app/hooks/useDMGOptimizer";
@@ -86,6 +87,7 @@ export default function MainTabLayout() {
     updateSkillCount,
     updateSkillParams,
     toggleSkillCancellation,
+    toggleSkillExhausted,
     togglePassiveSkill,
     toggleInnerWay,
     setInnerWayTier,
@@ -171,6 +173,14 @@ export default function MainTabLayout() {
     );
   }
 
+  if (tab === "simulation") {
+    return (
+      <div className="h-[calc(100dvh-150px)] sm:h-[calc(100dvh-165px)] lg:h-[calc(100dvh-180px)] overflow-y-auto px-1.5 sm:px-2">
+        <SimulationTab rotation={selectedRotation} ctx={ctx} />
+      </div>
+    );
+  }
+
   return (
     <div className="h-[calc(100dvh-150px)] sm:h-[calc(100dvh-165px)] lg:h-[calc(100dvh-180px)]">
       {isStacked ? (
@@ -215,6 +225,7 @@ export default function MainTabLayout() {
                 onUpdateSkillCount={updateSkillCount}
                 onUpdateSkillParams={updateSkillParams}
                 onToggleSkillCancellation={toggleSkillCancellation}
+                onToggleSkillExhausted={toggleSkillExhausted}
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}
@@ -313,6 +324,7 @@ export default function MainTabLayout() {
                 onUpdateSkillCount={updateSkillCount}
                 onUpdateSkillParams={updateSkillParams}
                 onToggleSkillCancellation={toggleSkillCancellation}
+                onToggleSkillExhausted={toggleSkillExhausted}
                 onTogglePassiveSkill={togglePassiveSkill}
                 onUpdatePassiveUptime={updatePassiveUptime}
                 onToggleInnerWay={toggleInnerWay}

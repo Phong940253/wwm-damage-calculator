@@ -38,6 +38,8 @@ const DEFAULT_ROTATION: Rotation = {
 export function DefaultRotationModal({ isOpen, onClose, rotation, onSave }: DefaultRotationModalProps) {
   const [formData, setFormData] = useState<Rotation>(DEFAULT_ROTATION);
   const [activeTab, setActiveTab] = useState<"skills" | "passives" | "innerWays">("skills");
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (rotation) {
@@ -96,6 +98,37 @@ export function DefaultRotationModal({ isOpen, onClose, rotation, onSave }: Defa
       newSkills.forEach((s, i) => s.order = i);
       return { ...prev, skills: newSkills };
     });
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (dropIndex: number) => {
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    setFormData((prev) => {
+      const newSkills = [...prev.skills];
+      const [moved] = newSkills.splice(draggedIndex, 1);
+      newSkills.splice(dropIndex, 0, moved);
+      newSkills.forEach((s, i) => s.order = i);
+      return { ...prev, skills: newSkills };
+    });
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleTogglePassive = (id: string) => {
@@ -214,7 +247,16 @@ export function DefaultRotationModal({ isOpen, onClose, rotation, onSave }: Defa
               </div>
               <div className="space-y-3">
                 {formData.skills.map((rs, idx) => (
-                  <div key={rs.entryId || idx} className="rounded border p-4 flex flex-col gap-3 relative bg-muted/20">
+                  <div
+                    key={rs.entryId || idx}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={handleDragEnd}
+                    className={`rounded border p-4 flex flex-col gap-3 relative bg-muted/20 transition-colors ${draggedIndex === idx ? "opacity-50" : ""} ${dragOverIndex === idx && draggedIndex !== idx ? "ring-2 ring-yellow-500 bg-yellow-500/10" : ""}`}
+                  >
+                    {dragOverIndex === idx && draggedIndex !== idx && (
+                      <div className="absolute -top-1.5 left-2 right-2 h-1 rounded-full bg-yellow-500 z-10" />
+                    )}
                     <Button 
                       size="sm" 
                       variant="destructive" 
@@ -225,14 +267,21 @@ export function DefaultRotationModal({ isOpen, onClose, rotation, onSave }: Defa
                     </Button>
                     
                     <div className="flex items-center gap-4">
-                       <Badge variant="secondary">Step {idx + 1}</Badge>
-                       <label className="flex items-center gap-2 text-xs cursor-pointer">
-                          <Checkbox 
-                            checked={rs.cancelled}
-                            onCheckedChange={(checked) => handleSkillChange(idx, "cancelled", !!checked)}
-                          />
-                          Cancelled (Effect Only)
-                       </label>
+                       <Badge variant="secondary" className="cursor-grab active:cursor-grabbing" draggable onDragStart={() => handleDragStart(idx)}>↕ Step {idx + 1}</Badge>
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                           <Checkbox 
+                             checked={rs.cancelled}
+                             onCheckedChange={(checked) => handleSkillChange(idx, "cancelled", !!checked)}
+                           />
+                           Cancelled (Effect Only)
+                        </label>
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                           <Checkbox 
+                             checked={rs.exhausted}
+                             onCheckedChange={(checked) => handleSkillChange(idx, "exhausted", !!checked)}
+                           />
+                           Exhausted
+                        </label>
                     </div>
 
                     <div className="grid grid-cols-[1fr_100px] gap-3">

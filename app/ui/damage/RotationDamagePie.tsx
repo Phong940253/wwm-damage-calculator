@@ -115,6 +115,7 @@ export default function RotationDamagePie({
       rotation.activePassiveSkills,
       runtimeState.priorHitsBySkill,
       rotSkill.cancelled,
+      rotSkill.exhausted,
     );
     entryOpts.rotationSkills = rotation.skills;
 

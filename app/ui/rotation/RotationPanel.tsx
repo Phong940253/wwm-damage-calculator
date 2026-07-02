@@ -37,6 +37,7 @@ interface RotationPanelProps {
   onUpdateSkillCount: (rotationId: string, entryId: string, count: number) => void;
   onUpdateSkillParams: (rotationId: string, entryId: string, patch: Record<string, number>) => void;
   onToggleSkillCancellation: (rotationId: string, entryId: string) => void;
+  onToggleSkillExhausted: (rotationId: string, entryId: string) => void;
   onTogglePassiveSkill: (rotationId: string, passiveId: string) => void;
   onUpdatePassiveUptime: (
     rotationId: string,
@@ -70,6 +71,7 @@ export default function RotationPanel({
   onUpdateSkillCount,
   onUpdateSkillParams,
   onToggleSkillCancellation,
+  onToggleSkillExhausted,
   onTogglePassiveSkill,
   onUpdatePassiveUptime,
   onToggleInnerWay,
@@ -115,6 +117,7 @@ export default function RotationPanel({
       moveDown: "Di chuyển xuống",
       remove: "Xóa",
       cancel: "Hủy chiêu (lấy hiệu ứng)",
+      exhausted: "Hồn (Exhausted)",
     }
     : {
       newRotation: "New Rotation",
@@ -154,6 +157,7 @@ export default function RotationPanel({
       moveDown: "Move down",
       remove: "Remove",
       cancel: "Cancel (effect only)",
+      exhausted: "Exhausted",
     };
 
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
@@ -853,6 +857,16 @@ export default function RotationPanel({
                           disabled={selectedIsDefault}
                           className="h-4 w-4"
                           title={text.cancel}
+                        />
+                        <Checkbox
+                          checked={rotSkill.exhausted}
+                          onCheckedChange={() =>
+                            !selectedIsDefault &&
+                            onToggleSkillExhausted(selectedRotation.id, rotSkill.entryId)
+                          }
+                          disabled={selectedIsDefault}
+                          className="h-4 w-4"
+                          title={text.exhausted}
                         />
                       </div>
 

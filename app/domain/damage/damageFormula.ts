@@ -45,7 +45,7 @@ export interface FormulaGroup {
   showFlatDamage?: boolean;
 }
 
-const buildDamageCache = (g: (k: string) => number): DamageCache => {
+export function buildDamageCache(g: (k: string) => number): DamageCache {
   const $ = (k: string) => { const v = g(k); return Number.isFinite(v) ? v : 0; };
   return {
     minPhysAtk: $("MinPhysicalAttack"),
@@ -98,12 +98,12 @@ const calcEleComp = (
   return attr * skillElemMult * (mul / 100) * (1 + pen / 173) * (1 + dmgBonus / 100);
 };
 
-const calcBaseDamage = (
+export function calcBaseDamage(
   physAtk: number,
   otherAttr: number,
   yourAttr: number,
   cache: DamageCache,
-): number => {
+): number {
   const physComp = calcPhysComp(physAtk, otherAttr, cache.skillPhysMult, cache.physMul, cache.physPen, cache.physDmgBonus, cache.flatDmg);
   const eleComp = calcEleComp(yourAttr, cache.skillElemMult, cache.eleMul, cache.elePen, cache.attrDmgBonus);
   const basePhys = Math.max(0, physComp - cache.bossDef);
@@ -388,6 +388,28 @@ export const calcAffinityDamage = (g: (k: string) => number) => {
   const dmgMult = 1 + dmgBonusTotal / 100;
 
   return base * familyMult * dmgMult * (1 + cache.affinityDmgBonus / 100);
+};
+
+/* =========================
+   Normal Base Hit Damage
+========================= */
+
+export const calcNormalBaseDamage = (g: (k: string) => number): number => {
+  const cache = buildDamageCache(g);
+
+  const avgPhysAtk = (cache.minPhysAtk + cache.maxPhysAtk) / 2;
+  const avgOtherAttr =
+    cache.minOtherAttr >= cache.maxOtherAttr
+      ? cache.minOtherAttr
+      : (cache.minOtherAttr + cache.maxOtherAttr) / 2;
+  const avgYourAttr = (cache.minYourAttr + cache.maxYourAttr) / 2;
+  const base = calcBaseDamage(avgPhysAtk, avgOtherAttr, avgYourAttr, cache);
+
+  const dmgBonusTotal = cache.dmgBoost + cache.bossDmgBoost;
+  const familyMult = 1 + cache.familyDmgBonus / 100;
+  const dmgMult = 1 + dmgBonusTotal / 100;
+
+  return base * familyMult * dmgMult;
 };
 
 /* =========================

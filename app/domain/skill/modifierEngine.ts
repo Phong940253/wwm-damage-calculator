@@ -14,6 +14,8 @@ export interface RotationBonusBreakdown {
     passives: Record<string, { name: string; uptimePct: number }>;
     innerWays: Record<string, { name: string }>;
   };
+  /** Bonuses from exhaustedExtra modifiers, applied only when boss is exhausted. */
+  exhaustedBonuses: Record<string, number>;
 }
 
 function isPassiveApplicableToMartialArt(
@@ -305,6 +307,7 @@ export function computeRotationBonusesWithBreakdown(
       byPassive: {},
       byInnerWay: {},
       meta: { passives: {}, innerWays: {} },
+      exhaustedBonuses: {},
     };
   }
 
@@ -465,11 +468,15 @@ export function computeRotationBonusesWithBreakdown(
     ...Object.values(byInnerWay),
   );
 
+  // 3) Compute exhausted bonuses
+  const exhaustedBonuses = computeExhaustedBonuses(rotation, elementStats.martialArtsId);
+
   return {
     total,
     byPassive,
     byInnerWay,
     meta: { passives: metaPassives, innerWays: metaInner },
+    exhaustedBonuses,
   };
 }
 
@@ -478,4 +485,59 @@ export function sumBonuses(
   extra?: Record<string, number>,
 ): Record<string, number> {
   return sumRecords(base, extra);
+}
+
+/**
+ * Compute exhausted bonuses from passive skills and inner ways.
+ * These are applied per-skill when opts.exhausted is true.
+ */
+export function computeExhaustedBonuses(
+  rotation?: Rotation,
+  martialArtId?: ElementStats["martialArtsId"],
+): Record<string, number> {
+  if (!rotation) return {};
+
+  const uptimeFactor = (passiveId: string) => {
+    const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
+    const explicit = rotation.passiveUptimes?.[passiveId];
+    const uptimePct =
+      typeof explicit === "number" && !Number.isNaN(explicit)
+        ? explicit
+        : passive?.defaultUptimePercent ?? 100;
+    return clamp(uptimePct, 0, 100) / 100;
+  };
+
+  const result: Record<string, number> = {};
+
+  for (const passiveId of rotation.activePassiveSkills) {
+    const passive = PASSIVE_SKILLS.find((p) => p.id === passiveId);
+    if (!passive) continue;
+    if (passive.includedInStats) continue;
+    if (martialArtId !== undefined && !isPassiveApplicableToMartialArt(passive, martialArtId)) continue;
+
+    for (const modifier of passive.modifiers) {
+      if (!modifier.exhaustedExtra) continue;
+      const f = modifier.applyUptime === false ? 1 : uptimeFactor(passiveId);
+      if (f <= 0) continue;
+      const key = String(modifier.stat);
+      const add = clamp(modifier.exhaustedExtra, modifier.min, modifier.max) * f;
+      result[key] = (result[key] || 0) + add;
+    }
+  }
+
+  const collapsedInnerIds = collapseInnerWayTiers(rotation.activeInnerWays);
+  for (const innerId of collapsedInnerIds) {
+    const inner = INNER_WAYS.find((i) => i.id === innerId);
+    if (!inner) continue;
+    if (martialArtId !== undefined && !isInnerWayApplicableToMartialArt(inner, martialArtId)) continue;
+
+    for (const modifier of inner.modifiers) {
+      if (!modifier.exhaustedExtra) continue;
+      const key = String(modifier.stat);
+      const add = clamp(modifier.exhaustedExtra, modifier.min, modifier.max);
+      result[key] = (result[key] || 0) + add;
+    }
+  }
+
+  return result;
 }

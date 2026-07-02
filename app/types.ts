@@ -126,6 +126,7 @@ export interface RotationSkill {
   order: number;
   count: number; // số lần sử dụng skill này
   cancelled?: boolean; // nếu true, skill này không tính dmg (chỉ để lấy hiệu ứng/proc)
+  exhausted?: boolean; // nếu true, skill được +10% dmg (boss exhausted state)
 
   /** Optional per-skill-entry parameters (e.g. Blossoms for Unfaded Flower). */
   params?: Record<string, number>;

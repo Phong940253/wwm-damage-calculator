@@ -13,6 +13,7 @@ import {
   GitCompare,
   Zap,
   Settings,
+  List,
   Beaker,
 } from "lucide-react";
 import { useI18n } from "@/app/providers/I18nProvider";
@@ -102,6 +103,15 @@ export function StatusBar() {
               title={t("status.settings")}
             >
               <Settings size={18} />
+            </TabButton>
+
+            <TabButton
+              active={tab === "simulation"}
+              onClick={() => set("main", "simulation")}
+              label={t("status.simulation")}
+              title={t("status.simulation")}
+            >
+              <List size={18} />
             </TabButton>
           </>
         )}

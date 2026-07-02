@@ -70,6 +70,16 @@ export interface SkillDamageOptions {
    *   keep 5 ripple hits
    */
   cancelled?: boolean;
+
+  /**
+   * Boss exhausted state: skill gets +10% DamageBoost.
+   * When T3 Sword Morph is active, this also enables special effects
+   * (guaranteed affinity hit 3, no abrasion) for Homeless Charge Stage 3.
+   */
+  exhausted?: boolean;
+
+  /** Extra stat bonuses from passive/inner way exhaustedExtra modifiers. */
+  exhaustedBonuses?: Record<string, number>;
 }
 
 export interface RotationSkillRuntimeState {
@@ -104,6 +114,8 @@ export function buildRotationSkillDamageOptions(
   activePassiveSkills?: string[],
   priorHitsInRotationBySkill?: Record<string, number>,
   cancelled?: boolean,
+  exhausted?: boolean,
+  exhaustedBonuses?: Record<string, number>,
 ): SkillDamageOptions {
   const entryCount = Math.max(0, Number(currentEntryUseCount) || 0);
   return {
@@ -117,6 +129,8 @@ export function buildRotationSkillDamageOptions(
     // rotation entry (column), while map stays available for cross-skill rules.
     skillUseCountInRotation:
       entryCount || (skillUseCountsInRotation?.[skillId] ?? 0),
+    exhausted,
+    exhaustedBonuses,
   };
 }
 
@@ -235,13 +249,14 @@ const resolveSwordMorphExhaustedLogic = ({
   ctx,
   skill,
   current,
+  opts,
 }: InnerWaySkillDamageResolverCtx): SkillDamageResult => {
   if (skill.id !== HOMELESS_CHARGE_STAGE_3_SKILL_ID) return current;
+  if (!opts?.exhausted) return current;
 
   // "Sword energy attacks do not cause Abrasion against Exhausted targets;
   // against Exhausted non-player targets, the 3rd sword energy hit is guaranteed Affinity."
-  // Exhausted uptime: 28.57% (10s duration / 35s cycle)
-  const uptime = 10 / 35;
+  // When exhausted is active, effects apply 100% (no uptime weighting).
   const g = ctx.get;
 
   // Calculate approximate ratio of Normal (Average) damage vs Abrasion (Min) damage.
@@ -258,30 +273,29 @@ const resolveSwordMorphExhaustedLogic = ({
   const nextPerHit = current.perHit.map((h, idx) => {
     if (!h.averageBreakdown) return h;
 
-    // Hit 3: Guaranteed Affinity during uptime
+    // Hit 3: Guaranteed Affinity when exhausted
     if (idx === 2) {
       return {
         ...h,
         normal: {
           ...h.normal,
-          value: (1 - uptime) * h.normal.value + uptime * h.affinity.value,
+          value: h.affinity.value,
         },
         averageBreakdown: {
-          normal: (1 - uptime) * h.averageBreakdown.normal,
-          critical: (1 - uptime) * h.averageBreakdown.critical,
-          abrasion: (1 - uptime) * h.averageBreakdown.abrasion,
-          affinity:
-            (1 - uptime) * h.averageBreakdown.affinity +
-            uptime * h.affinity.value,
+          ...h.averageBreakdown,
+          normal: 0,
+          critical: 0,
+          abrasion: 0,
+          affinity: h.affinity.value,
         },
       };
     }
 
-    // Hits 1 & 2: Abrasion suppression during uptime
-    // Abrasion hits (minDamage) become Normal hits (baseDamage)
+    // Hits 1 & 2: No abrasion when exhausted
+    // All abrasion damage becomes Normal damage
     const abrasionWeight = h.averageBreakdown.abrasion / Math.max(1, h.min.value);
     const suppressedAbrasionBonus =
-      uptime * abrasionWeight * (h.min.value * baseRatio - h.min.value);
+      abrasionWeight * (h.min.value * baseRatio - h.min.value);
 
     return {
       ...h,
@@ -293,8 +307,8 @@ const resolveSwordMorphExhaustedLogic = ({
         ...h.averageBreakdown,
         normal:
           h.averageBreakdown.normal +
-          uptime * abrasionWeight * (h.min.value * baseRatio),
-        abrasion: (1 - uptime) * h.averageBreakdown.abrasion,
+          abrasionWeight * (h.min.value * baseRatio),
+        abrasion: 0,
       },
     };
   });
@@ -532,7 +546,7 @@ function scaleDamageResult(dmg: DamageResult, scale: number): DamageResult {
   };
 }
 
-function getEffectiveSkillHits(skill: Skill, opts?: SkillDamageOptions) {
+export function getEffectiveSkillHits(skill: Skill, opts?: SkillDamageOptions) {
   // Default: use JSON hits as-is.
   const baseHits = skill.hits ?? [];
 
@@ -623,6 +637,9 @@ export function calculateSkillDamage(
     ? computeRotationPartyBuff(opts?.params, opts.rotationSkills)
     : 0;
 
+  // Exhausted state: +10% DamageBoost when boss is exhausted
+  const exhaustedDmgBoost = opts?.exhausted ? 10 : 0;
+
   // Process each hit type and multiply by hit count
   for (const hit of filteredHits) {
     const hitCtx = createSkillContext(ctx, {
@@ -635,7 +652,8 @@ export function calculateSkillDamage(
       damageSkillTypes,
       weaponType: skill.weaponType,
       buffDmgBoostPct: opts?.params?.buffDmgBoostPct ?? skill.selfDamageBoostPct ?? 0,
-      extraDmgBoost: (opts?.extraDmgBoost ?? 0) + partyBuff,
+      extraDmgBoost: (opts?.extraDmgBoost ?? 0) + partyBuff + exhaustedDmgBoost,
+      exhaustedStatOverrides: opts?.exhausted ? opts?.exhaustedBonuses : undefined,
     });
 
     const damage = calculateDamage(hitCtx);

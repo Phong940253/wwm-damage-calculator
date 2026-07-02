@@ -21,6 +21,8 @@ export type PassiveModifier =
       max?: number;
       /** Giới hạn tối thiểu cho phần cộng thêm của modifier này */
       min?: number;
+      /** Extra value added when boss is exhausted. Only for flat modifiers. */
+      exhaustedExtra?: number;
     }
   | {
       stat: StatKey;
@@ -35,6 +37,8 @@ export type PassiveModifier =
       max?: number;
       /** Giới hạn tối thiểu cho phần cộng thêm của modifier này */
       min?: number;
+      /** Extra value added when boss is exhausted. Only for flat modifiers. */
+      exhaustedExtra?: number;
     };
 
 /**

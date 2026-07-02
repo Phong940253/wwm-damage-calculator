@@ -184,6 +184,8 @@ export function createSkillContext(
     buffDmgBoostPct?: number;
     /** Extra DamageBoost % from external party buffs (e.g. Tides distance). */
     extraDmgBoost?: number;
+    /** Stat overrides applied when boss is exhausted (from passive/inner way exhaustedExtra). */
+    exhaustedStatOverrides?: Record<string, number>;
   },
 ): DamageContext {
   // Pre-calculate combined flat damage outside getter to avoid recalculation
@@ -271,6 +273,11 @@ export function createSkillContext(
     // Physical ATK / OtherAttr / YourType pass through base value (no pre-multiply)
     else {
       value = baseCtx.get(key);
+    }
+
+    // Apply exhausted stat overrides on top of resolved value
+    if (opts.exhaustedStatOverrides?.[key]) {
+      value += opts.exhaustedStatOverrides[key];
     }
 
     // Cache the value

@@ -469,6 +469,22 @@ export const useRotation = () => {
     );
   };
 
+  const toggleSkillExhausted = (rotationId: string, entryId: string) => {
+    setRotations((prev) =>
+      prev.map((r) => {
+        if (r.id !== rotationId) return r;
+
+        return {
+          ...r,
+          skills: r.skills.map((s) =>
+            s.entryId === entryId ? { ...s, exhausted: !s.exhausted } : s,
+          ),
+          updatedAt: Date.now(),
+        };
+      }),
+    );
+  };
+
   const togglePassiveSkill = (rotationId: string, passiveId: string) => {
     setRotations((prev) =>
       prev.map((r) => {
@@ -601,6 +617,7 @@ export const useRotation = () => {
     updateSkillCount,
     updateSkillParams,
     toggleSkillCancellation,
+    toggleSkillExhausted,
     togglePassiveSkill,
     toggleInnerWay,
     setInnerWayTier,

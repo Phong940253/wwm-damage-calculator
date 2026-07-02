@@ -218,6 +218,7 @@ export const STAT_LABELS: Partial<Record<keyof InputStats | string, string>> = {
     "Everspring Umbrella Charged Skill DMG Boost",
   EverspringUmbrellaSpecialSkillDMGBoost:
     "Everspring Umbrella Special Skill DMG Boost",
+  PhysicalDMGBonus: "Physical DMG Bonus",
   MainElementMultiplier: "Main Element Multiplier",
 };
 
