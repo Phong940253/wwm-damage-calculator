@@ -26,6 +26,8 @@ import {
   buildDamageCache,
 } from "@/app/domain/damage/damageFormula";
 import { Button } from "@/components/ui/button";
+import SimulationOutcomePie from "./SimulationOutcomePie";
+import SimulationSkillBar from "./SimulationSkillBar";
 
 interface SimulationTabProps {
   rotation?: Rotation;
@@ -346,6 +348,15 @@ export default function SimulationTab({ rotation, ctx }: SimulationTabProps) {
   const DEFAULT_ROTATION_SECONDS = 60;
   const dps = grandTotal / DEFAULT_ROTATION_SECONDS;
 
+  const skillBarData = data.skills.map((sk) => ({
+    skillName: sk.skillName,
+    subtotal:
+      sk.subtotalNormal +
+      sk.subtotalAbrasion +
+      sk.subtotalCritical +
+      sk.subtotalAffinity,
+  }));
+
   return (
     <div className="flex flex-col gap-3 h-full p-1">
       <div className="flex items-center justify-between">
@@ -360,6 +371,22 @@ export default function SimulationTab({ rotation, ctx }: SimulationTabProps) {
         >
           Re-simulate
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="rounded border border-border p-3">
+          <h4 className="text-xs font-semibold mb-2 text-foreground">Outcome Breakdown</h4>
+          <SimulationOutcomePie
+            totalNormal={data.totalNormal}
+            totalAbrasion={data.totalAbrasion}
+            totalCritical={data.totalCritical}
+            totalAffinity={data.totalAffinity}
+          />
+        </div>
+        <div className="rounded border border-border p-3">
+          <h4 className="text-xs font-semibold mb-2 text-foreground">Skill Damage Breakdown</h4>
+          <SimulationSkillBar skills={skillBarData} grandTotal={grandTotal} />
+        </div>
       </div>
 
       <div className="overflow-y-auto flex-1">
