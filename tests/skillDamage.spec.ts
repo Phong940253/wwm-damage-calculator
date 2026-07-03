@@ -121,7 +121,7 @@ describe("skill damage", () => {
     expect(sumDamage).toBeCloseTo(expected, 6);
   });
 
-  it("T3 Sword Morph + exhausted forces affinity on hit 3 for Homeless Charge Stage 3", () => {
+  it("T3 Sword Morph + exhausted no longer forces affinity on hit 3 in average pipeline", () => {
     const ctx = buildDamageContext(INITIAL_STATS, INITIAL_ELEMENT_STATS, {});
     const skill = SKILLS.find((s) => s.id === HOMELESS_CHARGE_STAGE_3_SKILL_ID);
     expect(skill).toBeDefined();
@@ -133,15 +133,10 @@ describe("skill damage", () => {
       activePassiveSkills: [],
     });
 
-    expect(result.perHit[2].averageBreakdown?.affinity).toBeGreaterThan(0);
-    expect(result.perHit[2].averageBreakdown?.abrasion).toBe(0);
-    expect(result.perHit[2].averageBreakdown?.normal).toBe(0);
-    expect(result.perHit[2].averageBreakdown?.critical).toBe(0);
-
-    expect(result.perHit[0].averageBreakdown?.abrasion).toBe(0);
-    expect(result.perHit[1].averageBreakdown?.abrasion).toBe(0);
-
-    expect(result.perHit[2].affinity.value).toBeGreaterThan(result.perHit[0].normal.value);
+    // Average pipeline no longer applies T3 override;
+    // hit 3 should have normal breakdown with abrasion > 0
+    expect(result.perHit[2].averageBreakdown?.abrasion).toBeGreaterThan(0);
+    expect(result.perHit[2].averageBreakdown?.normal).toBeGreaterThan(0);
   });
 
   it("without exhausted, T3 has no effect on Homeless Charge Stage 3", () => {

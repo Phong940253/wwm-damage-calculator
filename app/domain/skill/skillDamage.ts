@@ -5,10 +5,7 @@ import { Skill } from "./types";
 import { createSkillContext } from "./skillContext";
 import { DamageResult, SkillDamageResult } from "../damage/type";
 import { calcExpectedNormalBreakdown } from "../damage/damageFormula";
-import {
-  SWORD_MORPH_T3_INNER_WAY_ID,
-  SWORD_MORPH_T5_INNER_WAY_ID,
-} from "./innerWays";
+
 import type { RotationSkill } from "@/app/types";
 import {
   applySkillHitScaling,
@@ -245,97 +242,6 @@ function applyScaleToSkillDamageResult(
   };
 }
 
-const resolveSwordMorphExhaustedLogic = ({
-  ctx,
-  skill,
-  current,
-  opts,
-}: InnerWaySkillDamageResolverCtx): SkillDamageResult => {
-  if (skill.id !== HOMELESS_CHARGE_STAGE_3_SKILL_ID) return current;
-  if (!opts?.exhausted) return current;
-
-  // "Sword energy attacks do not cause Abrasion against Exhausted targets;
-  // against Exhausted non-player targets, the 3rd sword energy hit is guaranteed Affinity."
-  // When exhausted is active, effects apply 100% (no uptime weighting).
-  const g = ctx.get;
-
-  // Calculate approximate ratio of Normal (Average) damage vs Abrasion (Min) damage.
-  // Abrasion damage uses min attack and has a 1.02 multiplier.
-  const minPhys = g("MinPhysicalAttack");
-  const maxPhys = g("MaxPhysicalAttack");
-  const minAttr = g("MINAttributeAttackOfYOURType");
-  const maxAttr = g("MAXAttributeAttackOfYOURType");
-  const avgPhys = (minPhys + maxPhys) / 2;
-  const avgAttr = (minAttr + maxAttr) / 2;
-  const baseRatio =
-    (avgPhys + avgAttr) / Math.max(1, (minPhys + minAttr) * 1.02);
-
-  const nextPerHit = current.perHit.map((h, idx) => {
-    if (!h.averageBreakdown) return h;
-
-    // Hit 3: Guaranteed Affinity when exhausted
-    if (idx === 2) {
-      return {
-        ...h,
-        normal: {
-          ...h.normal,
-          value: h.affinity.value,
-        },
-        averageBreakdown: {
-          ...h.averageBreakdown,
-          normal: 0,
-          critical: 0,
-          abrasion: 0,
-          affinity: h.affinity.value,
-        },
-      };
-    }
-
-    // Hits 1 & 2: No abrasion when exhausted
-    // All abrasion damage becomes Normal damage
-    const abrasionWeight = h.averageBreakdown.abrasion / Math.max(1, h.min.value);
-    const suppressedAbrasionBonus =
-      abrasionWeight * (h.min.value * baseRatio - h.min.value);
-
-    return {
-      ...h,
-      normal: {
-        ...h.normal,
-        value: h.normal.value + suppressedAbrasionBonus,
-      },
-      averageBreakdown: {
-        ...h.averageBreakdown,
-        normal:
-          h.averageBreakdown.normal +
-          abrasionWeight * (h.min.value * baseRatio),
-        abrasion: 0,
-      },
-    };
-  });
-
-  // Recalculate total
-  const nextTotal: DamageResult = {
-    ...current.total,
-    normal: { ...current.total.normal, value: 0 },
-    averageBreakdown: { normal: 0, critical: 0, abrasion: 0, affinity: 0 },
-  };
-
-  for (const h of nextPerHit) {
-    nextTotal.normal.value += h.normal.value;
-    if (nextTotal.averageBreakdown && h.averageBreakdown) {
-      nextTotal.averageBreakdown.normal += h.averageBreakdown.normal;
-      nextTotal.averageBreakdown.critical += h.averageBreakdown.critical;
-      nextTotal.averageBreakdown.abrasion += h.averageBreakdown.abrasion;
-      nextTotal.averageBreakdown.affinity += h.averageBreakdown.affinity;
-    }
-  }
-
-  return {
-    total: nextTotal,
-    perHit: nextPerHit,
-  };
-};
-
 const INNER_WAY_SKILL_DAMAGE_RESOLVERS: InnerWaySkillDamageResolver[] = [
   {
     innerWayId: PHANTOM_RALLY_T0_INNER_WAY_ID,
@@ -363,14 +269,6 @@ const INNER_WAY_SKILL_DAMAGE_RESOLVERS: InnerWaySkillDamageResolver[] = [
       });
       return applyScaleToSkillDamageResult(current, scale);
     },
-  },
-  {
-    innerWayId: SWORD_MORPH_T3_INNER_WAY_ID,
-    apply: resolveSwordMorphExhaustedLogic,
-  },
-  {
-    innerWayId: SWORD_MORPH_T5_INNER_WAY_ID,
-    apply: resolveSwordMorphExhaustedLogic,
   },
 ];
 
