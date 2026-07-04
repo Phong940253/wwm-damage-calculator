@@ -54,12 +54,12 @@ Nếu bạn chỉ có 5 cái Pendant, nó sẽ thử cả 5. Không đời nào 
 
 ### 3. Nhập Stats (Main → Stats)
 
-Sau khi đã equip gear, sang Main → Stats. Tool đã tự động cộng stats từ gear vào, bạn chỉ cần:
+Sang Main → Stats. Nhập theo thứ tự:
 
-- Chọn level nhân vật và level boss (quan trọng: boss cấp cao kháng nhiều hơn)
-- Chọn môn phái
-- Nhập các chỉ số cơ bản còn thiếu (những stat gear không cung cấp)
-- Nhấn **Save Current** để khỏi nhập lại lần sau
+1. **Stat nền trước** — level, level boss, môn phái, Body/Power/Defense/Agility/Momentum. Mấy stat này ảnh hưởng đến các chỉ số khác, nhập trước cho đúng.
+2. **Stat còn lại sau** — Critical Rate, Precision Rate, v.v. Nhập y hệt như trong game, không cần tính gì thêm. Riêng Critical DMG để nguyên 50 và Affinity DMG để nguyên 35 — tool tự cộng từ passive và inner way.
+
+Nhấn **Save Current** để khỏi nhập lại lần sau.
 
 ### 4. Tạo Rotation (Main → Rotation)
 
