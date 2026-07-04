@@ -39,33 +39,35 @@ Nếu bạn chỉ có 5 cái Pendant, nó sẽ thử cả 5. Không đời nào 
 
 Đừng mở tool lên là lao vô Optimize liền. Làm từ từ:
 
-### 1. Nhập Stats (Main → Stats)
-
-- Chọn level nhân vật và level boss (quan trọng: boss cấp cao kháng nhiều hơn)
-- Chọn môn phái
-- Nhập các chỉ số cơ bản (không cần nhập hết, skip mấy cái chưa biết)
-- Nhấn **Save Current** để khỏi nhập lại lần sau
-
-### 2. Tạo Rotation (Main → Rotation)
-
-- **Add Rotation**, đặt tên
-- **Add Skill** → chọn skill → chỉnh số lần xài
-- Bật exhausted nếu skill đó dùng lúc boss exhausted
-- Bật mấy passive với inner way bạn đang dùng
-- *Lý do:* skill đứng riêng không phản ánh đúng. Skill trước buff skill sau.
-
-### 3. Quản lý Gear (Gear → Customize Gear)
+### 1. Quản lý Gear (Gear → Customize Gear)
 
 - **Add Gear** → điền thông tin món đồ bạn có
 - Cách nhanh nhất: nhấn nút **OCR** (hình máy ảnh) → chụp ảnh màn hình gear
   trong game → Gemini API tự động điền hết
 - Thêm hết gear bạn đang phân vân (không cần thêm gear rác)
 
-### 4. Equip đồ (Gear → Equipped Gear)
+### 2. Equip đồ (Gear → Equipped Gear)
 
 - 8 slot: Weapon I, Weapon II, Disc, Pendant, Head, Chest, Hand, Leg
 - Để trống = không có gì, tool tự xài stats gốc
 - Có slot nào chưa biết đeo gì thì thử nghiệm sau
+
+### 3. Nhập Stats (Main → Stats)
+
+Sau khi đã equip gear, sang Main → Stats. Tool đã tự động cộng stats từ gear vào, bạn chỉ cần:
+
+- Chọn level nhân vật và level boss (quan trọng: boss cấp cao kháng nhiều hơn)
+- Chọn môn phái
+- Nhập các chỉ số cơ bản còn thiếu (những stat gear không cung cấp)
+- Nhấn **Save Current** để khỏi nhập lại lần sau
+
+### 4. Tạo Rotation (Main → Rotation)
+
+- **Add Rotation**, đặt tên
+- **Add Skill** → chọn skill → chỉnh số lần xài
+- Bật exhausted nếu skill đó dùng lúc boss exhausted
+- Bật mấy passive với inner way bạn đang dùng
+- *Lý do:* skill đứng riêng không phản ánh đúng. Skill trước buff skill sau.
 
 ### 5. Xem damage (Main)
 
