@@ -6,6 +6,7 @@ import {
 } from "@/app/domain/gear/additionRules";
 
 const SPECIAL_STAT_KEYS = [
+  "CombatBoostAgainstBossUnits",
   "ChargeSkillDamageBoost",
   "BallisticSkillDamageBoost",
   "PursuitSkillDamageBoost",
