@@ -19,6 +19,7 @@ const STAT_OPTION_GROUPS: { label: string; options: GearStatKey[] }[] = [
             "ChargeSkillDamageBoost",
             "BallisticSkillDamageBoost",
             "PursuitSkillDamageBoost",
+            "CombatBoostAgainstBossUnits",
             "ArtOfSwordDMGBoost",
             "ArtOfSpearDMGBoost",
             "ArtOfFanDMGBoost",
