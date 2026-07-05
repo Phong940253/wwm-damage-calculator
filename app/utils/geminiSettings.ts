@@ -5,7 +5,7 @@ export type GeminiRuntimeSettings = {
   model: string;
 };
 
-export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+export const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 function parseStoredSettings(raw: string | null): Partial<GeminiRuntimeSettings> {
   if (!raw) return {};
