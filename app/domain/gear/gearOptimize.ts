@@ -172,6 +172,8 @@ export async function computeOptimizeResultsAsync(
     reducePerSlotCap?: number;
     /** If true, expand gear candidates with tune variants for slots that have tunable gears. */
     considerTune?: boolean;
+    /** Beam width for context-aware pre-reduction (default 200). */
+    beamWidth?: number;
   },
   onProgress?: (current: number, total: number) => void,
   signal?: AbortSignal,
@@ -486,8 +488,7 @@ export async function computeOptimizeResultsAsync(
   const reducePerSlotCap =
     reducePerSlotCapRaw > 0 ? Math.max(2, reducePerSlotCapRaw) : 0;
 
-  const reduceSlotOptionsIfNeeded = async () => {
-    // Reduce only when the estimated search space is huge.
+  const beamSearchReduceSlotOptions = async (): Promise<typeof slotOptions> => {
     if (estimated <= autoReduceIfOverCombos) return slotOptions;
 
     const slotCount = slotOptions.length || 1;
@@ -495,71 +496,97 @@ export async function computeOptimizeResultsAsync(
       2,
       Math.floor(Math.pow(reduceTargetCombos, 1 / slotCount)),
     );
-    // Khi considerTune bật, dùng cap cao hơn để giữ item gốc + tune variants đầy đủ
     const autoCap = options?.considerTune && reducePerSlotCap === 0
       ? Math.max(12, capFromTarget)
       : capFromTarget;
     const perSlotCap = reducePerSlotCap > 0 ? reducePerSlotCap : autoCap;
+    const beamWidth = Math.max(1, options?.beamWidth ?? 200);
 
-    const reduced = await Promise.all(
-      slotOptions.map(async ({ slot, items, equippedGear }) => {
-        throwIfCancelled();
-        if (items.length <= perSlotCap) return { slot, items, equippedGear };
+    // Track which slots actually need reduction
+    const needsReduce = slotOptions.map(({ items }) => items.length > perSlotCap);
+    if (!needsReduce.some(Boolean)) return slotOptions;
 
-        // Single-swap scoring vs base equipped state.
-        const scratchBonus: Record<string, number> = { ...baseBonus };
-        if (equippedGear) applyGear(scratchBonus, equippedGear, -1);
+    const result = [...slotOptions];
+    // beam: accumulated bonus for each partial selection
+    let beam: Record<string, number>[] = [{ ...baseBonus }];
 
-        const scored: Array<{ gear: CustomGear | null; dmg: number }> = [];
+    const getItemKey = (g: CustomGear | null): string => {
+      if (!g) return "__null__";
+      return g.id + ((g as GearWithTune).__tuneId ?? "");
+    };
 
-        // Score the "no gear" option (only if present).
-        if (items.some((x) => x === null)) {
-          const dmg = computeTotalDamage(scratchBonus);
-          scored.push({ gear: null, dmg });
+    for (let i = 0; i < slotCount; i++) {
+      throwIfCancelled();
+      const { slot, items, equippedGear } = slotOptions[i];
+      if (!needsReduce[i]) {
+        // Still advance beam: expand with existing items
+        const newBeam: Record<string, number>[] = [];
+        for (const bonus of beam) {
+          if (equippedGear) applyGear(bonus, equippedGear, -1);
+          for (const gear of items) {
+            if (gear) applyGear(bonus, gear, +1);
+            newBeam.push({ ...bonus });
+            if (gear) applyGear(bonus, gear, -1);
+          }
+          if (equippedGear) applyGear(bonus, equippedGear, +1);
         }
+        beam = newBeam;
+        continue;
+      }
 
+      // Phase A: Score each item across all beam contexts
+      const itemBest = new Map<string, number>();
+      const extended: Array<{
+        bonus: Record<string, number>;
+        dmg: number;
+        itemKey: string;
+      }> = [];
+
+      for (const bonus of beam) {
+        if (equippedGear) applyGear(bonus, equippedGear, -1);
         for (const gear of items) {
           throwIfCancelled();
-          if (!gear) continue;
-          applyGear(scratchBonus, gear, +1);
-          const dmg = computeTotalDamage(scratchBonus);
-          scored.push({ gear, dmg });
-          applyGear(scratchBonus, gear, -1);
+          if (gear) applyGear(bonus, gear, +1);
+          const dmg = computeTotalDamage(bonus);
+
+          const key = getItemKey(gear);
+          itemBest.set(key, Math.max(dmg, itemBest.get(key) ?? -Infinity));
+          extended.push({ bonus: { ...bonus }, dmg, itemKey: key });
+
+          if (gear) applyGear(bonus, gear, -1);
         }
+        if (equippedGear) applyGear(bonus, equippedGear, +1);
+      }
 
-        scored.sort((a, b) => b.dmg - a.dmg);
+      // Phase B: Rank items and keep top N
+      const ranked = Array.from(itemBest.entries())
+        .sort((a, b) => b[1] - a[1]);
+      const keptIds = new Set<string>();
+      // Always keep equipped
+      if (equippedGear) keptIds.add(getItemKey(equippedGear));
+      for (const [key] of ranked) {
+        if (keptIds.size >= perSlotCap) break;
+        keptIds.add(key);
+      }
 
-        const kept: Array<CustomGear | null> = [];
-        const seen = new Set<string>();
-        const keep = (g: CustomGear | null) => {
-          const tuneId = (g as GearWithTune).__tuneId ?? "";
-          const baseId = g ? g.id : "__null__";
-          const key = baseId + tuneId;
-          if (seen.has(key)) return;
-          seen.add(key);
-          kept.push(g);
-        };
+      // Apply reduction to slot options
+      result[i] = {
+        slot,
+        items: items.filter((g) => keptIds.has(getItemKey(g))),
+        equippedGear,
+      };
 
-        // Always keep equipped (if any) to ensure "no change" remains possible.
-        if (equippedGear) keep(equippedGear);
+      // Phase C: Build new beam from extended entries that use kept items
+      const scoredBeam = extended
+        .filter((e) => keptIds.has(e.itemKey))
+        .sort((a, b) => b.dmg - a.dmg);
+      beam = scoredBeam.slice(0, beamWidth).map((e) => e.bonus);
+    }
 
-        // Keep best-scoring up to cap.
-        for (const s of scored) {
-          if (kept.length >= perSlotCap) break;
-          keep(s.gear);
-        }
-
-        // Ensure null is kept if it existed originally.
-        if (items.some((x) => x === null)) keep(null);
-
-        return { slot, items: kept.length ? kept : [null], equippedGear };
-      }),
-    );
-
-    return reduced;
+    return result;
   };
 
-  const finalSlotOptions = await reduceSlotOptionsIfNeeded();
+  const finalSlotOptions = await beamSearchReduceSlotOptions();
 
   const finalEstimated = finalSlotOptions.reduce(
     (acc, { items }) => acc * items.length,
