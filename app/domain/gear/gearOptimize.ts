@@ -432,17 +432,20 @@ export async function computeOptimizeResultsAsync(
       const expanded: Array<CustomGear | null> = [];
       for (const item of slotDef.items) {
         expanded.push(item);
-        // Tune variants
-        if (item && item.tunedSubIndex && item.tunedSubIndex > 0) {
-          for (const v of generateTuneVariants(item, elementStats.selected)) {
-            const variantGear: GearWithTune = {
-              ...item,
-              subs: v.overrideSubs,
-              __tuneId: `::tune::${v.subIndex}::${v.targetStat}`,
-              __tuneLabel: v.label,
-              __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}`,
-            };
-            expanded.push(variantGear);
+        // Tune variants — generate for ALL tunable sub lines (indices 1..n-1)
+        // Chỉ cho gear có tunedSubIndex > 0 (đang được tune)
+        if (item && item.tunedSubIndex && item.tunedSubIndex > 0 && item.subs && item.subs.length >= 2) {
+          for (let si = 1; si < item.subs.length; si++) {
+            for (const v of generateTuneVariants(item, elementStats.selected, si)) {
+              const variantGear: GearWithTune = {
+                ...item,
+                subs: v.overrideSubs,
+                __tuneId: `::tune::${v.subIndex}::${v.targetStat}`,
+                __tuneLabel: v.label,
+                __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}`,
+              };
+              expanded.push(variantGear);
+            }
           }
         }
         // Addition swap variant (only if best stat differs from current)
@@ -492,7 +495,11 @@ export async function computeOptimizeResultsAsync(
       2,
       Math.floor(Math.pow(reduceTargetCombos, 1 / slotCount)),
     );
-    const perSlotCap = reducePerSlotCap > 0 ? reducePerSlotCap : capFromTarget;
+    // Khi considerTune bật, dùng cap cao hơn để giữ item gốc + tune variants đầy đủ
+    const autoCap = options?.considerTune && reducePerSlotCap === 0
+      ? Math.max(12, capFromTarget)
+      : capFromTarget;
+    const perSlotCap = reducePerSlotCap > 0 ? reducePerSlotCap : autoCap;
 
     const reduced = await Promise.all(
       slotOptions.map(async ({ slot, items, equippedGear }) => {

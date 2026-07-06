@@ -51,6 +51,7 @@ export function useGearOptimize(
     reduceTargetCombos?: number;
     reducePerSlotCap?: number;
     considerTune?: boolean;
+    desiredDisplay?: number;
   },
 ) {
   const { levelContext } = useLevelContext();
@@ -184,7 +185,7 @@ export function useGearOptimize(
             elementStats,
             customGears,
             equipped,
-            MAX_RESULTS_CAP,
+            options?.desiredDisplay ?? MAX_RESULTS_CAP,
             rotation,
             levelContext,
             options,
@@ -293,7 +294,7 @@ export function useGearOptimize(
                 elementStats,
                 customGears,
                 equipped,
-                desiredDisplay: MAX_RESULTS_CAP,
+                desiredDisplay: options?.desiredDisplay ?? MAX_RESULTS_CAP,
                 rotation,
                 levelContext,
                 staticData: {
@@ -306,8 +307,7 @@ export function useGearOptimize(
                   ...options,
                   restrictSlots,
                   yieldToEventLoop: false,
-                  // Aggressive reduction defaults in worker mode (can be overridden by UI options)
-                  autoReduceIfOverCombos: options?.autoReduceIfOverCombos ?? 1,
+                  autoReduceIfOverCombos: options?.autoReduceIfOverCombos ?? 200_000,
                   reduceTargetCombos: options?.reduceTargetCombos ?? 200_000,
                 },
               },
@@ -441,5 +441,5 @@ export function useGearOptimize(
     ],
   );
 
-  return { run, cancel, loading, error, results, baseDamage, combos, progress };
+  return { run, cancel, loading, error, results, setResults, baseDamage, setBaseDamage, combos, setCombos, progress };
 }

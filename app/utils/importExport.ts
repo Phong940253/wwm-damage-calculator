@@ -1,5 +1,6 @@
 // app/utils/importExport.ts
 import { CustomGear, GearSlot, Rotation } from "@/app/types";
+import { OptimizeResult } from "@/app/domain/gear/gearOptimize";
 
 export interface ExportPayload {
   version: "1.0";
@@ -12,6 +13,11 @@ export interface ExportPayload {
   rotations?: {
     list: Rotation[];
     selectedId?: string;
+  };
+  optimizerResults?: {
+    baseDamage: number;
+    totalCombos: number;
+    results: OptimizeResult[];
   };
 }
 
@@ -62,5 +68,29 @@ export function importFromJsonFile(file: File): Promise<ExportPayload> {
     };
     reader.onerror = () => reject(new Error("File read error"));
     reader.readAsText(file);
+  });
+}
+
+export function exportOptimizerResultsToFile(
+  results: OptimizeResult[],
+  baseDamage: number,
+  totalCombos: number,
+): void {
+  const payload: ExportPayload = {
+    version: "1.0",
+    optimizerResults: { baseDamage, totalCombos, results },
+  };
+  const date = new Date().toISOString().slice(0, 10);
+  exportToJsonFile(payload, `wwm_optimizer_results_${date}.json`);
+}
+
+export function importOptimizerResultsFromFile(
+  file: File,
+): Promise<{ baseDamage: number; totalCombos: number; results: OptimizeResult[] }> {
+  return importFromJsonFile(file).then((payload) => {
+    if (!payload.optimizerResults) {
+      throw new Error("No optimizer results found in file");
+    }
+    return payload.optimizerResults;
   });
 }

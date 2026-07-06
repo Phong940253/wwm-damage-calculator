@@ -676,3 +676,174 @@ describe("computeOptimizeResultsAsync with addition swap", () => {
     expect(hasSwap).toBe(false);
   });
 });
+
+// ============================================================
+// Tests: generateTuneVariants with overrideSubIndex
+// ============================================================
+
+describe("generateTuneVariants with overrideSubIndex", () => {
+  it("generates variants for any tunable sub line when overrideSubIndex is given", () => {
+    const gear = makeGear({
+      id: "g_override",
+      slot: "hand",
+      tunedSubIndex: 2,  // currently tuned sub = line 3
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "Power", value: 38 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    // Generate variants for subIndex=1 (line 2), not the tuned sub
+    const variants = generateTuneVariants(gear, bellstrikeElement, 1);
+    expect(variants.length).toBeGreaterThan(0);
+    for (const v of variants) {
+      expect(v.subIndex).toBe(1);
+      expect(v.overrideSubs[1].stat).toBe(v.targetStat);
+      // Original tuned sub (index 2) should be unchanged
+      expect(v.overrideSubs[2]).toEqual({ stat: "Power", value: 38 });
+    }
+  });
+
+  it("returns empty for overrideSubIndex <= 0", () => {
+    const gear = makeGear({
+      id: "g_override_invalid",
+      slot: "hand",
+      tunedSubIndex: 2,
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "Power", value: 38 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    expect(generateTuneVariants(gear, bellstrikeElement, 0)).toEqual([]);
+  });
+
+  it("returns empty for overrideSubIndex >= subs.length", () => {
+    const gear = makeGear({
+      id: "g_override_oob",
+      slot: "hand",
+      tunedSubIndex: 2,
+      subs: [
+        { stat: "Momentum", value: 35 },
+        { stat: "CriticalRate", value: 7.4 },
+        { stat: "Power", value: 38 },
+        { stat: "AffinityRate", value: 3.5 },
+        { stat: "bellstrikeMax", value: 35 },
+      ],
+    });
+    expect(generateTuneVariants(gear, bellstrikeElement, 10)).toEqual([]);
+  });
+});
+
+// ============================================================
+// Tests: desiredDisplay limits heap size
+// ============================================================
+
+describe("computeOptimizeResultsAsync with desiredDisplay", () => {
+  it("desiredDisplay limits the number of results returned", async () => {
+    const gears: CustomGear[] = [
+      makeGear({ id: "g1", slot: "head", name: "Head A" }),
+      makeGear({ id: "g2", slot: "head", name: "Head B" }),
+    ];
+    const equipped: Partial<Record<string, string>> = {};
+
+    const r = await computeOptimizeResultsAsync(
+      baseStats, baseElementStats, gears, equipped as any, 1, undefined, undefined,
+      { candidateGears: gears, slotsToOptimize: ["head"] },
+    );
+
+    expect(r.results.length).toBeLessThanOrEqual(1);
+  });
+});
+
+// ============================================================
+// Tests: considerTune with perSlotCap
+// ============================================================
+
+describe("considerTune with perSlotCap", () => {
+  it("perSlotCap > 0 still applies reduction with considerTune=true", async () => {
+    // Create many gears for pendant slot to force reduction
+    const gears: CustomGear[] = [];
+    for (let i = 0; i < 20; i++) {
+      gears.push(makeGear({
+        id: `g_pendant_${i}`,
+        name: `Pendant ${i}`,
+        slot: "pendant",
+        tunedSubIndex: 2,
+        subs: [
+          { stat: "Momentum", value: 35 },
+          { stat: "CriticalRate", value: 7.4 },
+          { stat: "Power", value: 38 },
+          { stat: "AffinityRate", value: 3.5 },
+          { stat: "bellstrikeMax", value: 35 },
+        ],
+        tuneHistory: [{ subIndex: 2, stat: "Power" }],
+      }));
+    }
+    const equipped: Partial<Record<string, string>> = {};
+
+    const r = await computeOptimizeResultsAsync(
+      baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
+      {
+        candidateGears: gears,
+        slotsToOptimize: ["pendant"],
+        considerTune: true,
+        reducePerSlotCap: 5,
+        autoReduceIfOverCombos: 1,
+      },
+    );
+
+    expect(r.results.length).toBeGreaterThan(0);
+    // With perSlotCap=5, at most 5 items survive for pendant (original + variants)
+    // So combos should be ≤ 5^1 = 5 (1 slot)
+    expect(r.totalCombos).toBeLessThanOrEqual(50); // 5 items max after reduction, 20 original
+  });
+});
+
+// ============================================================
+// Tests: tune variants for ALL sub lines (not just tunedSubIndex)
+// ============================================================
+
+describe("tune variants cover all sub lines in optimizer", () => {
+  it("considerTune = true with tunable gear produces variants for multiple sub lines", async () => {
+    const gears: CustomGear[] = [
+      makeGear({
+        id: "g_multi_tune",
+        name: "Multi-tune head",
+        slot: "head",
+        tunedSubIndex: 2,
+        subs: [
+          { stat: "Momentum", value: 35 },
+          { stat: "CriticalRate", value: 7.4 },
+          { stat: "Power", value: 38 },
+          { stat: "AffinityRate", value: 3.5 },
+          { stat: "bellstrikeMax", value: 35 },
+        ],
+        tuneHistory: [{ subIndex: 2, stat: "Power" }],
+      }),
+    ];
+    const equipped: Partial<Record<string, string>> = {};
+
+    const r = await computeOptimizeResultsAsync(
+      baseStats, baseElementStats, gears, equipped as any, 100, undefined, undefined,
+      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+    );
+
+    // Should have tune variants for multiple sub lines (1, 2, 3, 4)
+    const seenSubIndices = new Set<number>();
+    for (const res of r.results) {
+      const g = res.selection["head"];
+      const meta = g as any;
+      if (meta?.__tuneId?.startsWith("::tune::")) {
+        const parts = meta.__tuneId.split("::");
+        seenSubIndices.add(parseInt(parts[2], 10));
+      }
+    }
+    // Should have variants from at least 2 different sub lines
+    expect(seenSubIndices.size).toBeGreaterThanOrEqual(2);
+  });
+});

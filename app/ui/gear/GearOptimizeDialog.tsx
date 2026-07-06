@@ -33,6 +33,7 @@ import {
 import GearHoverDetail from "./GearHoverDetail";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { getTuneSuccessRateToneClass, computeSingleTuneSuccessRate } from "@/app/domain/gear/tuneAdvisor";
+import { exportOptimizerResultsToFile, importOptimizerResultsFromFile } from "@/app/utils/importExport";
 
 type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string; __tuneFrom?: string };
 const getTuneMeta = (g: CustomGear | undefined): GearWithTune | undefined => g as GearWithTune;
@@ -56,6 +57,7 @@ interface Props {
   onApply: (s: OptimizeResult["selection"]) => void;
   equipped?: Partial<Record<GearSlot, string>>;
   customGears?: CustomGear[];
+  onImportResults?: (payload: { baseDamage: number; totalCombos: number; results: OptimizeResult[] }) => void;
 }
 
 export default function GearOptimizeDialog({
@@ -77,6 +79,7 @@ export default function GearOptimizeDialog({
   onApply,
   equipped = {},
   customGears = [],
+  onImportResults,
 }: Props) {
   const { language } = useI18n();
   const text = language === "vi"
@@ -106,6 +109,8 @@ export default function GearOptimizeDialog({
       empty: "Không có kết quả. Hãy đổi bộ lọc hoặc chạy lại tối ưu.",
       equip: "Trang bị",
       noResultCell: "—",
+      exportResults: "Xuất JSON",
+      importResults: "Nhập JSON",
     }
     : {
       title: "Optimize Gear Results",
@@ -133,6 +138,8 @@ export default function GearOptimizeDialog({
       empty: "No results found. Try changing filters or running the optimizer.",
       equip: "Equip",
       noResultCell: "—",
+      exportResults: "Export JSON",
+      importResults: "Import JSON",
     };
 
   const baseGearBonus = useMemo(
@@ -179,6 +186,8 @@ export default function GearOptimizeDialog({
     },
     { col: "gain", dir: "desc" }
   );
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayedResults = useMemo(() => {
     let list = results;
@@ -246,6 +255,27 @@ export default function GearOptimizeDialog({
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN);
   const endIdx = Math.min(displayedResults.length, Math.ceil((scrollTop + viewH) / ROW_H) + OVERSCAN);
   const visibleRows = displayedResults.slice(startIdx, endIdx);
+
+  const handleExportResults = () => {
+    exportOptimizerResultsToFile(results, baseDamage, combos);
+  };
+
+  const handleImportResults = (file: File) => {
+    importOptimizerResultsFromFile(file).then((payload) => {
+      onImportResults?.(payload);
+    }).catch((err) => {
+      console.error("Failed to import optimizer results:", err);
+      alert("Failed to import optimizer results: " + (err instanceof Error ? err.message : "Unknown error"));
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImportResults(file);
+    }
+    e.target.value = "";
+  };
 
   return (
     <Dialog open={open && !loading} onOpenChange={onOpenChange}>
@@ -321,6 +351,12 @@ export default function GearOptimizeDialog({
                       <Button data-tour="gear-optimize-recalculate" size="sm" onClick={onRecalculate}>
                         {text.recalculate}
                       </Button>
+                      <Button size="sm" variant="outline" onClick={handleExportResults}>
+                        {text.exportResults}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                        {text.importResults}
+                      </Button>
                     </div>
                   </div>
 
@@ -374,6 +410,13 @@ export default function GearOptimizeDialog({
                     </div>
                   </div>
                 </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".json,application/json"
+                  onChange={handleFileChange}
+                />
               </div>
               <div ref={scrollRef} onScroll={onScroll} className="px-6 pb-6 flex-1 min-h-0 overflow-auto">
                 {displayedResults.length > 0 ? (

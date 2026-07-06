@@ -387,30 +387,32 @@ export function computeSingleTuneSuccessRate(
   return 1 / eligibleCount;
 }
 
-/** Generate all eligible tune variants for a gear piece.
- *  Only gears with tunedSubIndex > 0 produce variants.
- *  Each variant replaces the substat at tunedSubIndex with a different
+/** Generate all eligible tune variants for a gear piece at a given subIndex.
+ *  If subIndex is omitted, uses gear.tunedSubIndex (must be > 0).
+ *  Each variant replaces the substat at the target subIndex with a different
  *  eligible stat at max per-line value.
  */
 export function generateTuneVariants(
   gear: Pick<CustomGear, "subs" | "tunedSubIndex" | "tuneHistory">,
   elementKey: ElementKey,
+  /** Override subIndex. If omitted, uses gear.tunedSubIndex (must be > 0). */
+  overrideSubIndex?: number,
 ): TuneVariant[] {
-  const tunedSubIndex = gear.tunedSubIndex;
-  if (typeof tunedSubIndex !== "number" || tunedSubIndex <= 0) return [];
+  const subIndex = overrideSubIndex ?? gear.tunedSubIndex;
+  if (typeof subIndex !== "number" || subIndex <= 0) return [];
   const subs = gear.subs;
-  if (!subs || tunedSubIndex >= subs.length) return [];
+  if (!subs || subIndex >= subs.length) return [];
 
   const pool = getTuneSystemStatPool(elementKey);
   const subStatKeys = subs.map((s) => String(s.stat ?? ""));
 
   // Exclude current stat on this line + any stat previously tuned on this subIndex
   const excludedStats = new Set<string>();
-  const currentStat = subStatKeys[tunedSubIndex];
+  const currentStat = subStatKeys[subIndex];
   if (currentStat) excludedStats.add(currentStat);
   const history = gear.tuneHistory ?? [];
   for (const entry of history) {
-    if (entry.subIndex === tunedSubIndex && entry.stat) {
+    if (entry.subIndex === subIndex && entry.stat) {
       excludedStats.add(entry.stat);
     }
   }
@@ -419,18 +421,18 @@ export function generateTuneVariants(
 
   for (const targetStat of pool) {
     if (excludedStats.has(targetStat)) continue;
-    if (!isTuneTargetAllowedBySubRules(subStatKeys, tunedSubIndex, targetStat)) continue;
+    if (!isTuneTargetAllowedBySubRules(subStatKeys, subIndex, targetStat)) continue;
 
     const range = getPlayerTuneStatRange(targetStat);
     const targetValue = range.maxPerLine;
 
     const overrideSubs = subs.map((s, i) =>
-      i === tunedSubIndex ? { stat: targetStat, value: targetValue } : { ...s },
+      i === subIndex ? { stat: targetStat, value: targetValue } : { ...s },
     );
 
     variants.push({
       label: `→ ${targetStat} (+${targetValue})`,
-      subIndex: tunedSubIndex,
+      subIndex,
       targetStat,
       targetValue,
       overrideSubs,

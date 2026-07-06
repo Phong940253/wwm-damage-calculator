@@ -10,6 +10,7 @@ import GearForm from "./GearForm";
 import GearOptimizeDialog from "./GearOptimizeDialog";
 import GearOptimizeProgressDialog from "./GearOptimizeProgressDialog";
 import { CustomGear, InputStats, ElementStats, GearSlot, Rotation } from "@/app/types";
+import { OptimizeResult } from "@/app/domain/gear/gearOptimize";
 import { GEAR_SLOTS } from "@/app/constants";
 import { getStatLabel } from "@/app/utils/statLabel";
 import {
@@ -275,8 +276,9 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       slotsToOptimize: slotFilter.size > 0 ? Array.from(slotFilter) : undefined,
       reducePerSlotCap: perSlotCap,
       considerTune,
+      desiredDisplay: maxDisplay,
     };
-  }, [filteredGears, slotFilter, perSlotCap, considerTune]);
+  }, [filteredGears, slotFilter, perSlotCap, considerTune, maxDisplay]);
 
   const opt = useGearOptimize(
     stats,
@@ -286,6 +288,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
     rotation,
     optimizeOptions
   );
+  const { setResults, setBaseDamage, setCombos } = opt;
 
   useEffect(() => {
     if (optOpen) {
@@ -293,6 +296,15 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [optOpen]);
+
+  const handleImportResults = useCallback(
+    (payload: { baseDamage: number; totalCombos: number; results: OptimizeResult[] }) => {
+      setResults(payload.results);
+      setBaseDamage(payload.baseDamage);
+      setCombos(payload.totalCombos);
+    },
+    [setResults, setBaseDamage, setCombos],
+  );
 
   const apply = (sel: Partial<Record<GearSlot, CustomGear>>) => {
     setEquipped((prev) => {
@@ -705,6 +717,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         onApply={apply}
         equipped={equipped}
         customGears={customGears}
+        onImportResults={handleImportResults}
       />
     </div>
   );
