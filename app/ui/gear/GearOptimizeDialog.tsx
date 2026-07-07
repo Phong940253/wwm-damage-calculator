@@ -260,7 +260,7 @@ export default function GearOptimizeDialog({
                           className="h-9 w-24"
                           onChange={(e) => setPerSlotCap(Math.max(0, Number(e.target.value) || 0))}
                           min={0}
-                          title="0 = auto (no fixed per-slot cap)"
+                          title={t("gearOptimize.perSlotCapTitle")}
                         />
                       </label>
                       <Button data-tour="gear-optimize-recalculate" size="sm" onClick={onRecalculate}>
@@ -312,7 +312,7 @@ export default function GearOptimizeDialog({
                         size="sm"
                         variant="outline"
                         onClick={() => dispatchSort({ type: "toggleDir" })}
-                        title="Toggle sort direction"
+                        title={t("gearOptimize.toggleSortDirTitle")}
                       >
                         {sort.dir === "desc" ? "↓" : "↑"}
                       </Button>
@@ -392,7 +392,7 @@ export default function GearOptimizeDialog({
                                   <Badge
                                     variant="secondary"
                                     className="tabular-nums"
-                                    title="How many slots change vs equipped"
+                                    title={t("gearOptimize.changesTitle")}
                                   >
                                     {changeCount}
                                   </Badge>
@@ -456,7 +456,7 @@ export default function GearOptimizeDialog({
                                               </Button>
                                             </PopoverTrigger>
                                             <PopoverContent side="right" align="start" className="w-72 p-3 text-xs">
-                                              <div className="font-medium mb-2">Tune/Swap Details</div>
+                                              <div className="font-medium mb-2">{t("gearOptimize.tuneSwapDetailsTitle")}</div>
                                               <div className="space-y-2">
                                                 {tuneDetail.map((d, i) => (
                                                   <div key={i} className="border-b border-border/40 pb-1.5 last:border-0 last:pb-0">
@@ -472,7 +472,7 @@ export default function GearOptimizeDialog({
                                                       <span className="text-foreground">{d.toText}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1.5 pl-1 mt-0.5">
-                                                      <span className="text-muted-foreground">Tỉ lệ:</span>
+                                                      <span className="text-muted-foreground">{t("gearOptimize.rate")}:</span>
                                                       <Badge variant="outline" className={`tabular-nums text-[10px] px-1.5 py-0 ${getTuneSuccessRateToneClass(d.successRate)}`}>
                                                         {d.successRate.toFixed(d.successRate === 100 ? 0 : 1)}%
                                                       </Badge>

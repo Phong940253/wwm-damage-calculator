@@ -646,7 +646,7 @@ export default function GearEquippedTab() {
                             <Badge
                               variant="outline"
                               className="h-6 border-amber-400/30 bg-amber-500/10 px-2 text-[11px] text-amber-700"
-                              title="Gear impact excluding main stats (subs + bonus only)"
+                              title={t("gearCard.noMainTooltip")}
                             >
                               {t("gearEquipped.noMain")} {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
                               {row.perStat.impactPctNoMain.toFixed(2)}%
@@ -691,7 +691,7 @@ export default function GearEquippedTab() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>{t("gearEquipped.gear")}</span>
-                      <span>{available.length} options</span>
+                      <span>{available.length} {t("gearEquipped.optionsLabel")}</span>
                     </div>
                     <select
                       value={row.equippedId || ""}

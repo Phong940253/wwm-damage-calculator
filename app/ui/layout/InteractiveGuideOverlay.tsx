@@ -485,7 +485,7 @@ export function InteractiveGuideOverlay() {
                     rel="noreferrer"
                     className="mt-2 inline-flex w-full items-center justify-center rounded-md border border-white/15 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
-                    Send Feedback
+                    {t("guide.sendFeedback")}
                 </a>
             </div>
         </>

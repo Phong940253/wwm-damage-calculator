@@ -1,0 +1,67 @@
+Step 1: Best Damage = 1833226.11 12 optimizer.ts:614:25
+Step 2: Best Damage = 1870184.14 12 optimizer.ts:614:25
+Step 3: Best Damage = 1907306.73 12 optimizer.ts:614:25
+Step 4: Best Damage = 1944784.38 12 optimizer.ts:614:25
+Step 5: Best Damage = 1982262.03 12 optimizer.ts:614:25
+Step 6: Best Damage = 2019739.68 12 optimizer.ts:614:25
+Step 7: Best Damage = 2054545.58 12 optimizer.ts:614:25
+Step 8: Best Damage = 2089751.66 12 optimizer.ts:614:25
+Step 9: Best Damage = 2123132.35 12 optimizer.ts:614:25
+Step 10: Best Damage = 2156513.04 12 optimizer.ts:614:25
+Step 11: Best Damage = 2189893.73 12 optimizer.ts:614:25
+Step 12: Best Damage = 2223274.42 12 optimizer.ts:614:25
+Step 13: Best Damage = 2255048.19 12 optimizer.ts:614:25
+Step 14: Best Damage = 2286545.85 12 optimizer.ts:614:25
+Step 15: Best Damage = 2319125.68 12 optimizer.ts:614:25
+Step 16: Best Damage = 2348708.80 12 optimizer.ts:614:25
+Step 17: Best Damage = 2378291.27 12 optimizer.ts:614:25
+Step 18: Best Damage = 2407872.92 12 optimizer.ts:614:25
+Step 19: Best Damage = 2437454.37 12 optimizer.ts:614:25
+Step 20: Best Damage = 2467035.66 12 optimizer.ts:614:25
+Step 21: Best Damage = 2496616.06 12 optimizer.ts:614:25
+Step 22: Best Damage = 2526196.22 12 optimizer.ts:614:25
+Step 23: Best Damage = 2555775.90 12 optimizer.ts:614:25
+Step 24: Best Damage = 2555775.90
+
+{
+  "best": {
+    "path": "bellstrike",
+    "maxDamage": 2555775.898633788,
+    "allocations": {
+      "MaxPhysicalAttack": 6,
+      "bellstrikeMax": 0,
+      "CriticalRate": 0,
+      "AffinityRate": 6,
+      "CombatBoostAgainstBossUnits": 0,
+      "AllMartialArtsBoost": 0,
+      "ArtOfSwordDMGBoost": 1,
+      "Momentum": 10,
+      "Power": 8,
+      "NamelessSwordChargedSkillDMGBoost": 4,
+      "PhysicalPenetration": 4
+    },
+    "stats": {
+      "MinPhysicalAttack": 177,
+      "MaxPhysicalAttack": 736.7999999999998,
+      "NamelessSwordChargedSkillDMGBoost": 20,
+      "PhysicalPenetration": 36,
+      "AffinityRate": 21.6,
+      "Momentum": 403.99999999999994,
+      "ArtOfSwordDMGBoost": 5.2,
+      "Power": 323.2
+    },
+    "specialLines": [
+      "Momentum",
+      "Momentum",
+      "MaxPhysicalAttack",
+      "MaxPhysicalAttack",
+      "AffinityRate",
+      "AffinityRate",
+      "AffinityRate",
+      "AffinityRate"
+    ],
+    "mode": "exhaustive",
+    "elapsedMs": 33915
+  }
+}
+

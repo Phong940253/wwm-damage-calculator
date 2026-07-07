@@ -218,8 +218,8 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
             indicatorClassName="bg-amber-400"
         />
         <div className="flex justify-between text-xs text-muted-foreground mt-1">
-          <span>{Math.round(currentDamage).toLocaleString()} (Current)</span>
-          <span>{Math.round(theoreticalMaxDamage).toLocaleString()} (Max)</span>
+          <span>{Math.round(currentDamage).toLocaleString()} {t("gearAnalysis.currentLabel")}</span>
+          <span>{Math.round(theoreticalMaxDamage).toLocaleString()} {t("gearAnalysis.maxLabel")}</span>
         </div>
       </div>
 
@@ -322,7 +322,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
                               {s.name}
                             </span>
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title="Mains + Subs + Additions">
+                              <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title={t("gearAnalysis.statCountTooltip")}>
                                   {s.totalCount} {t("gearAnalysis.count")}
                               </Badge>
                               <div className="flex items-center gap-1">

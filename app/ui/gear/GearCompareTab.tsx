@@ -88,7 +88,7 @@ export default function GearCompareTab({
             <option value="">{t("gearCompare.selectGear")}</option>
             {customGears.map((gear) => (
               <option key={gear.id} value={gear.id}>
-                {gear.name} (Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
+                {gear.name} ({t("gearCard.detailLevel")} {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
               </option>
             ))}
           </select>
@@ -106,7 +106,7 @@ export default function GearCompareTab({
             <option value="">{t("gearCompare.selectGear")}</option>
             {customGears.map((gear) => (
               <option key={gear.id} value={gear.id}>
-                {gear.name} (Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
+                {gear.name} ({t("gearCard.detailLevel")} {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
               </option>
             ))}
           </select>
@@ -127,10 +127,10 @@ export default function GearCompareTab({
                       <tr>
                         <th className="px-4 py-2 text-left text-sm">{t("gearCompare.stat")}</th>
                         <th className="px-4 py-2 text-right text-sm text-emerald-500">
-                          Gear A
+                          {t("gearCompare.gearA")}
                         </th>
                         <th className="px-4 py-2 text-right text-sm text-blue-500">
-                          Gear B
+                          {t("gearCompare.gearB")}
                         </th>
                       </tr>
                     </thead>
@@ -177,18 +177,18 @@ export default function GearCompareTab({
                   <thead className="bg-muted/30">
                     <tr>
                       <th className="px-4 py-2 text-left text-sm">{t("gearCompare.stat")}</th>
-                      <th className="px-4 py-2 text-right text-sm text-emerald-500">
-                        Gear A
-                      </th>
-                      <th className="px-4 py-2 text-right text-sm text-blue-500">
-                        Gear B
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {Array.from(
-                      new Set([
-                        ...selectedGearA.subs.map((s) => s.stat),
+                        <th className="px-4 py-2 text-right text-sm text-emerald-500">
+                          {t("gearCompare.gearA")}
+                        </th>
+                        <th className="px-4 py-2 text-right text-sm text-blue-500">
+                          {t("gearCompare.gearB")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {Array.from(
+                        new Set([
+                          ...selectedGearA.subs.map((s) => s.stat),
                         ...selectedGearB.subs.map((s) => s.stat),
                       ])
                     ).map((stat) => {
@@ -229,10 +229,10 @@ export default function GearCompareTab({
                   <tr>
                     <th className="px-4 py-2 text-left text-sm">{t("gearCompare.damageType")}</th>
                     <th className="px-4 py-2 text-right text-sm text-emerald-500">
-                      Gear A
+                      {t("gearCompare.gearA")}
                     </th>
                     <th className="px-4 py-2 text-right text-sm text-blue-500">
-                      Gear B
+                      {t("gearCompare.gearB")}
                     </th>
                     <th className="px-4 py-2 text-right text-sm">{t("gearCompare.difference")}</th>
                     <th className="px-4 py-2 text-right text-sm">{t("gearCompare.changePct")}</th>

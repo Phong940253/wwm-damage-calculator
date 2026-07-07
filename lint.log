@@ -1,0 +1,12 @@
+./app/domain/gear/idealOptimizer.ts:452:7
+Type error: Expected 2 arguments, but got 1.
+
+  450 |         applyLines(index, plan.counts[index]);
+  451 |       }
+> 452 |       recordBest(plan.sequence);
+      |       ^
+  453 |       for (const index of plan.indices) {
+  454 |         applyLines(index, -plan.counts[index]);
+  455 |       }
+Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.

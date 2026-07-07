@@ -367,7 +367,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         <div className="flex flex-wrap gap-2">
           <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none px-2 py-1 rounded-md border border-border/40 hover:bg-muted/40 transition-colors">
             <Checkbox checked={considerTune} onCheckedChange={(v) => setConsiderTune(Boolean(v))} />
-            <span className="text-muted-foreground">Consider Tune</span>
+            <span className="text-muted-foreground">{t("gearCustomize.considerTune")}</span>
           </label>
           <Button data-tour="gear-optimize-open" variant="outline" onClick={() => setOptOpen(true)}>
             {t("gearCustomize.optimize")}

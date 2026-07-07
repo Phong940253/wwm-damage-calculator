@@ -413,7 +413,7 @@ export default function RotationPanel({
             <div className="mb-4 rounded border border-border bg-muted/50 p-3">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-xs h-5">
-                  Default
+                  {t("rotation.default")}
                 </Badge>
                 <p className="text-xs text-foreground/85">
                   {t("rotation.readonly")}
@@ -476,7 +476,7 @@ export default function RotationPanel({
                         {typeof passive.defaultUptimePercent === "number" && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between">
-                              <p className="text-[11px] text-muted-foreground">Uptime</p>
+                              <p className="text-[11px] text-muted-foreground">{t("rotation.uptime")}</p>
                               <p className="text-[11px] text-muted-foreground">{t("rotation.uptime")}</p>
                               <p className="text-[11px] text-foreground">
                                 {(
@@ -578,7 +578,6 @@ export default function RotationPanel({
                               </p>
                               {typeof inner.level === "number" && (
                                 <Badge variant="secondary" className="text-xs h-5">
-                                  Tier {inner.level}
                                   {t("rotation.tier")} {inner.level}
                                 </Badge>
                               )}

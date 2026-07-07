@@ -42,16 +42,16 @@ const WEAPON_SLOTS: GearSlot[] = ["weapon_1", "weapon_2"];
 
 const WEAPON_TYPE_OPTIONS: Array<{
   value: MartialArtWeaponType;
-  label: string;
+  i18nKey: string;
 }> = [
-    { value: "sword", label: "Sword" },
-    { value: "spear", label: "Spear" },
-    { value: "umbrella", label: "Umbrella" },
-    { value: "fan", label: "Fan" },
-    { value: "horizontal_blade", label: "Horizontal Blade" },
-    { value: "mo_blade", label: "Mo Blade" },
-    { value: "rope_dart", label: "Rope Dart" },
-    { value: "dual_blades", label: "Dual Blades" },
+    { value: "sword", i18nKey: "gearForm.weaponTypeSword" },
+    { value: "spear", i18nKey: "gearForm.weaponTypeSpear" },
+    { value: "umbrella", i18nKey: "gearForm.weaponTypeUmbrella" },
+    { value: "fan", i18nKey: "gearForm.weaponTypeFan" },
+    { value: "horizontal_blade", i18nKey: "gearForm.weaponTypeHorizontalBlade" },
+    { value: "mo_blade", i18nKey: "gearForm.weaponTypeMoBlade" },
+    { value: "rope_dart", i18nKey: "gearForm.weaponTypeRopeDart" },
+    { value: "dual_blades", i18nKey: "gearForm.weaponTypeDualBlades" },
   ];
 
 function isWeaponSlot(slot: GearSlot): boolean {
@@ -463,7 +463,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             >
               {WEAPON_TYPE_OPTIONS.map((w) => (
                 <option key={w.value} value={w.value}>
-                  {w.label}
+                  {t(w.i18nKey)}
                 </option>
               ))}
             </select>

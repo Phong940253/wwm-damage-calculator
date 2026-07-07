@@ -578,7 +578,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                           ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
                           : "border-red-400/25 bg-red-500/10 text-red-200")
                       }
-                      title="Gear impact vs empty slot (keeping other equipped slots)"
+                      title={t("gearCard.impactTooltip")}
                     >
                       {impactPctTotal >= 0 ? "+" : ""}
                       {impactPctTotal.toFixed(2)}%
@@ -590,9 +590,9 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                   Math.abs(impactPctNoMain) >= 0.01 && (
                     <span
                       className="shrink-0 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200"
-                      title="Gear impact excluding main stats (subs + bonus only)"
+                      title={t("gearCard.noMainTooltip")}
                     >
-                      No-main {impactPctNoMain >= 0 ? "+" : ""}
+                      {t("gearEquipped.noMain")} {impactPctNoMain >= 0 ? "+" : ""}
                       {impactPctNoMain.toFixed(2)}%
                     </span>
                   )}

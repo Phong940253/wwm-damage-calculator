@@ -546,7 +546,15 @@ export default function StatsPanel({
           )}
         </section>
 
-        {Object.entries(STAT_GROUPS).map(([group, keys]) => (
+        {Object.entries(STAT_GROUPS).map(([group, keys]) => {
+          const groupLabels: Record<string, string> = {
+            Core: t("stats.groupCore"),
+            Attributes: t("stats.groupAttr"),
+            Element: t("stats.groupElem"),
+            Rates: t("stats.groupRates"),
+            Defense: t("stats.groupDef"),
+          };
+          return (
           <section key={group} className="space-y-5">
             {/* ---------- Group Header ---------- */}
             <button
@@ -554,7 +562,7 @@ export default function StatsPanel({
               onClick={() => toggleGroup(group)}
               className="flex w-full items-center gap-3 group/header cursor-pointer"
             >
-              <h2 className="text-lg font-semibold">{group}</h2>
+              <h2 className="text-lg font-semibold">{groupLabels[group] ?? group}</h2>
               <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
               <ChevronDown
                 size={16}
@@ -610,7 +618,8 @@ export default function StatsPanel({
               </div>
             )}
           </section>
-        ))}
+          );
+        })}
 
         <section className="space-y-4">
           <div className="flex items-center gap-3">

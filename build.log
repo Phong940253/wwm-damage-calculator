@@ -1,0 +1,48 @@
+
+> nextjs@0.1.0 build F:\Freelance\wwm-damage-calculator
+> next build
+
+   ▲ Next.js 15.2.8
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+(node:37764) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Compiled successfully
+
+Failed to compile.
+
+./app/domain/gear/optimizer.ts
+6:3  Error: 'RuleSet' is defined but never used.  @typescript-eslint/no-unused-vars
+10:10  Error: 'TuneStatKey' is defined but never used.  @typescript-eslint/no-unused-vars
+17:3  Error: 'evaluateDamage' is defined but never used.  @typescript-eslint/no-unused-vars
+29:3  Error: 'CANDIDATE_STATS' is defined but never used.  @typescript-eslint/no-unused-vars
+32:3  Error: 'RANDOM_LINES_COUNT' is defined but never used.  @typescript-eslint/no-unused-vars
+199:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+684:9  Error: 'evaluateCurrentDamage' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+710:7  Error: 'allSpecialPlans' is never reassigned. Use 'const' instead.  prefer-const
+877:11  Error: 'nextBeam' is never reassigned. Use 'const' instead.  prefer-const
+1055:29  Error: 'stat' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/domain/gear/optimizerUtils.ts
+268:3  Error: 'path' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/hooks/useIdealGearOptimize.ts
+167:15  Warning: Unused eslint-disable directive (no problems were reported from 'no-console').
+198:19  Warning: Unused eslint-disable directive (no problems were reported from 'no-console').
+289:13  Warning: Unused eslint-disable directive (no problems were reported from 'no-console').
+304:5  Warning: React Hook useCallback has a missing dependency: 'result'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/ui/gear/GearEquippedTab.tsx
+288:9  Warning: The 'calcWithCache' function makes the dependencies of useMemo Hook (at line 608) change on every render. To fix this, wrap the definition of 'calcWithCache' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+305:6  Warning: React Hook useMemo has a missing dependency: 'calcWithCache'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+393:6  Warning: React Hook useMemo has a missing dependency: 'calcWithCache'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+537:6  Warning: React Hook useMemo has a missing dependency: 'calcWithCache'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/ui/gear/GearLabTab.tsx
+70:9  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+185:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+255:11  Error: 'baseGearBonus' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+ ELIFECYCLE  Command failed with exit code 1.
