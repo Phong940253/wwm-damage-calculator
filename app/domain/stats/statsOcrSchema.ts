@@ -22,18 +22,33 @@ export interface StatsOcrResult {
   HP?: number;
   PhysicalDefense?: number;
   PhysicalPenetration?: number;
-  CombatBoostAgainstBossUnits?: number;
 
-  // Active Element name (e.g. Bellstrike, Stonesplit, Silkbind, Bamboocut)
+  // Active Element name (e.g. Bellstrike, Stonesplit, Silkbind, Bamboocut) for auto-selection
   activeElement?: "bellstrike" | "stonesplit" | "silkbind" | "bamboocut";
-  elementMin?: number;
-  elementMax?: number;
-  elementPenetration?: number;
-  elementDMGBonus?: number;
+
+  // Element Attack values (per element — extract ALL visible in image)
+  bellstrikeMin?: number;
+  bellstrikeMax?: number;
+  bellstrikePenetration?: number;
+  bellstrikeDMGBonus?: number;
+  stonesplitMin?: number;
+  stonesplitMax?: number;
+  stonesplitPenetration?: number;
+  stonesplitDMGBonus?: number;
+  silkbindMin?: number;
+  silkbindMax?: number;
+  silkbindPenetration?: number;
+  silkbindDMGBonus?: number;
+  bamboocutMin?: number;
+  bamboocutMax?: number;
+  bamboocutPenetration?: number;
+  bamboocutDMGBonus?: number;
 }
 
 export const STATS_OCR_PROMPT = `
-You are extracting character stats information from a Where Winds Meet status/attributes screenshot.
+You are extracting character stats information from Where Winds Meet screenshots.
+
+You may receive ONE or MULTIPLE images showing different parts of the same character's stats screen. Combine information from ALL images to fill as many fields as possible.
 
 Return STRICT JSON only.
 No explanation.
@@ -53,26 +68,32 @@ Look for these fields and extract their values:
    - Agility
    - Momentum
 
-3. GENERAL STATS:
-   - For stats showing "Current (Base)" or similar brackets like "51.6%(35.6%)", prefer the Base value inside parentheses if you want to extract the pure base stat, but if not possible, return the Total/Current value (the one before parentheses) as a plain number.
-   - Max HP -> HP
-   - Physical Attack (e.g., "967-2917" -> extract Min as "MinPhysicalAttack" and Max as "MaxPhysicalAttack")
-   - Physical Defense -> PhysicalDefense
-   - Precision Rate -> PrecisionRate (e.g. "100.0%(89.1%)" -> prefer base "89.1" or "100.0")
-   - Critical Rate -> CriticalRate (e.g. "51.6%(35.6%)" -> prefer base "35.6" or "51.6")
-   - Affinity Rate -> AffinityRate (e.g. "59.1%(40.0%)" -> prefer base "40.0" or "59.1")
-   - Critical DMG Bonus -> CriticalDMGBonus (e.g. "50.0%" -> 50.0)
-   - Affinity DMG Bonus -> AffinityDMGBonus (e.g. "40.2%" -> 40.2)
-   - Physical Penetration -> PhysicalPenetration (e.g. "38.6" -> 38.6)
-   - Combat Boost Against Boss Units -> CombatBoostAgainstBossUnits (e.g. "2.6%" -> 2.6)
+ 3. GENERAL STATS:
+    - For stats showing "WhiteNumber (OrangeNumber)" like "100.2%(89.3%)", ALWAYS take the WHITE number (before parentheses). The orange number in parentheses is already reduced by boss resistance and should be IGNORED.
+    - Max HP -> HP
+    - Physical Attack (e.g., "967-2917" -> extract Min as "MinPhysicalAttack" and Max as "MaxPhysicalAttack")
+    - Physical Defense -> PhysicalDefense
+    - Precision Rate -> PrecisionRate (e.g. WHITE "100.2" from "100.2%(89.3%)" -> 100.2)
+    - Critical Rate -> CriticalRate (e.g. WHITE "60.0" from "60.0%(41.4%)" -> 60.0)
+    - Affinity Rate -> AffinityRate (e.g. WHITE "58.0" from "58.0%(40.0%)" -> 58.0)
+    - Critical DMG Bonus -> CriticalDMGBonus (e.g. "50.0%" -> 50.0)
+    - Affinity DMG Bonus -> AffinityDMGBonus (e.g. "40.2%" -> 40.2)
+    - Physical Penetration -> PhysicalPenetration (e.g. "38.6" -> 38.6)
 
 4. ELEMENT ATTACKS:
-   - Check the active element attack values on the right side if visible (e.g. "Bellstrike Attack: 319-739").
-   - Extract the element name: "activeElement" = "bellstrike", "stonesplit", "silkbind", or "bamboocut".
-   - Extract min value: "elementMin" (e.g., 319)
-   - Extract max value: "elementMax" (e.g., 739)
-   - "Attribute Attack Penetration" -> elementPenetration (e.g., 24.0)
-   - "Attribute Attack DMG Bonus" -> elementDMGBonus (e.g., 9.0)
+    - Extract ALL visible element attack values shown in the image. Each element appears as "Name: min-max".
+      - The number BEFORE the dash is ALWAYS the min value. The number AFTER the dash is ALWAYS the max value.
+      - IMPORTANT: max CAN be 0 or smaller than min. Extract exactly what is shown (e.g. "69-0" -> min: 69, max: 0, NOT min: 69, max: 69).
+      - Examples:
+        "Bellstrike Attack: 286-706 (286-706)" -> take the WHITE min-max before parentheses: bellstrikeMin: 286, bellstrikeMax: 706
+        "Stonesplit Attack: 10-30" -> stonesplitMin: 10, stonesplitMax: 30
+        "Silkbind Attack: 10-30" -> silkbindMin: 10, silkbindMax: 30
+        "Bamboocut Attack: 10-30" -> bamboocutMin: 10, bamboocutMax: 30
+    - ALWAYS take the WHITE text values before parentheses. Ignore any orange/parenthesized values.
+    - Extract the active/highlighted element name if identifiable: "activeElement" = "bellstrike", "stonesplit", "silkbind", or "bamboocut".
+    - Per-element attack penetration and DMG bonus if visible:
+      "Attribute Attack Penetration" -> bellstrikePenetration (or stonesplitPenetration etc.)
+      "Attribute Attack DMG Bonus" -> bellstrikeDMGBonus (or stonesplitDMGBonus etc.)
 
 Example JSON Output:
 {
@@ -89,9 +110,15 @@ Example JSON Output:
   "HP": 154682,
   "PhysicalDefense": 500,
   "activeElement": "bellstrike",
-  "elementMin": 319,
-  "elementMax": 739,
-  "elementPenetration": 24.0,
-  "elementDMGBonus": 9.0
+  "bellstrikeMin": 319,
+  "bellstrikeMax": 739,
+  "bellstrikePenetration": 24.0,
+  "bellstrikeDMGBonus": 9.0,
+  "stonesplitMin": 10,
+  "stonesplitMax": 30,
+  "silkbindMin": 10,
+  "silkbindMax": 30,
+  "bamboocutMin": 10,
+  "bamboocutMax": 30
 }
 `;

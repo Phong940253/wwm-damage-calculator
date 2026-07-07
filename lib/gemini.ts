@@ -1,7 +1,7 @@
 import { getGeminiRuntimeSettings } from "@/app/utils/geminiSettings";
 
 export async function callGeminiVision(
-  base64Image: string,
+  base64Images: string | string[],
   prompt: string,
 ): Promise<unknown> {
   const { apiKey, model } = getGeminiRuntimeSettings();
@@ -11,6 +11,8 @@ export async function callGeminiVision(
       "Gemini API key is missing. Set it in Settings or NEXT_PUBLIC_GEMINI_API_KEY.",
     );
   }
+
+  const images = Array.isArray(base64Images) ? base64Images : [base64Images];
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
@@ -25,12 +27,9 @@ export async function callGeminiVision(
             role: "user",
             parts: [
               { text: prompt },
-              {
-                inlineData: {
-                  mimeType: "image/png",
-                  data: base64Image,
-                },
-              },
+              ...images.map((data) => ({
+                inlineData: { mimeType: "image/png", data },
+              })),
             ],
           },
         ],

@@ -121,96 +121,94 @@ export default function StatsPanel({
   const [ocrLoading, setOcrLoading] = useState(false);
   const statsFileRef = useRef<HTMLInputElement | null>(null);
 
-  const handleStatsOcr = async (file: File) => {
+  const applyOcrResult = (result: StatsOcrResult) => {
+    // 1. Update playerLevel & enemyLevel
+    if (result.playerLevel !== undefined && setPlayerLevel) {
+      setPlayerLevel(result.playerLevel);
+    }
+    if (result.enemyLevel !== undefined && setEnemyLevel) {
+      setEnemyLevel(result.enemyLevel);
+    }
+
+    // 2. Set active element
+    if (result.activeElement) {
+      onElementChange("selected", "selected", result.activeElement);
+    }
+
+    // 3. Update Base Attributes (Body, Power, Defense, Agility, Momentum)
+    const baseAttributes = ["Body", "Power", "Defense", "Agility", "Momentum"] as const;
+    baseAttributes.forEach((attr) => {
+      const val = result[attr];
+      if (val !== undefined) {
+        onStatChange(attr, "current", String(val));
+      }
+    });
+
+    // 4. Update element stats (all visible elements)
+    const ELEMENT_NAMES = ["bellstrike", "stonesplit", "silkbind", "bamboocut"] as const;
+    for (const el of ELEMENT_NAMES) {
+      const minVal = result[`${el}Min` as keyof StatsOcrResult];
+      const maxVal = result[`${el}Max` as keyof StatsOcrResult];
+      const penVal = result[`${el}Penetration` as keyof StatsOcrResult];
+      const dmgVal = result[`${el}DMGBonus` as keyof StatsOcrResult];
+      if (minVal !== undefined) onElementChange(`${el}Min` as keyof ElementStats, "current", String(minVal));
+      if (maxVal !== undefined) onElementChange(`${el}Max` as keyof ElementStats, "current", String(maxVal));
+      if (penVal !== undefined) onElementChange(`${el}Penetration` as keyof ElementStats, "current", String(penVal));
+      if (dmgVal !== undefined) onElementChange(`${el}DMGBonus` as keyof ElementStats, "current", String(dmgVal));
+    }
+
+    // Calculate new derived stats immediately to avoid React state stale closure
+    const agility = result.Agility !== undefined ? result.Agility : Number(stats.Agility?.current || 0);
+    const momentum = result.Momentum !== undefined ? result.Momentum : Number(stats.Momentum?.current || 0);
+    const power = result.Power !== undefined ? result.Power : Number(stats.Power?.current || 0);
+    const body = result.Body !== undefined ? result.Body : Number(stats.Body?.current || 0);
+    const defense = result.Defense !== undefined ? result.Defense : Number(stats.Defense?.current || 0);
+
+    const localDerived = {
+      MinPhysicalAttack: (agility + (gearBonus.Agility || 0)) * 0.9 + (power + (gearBonus.Power || 0)) * 0.22,
+      MaxPhysicalAttack: (momentum + (gearBonus.Momentum || 0)) * 0.9 + (power + (gearBonus.Power || 0)) * 1.36,
+      CriticalRate: (agility + (gearBonus.Agility || 0)) * 0.076,
+      AffinityRate: (momentum + (gearBonus.Momentum || 0)) * 0.038,
+      HP: (body + (gearBonus.Body || 0)) * 60 + (defense + (gearBonus.Defense || 0)) * 17,
+      PhysicalDefense: (defense + (gearBonus.Defense || 0)) * 0.57,
+    };
+
+    // 5. Update remaining derived/total stats
+    const totalStatsMapping: Array<{ key: string; val?: number }> = [
+      { key: "MinPhysicalAttack", val: result.MinPhysicalAttack },
+      { key: "MaxPhysicalAttack", val: result.MaxPhysicalAttack },
+      { key: "CriticalRate", val: result.CriticalRate },
+      { key: "AffinityRate", val: result.AffinityRate },
+      { key: "HP", val: result.HP },
+      { key: "PhysicalDefense", val: result.PhysicalDefense },
+      { key: "PhysicalPenetration", val: result.PhysicalPenetration },
+      { key: "PrecisionRate", val: result.PrecisionRate },
+    ];
+
+    totalStatsMapping.forEach(({ key, val }) => {
+      if (val !== undefined) {
+        const gear = gearBonus[key] || 0;
+        const derivedValue = localDerived[key as keyof typeof localDerived] || 0;
+        const passiveValue = includedInStatsBonus[key] || 0;
+        const nextBase = Math.round((val - gear - derivedValue - passiveValue) * 100000) / 100000;
+        onStatChange(key as keyof InputStats, "current", String(nextBase));
+      }
+    });
+  };
+
+  const handleStatsOcr = async (files: File[]) => {
+    if (!files.length) return;
     setOcrLoading(true);
     try {
-      const base64 = await fileToBase64(file);
-      const result = await callGeminiVision(base64, STATS_OCR_PROMPT) as StatsOcrResult;
-
-      // 1. Update playerLevel & enemyLevel
-      if (result.playerLevel !== undefined && setPlayerLevel) {
-        setPlayerLevel(result.playerLevel);
-      }
-      if (result.enemyLevel !== undefined && setEnemyLevel) {
-        setEnemyLevel(result.enemyLevel);
-      }
-
-      // 2. Set active element
-      if (result.activeElement) {
-        onElementChange("selected", "selected", result.activeElement);
-      }
-
-      // 3. Update Base Attributes (Body, Power, Defense, Agility, Momentum)
-      const baseAttributes = ["Body", "Power", "Defense", "Agility", "Momentum"] as const;
-      baseAttributes.forEach((attr) => {
-        const val = result[attr];
-        if (val !== undefined) {
-          onStatChange(attr, "current", String(val));
-        }
-      });
-
-      // 4. Update element stats if present
-      if (result.activeElement) {
-        const prefix = result.activeElement;
-        if (result.elementMin !== undefined) {
-          onElementChange(`${prefix}Min` as any, "current", String(result.elementMin));
-        }
-        if (result.elementMax !== undefined) {
-          onElementChange(`${prefix}Max` as any, "current", String(result.elementMax));
-        }
-        if (result.elementPenetration !== undefined) {
-          onElementChange(`${prefix}Penetration` as any, "current", String(result.elementPenetration));
-        }
-        if (result.elementDMGBonus !== undefined) {
-          onElementChange(`${prefix}DMGBonus` as any, "current", String(result.elementDMGBonus));
-        }
-      }
-
-      // Calculate new derived stats immediately to avoid React state stale closure
-      const agility = result.Agility !== undefined ? result.Agility : Number(stats.Agility?.current || 0);
-      const momentum = result.Momentum !== undefined ? result.Momentum : Number(stats.Momentum?.current || 0);
-      const power = result.Power !== undefined ? result.Power : Number(stats.Power?.current || 0);
-      const body = result.Body !== undefined ? result.Body : Number(stats.Body?.current || 0);
-      const defense = result.Defense !== undefined ? result.Defense : Number(stats.Defense?.current || 0);
-
-      const localDerived = {
-        MinPhysicalAttack: (agility + (gearBonus.Agility || 0)) * 0.9 + (power + (gearBonus.Power || 0)) * 0.22,
-        MaxPhysicalAttack: (momentum + (gearBonus.Momentum || 0)) * 0.9 + (power + (gearBonus.Power || 0)) * 1.36,
-        CriticalRate: (agility + (gearBonus.Agility || 0)) * 0.076,
-        AffinityRate: (momentum + (gearBonus.Momentum || 0)) * 0.038,
-        HP: (body + (gearBonus.Body || 0)) * 60 + (defense + (gearBonus.Defense || 0)) * 17,
-        PhysicalDefense: (defense + (gearBonus.Defense || 0)) * 0.57,
-      };
-
-      // 5. Update remaining derived/total stats
-      const totalStatsMapping: Array<{ key: string; val?: number }> = [
-        { key: "MinPhysicalAttack", val: result.MinPhysicalAttack },
-        { key: "MaxPhysicalAttack", val: result.MaxPhysicalAttack },
-        { key: "CriticalRate", val: result.CriticalRate },
-        { key: "AffinityRate", val: result.AffinityRate },
-        { key: "HP", val: result.HP },
-        { key: "PhysicalDefense", val: result.PhysicalDefense },
-        { key: "PhysicalPenetration", val: result.PhysicalPenetration },
-        { key: "CombatBoostAgainstBossUnits", val: result.CombatBoostAgainstBossUnits },
-      ];
-
-      totalStatsMapping.forEach(({ key, val }) => {
-        if (val !== undefined) {
-          const gear = gearBonus[key] || 0;
-          const derivedValue = localDerived[key as keyof typeof localDerived] || 0;
-          const passiveValue = includedInStatsBonus[key] || 0;
-          const nextBase = Math.round((val - gear - derivedValue - passiveValue) * 100000) / 100000;
-          onStatChange(key as any, "current", String(nextBase));
-        }
-      });
-
-      alert(language === "vi" ? "OCR và nhập Stats thành công!" : "OCR and imported Stats successfully!");
-    } catch (e: any) {
+      const base64Array = await Promise.all(files.map(fileToBase64));
+      const result = await callGeminiVision(base64Array, STATS_OCR_PROMPT) as StatsOcrResult;
+      applyOcrResult(result);
+      alert(language === "vi" ? `OCR thành công ${files.length} ảnh!` : `OCR succeeded for ${files.length} image(s)!`);
+    } catch (e) {
       console.error(e);
       alert(language === "vi" ? "OCR thất bại. Vui lòng thử lại." : "OCR failed. Please try again.");
-    } finally {
-      setOcrLoading(false);
     }
+    setOcrLoading(false);
   };
 
   // Debounce timers
@@ -688,7 +686,7 @@ export default function StatsPanel({
                 {language === "vi" ? "Đang xử lý..." : "Processing..."}
               </>
             ) : (
-              language === "vi" ? "Nhập Stats từ Ảnh (OCR)" : "Import Stats from Image (OCR)"
+              language === "vi" ? "Nhập Stats từ Ảnh (OCR)" : "Import Stats from Images (OCR)"
             )}
           </Button>
 
@@ -696,11 +694,12 @@ export default function StatsPanel({
             ref={statsFileRef}
             type="file"
             accept="image/*"
+            multiple
             hidden
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              handleStatsOcr(file);
+              const files = e.target.files;
+              if (!files?.length) return;
+              handleStatsOcr(Array.from(files));
               e.target.value = "";
             }}
           />
