@@ -6,7 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
+import { callGeminiVision } from "@/lib/gemini";
+import { fileToBase64 } from "@/lib/utils";
+import { STATS_OCR_PROMPT, type StatsOcrResult } from "@/app/domain/stats/statsOcrSchema";
 import { STAT_GROUPS } from "../../constants";
 import { LIST_MARTIAL_ARTS } from "../../domain/skill/types";
 import { InputStats, ElementStats } from "../../types";
@@ -114,6 +117,101 @@ export default function StatsPanel({
   const [heatmapCollapsed, setHeatmapCollapsed] = useState(false);
   const [levelsCollapsed, setLevelsCollapsed] = useState(false);
   const [elementsCollapsed, setElementsCollapsed] = useState(false);
+
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const statsFileRef = useRef<HTMLInputElement | null>(null);
+
+  const handleStatsOcr = async (file: File) => {
+    setOcrLoading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const result = await callGeminiVision(base64, STATS_OCR_PROMPT) as StatsOcrResult;
+
+      // 1. Update playerLevel & enemyLevel
+      if (result.playerLevel !== undefined && setPlayerLevel) {
+        setPlayerLevel(result.playerLevel);
+      }
+      if (result.enemyLevel !== undefined && setEnemyLevel) {
+        setEnemyLevel(result.enemyLevel);
+      }
+
+      // 2. Set active element
+      if (result.activeElement) {
+        onElementChange("selected", "selected", result.activeElement);
+      }
+
+      // 3. Update Base Attributes (Body, Power, Defense, Agility, Momentum)
+      const baseAttributes = ["Body", "Power", "Defense", "Agility", "Momentum"] as const;
+      baseAttributes.forEach((attr) => {
+        const val = result[attr];
+        if (val !== undefined) {
+          onStatChange(attr, "current", String(val));
+        }
+      });
+
+      // 4. Update element stats if present
+      if (result.activeElement) {
+        const prefix = result.activeElement;
+        if (result.elementMin !== undefined) {
+          onElementChange(`${prefix}Min` as any, "current", String(result.elementMin));
+        }
+        if (result.elementMax !== undefined) {
+          onElementChange(`${prefix}Max` as any, "current", String(result.elementMax));
+        }
+        if (result.elementPenetration !== undefined) {
+          onElementChange(`${prefix}Penetration` as any, "current", String(result.elementPenetration));
+        }
+        if (result.elementDMGBonus !== undefined) {
+          onElementChange(`${prefix}DMGBonus` as any, "current", String(result.elementDMGBonus));
+        }
+      }
+
+      // Calculate new derived stats immediately to avoid React state stale closure
+      const agility = result.Agility !== undefined ? result.Agility : Number(stats.Agility?.current || 0);
+      const momentum = result.Momentum !== undefined ? result.Momentum : Number(stats.Momentum?.current || 0);
+      const power = result.Power !== undefined ? result.Power : Number(stats.Power?.current || 0);
+      const body = result.Body !== undefined ? result.Body : Number(stats.Body?.current || 0);
+      const defense = result.Defense !== undefined ? result.Defense : Number(stats.Defense?.current || 0);
+
+      const localDerived = {
+        MinPhysicalAttack: (agility + (gearBonus.Agility || 0)) * 0.9 + (power + (gearBonus.Power || 0)) * 0.22,
+        MaxPhysicalAttack: (momentum + (gearBonus.Momentum || 0)) * 0.9 + (power + (gearBonus.Power || 0)) * 1.36,
+        CriticalRate: (agility + (gearBonus.Agility || 0)) * 0.076,
+        AffinityRate: (momentum + (gearBonus.Momentum || 0)) * 0.038,
+        HP: (body + (gearBonus.Body || 0)) * 60 + (defense + (gearBonus.Defense || 0)) * 17,
+        PhysicalDefense: (defense + (gearBonus.Defense || 0)) * 0.57,
+      };
+
+      // 5. Update remaining derived/total stats
+      const totalStatsMapping: Array<{ key: string; val?: number }> = [
+        { key: "MinPhysicalAttack", val: result.MinPhysicalAttack },
+        { key: "MaxPhysicalAttack", val: result.MaxPhysicalAttack },
+        { key: "CriticalRate", val: result.CriticalRate },
+        { key: "AffinityRate", val: result.AffinityRate },
+        { key: "HP", val: result.HP },
+        { key: "PhysicalDefense", val: result.PhysicalDefense },
+        { key: "PhysicalPenetration", val: result.PhysicalPenetration },
+        { key: "CombatBoostAgainstBossUnits", val: result.CombatBoostAgainstBossUnits },
+      ];
+
+      totalStatsMapping.forEach(({ key, val }) => {
+        if (val !== undefined) {
+          const gear = gearBonus[key] || 0;
+          const derivedValue = localDerived[key as keyof typeof localDerived] || 0;
+          const passiveValue = includedInStatsBonus[key] || 0;
+          const nextBase = Math.round((val - gear - derivedValue - passiveValue) * 100000) / 100000;
+          onStatChange(key as any, "current", String(nextBase));
+        }
+      });
+
+      alert(language === "vi" ? "OCR và nhập Stats thành công!" : "OCR and imported Stats successfully!");
+    } catch (e: any) {
+      console.error(e);
+      alert(language === "vi" ? "OCR thất bại. Vui lòng thử lại." : "OCR failed. Please try again.");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   // Debounce timers
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
@@ -576,6 +674,36 @@ export default function StatsPanel({
               {text.saveCurrent}
             </Button>
           </div>
+
+          <Button
+            onClick={() => statsFileRef.current?.click()}
+            className="w-full rounded-xl bg-sky-500/15 text-sky-300 border border-sky-500/25 hover:bg-sky-500/25 hover:text-sky-200"
+            variant="secondary"
+            type="button"
+            disabled={ocrLoading}
+          >
+            {ocrLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {language === "vi" ? "Đang xử lý..." : "Processing..."}
+              </>
+            ) : (
+              language === "vi" ? "Nhập Stats từ Ảnh (OCR)" : "Import Stats from Image (OCR)"
+            )}
+          </Button>
+
+          <input
+            ref={statsFileRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              handleStatsOcr(file);
+              e.target.value = "";
+            }}
+          />
         </section>
       </CardContent>
     </Card>
