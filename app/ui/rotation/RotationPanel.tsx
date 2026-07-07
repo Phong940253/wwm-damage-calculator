@@ -77,88 +77,7 @@ export default function RotationPanel({
   onToggleInnerWay,
   onSetInnerWayTier,
 }: RotationPanelProps) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      newRotation: "Rotation mới",
-      rotationNamePlaceholder: "Tên rotation...",
-      create: "Tạo",
-      rotations: "Rotations",
-      default: "Mặc định",
-      skillCount: (count: number) => `${count} kỹ năng`,
-      rename: "Đổi tên",
-      duplicate: "Nhân bản",
-      copyJson: "Sao chép JSON",
-      exportJson: "Xuất JSON",
-      delete: "Xóa",
-      deleteConfirm: (name: string) => `Xóa \"${name}\"?`,
-      copyFailed: "Không thể sao chép JSON rotation vào clipboard.",
-      readonly: "Rotation này chỉ đọc. Hãy tạo rotation mới để tùy chỉnh.",
-      currentMartialArt: "Võ học hiện tại",
-      noneAllSkills: "Không có (Tất cả kỹ năng)",
-      passiveSkills: "Kỹ năng nội tại",
-      innerWays: "Nội công",
-      hide: "Ẩn",
-      show: "Hiện",
-      noPassive: "Không có kỹ năng nội tại cho võ học này",
-      noInnerWays: "Không có nội công khả dụng",
-      uptime: "Thời gian hoạt động",
-      tier: "Tầng",
-      off: "Tắt",
-      lockedDefault: "Rotation mặc định bị khóa",
-      selectTier: "Chọn tầng",
-      skillsIn: (name: string) => `Kỹ năng trong \"${name}\"`,
-      addSkill: "Thêm kỹ năng",
-      searchSkills: "Tìm kỹ năng...",
-      noMatchingSkills: "Không có kỹ năng phù hợp",
-      allSkillsAdded: "Đã thêm tất cả kỹ năng",
-      noSkillsAdded: "Chưa thêm kỹ năng",
-      moveUp: "Di chuyển lên",
-      moveDown: "Di chuyển xuống",
-      remove: "Xóa",
-      cancel: "Hủy chiêu (lấy hiệu ứng)",
-      exhausted: "Hồn (Exhausted)",
-    }
-    : {
-      newRotation: "New Rotation",
-      rotationNamePlaceholder: "Rotation name...",
-      create: "Create",
-      rotations: "Rotations",
-      default: "Default",
-      skillCount: (count: number) => `${count} skill${count !== 1 ? "s" : ""}`,
-      rename: "Rename",
-      duplicate: "Duplicate",
-      copyJson: "Copy JSON",
-      exportJson: "Export to JSON",
-      delete: "Delete",
-      deleteConfirm: (name: string) => `Delete \"${name}\"?`,
-      copyFailed: "Failed to copy rotation JSON to clipboard.",
-      readonly: "This rotation is read-only. Create a new rotation to customize.",
-      currentMartialArt: "Current Martial Art",
-      noneAllSkills: "None (All Skills)",
-      passiveSkills: "Passive Skills",
-      innerWays: "Inner Ways",
-      hide: "Hide",
-      show: "Show",
-      noPassive: "No passive skills for this martial art",
-      noInnerWays: "No inner ways available",
-      uptime: "Uptime",
-      tier: "Tier",
-      off: "Off",
-      lockedDefault: "Default rotations are locked",
-      selectTier: "Select tier",
-      skillsIn: (name: string) => `Skills in \"${name}\"`,
-      addSkill: "Add Skill",
-      searchSkills: "Search skills...",
-      noMatchingSkills: "No matching skills",
-      allSkillsAdded: "All skills added",
-      noSkillsAdded: "No skills added",
-      moveUp: "Move up",
-      moveDown: "Move down",
-      remove: "Remove",
-      cancel: "Cancel (effect only)",
-      exhausted: "Exhausted",
-    };
+  const { t } = useI18n();
 
   const selectedRotation = rotations.find((r) => r.id === selectedRotationId);
   const selectedIsDefault = isDefaultRotation(selectedRotation);
@@ -282,7 +201,7 @@ export default function RotationPanel({
       const dataStr = JSON.stringify(rotation, null, 2);
       await copyTextToClipboard(dataStr);
     } catch {
-      alert(text.copyFailed);
+      alert(t("rotation.copyFailed"));
     }
   };
 
@@ -363,10 +282,10 @@ export default function RotationPanel({
     <div className="space-y-4 sm:space-y-6">
       {/* Create New Rotation */}
       <Card className="p-3 sm:p-4">
-        <h3 className="text-sm font-semibold mb-3">{text.newRotation}</h3>
+        <h3 className="text-sm font-semibold mb-3">{t("rotation.newRotation")}</h3>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
-            placeholder={text.rotationNamePlaceholder}
+            placeholder={t("rotation.rotationNamePlaceholder")}
             value={newRotationName}
             onChange={(e) => setNewRotationName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreateRotation()}
@@ -378,14 +297,14 @@ export default function RotationPanel({
             size="sm"
             className="whitespace-nowrap"
           >
-            {text.create}
+            {t("rotation.create")}
           </Button>
         </div>
       </Card>
 
       {/* Rotation List */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold">{text.rotations}</h3>
+        <h3 className="text-sm font-semibold">{t("rotation.rotations")}</h3>
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {rotations.map((rotation) => (
             (() => {
@@ -424,13 +343,13 @@ export default function RotationPanel({
                             variant="secondary"
                             className="text-[10px] h-5 flex-shrink-0"
                           >
-                            {text.default}
+                            {t("rotation.default")}
                           </Badge>
                         )}
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      {text.skillCount(rotation.skills.length)}
+                      {(rotation.skills.length === 1 ? t("rotation.skillCount") : t("rotation.skillCountPlural")).replace("{count}", String(rotation.skills.length))}
                     </p>
                   </div>
 
@@ -446,37 +365,37 @@ export default function RotationPanel({
                         onClick={() => handleRenameStart(rotation)}
                         className="text-xs"
                       >
-                        {text.rename}
+                        {t("rotation.rename")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDuplicateRotation(rotation.id)}
                         className="text-xs"
                       >
-                        {text.duplicate}
+                        {t("rotation.duplicate")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleCopyRotationToClipboard(rotation)}
                         className="text-xs"
                       >
-                        {text.copyJson}
+                        {t("rotation.copyJson")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleExportRotation(rotation)}
                         className="text-xs"
                       >
-                        {text.exportJson}
+                        {t("rotation.exportJson")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
                           if (rotationIsDefault) return;
-                          if (confirm(text.deleteConfirm(rotation.name))) {
+                          if (confirm(t("rotation.deleteConfirm").replace("{name}", rotation.name))) {
                             onDeleteRotation(rotation.id);
                           }
                         }}
                         disabled={rotationIsDefault}
                         className="text-xs text-red-400"
                       >
-                        {text.delete}
+                        {t("rotation.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -494,32 +413,32 @@ export default function RotationPanel({
             <div className="mb-4 rounded border border-border bg-muted/50 p-3">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-xs h-5">
-                  Default
+                  {t("rotation.default")}
                 </Badge>
                 <p className="text-xs text-foreground/85">
-                  {text.readonly}
+                  {t("rotation.readonly")}
                 </p>
               </div>
             </div>
           )}
           <div className="mb-4 p-3 bg-muted rounded border border-border">
-            <p className="text-xs text-muted-foreground mb-2">{text.currentMartialArt}</p>
+            <p className="text-xs text-muted-foreground mb-2">{t("rotation.currentMartialArt")}</p>
             <p className="text-sm font-semibold">
               {LIST_MARTIAL_ARTS.find((m) => m.id === currentMartialArtId)?.name ||
-                text.noneAllSkills}
+                t("rotation.noneAllSkills")}
             </p>
           </div>
 
           {/* ========== PASSIVE SKILLS ========== */}
           <div className="mb-4 pb-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">{text.passiveSkills}</h3>
+              <h3 className="text-sm font-semibold">{t("rotation.passiveSkills")}</h3>
               <Button
                 onClick={() => setShowPassiveSkills(!showPassiveSkills)}
                 size="sm"
                 className="text-xs"
               >
-                {showPassiveSkills ? text.hide : text.show}
+                {showPassiveSkills ? t("rotation.hide") : t("rotation.show")}
               </Button>
             </div>
 
@@ -527,7 +446,7 @@ export default function RotationPanel({
               <div className="space-y-2 bg-muted/50 p-3 rounded border border-border">
                 {availablePassiveSkills.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">
-                    {text.noPassive}
+                    {t("rotation.noPassive")}
                   </p>
                 ) : (
                   availablePassiveSkills.map((passive) => (
@@ -557,8 +476,8 @@ export default function RotationPanel({
                         {typeof passive.defaultUptimePercent === "number" && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between">
-                              <p className="text-[11px] text-muted-foreground">Uptime</p>
-                              <p className="text-[11px] text-muted-foreground">{text.uptime}</p>
+                              <p className="text-[11px] text-muted-foreground">{t("rotation.uptime")}</p>
+                              <p className="text-[11px] text-muted-foreground">{t("rotation.uptime")}</p>
                               <p className="text-[11px] text-foreground">
                                 {(
                                   selectedRotation.passiveUptimes?.[passive.id] ??
@@ -613,13 +532,13 @@ export default function RotationPanel({
           {/* ========== INNER WAYS ========== */}
           <div className="mb-4 pb-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">{text.innerWays}</h3>
+              <h3 className="text-sm font-semibold">{t("rotation.innerWays")}</h3>
               <Button
                 onClick={() => setShowInnerWays(!showInnerWays)}
                 size="sm"
                 className="text-xs"
               >
-                {showInnerWays ? text.hide : text.show}
+                {showInnerWays ? t("rotation.hide") : t("rotation.show")}
               </Button>
             </div>
 
@@ -627,7 +546,7 @@ export default function RotationPanel({
               <div className="space-y-2 bg-muted/50 p-3 rounded border border-border">
                 {availableInnerWays.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">
-                    {text.noInnerWays}
+                    {t("rotation.noInnerWays")}
                   </p>
                 ) : (
                   innerWayGroups.map((group) => {
@@ -659,8 +578,7 @@ export default function RotationPanel({
                               </p>
                               {typeof inner.level === "number" && (
                                 <Badge variant="secondary" className="text-xs h-5">
-                                  Tier {inner.level}
-                                  {text.tier} {inner.level}
+                                  {t("rotation.tier")} {inner.level}
                                 </Badge>
                               )}
                             </div>
@@ -687,8 +605,8 @@ export default function RotationPanel({
                     // Tiered inner way: single selector (Off / Tier)
                     const selectedTier = group.selected;
                     const displayTier = selectedTier
-                      ? `${text.tier} ${selectedTier.level ?? "?"}`
-                      : text.off;
+                      ? `${t("rotation.tier")} ${selectedTier.level ?? "?"}`
+                      : t("rotation.off");
                     const details = selectedTier ?? group.items[group.items.length - 1];
 
                     return (
@@ -703,7 +621,7 @@ export default function RotationPanel({
                               size="sm"
                               className="mt-0.5 h-7 px-2 text-xs"
                               disabled={selectedIsDefault}
-                              title={selectedIsDefault ? text.lockedDefault : text.selectTier}
+                              title={selectedIsDefault ? t("rotation.lockedDefault") : t("rotation.selectTier")}
                             >
                               {displayTier}
                             </Button>
@@ -715,7 +633,7 @@ export default function RotationPanel({
                                 onSetInnerWayTier(selectedRotation.id, group.key, null);
                               }}
                             >
-                              {text.off}
+                              {t("rotation.off")}
                             </DropdownMenuItem>
                             {group.items.map((tier) => (
                               <DropdownMenuItem
@@ -725,7 +643,7 @@ export default function RotationPanel({
                                   onSetInnerWayTier(selectedRotation.id, group.key, tier.id);
                                 }}
                               >
-                                {text.tier} {tier.level ?? "?"}: {tier.name}
+                                {t("rotation.tier")} {tier.level ?? "?"}: {tier.name}
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>
@@ -738,7 +656,7 @@ export default function RotationPanel({
                             </p>
                             {selectedTier && typeof selectedTier.level === "number" && (
                               <Badge variant="secondary" className="text-xs h-5">
-                                {text.tier} {selectedTier.level}
+                                {t("rotation.tier")} {selectedTier.level}
                               </Badge>
                             )}
                           </div>
@@ -761,7 +679,7 @@ export default function RotationPanel({
 
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold">
-              {text.skillsIn(selectedRotation.name)}
+              {t("rotation.skillsIn").replace("{name}", selectedRotation.name)}
             </h3>
             <Button
               onClick={() => !selectedIsDefault && setShowSkillPicker(!showSkillPicker)}
@@ -769,7 +687,7 @@ export default function RotationPanel({
               className="text-xs"
               disabled={selectedIsDefault}
             >
-              {showSkillPicker ? text.hide : text.addSkill}
+              {showSkillPicker ? t("rotation.hide") : t("rotation.addSkill")}
             </Button>
           </div>
 
@@ -777,7 +695,7 @@ export default function RotationPanel({
           {showSkillPicker && (
             <div className="mb-4 p-3 bg-muted rounded border border-border00">
               <Input
-                placeholder={text.searchSkills}
+                placeholder={t("rotation.searchSkills")}
                 value={searchSkill}
                 onChange={(e) => setSearchSkill(e.target.value)}
                 className="text-xs mb-3"
@@ -800,7 +718,7 @@ export default function RotationPanel({
                 ))}
                 {availableSkills.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-2">
-                    {searchSkill ? text.noMatchingSkills : text.allSkillsAdded}
+                    {searchSkill ? t("rotation.noMatchingSkills") : t("rotation.allSkillsAdded")}
                   </p>
                 )}
               </div>
@@ -809,7 +727,7 @@ export default function RotationPanel({
 
           {/* Skills List */}
           {selectedRotation.skills.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">{text.noSkillsAdded}</p>
+            <p className="text-xs text-muted-foreground italic">{t("rotation.noSkillsAdded")}</p>
           ) : (
             <div className="space-y-2">
               {selectedRotation.skills.map((rotSkill, idx) => {
@@ -856,7 +774,7 @@ export default function RotationPanel({
                           }
                           disabled={selectedIsDefault}
                           className="h-4 w-4"
-                          title={text.cancel}
+                          title={t("rotation.cancel")}
                         />
                         <Checkbox
                           checked={rotSkill.exhausted}
@@ -866,7 +784,7 @@ export default function RotationPanel({
                           }
                           disabled={selectedIsDefault}
                           className="h-4 w-4"
-                          title={text.exhausted}
+                          title={t("rotation.exhausted")}
                         />
                       </div>
 
@@ -922,7 +840,7 @@ export default function RotationPanel({
                           onMoveSkill(selectedRotation.id, idx, idx - 1)
                         }
                         disabled={selectedIsDefault || idx === 0}
-                        title={text.moveUp}
+                        title={t("rotation.moveUp")}
                       >
                         ↑
                       </Button>
@@ -938,7 +856,7 @@ export default function RotationPanel({
                         disabled={
                           selectedIsDefault || idx === selectedRotation.skills.length - 1
                         }
-                        title={text.moveDown}
+                        title={t("rotation.moveDown")}
                       >
                         ↓
                       </Button>
@@ -951,7 +869,7 @@ export default function RotationPanel({
                           onRemoveSkill(selectedRotation.id, rotSkill.entryId)
                         }
                         disabled={selectedIsDefault}
-                        title={text.remove}
+                        title={t("rotation.remove")}
                       >
                         ✕
                       </Button>

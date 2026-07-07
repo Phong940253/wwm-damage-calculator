@@ -27,26 +27,7 @@ export default function GearOptimizeProgressDialog({
   progress,
   onCancel,
 }: Props) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      title: "Đang tính tối ưu trang bị",
-      checking: "Đang kiểm tra",
-      gearCombinations: "tổ hợp trang bị",
-      pleaseWait: "Vui lòng chờ...",
-      elapsed: "Đã qua",
-      eta: "Dự kiến",
-      estimating: "đang tính...",
-    }
-    : {
-      title: "Calculating Gear Optimization",
-      checking: "Checking",
-      gearCombinations: "gear combinations",
-      pleaseWait: "Please wait...",
-      elapsed: "Elapsed",
-      eta: "ETA",
-      estimating: "estimating...",
-    };
+  const { t } = useI18n();
 
   const startTimeRef = useRef<number | null>(null);
   const [, forceUpdate] = useState(0);
@@ -72,7 +53,7 @@ export default function GearOptimizeProgressDialog({
   const elapsedSec = Math.floor(elapsedMs / 1000);
   const elapsedStr = formatDuration(elapsedSec);
 
-  let etaStr = text.estimating;
+  let etaStr = t("gearOptimize.progressEstimating");
   if (percent > 2 && elapsedMs > 3000) {
     const estimatedSec = Math.round(elapsedSec / (percent / 100));
     const remainingSec = estimatedSec - elapsedSec;
@@ -92,12 +73,12 @@ export default function GearOptimizeProgressDialog({
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{text.title}</DialogTitle>
+          <DialogTitle>{t("gearOptimize.progressTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground text-center">
-            {text.checking} {progress.current.toLocaleString()} / {progress.total.toLocaleString()} {text.gearCombinations}
+            {t("gearOptimize.progressChecking")} {progress.current.toLocaleString()} / {progress.total.toLocaleString()} {t("gearOptimize.progressCombinations")}
           </p>
 
           {/* Progress bar */}
@@ -111,7 +92,7 @@ export default function GearOptimizeProgressDialog({
           <p className="text-sm font-semibold text-center">{Math.round(percent)}%</p>
 
           <p className="text-xs text-muted-foreground text-center">
-            {text.elapsed}: {elapsedStr} &middot; {text.eta}: {etaStr}
+            {t("gearOptimize.progressElapsed")}: {elapsedStr} &middot; {t("gearOptimize.progressEta")}: {etaStr}
           </p>
         </div>
       </DialogContent>

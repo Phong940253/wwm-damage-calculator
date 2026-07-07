@@ -42,16 +42,16 @@ const WEAPON_SLOTS: GearSlot[] = ["weapon_1", "weapon_2"];
 
 const WEAPON_TYPE_OPTIONS: Array<{
   value: MartialArtWeaponType;
-  label: string;
+  i18nKey: string;
 }> = [
-    { value: "sword", label: "Sword" },
-    { value: "spear", label: "Spear" },
-    { value: "umbrella", label: "Umbrella" },
-    { value: "fan", label: "Fan" },
-    { value: "horizontal_blade", label: "Horizontal Blade" },
-    { value: "mo_blade", label: "Mo Blade" },
-    { value: "rope_dart", label: "Rope Dart" },
-    { value: "dual_blades", label: "Dual Blades" },
+    { value: "sword", i18nKey: "gearForm.weaponTypeSword" },
+    { value: "spear", i18nKey: "gearForm.weaponTypeSpear" },
+    { value: "umbrella", i18nKey: "gearForm.weaponTypeUmbrella" },
+    { value: "fan", i18nKey: "gearForm.weaponTypeFan" },
+    { value: "horizontal_blade", i18nKey: "gearForm.weaponTypeHorizontalBlade" },
+    { value: "mo_blade", i18nKey: "gearForm.weaponTypeMoBlade" },
+    { value: "rope_dart", i18nKey: "gearForm.weaponTypeRopeDart" },
+    { value: "dual_blades", i18nKey: "gearForm.weaponTypeDualBlades" },
   ];
 
 function isWeaponSlot(slot: GearSlot): boolean {
@@ -64,74 +64,7 @@ function isWeaponSlot(slot: GearSlot): boolean {
 ======================= */
 
 export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      ocrFailed: "OCR thất bại. Vui lòng thử lại hoặc nhập thủ công.",
-      enterName: "Vui lòng nhập tên trang bị",
-      addMainRequired: "Vui lòng thêm ít nhất một thuộc tính chính",
-      saveFailed: "Lưu trang bị thất bại. Vui lòng thử lại.",
-      gearName: "Tên trang bị",
-      slot: "Vị trí",
-      weaponType: "Loại vũ khí",
-      weaponTypeRequired: "Vui lòng chọn loại vũ khí cho ô Weapon",
-      level: "Cấp gear",
-      tuneHistory: "Lịch sử tune",
-      addTuneHistory: "+ Thêm lịch sử tune",
-      tuneHistoryLine: "Dòng",
-      tuneHistoryStat: "Stat sau tune",
-      tuneHistoryStatPlaceholder: "ví dụ: CriticalRate",
-      tuneHistoryNote: "Dòng 1 không thể tune; chỉ nhập các lần tune từ dòng 2 trở đi.",
-      rarity: "Độ hiếm",
-      rarityPlaceholder: "ví dụ: Common, Rare, Epic, Legendary",
-      mainAttributes: "Thuộc tính chính",
-      subAttributes: "Thuộc tính phụ",
-      additionalAttribute: "Thuộc tính bổ sung",
-      addAdditionalAttribute: "+ Thêm thuộc tính bổ sung",
-      add: "+ Thêm",
-      dragToReorder: "Kéo để sắp xếp",
-      dragToMove: "Kéo để di chuyển",
-      tunedLine: "Dòng đã tune",
-      markTuned: "Tune",
-      tuned: "Đã tune",
-      saveChanges: "Lưu thay đổi",
-      addGear: "Thêm trang bị",
-      processing: "Đang xử lý...",
-      ocr: "OCR",
-    }
-    : {
-      ocrFailed: "OCR failed. Please try again or enter manually.",
-      enterName: "Please enter a gear name",
-      addMainRequired: "Please add at least one main attribute",
-      saveFailed: "Failed to save gear. Please try again.",
-      gearName: "Gear Name",
-      slot: "Slot",
-      weaponType: "Weapon Type",
-      weaponTypeRequired: "Please select a weapon type for weapon slots",
-      level: "Gear level",
-      tuneHistory: "Tune history",
-      addTuneHistory: "+ Add tune history",
-      tuneHistoryLine: "Line",
-      tuneHistoryStat: "Post-tune stat",
-      tuneHistoryStatPlaceholder: "e.g. CriticalRate",
-      tuneHistoryNote: "Line 1 cannot be tuned; enter only tune results for line 2 and beyond.",
-      rarity: "Rarity",
-      rarityPlaceholder: "e.g. Common, Rare, Epic, Legendary",
-      mainAttributes: "Main Attributes",
-      subAttributes: "Sub Attributes",
-      additionalAttribute: "Additional Attribute",
-      addAdditionalAttribute: "+ Add Additional Attribute",
-      add: "+ Add",
-      dragToReorder: "Drag to reorder",
-      dragToMove: "Drag to move",
-      tunedLine: "Tuned line",
-      markTuned: "Tune",
-      tuned: "Tuned",
-      saveChanges: "Save Changes",
-      addGear: "Add Gear",
-      processing: "Processing...",
-      ocr: "OCR",
-    };
+  const { t } = useI18n();
 
   const sectionClass = "rounded-md border p-3 space-y-2";
   const labelClass = "mb-1 block text-xs font-medium text-muted-foreground";
@@ -259,7 +192,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
     } catch (error) {
       console.error("OCR failed:", error);
-      alert(text.ocrFailed);
+      alert(t("gearForm.ocrFailed"));
     } finally {
       setOcrLoading(false);
     }
@@ -334,7 +267,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
   const submit = () => {
     // Validate name
     if (!name.trim()) {
-      alert(text.enterName);
+      alert(t("gearForm.enterName"));
       return;
     }
 
@@ -343,12 +276,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
     // Validate mains for non-armor slots
     if (!isArmor && mains.length === 0) {
-      alert(text.addMainRequired);
+      alert(t("gearForm.addMainRequired"));
       return;
     }
 
     if (isWeaponSlot(slot) && !weaponType) {
-      alert(text.weaponTypeRequired);
+      alert(t("gearForm.weaponTypeRequired"));
       return;
     }
 
@@ -424,7 +357,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       onSuccess?.();
     } catch (error) {
       console.error("Failed to save gear:", error);
-      alert(text.saveFailed);
+      alert(t("gearForm.saveFailed"));
     }
   };
 
@@ -490,12 +423,12 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Basic info */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className={labelClass}>{text.gearName}</label>
+          <label className={labelClass}>{t("gearForm.gearName")}</label>
           <Input value={name} onChange={e => setName(e.target.value)} />
         </div>
 
         <div>
-          <label className={labelClass}>{text.slot}</label>
+          <label className={labelClass}>{t("gearForm.slot")}</label>
           <select
             className={slotSelectClass}
             value={slot}
@@ -510,7 +443,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         </div>
 
         <div>
-          <label className={labelClass}>{text.level}</label>
+          <label className={labelClass}>{t("gearForm.level")}</label>
           <Input
             type="number"
             min={1}
@@ -522,7 +455,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
 
         {isWeaponSlot(slot) && (
           <div>
-            <label className={labelClass}>{text.weaponType}</label>
+            <label className={labelClass}>{t("gearForm.weaponType")}</label>
             <select
               className={slotSelectClass}
               value={weaponType}
@@ -530,7 +463,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             >
               {WEAPON_TYPE_OPTIONS.map((w) => (
                 <option key={w.value} value={w.value}>
-                  {w.label}
+                  {t(w.i18nKey)}
                 </option>
               ))}
             </select>
@@ -538,11 +471,11 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
         )}
 
         <div className="sm:col-span-2">
-          <label className={labelClass}>{text.rarity}</label>
+          <label className={labelClass}>{t("gearForm.rarity")}</label>
           <Input
             value={rarity}
             onChange={(e) => setRarity(e.target.value)}
-            placeholder={text.rarityPlaceholder}
+            placeholder={t("gearForm.rarityPlaceholder")}
             list="gear-rarity-options"
           />
           <datalist id="gear-rarity-options">
@@ -558,9 +491,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* 🔥 Main attributes */}
       <div className={sectionClass}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-medium">{text.mainAttributes}</p>
+          <p className="text-sm font-medium">{t("gearForm.mainAttributes")}</p>
           <Button className="h-8" size="sm" variant="secondary" onClick={addMain}>
-            {text.add}
+            {t("gearForm.add")}
           </Button>
         </div>
 
@@ -607,7 +540,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   onDragEnd={() => {
                     dnd.endDrag();
                   }}
-                  title={text.dragToReorder}
+                  title={t("gearForm.dragToReorder")}
                 >
                   <GripVertical className="w-4 h-4" />
                 </div>
@@ -650,13 +583,13 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Sub attributes */}
       <div className={sectionClass}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-medium">{text.subAttributes}</p>
+          <p className="text-sm font-medium">{t("gearForm.subAttributes")}</p>
           <div className="flex items-center gap-2">
             {tunedSubRowId && (
-              <span className="hidden text-xs text-red-400 sm:inline">{text.tunedLine}</span>
+              <span className="hidden text-xs text-red-400 sm:inline">{t("gearForm.tunedLine")}</span>
             )}
             <Button className="h-8" size="sm" variant="secondary" onClick={addSub}>
-              {text.add}
+              {t("gearForm.add")}
             </Button>
           </div>
         </div>
@@ -704,7 +637,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   onDragEnd={() => {
                     dnd.endDrag();
                   }}
-                  title={text.dragToReorder}
+                  title={t("gearForm.dragToReorder")}
                 >
                   <GripVertical className="w-4 h-4" />
                 </div>
@@ -740,9 +673,9 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                   onClick={() =>
                     setTunedSubRowId((prev) => (prev === s.id ? null : s.id))
                   }
-                  title={text.markTuned}
+                  title={t("gearForm.markTuned")}
                 >
-                  {tunedSubRowId === s.id ? text.tuned : text.markTuned}
+                  {tunedSubRowId === s.id ? t("gearForm.tuned") : t("gearForm.markTuned")}
                 </Button>
               </div>
             </div>
@@ -756,22 +689,22 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Tune history */}
       <div className={sectionClass}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-medium">{text.tuneHistory}</p>
+          <p className="text-sm font-medium">{t("gearForm.tuneHistory")}</p>
           <Button className="h-8" size="sm" variant="secondary" onClick={addTuneHistoryRow}>
-            {text.addTuneHistory}
+            {t("gearForm.addTuneHistory")}
           </Button>
         </div>
 
         <div className="space-y-2">
           {tuneHistoryRows.length === 0 ? (
             <div className="rounded border border-dashed border-white/10 px-3 py-2 text-xs text-muted-foreground">
-              {text.tuneHistoryNote}
+              {t("gearForm.tuneHistoryNote")}
             </div>
           ) : (
             tuneHistoryRows.map((row, index) => (
               <div key={row.id} className="flex flex-wrap items-center gap-1.5 rounded sm:flex-nowrap">
                 <div className="w-12 shrink-0 text-xs text-muted-foreground">
-                  {text.tuneHistoryLine} #{index + 1}
+                  {t("gearForm.tuneHistoryLine")} #{index + 1}
                 </div>
                 <select
                   className="h-8 w-[5.75rem] rounded-md border border-input bg-background px-2 text-sm"
@@ -816,7 +749,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Addition */}
       <div className={sectionClass}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-medium">{text.additionalAttribute}</p>
+            <p className="text-sm font-medium">{t("gearForm.additionalAttribute")}</p>
         </div>
 
         <div className="space-y-2">
@@ -847,7 +780,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
                     variant="secondary"
                     onClick={addAddition}
                 >
-                    {text.addAdditionalAttribute}
+                    {t("gearForm.addAdditionalAttribute")}
                 </Button>
             )}
         </div>
@@ -856,7 +789,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
       {/* Actions */}
       <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap sm:justify-between">
         <Button className="h-9 w-full sm:w-auto" data-tour={!initialGear ? "gear-add-submit" : undefined} onClick={submit}>
-          {initialGear ? text.saveChanges : text.addGear}
+          {initialGear ? t("gearForm.saveChanges") : t("gearForm.addGear")}
         </Button>
         <Button
           className="h-9 w-full sm:w-auto"
@@ -868,10 +801,10 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
           {ocrLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {text.processing}
+              {t("gearForm.processing")}
             </>
           ) : (
-            text.ocr
+            t("gearForm.ocr")
           )}
         </Button>
 

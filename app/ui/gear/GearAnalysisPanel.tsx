@@ -53,47 +53,7 @@ interface GroupedStatEntry {
 }
 
 export default function GearAnalysisPanel({ gears, equipped, elementStats, currentDamage, theoreticalMaxDamage }: Props) {
-  const { language } = useI18n();
-  
-  const text = language === "vi"
-    ? {
-        title: "📊 Phân tích Trang bị",
-        subTitle: "Tổng hợp dòng phụ & chỉ số",
-        totalSubs: "Tổng số dòng phụ",
-        equipped: "Đã trang bị",
-        exportPng: "📸 Xuất PNG",
-        statDistribution: "Phân bổ dòng phụ",
-        statDetails: "Chi tiết chỉ số",
-        count: "dòng",
-        total: "Tổng cộng",
-        noData: "Chưa có trang bị nào để phân tích.",
-        groupCore: "Cốt lõi",
-        groupAttr: "Thuộc tính",
-        groupRates: "Tỷ lệ",
-        groupDef: "Phòng thủ",
-        groupElem: "Nguyên tố",
-        groupOther: "Khác",
-        theoreticalMax: "tối đa lí thuyết"
-      }
-    : {
-        title: "📊 Gear Analysis",
-        subTitle: "Sub-stat distribution & summary",
-        totalSubs: "Total Sub-lines",
-        equipped: "Equipped",
-        exportPng: "📸 Export PNG",
-        statDistribution: "Sub-stat Distribution",
-        statDetails: "Stat Details",
-        count: "lines",
-        total: "Total",
-        noData: "No gear equipped for analysis.",
-        groupCore: "Core",
-        groupAttr: "Attributes",
-        groupRates: "Rates",
-        groupDef: "Defense",
-        groupElem: "Element",
-        groupOther: "Other",
-        theoreticalMax: "theoretical max"
-      };
+  const { t } = useI18n();
 
   const analysis = useMemo(() => analyzeEquippedGear(gears, equipped), [gears, equipped]);
   
@@ -113,7 +73,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
   if (analysis.equippedCount === 0) {
     return (
       <Card className="p-8 text-center bg-card/60 border-white/10 italic text-muted-foreground">
-        {text.noData}
+        {t("gearAnalysis.noData")}
       </Card>
     );
   }
@@ -177,7 +137,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
     // Add All Martial Arts Boost if there's any value
     if (totalMartialArtsBoost > 0) {
         groups.Other.unshift({
-            name: language === "vi" ? "Tổng cộng Võ học" : "All Martial Arts Boost",
+            name: t("gearAnalysis.allMartialArtsBoost"),
             totalCount: totalMartialArtsLines,
             subCount: totalMartialArtsLines, // Using total here for simplicity as it's virtual
             totalValue: totalMartialArtsBoost,
@@ -202,12 +162,12 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
 
   const getGroupLabel = (name: string) => {
     switch (name) {
-        case "Core": return text.groupCore;
-        case "Attributes": return text.groupAttr;
-        case "Rates": return text.groupRates;
-        case "Defense": return text.groupDef;
-        case "Element": return text.groupElem;
-        default: return text.groupOther;
+        case "Core": return t("gearAnalysis.groupCore");
+        case "Attributes": return t("gearAnalysis.groupAttr");
+        case "Rates": return t("gearAnalysis.groupRates");
+        case "Defense": return t("gearAnalysis.groupDef");
+        case "Element": return t("gearAnalysis.groupElem");
+        default: return t("gearAnalysis.groupOther");
     }
   };
 
@@ -216,17 +176,17 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            {text.title}
+            {t("gearAnalysis.title")}
           </h2>
-          <p className="text-sm text-muted-foreground">{text.subTitle}</p>
+          <p className="text-sm text-muted-foreground">{t("gearAnalysis.subTitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex flex-col items-end mr-2">
-             <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">{text.totalSubs}</span>
+             <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">{t("gearAnalysis.totalSubs")}</span>
              <span className="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">{analysis.totalSubLines}</span>
           </div>
           <Badge variant="outline" className="h-10 px-4 border-white/20 bg-white/10 text-white font-bold">
-            {analysis.equippedCount}/{GEAR_SLOTS.length} {text.equipped}
+            {analysis.equippedCount}/{GEAR_SLOTS.length} {t("gearAnalysis.equipped")}
           </Badge>
           <Button 
             variant="secondary" 
@@ -246,7 +206,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-400" />
-            {language === "vi" ? "Sát thương thực tế so với Tối đa lý thuyết" : "Actual Damage vs Theoretical Max"}
+            {t("gearAnalysis.actualVsTheoretical")}
           </span>
           <span className="font-mono font-bold text-amber-400">
             {overallMaxPercentage.toFixed(2)}%
@@ -258,8 +218,8 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
             indicatorClassName="bg-amber-400"
         />
         <div className="flex justify-between text-xs text-muted-foreground mt-1">
-          <span>{Math.round(currentDamage).toLocaleString()} (Current)</span>
-          <span>{Math.round(theoreticalMaxDamage).toLocaleString()} (Max)</span>
+          <span>{Math.round(currentDamage).toLocaleString()} {t("gearAnalysis.currentLabel")}</span>
+          <span>{Math.round(theoreticalMaxDamage).toLocaleString()} {t("gearAnalysis.maxLabel")}</span>
         </div>
       </div>
 
@@ -271,7 +231,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
-              {text.statDistribution}
+              {t("gearAnalysis.statDistribution")}
             </h3>
           </div>
           
@@ -341,7 +301,7 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
         <div className="lg:col-span-3 space-y-4">
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Info className="w-4 h-4 text-blue-400" />
-            {text.statDetails}
+            {t("gearAnalysis.statDetails")}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-2">
@@ -362,8 +322,8 @@ export default function GearAnalysisPanel({ gears, equipped, elementStats, curre
                               {s.name}
                             </span>
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title="Mains + Subs + Additions">
-                                  {s.totalCount} {text.count}
+                              <Badge variant="outline" className="h-4 px-1 text-[9px] border-emerald-500/20 text-emerald-400 bg-emerald-500/5" title={t("gearAnalysis.statCountTooltip")}>
+                                  {s.totalCount} {t("gearAnalysis.count")}
                               </Badge>
                               <div className="flex items-center gap-1">
                                 <span className={cn(

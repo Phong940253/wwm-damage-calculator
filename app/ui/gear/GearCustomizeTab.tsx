@@ -98,52 +98,7 @@ interface Props {
 ======================= */
 
 export default function GearCustomizeTab({ stats, elementStats, rotation }: Props) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      customGear: "Trang bị tùy chỉnh",
-      optimize: "Tối ưu",
-      addGear: "+ Thêm trang bị",
-      deleteAll: "Xóa tất cả",
-      confirmDeleteAllTitle: "Xóa toàn bộ trang bị?",
-      confirmDeleteAllDesc: "Hành động này sẽ xóa toàn bộ trang bị tùy chỉnh và không thể hoàn tác.",
-      cancel: "Hủy",
-      confirmDelete: "Xóa",
-      slot: "Vị trí",
-      stat: "Chỉ số",
-      searchStat: "Tìm chỉ số...",
-      clearFilter: "Xóa bộ lọc",
-      sort: "Sắp xếp",
-      noSorting: "Không sắp xếp",
-      desc: "↓ Giảm dần",
-      asc: "↑ Tăng dần",
-      clearSort: "Xóa sắp xếp",
-      loadingMoreGear: "Đang tải thêm trang bị",
-      editGear: "Sửa trang bị",
-      addNewGear: "Thêm trang bị mới",
-    }
-    : {
-      customGear: "Custom Gear",
-      optimize: "Optimize",
-      addGear: "+ Add Gear",
-      deleteAll: "Delete All",
-      confirmDeleteAllTitle: "Delete all gear?",
-      confirmDeleteAllDesc: "This action will remove all custom gear and cannot be undone.",
-      cancel: "Cancel",
-      confirmDelete: "Delete",
-      slot: "Slot",
-      stat: "Stat",
-      searchStat: "Search stat...",
-      clearFilter: "Clear Filter",
-      sort: "Sort",
-      noSorting: "No sorting",
-      desc: "↓ Desc",
-      asc: "↑ Asc",
-      clearSort: "Clear Sort",
-      loadingMoreGear: "Loading more gear",
-      editGear: "Edit Gear",
-      addNewGear: "Add New Gear",
-    };
+  const { t } = useI18n();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -420,14 +375,14 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold">{text.customGear}</h3>
+        <h3 className="text-lg font-semibold">{t("gearCustomize.customGear")}</h3>
         <div className="flex flex-wrap gap-2">
           <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none px-2 py-1 rounded-md border border-border/40 hover:bg-muted/40 transition-colors">
             <Checkbox checked={considerTune} onCheckedChange={(v) => setConsiderTune(Boolean(v))} />
-            <span className="text-muted-foreground">Consider Tune</span>
+            <span className="text-muted-foreground">{t("gearCustomize.considerTune")}</span>
           </label>
           <Button data-tour="gear-optimize-open" variant="outline" onClick={() => setOptOpen(true)}>
-            {text.optimize}
+            {t("gearCustomize.optimize")}
           </Button>
           <Button
             data-tour="gear-add-open"
@@ -436,7 +391,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
               setOpen(true);
             }}
           >
-            {text.addGear}
+            {t("gearCustomize.addGear")}
           </Button>
           {/* Button delete all */}
           <Button
@@ -444,7 +399,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             onClick={() => setConfirmDeleteAllOpen(true)}
             disabled={customGears.length === 0}
           >
-            {text.deleteAll}
+            {t("gearCustomize.deleteAll")}
           </Button>
         </div>
       </div>
@@ -459,7 +414,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             variant={slotFilter.size > 0 ? "default" : "outline"}
             onClick={() => setPinSlot((p) => !p)}
           >
-            {text.slot}
+            {t("gearCustomize.slot")}
             {slotFilter.size > 0 && ` (${slotFilter.size})`}
             {pinSlot && " 📌"}
           </Button>
@@ -499,7 +454,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             variant={statFilter.size > 0 ? "default" : "outline"}
             onClick={() => setPinStat((p) => !p)}
           >
-            {text.stat}
+            {t("gearCustomize.stat")}
             {statFilter.size > 0 && ` (${statFilter.size})`}
             {pinStat && " 📌"}
           </Button>
@@ -516,7 +471,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           >
             <input
               className="w-full mb-2 px-2 py-1 rounded border bg-background text-xs"
-              placeholder={text.searchStat}
+              placeholder={t("gearCustomize.searchStat")}
               value={statSearch}
               onChange={(e) => setStatSearch(e.target.value)}
             />
@@ -551,7 +506,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
               setStatSearch("");
             }}
           >
-            {text.clearFilter}
+            {t("gearCustomize.clearFilter")}
           </Button>
         )}
 
@@ -561,7 +516,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             variant={sortStat !== "none" ? "default" : "outline"}
             onClick={() => setPinSort((p) => !p)}
           >
-            {text.sort}
+            {t("gearCustomize.sort")}
             {sortStat !== "none" && ` (${sortStat})`}
             {pinSort && " 📌"}
           </Button>
@@ -583,7 +538,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
               value={sortStat}
               onChange={(e) => setSortStat(e.target.value)}
             >
-              <option value="none">{text.noSorting}</option>
+              <option value="none">{t("gearCustomize.noSorting")}</option>
               {statOptions.map((stat) => (
                 <option key={stat} value={stat}>
                   {getStatLabel(stat, elementStats)}
@@ -599,7 +554,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                 onClick={() => setSortDir("desc")}
                 className="flex-1"
               >
-                {text.desc}
+                {t("gearCustomize.desc")}
               </Button>
               <Button
                 size="sm"
@@ -607,7 +562,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                 onClick={() => setSortDir("asc")}
                 className="flex-1"
               >
-                {text.asc}
+                {t("gearCustomize.asc")}
               </Button>
             </div>
 
@@ -622,7 +577,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                   setSortDir("desc");
                 }}
               >
-                {text.clearSort}
+                {t("gearCustomize.clearSort")}
               </Button>
             )}
           </div>
@@ -652,7 +607,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
           <div
             ref={loadMoreRef}
             className="h-10 w-full"
-            aria-label={text.loadingMoreGear}
+            aria-label={t("gearCustomize.loadingMoreGear")}
           />
         </div>
       )}
@@ -663,7 +618,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92dvh] w-[98vw] max-w-[98vw] p-4 sm:max-h-[90dvh] sm:w-[96vw] sm:max-w-2xl sm:p-6 overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? text.editGear : text.addNewGear}</DialogTitle>
+            <DialogTitle>{editing ? t("gearCustomize.editGear") : t("gearCustomize.addNewGear")}</DialogTitle>
           </DialogHeader>
           <GearForm initialGear={editing} onSuccess={() => setOpen(false)} />
         </DialogContent>
@@ -672,12 +627,12 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
       <Dialog open={confirmDeleteAllOpen} onOpenChange={setConfirmDeleteAllOpen}>
         <DialogContent className="w-[92vw] max-w-md">
           <DialogHeader>
-            <DialogTitle>{text.confirmDeleteAllTitle}</DialogTitle>
-            <DialogDescription>{text.confirmDeleteAllDesc}</DialogDescription>
+            <DialogTitle>{t("gearCustomize.confirmDeleteAllTitle")}</DialogTitle>
+            <DialogDescription>{t("gearCustomize.confirmDeleteAllDesc")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteAllOpen(false)}>
-              {text.cancel}
+              {t("gearCustomize.cancel")}
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700 text-white"
@@ -686,7 +641,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
                 setConfirmDeleteAllOpen(false);
               }}
             >
-              {text.confirmDelete}
+              {t("gearCustomize.confirmDelete")}
             </Button>
           </DialogFooter>
         </DialogContent>

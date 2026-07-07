@@ -28,11 +28,8 @@ export default function GearDetailCard({
   impactPctByStat,
   impactPctByLineKey,
 }: Props) {
-  const { language } = useI18n();
+  const { t } = useI18n();
   const tunedSubIndexSet = getGearTuneHistorySubIndexSet(gear);
-  const text = language === "vi"
-    ? { main: "Chính", mainStats: "Chỉ số chính", subStats: "Chỉ số phụ", bonus: "Thưởng", level: "Cấp" }
-    : { main: "Main", mainStats: "Main Stats", subStats: "Sub Stats", bonus: "Bonus", level: "Lv." };
 
   return (
     <Card className="p-3 space-y-2 border border-white/10 bg-card/70">
@@ -41,7 +38,7 @@ export default function GearDetailCard({
         <p className="text-sm font-semibold truncate">{gear.name}</p>
         <div className="flex items-center gap-1.5">
           <Badge variant="outline">
-            {text.level} {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}
+            {t("gearCard.detailLevel")} {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}
           </Badge>
           <Badge variant="secondary">{gear.slot}</Badge>
         </div>
@@ -50,7 +47,7 @@ export default function GearDetailCard({
       {/* Main stat (single) */}
       {gear.main && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">{text.main}</p>
+          <p className="text-xs text-muted-foreground mb-1">{t("gearCard.detailMain")}</p>
           <StatLine
             stat={String(gear.main.stat)}
             value={gear.main.value}
@@ -67,7 +64,7 @@ export default function GearDetailCard({
       {/* Main stats (multi-main support) */}
       {gear.mains.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">{text.mainStats}</p>
+          <p className="text-xs text-muted-foreground mb-1">{t("gearCard.detailMainStats")}</p>
           <div className="space-y-1">
             {gear.mains.map((m, i) => (
               <StatLine
@@ -89,7 +86,7 @@ export default function GearDetailCard({
       {/* Sub stats */}
       {gear.subs.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">{text.subStats}</p>
+          <p className="text-xs text-muted-foreground mb-1">{t("gearCard.detailSubStats")}</p>
           <div className="space-y-1">
             {gear.subs.map((s, i) => (
               <StatLine
@@ -112,7 +109,7 @@ export default function GearDetailCard({
       {/* Bonus / Addition */}
       {gear.addition && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">{text.bonus}</p>
+          <p className="text-xs text-muted-foreground mb-1">{t("gearCard.detailBonus")}</p>
           <div className="space-y-1">
             <StatLine
               stat={String(gear.addition.stat)}

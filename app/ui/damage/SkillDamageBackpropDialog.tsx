@@ -314,68 +314,7 @@ export function SkillDamageBackpropDialog({
     skill: Skill;
     ctx: DamageContext;
 }) {
-    const { language } = useI18n();
-    const text = language === "vi"
-        ? {
-            dialogDescription:
-                "Truy vết sát thương (từ [app/domain/damage/damageFormula.ts]) — hiển thị dưới dạng phép tính dễ đọc (không dùng KaTeX)",
-            operatorLegend: "Chú giải toán tử",
-            add: "cộng",
-            multiply: "nhân",
-            divide: "chia",
-            assign: "gán/kết quả",
-            takeMax: "lấy giá trị lớn nhất",
-            clamp: "giới hạn về [0,1]",
-            hitGroup: "Nhóm hit",
-            repeats: "lặp",
-            min: "thấp nhất",
-            avg: "trung bình",
-            crit: "chí mạng",
-            aff: "affinity",
-            baseStats: "Chỉ số gốc (di chuột để xem tên chỉ số)",
-            physAtkDerivation: "Tính toán Min/MaxPhysicalAttack",
-            dmgBoostBreakdown: "Phân rã Damage Boost",
-            flatDmgBreakdown: "Phân rã FlatDamage",
-            baseFlatDmg: "FlatDamage (gốc)",
-            flatPhysical: "flatPhysical (kỹ năng)",
-            flatAttribute: "flatAttribute (kỹ năng)",
-            totalFlatDmg: "Tổng FlatDamage",
-            expectedNumbers: "Kỳ vọng (dạng số)",
-            baseWhenPrecision: "Base (dùng khi có Precision)",
-            probabilities: "Xác suất (clamp + chuẩn hóa)",
-            expectedFromFormula: "Sát thương kỳ vọng (từ damageFormula)",
-            perHitGroupNote: "Đây là Expected Normal (trung bình) cho mỗi nhóm hit trước khi nhân số hit.",
-        }
-        : {
-            dialogDescription:
-                "Damage backprop (from [app/domain/damage/damageFormula.ts]) — shown as readable arithmetic (no KaTeX)",
-            operatorLegend: "Operator legend",
-            add: "add",
-            multiply: "multiply",
-            divide: "divide",
-            assign: "assign/result",
-            takeMax: "take max",
-            clamp: "clamp to [0,1]",
-            hitGroup: "Hit group",
-            repeats: "repeats",
-            min: "min",
-            avg: "avg",
-            crit: "crit",
-            aff: "aff",
-            baseStats: "Base stats (hover for stat name)",
-            physAtkDerivation: "Min/MaxPhysicalAttack derivation",
-            dmgBoostBreakdown: "Damage Boost breakdown",
-            flatDmgBreakdown: "FlatDamage breakdown",
-            baseFlatDmg: "base FlatDamage",
-            flatPhysical: "flatPhysical (skill)",
-            flatAttribute: "flatAttribute (skill)",
-            totalFlatDmg: "total FlatDamage",
-            expectedNumbers: "Expected (numbers)",
-            baseWhenPrecision: "Base (used when Precision)",
-            probabilities: "Probabilities (clamp + normalize)",
-            expectedFromFormula: "Expected damage (from damageFormula)",
-            perHitGroupNote: "This is the per-hit-group Expected Normal (avg) before hit count.",
-        };
+    const { t } = useI18n();
 
     const hitExplains = useMemo(() => {
         const damageSkillTypes = skill.damageSkillType ?? ["normal"];
@@ -479,7 +418,7 @@ export function SkillDamageBackpropDialog({
                     <div className="p-5 pb-3">
                         <DialogHeader className="text-left">
                             <DialogTitle>{skill.name}</DialogTitle>
-                            <DialogDescription>{text.dialogDescription}</DialogDescription>
+                            <DialogDescription>{t("damageBackprop.dialogDescription")}</DialogDescription>
                         </DialogHeader>
                     </div>
 
@@ -487,13 +426,13 @@ export function SkillDamageBackpropDialog({
 
                     <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto p-5 space-y-6">
                         <Legend
-                            title={text.operatorLegend}
-                            add={text.add}
-                            multiply={text.multiply}
-                            divide={text.divide}
-                            assign={text.assign}
-                            takeMax={text.takeMax}
-                            clamp={text.clamp}
+                            title={t("damageBackprop.operatorLegend")}
+                            add={t("damageBackprop.add")}
+                            multiply={t("damageBackprop.multiply")}
+                            divide={t("damageBackprop.divide")}
+                            assign={t("damageBackprop.assign")}
+                            takeMax={t("damageBackprop.takeMax")}
+                            clamp={t("damageBackprop.clamp")}
                         />
 
                         {hitExplains.map(({ hitIndex, hitCount, hit, damage, steps, formulaGroups, minPhysExplain, maxPhysExplain, bossPhysDefExplain, dmgBoostExplain, boostComponents, flatDmgExplain }) => {
@@ -506,25 +445,25 @@ export function SkillDamageBackpropDialog({
                                 >
                                     <div className="flex items-baseline justify-between gap-3">
                                         <div>
-                                            <div className="text-sm font-semibold">{text.hitGroup} {hitIndex + 1}</div>
+                                            <div className="text-sm font-semibold">{t("damageBackprop.hitGroup")} {hitIndex + 1}</div>
                                             <div className="text-xs text-muted-foreground">
-                                                {text.repeats}: {hitCount} · physMult: {fmt(hit.physicalMultiplier)} ·
+                                                {t("damageBackprop.repeats")}: {hitCount} · physMult: {fmt(hit.physicalMultiplier)} ·
                                                 elemMult: {fmt(hit.elementMultiplier)}
                                             </div>
                                         </div>
 
                                         <div className="text-right text-xs text-muted-foreground">
                                             <div>
-                                                {text.min} <span className="text-foreground">{fmt(damage.min, 1)}</span>
+                                                {t("damageBackprop.min")} <span className="text-foreground">{fmt(damage.min, 1)}</span>
                                             </div>
                                             <div>
-                                                {text.avg} <span className="text-foreground">{fmt(damage.normal, 1)}</span>
+                                                {t("damageBackprop.avg")} <span className="text-foreground">{fmt(damage.normal, 1)}</span>
                                             </div>
                                             <div>
-                                                {text.crit} <span className="text-foreground">{fmt(damage.critical, 1)}</span>
+                                                {t("damageBackprop.crit")} <span className="text-foreground">{fmt(damage.critical, 1)}</span>
                                             </div>
                                             <div>
-                                                {text.aff} <span className="text-foreground">{fmt(damage.affinity, 1)}</span>
+                                                {t("damageBackprop.aff")} <span className="text-foreground">{fmt(damage.affinity, 1)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -533,7 +472,7 @@ export function SkillDamageBackpropDialog({
 
                                     <div className="space-y-2">
                                         <div className="text-sm font-semibold text-foreground">
-                                            {text.baseStats}
+                                            {t("damageBackprop.baseStats")}
                                         </div>
 
                                         <div className="flex flex-wrap gap-1.5">
@@ -622,7 +561,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">{text.physAtkDerivation}</div>
+                                        <div className="text-sm font-semibold text-foreground">{t("damageBackprop.physAtkDerivation")}</div>
 
                                         <ExprRow>
                                             <Name>MinPhysAtk</Name>
@@ -666,7 +605,7 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">{text.dmgBoostBreakdown}</div>
+                                        <div className="text-sm font-semibold text-foreground">{t("damageBackprop.dmgBoostBreakdown")}</div>
 
                                         <ExprRow>
                                             <Name>dmgBoost (stats)</Name>
@@ -725,10 +664,10 @@ export function SkillDamageBackpropDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">{text.flatDmgBreakdown}</div>
+                                        <div className="text-sm font-semibold text-foreground">{t("damageBackprop.flatDmgBreakdown")}</div>
 
                                         <ExprRow>
-                                            <Name>{text.baseFlatDmg}</Name>
+                                            <Name>{t("damageBackprop.baseFlatDmg")}</Name>
                                             <Op tone="eq">=</Op>
                                             {flatDmgExplain.lines.map((line, i) => (
                                                 <React.Fragment key={i}>
@@ -742,21 +681,21 @@ export function SkillDamageBackpropDialog({
 
                                         {hit.flatPhysical ? (
                                             <ExprRow>
-                                                <Name>{text.flatPhysical}</Name>
+                                                <Name>{t("damageBackprop.flatPhysical")}</Name>
                                                 <Op tone="eq">=</Op>
                                                 <Num n={hit.flatPhysical} />
                                             </ExprRow>
                                         ) : null}
                                         {hit.flatAttribute ? (
                                             <ExprRow>
-                                                <Name>{text.flatAttribute}</Name>
+                                                <Name>{t("damageBackprop.flatAttribute")}</Name>
                                                 <Op tone="eq">=</Op>
                                                 <Num n={hit.flatAttribute} />
                                             </ExprRow>
                                         ) : null}
 
                                         <ExprRow>
-                                            <Name>{text.totalFlatDmg}</Name>
+                                            <Name>{t("damageBackprop.totalFlatDmg")}</Name>
                                             <Op tone="eq">=</Op>
                                             <Num n={flatDmgExplain.total} />
                                             {hit.flatPhysical ? (
@@ -775,7 +714,7 @@ export function SkillDamageBackpropDialog({
                                     ))}
 
                                     <div className="space-y-2">
-                                        <div className="text-sm font-semibold text-foreground">{text.expectedNumbers}</div>
+                                        <div className="text-sm font-semibold text-foreground">{t("damageBackprop.expectedNumbers")}</div>
 
                                         <ExprRow>
                                             <Name>P</Name>
@@ -828,7 +767,7 @@ export function SkillDamageBackpropDialog({
 
                                     <FormulaGroupSection group={{
                                         id: "baseWhenPrecision",
-                                        title: text.baseWhenPrecision,
+                                        title: t("damageBackprop.baseWhenPrecision"),
                                         steps: [
                                             {
                                                 label: "base (summary)",
@@ -840,7 +779,7 @@ export function SkillDamageBackpropDialog({
 
                                     <div className="space-y-2">
                                         <div className="text-sm font-semibold text-foreground">
-                                            {text.probabilities}
+                                            {t("damageBackprop.probabilities")}
                                         </div>
 
                                         <ExprRow>
@@ -920,7 +859,7 @@ export function SkillDamageBackpropDialog({
 
                                     <div className="space-y-2">
                                         <div className="text-sm font-semibold text-foreground">
-                                            {text.expectedFromFormula}
+                                            {t("damageBackprop.expectedFromFormula")}
                                         </div>
 
                                         <ExprRow>
@@ -999,7 +938,7 @@ export function SkillDamageBackpropDialog({
                                         </ExprRow>
 
                                         <div className="text-xs text-muted-foreground">
-                                            {text.perHitGroupNote}
+                                            {t("damageBackprop.perHitGroupNote")}
                                         </div>
                                     </div>
                                 </div>
