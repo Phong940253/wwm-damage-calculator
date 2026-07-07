@@ -33,52 +33,7 @@ export default function FinalStatPanel({
   sections: FinalStatSection[];
   ctx: DamageContext;
 }) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      title: "Truy vết chỉ số",
-      noExplanation: "Không có dữ liệu giải thích cho ngữ cảnh này.",
-      noBreakdown: "Không có phân rã.",
-      legend: "Chú giải",
-      base: "Gốc",
-      baseNote: "Giá trị chỉ số đã lưu/gốc",
-      increase: "Tăng thêm",
-      increaseNote: "Giá trị tăng tạm thời",
-      gear: "Trang bị",
-      gearNote: "Thưởng từ trang bị (raw)",
-      passive: "Nội tại",
-      passiveNote: "Đóng góp từ kỹ năng nội tại",
-      innerWay: "Nội công",
-      innerWayNote: "Đóng góp từ nội công",
-      derived: "Suy ra",
-      derivedNote: "Được tính từ thuộc tính",
-      otherElements: "Nguyên tố khác",
-      otherElementsNote: "Tổng từ các nguyên tố không chọn",
-      bestEffort: "Giá trị được ước tính tốt nhất có thể và cộng dồn khi khả thi.",
-      showBreakdown: "Xem phân rã",
-    }
-    : {
-      title: "Stat backpropagation",
-      noExplanation: "No explanation data available for this context.",
-      noBreakdown: "No breakdown.",
-      legend: "Legend",
-      base: "Base",
-      baseNote: "Your saved/base stat value",
-      increase: "Increase",
-      increaseNote: "Temporary increase inputs",
-      gear: "Gear",
-      gearNote: "Gear bonus (raw)",
-      passive: "Passive",
-      passiveNote: "Passive skill contribution",
-      innerWay: "Inner Way",
-      innerWayNote: "Inner way contribution",
-      derived: "Derived",
-      derivedNote: "Computed from attributes",
-      otherElements: "Other elements",
-      otherElementsNote: "Summed from non-selected elements",
-      bestEffort: "Values are best-effort and additive where possible.",
-      showBreakdown: "Show breakdown",
-    };
+  const { t } = useI18n();
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<{
@@ -129,7 +84,7 @@ export default function FinalStatPanel({
             <DialogHeader className="px-5 pt-5">
               <DialogTitle className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-emerald-400" />
-                {text.title}
+                {t("finalStat.title")}
               </DialogTitle>
               <DialogDescription className="text-xs">
                 {selected ? (
@@ -147,7 +102,7 @@ export default function FinalStatPanel({
             <div className="flex-1 overflow-y-auto px-5 pb-5 pt-4 space-y-4">
               {!ctx.explain && (
                 <div className="rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-muted-foreground">
-                  {text.noExplanation}
+                  {t("finalStat.noExplanation")}
                 </div>
               )}
 
@@ -173,7 +128,7 @@ export default function FinalStatPanel({
 
                   <div className="px-4 pb-4 space-y-2">
                     {ex.lines.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">{text.noBreakdown}</div>
+                      <div className="text-sm text-muted-foreground">{t("finalStat.noBreakdown")}</div>
                     ) : (
                       ex.lines.map((line, idx) => (
                         <div
@@ -209,22 +164,22 @@ export default function FinalStatPanel({
 
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <Layers className="h-4 w-4 text-muted-foreground" /> {text.legend}
+                  <Layers className="h-4 w-4 text-muted-foreground" /> {t("finalStat.legend")}
                 </div>
                 <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-                  <LegendRow kind="base" label={text.base} note={text.baseNote} />
-                  <LegendRow kind="increase" label={text.increase} note={text.increaseNote} />
-                  <LegendRow kind="gear" label={text.gear} note={text.gearNote} />
-                  <LegendRow kind="passive" label={text.passive} note={text.passiveNote} />
-                  <LegendRow kind="inner-way" label={text.innerWay} note={text.innerWayNote} />
-                  <LegendRow kind="derived" label={text.derived} note={text.derivedNote} />
-                  <LegendRow kind="element-other" label={text.otherElements} note={text.otherElementsNote} />
+                  <LegendRow kind="base" label={t("finalStat.base")} note={t("finalStat.baseNote")} />
+                  <LegendRow kind="increase" label={t("finalStat.increase")} note={t("finalStat.increaseNote")} />
+                  <LegendRow kind="gear" label={t("finalStat.gear")} note={t("finalStat.gearNote")} />
+                  <LegendRow kind="passive" label={t("finalStat.passive")} note={t("finalStat.passiveNote")} />
+                  <LegendRow kind="inner-way" label={t("finalStat.innerWay")} note={t("finalStat.innerWayNote")} />
+                  <LegendRow kind="derived" label={t("finalStat.derived")} note={t("finalStat.derivedNote")} />
+                  <LegendRow kind="element-other" label={t("finalStat.otherElements")} note={t("finalStat.otherElementsNote")} />
                 </div>
               </div>
 
               <div className="text-[11px] text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-3.5 w-3.5" />
-                {text.bestEffort}
+                {t("finalStat.bestEffort")}
               </div>
             </div>
           </div>
@@ -241,8 +196,8 @@ function Section({
   section: FinalStatSection;
   onOpenDetails: (rowLabel: string, keys: string[]) => void;
 }) {
-  const { language } = useI18n();
-  const showBreakdownLabel = language === "vi" ? "Xem phân rã" : "Show breakdown";
+  const { t } = useI18n();
+  const showBreakdownLabel = t("finalStat.showBreakdown");
   const [open, setOpen] = useState(true);
 
   return (

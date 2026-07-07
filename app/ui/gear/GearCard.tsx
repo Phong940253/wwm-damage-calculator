@@ -157,42 +157,7 @@ interface Props {
 ======================= */
 
 export default function GearCard({ gear, elementStats, stats, rotation, onEdit, onDelete }: Props) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      equipped: "Đang trang bị",
-      gearActions: "Hành động trang bị",
-      unequip: "Tháo",
-      equip: "Trang bị",
-      edit: "Sửa",
-      delete: "Xóa",
-      main: "Chính",
-      sub: "Phụ",
-      bonus: "Thưởng",
-      showTune: "Tune",
-      tuneTitle: "Tune Preview",
-      availableStat: "Stat có thể ra",
-      avgGain: "Avg gain",
-      bestCase: "Best-case",
-      noTuneLine: "Không có dòng phụ hợp lệ để tune.",
-    }
-    : {
-      equipped: "Equipped",
-      gearActions: "Gear actions",
-      unequip: "Unequip",
-      equip: "Equip",
-      edit: "Edit",
-      delete: "Delete",
-      main: "Main",
-      sub: "Sub",
-      bonus: "Bonus",
-      showTune: "Tune",
-      tuneTitle: "Tune Preview",
-      availableStat: "Available stat",
-      avgGain: "Avg gain",
-      bestCase: "Best-case",
-      noTuneLine: "No valid sub-line to tune.",
-    };
+  const { t } = useI18n();
 
   const { customGears, equipped, setEquipped } = useGear();
   const isEquipped = equipped[gear.slot] === gear.id;
@@ -596,7 +561,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                 <p className="min-w-0 truncate text-sm font-semibold">{gear.name}</p>
                 {isEquipped && (
                   <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
-                    {text.equipped}
+                    {t("gearCard.equipped")}
                   </span>
                 )}</div>
               <div className="flex w-full items-center gap-2">
@@ -661,7 +626,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                 size="icon"
                 variant="ghost"
                 className="-mr-2 -mt-1 h-9 w-9 text-muted-foreground hover:text-foreground"
-                aria-label={text.gearActions}
+                aria-label={t("gearCard.gearActions")}
               >
                 ⋮
               </Button>
@@ -669,13 +634,13 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
             <DropdownMenuContent align="end">
               {isEquipped ? (
-                <DropdownMenuItem onClick={unequip}>{text.unequip}</DropdownMenuItem>
+                <DropdownMenuItem onClick={unequip}>{t("gearCard.unequip")}</DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={equip}>{text.equip}</DropdownMenuItem>
+                <DropdownMenuItem onClick={equip}>{t("gearCard.equip")}</DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => onEdit(gear)}>{text.edit}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(gear)}>{t("gearCard.edit")}</DropdownMenuItem>
               <DropdownMenuItem className="text-red-400" onClick={() => onDelete(gear.id)}>
-                {text.delete}
+                {t("gearCard.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -692,7 +657,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                 className="h-7 border-white/15 bg-background/40 px-2 text-[11px]"
                 onClick={() => setTuneDialogOpen(true)}
               >
-                {text.showTune}
+                {t("gearCard.showTune")}
               </Button>
             </div>
           )}
@@ -700,7 +665,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           {mains.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{text.main}</p>
+                <p className="text-xs font-medium text-muted-foreground">{t("gearCard.main")}</p>
                 <p className="text-[11px] text-muted-foreground">{mains.length}</p>
               </div>
               <div className="space-y-1.5">
@@ -721,7 +686,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           {gear.subs?.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{text.sub}</p>
+                <p className="text-xs font-medium text-muted-foreground">{t("gearCard.sub")}</p>
                 <p className="text-[11px] text-muted-foreground">{gear.subs.length}</p>
               </div>
               <div className="space-y-1.5">
@@ -742,7 +707,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
 
           {gear.addition && (
             <div className="mt-auto space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">{text.bonus}</p>
+              <p className="text-xs font-medium text-muted-foreground">{t("gearCard.bonus")}</p>
               <StatLine
                 stat={String(gear.addition.stat)}
                 value={gear.addition.value}
@@ -760,13 +725,13 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         <DialogContent className="max-h-[86dvh] w-[95vw] max-w-xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {text.tuneTitle} • {gear.name}
+              {t("gearCard.tuneTitle")} • {gear.name}
             </DialogTitle>
           </DialogHeader>
 
           {tuneRows.length === 0 ? (
             <div className="rounded-md border border-white/10 bg-background/30 px-3 py-2 text-sm text-muted-foreground">
-              {text.noTuneLine}
+              {t("gearCard.noTuneLine")}
             </div>
           ) : (
             <div className="space-y-2">
@@ -788,14 +753,14 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
                           row.bestCaseGainPct >= 0 ? "text-emerald-300" : "text-red-300"
                         )}
                       >
-                        {text.bestCase} {row.bestCaseGainPct >= 0 ? "+" : ""}
+                        {t("gearCard.bestCase")} {row.bestCaseGainPct >= 0 ? "+" : ""}
                         {row.bestCaseGainPct.toFixed(2)}%
                       </Badge>
                     </div>
                   </div>
 
                   <div className="mt-1.5 space-y-1">
-                    <div className="text-[11px] text-muted-foreground">{text.availableStat}</div>
+                    <div className="text-[11px] text-muted-foreground">{t("gearCard.availableStat")}</div>
                     <div className="flex flex-wrap gap-1">
                       {(() => {
                         const maxPositive = Math.max(

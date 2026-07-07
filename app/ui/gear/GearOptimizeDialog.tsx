@@ -78,62 +78,7 @@ export default function GearOptimizeDialog({
   equipped = {},
   customGears = [],
 }: Props) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      title: "Kết quả tối ưu trang bị",
-      combos: "Tổ hợp",
-      currentDamage: "Sát thương hiện tại",
-      showing: "Hiển thị",
-      hoverHint: "Di chuột vào tên trang bị được tô sáng để so sánh.",
-      calculating: "Đang tính mọi tổ hợp trang bị...",
-      controls: "Điều khiển",
-      controlsHint: "Thay đổi số KQ tối đa để ẩn/bớt kết quả ngay lập tức. Bấm 'Tính lại' để tối ưu với bộ lọc mới.",
-      maxResults: "KQ tối đa",
-      itemPerSlotCap: "Giới hạn/ô",
-      recalculate: "Tính lại",
-      upgradesOnly: "Chỉ hiển thị nâng cấp",
-      searchPlaceholder: "Tìm kết quả theo tên trang bị...",
-      sortGain: "Sắp xếp: Tăng %",
-      sortDamage: "Sắp xếp: Sát thương",
-      row: "#",
-      damage: "Sát thương",
-      gain: "Tăng",
-      changes: "Thay đổi",
-      tune: "Tune/Swap",
-      rate: "Tỉ lệ",
-      action: "Hành động",
-      empty: "Không có kết quả. Hãy đổi bộ lọc hoặc chạy lại tối ưu.",
-      equip: "Trang bị",
-      noResultCell: "—",
-    }
-    : {
-      title: "Optimize Gear Results",
-      combos: "Combos",
-      currentDamage: "Current dmg",
-      showing: "Showing",
-      hoverHint: "Hover a highlighted gear name to compare.",
-      calculating: "Calculating every gear combination...",
-      controls: "Controls",
-      controlsHint: "Change max results to show/hide results instantly. Click 'Recalculate' to re-run with new filters.",
-      maxResults: "Max results",
-      itemPerSlotCap: "Items/slot cap",
-      recalculate: "Recalculate",
-      upgradesOnly: "Upgrades only",
-      searchPlaceholder: "Search results by gear name...",
-      sortGain: "Sort: Gain",
-      sortDamage: "Sort: Damage",
-      row: "#",
-      damage: "Damage",
-      gain: "Gain",
-      changes: "Changes",
-      tune: "Tune/Swap",
-      rate: "Rate",
-      action: "Action",
-      empty: "No results found. Try changing filters or running the optimizer.",
-      equip: "Equip",
-      noResultCell: "—",
-    };
+  const { t } = useI18n();
 
   const baseGearBonus = useMemo(
     () => aggregateEquippedGearBonus(customGears, equipped),
@@ -252,16 +197,16 @@ export default function GearOptimizeDialog({
       <DialogContent className="w-[95vw] max-w-7xl md:max-h-[85vh] p-0 overflow-hidden">
         <div className="p-6 pb-4">
           <DialogHeader>
-            <DialogTitle className="text-xl">{text.title}</DialogTitle>
+            <DialogTitle className="text-xl">{t("gearOptimize.title")}</DialogTitle>
           </DialogHeader>
 
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="secondary">{text.combos}: {combos.toLocaleString()}</Badge>
-            <Badge variant="secondary">{text.currentDamage}: {baseDamage.toFixed(1)}</Badge>
+            <Badge variant="secondary">{t("gearOptimize.combos")}: {combos.toLocaleString()}</Badge>
+            <Badge variant="secondary">{t("gearOptimize.currentDamage")}: {baseDamage.toFixed(1)}</Badge>
             <Badge variant="secondary">
-              {text.showing}: {displayedResults.length.toLocaleString()} / {results.length.toLocaleString()}
+              {t("gearOptimize.showing")}: {displayedResults.length.toLocaleString()} / {results.length.toLocaleString()}
             </Badge>
-            <span>{text.hoverHint}</span>
+            <span>{t("gearOptimize.hoverHint")}</span>
           </div>
         </div>
 
@@ -271,7 +216,7 @@ export default function GearOptimizeDialog({
             <div className="max-h-[70vh] overflow-y-auto">
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="animate-pulse text-sm text-muted-foreground">
-                  {text.calculating}
+                  {t("gearOptimize.calculating")}
                 </div>
               </div>
             </div>
@@ -290,15 +235,15 @@ export default function GearOptimizeDialog({
                 <div className="rounded-lg border bg-muted/30 p-4 flex flex-col gap-3">
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <div className="space-y-1">
-                      <div className="text-sm font-medium">{text.controls}</div>
+                      <div className="text-sm font-medium">{t("gearOptimize.controls")}</div>
                       <div className="text-xs text-muted-foreground">
-                        {text.controlsHint}
+                        {t("gearOptimize.controlsHint")}
                       </div>
                     </div>
 
                     <div className="flex items-end gap-3">
                       <label className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">{text.maxResults}</span>
+                        <span className="text-muted-foreground">{t("gearOptimize.maxResults")}</span>
                         <Input
                           type="number"
                           value={maxDisplay}
@@ -308,7 +253,7 @@ export default function GearOptimizeDialog({
                         />
                       </label>
                       <label className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">{text.itemPerSlotCap}</span>
+                        <span className="text-muted-foreground">{t("gearOptimize.itemPerSlotCap")}</span>
                         <Input
                           type="number"
                           value={perSlotCap}
@@ -319,7 +264,7 @@ export default function GearOptimizeDialog({
                         />
                       </label>
                       <Button data-tour="gear-optimize-recalculate" size="sm" onClick={onRecalculate}>
-                        {text.recalculate}
+                        {t("gearOptimize.recalculate")}
                       </Button>
                     </div>
                   </div>
@@ -335,7 +280,7 @@ export default function GearOptimizeDialog({
                         htmlFor="opt-upgrades-only"
                         className="text-sm text-muted-foreground select-none"
                       >
-                        {text.upgradesOnly}
+                        {t("gearOptimize.upgradesOnly")}
                       </label>
                     </div>
 
@@ -343,7 +288,7 @@ export default function GearOptimizeDialog({
                       <Input
                         value={resultQuery}
                         onChange={(e) => setResultQuery(e.target.value)}
-                        placeholder={text.searchPlaceholder}
+                        placeholder={t("gearOptimize.searchPlaceholder")}
                         className="h-9"
                       />
                     </div>
@@ -354,14 +299,14 @@ export default function GearOptimizeDialog({
                         variant={sort.col === "gain" ? "default" : "outline"}
                         onClick={() => dispatchSort({ type: "setCol", col: "gain" })}
                       >
-                        {text.sortGain}
+                        {t("gearOptimize.sortGain")}
                       </Button>
                       <Button
                         size="sm"
                         variant={sort.col === "damage" ? "default" : "outline"}
                         onClick={() => dispatchSort({ type: "setCol", col: "damage" })}
                       >
-                        {text.sortDamage}
+                        {t("gearOptimize.sortDamage")}
                       </Button>
                       <Button
                         size="sm"
@@ -381,21 +326,21 @@ export default function GearOptimizeDialog({
                     <table className="w-full text-xs border-collapse">
                         <thead className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
                           <tr>
-                            <th style={{ position: "sticky", left: 0, zIndex: 30, width: 60, backgroundColor: "hsl(var(--background))" }} className="text-left p-3 font-semibold">{text.row}</th>
+                            <th style={{ position: "sticky", left: 0, zIndex: 30, width: 60, backgroundColor: "hsl(var(--background))" }} className="text-left p-3 font-semibold">{t("gearOptimize.row")}</th>
                             <th style={{ position: "sticky", left: 60, zIndex: 30, width: 120, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-right p-3 font-semibold select-none" onClick={() => handleSort("damage")}>
-                              {text.damage}{sort.col === "damage" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                              {t("gearOptimize.damage")}{sort.col === "damage" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
                             <th style={{ position: "sticky", left: 180, zIndex: 30, width: 110, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-right p-3 font-semibold select-none" onClick={() => handleSort("gain")}>
-                              {text.gain}{sort.col === "gain" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                              {t("gearOptimize.gain")}{sort.col === "gain" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
                             <th style={{ position: "sticky", left: 290, zIndex: 30, width: 80, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("changes")}>
-                              {text.changes}{sort.col === "changes" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                              {t("gearOptimize.changes")}{sort.col === "changes" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
                             <th style={{ position: "sticky", left: 370, zIndex: 30, width: 120, backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("tune")}>
-                              {text.tune}{sort.col === "tune" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                              {t("gearOptimize.tune")}{sort.col === "tune" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
                             <th style={{ position: "sticky", left: 490, zIndex: 30, width: 90, boxShadow: "inset -1px 0 0 0 hsl(var(--border))", backgroundColor: "hsl(var(--background))", cursor: "pointer" }} className="text-center p-3 font-semibold select-none" onClick={() => handleSort("rate")}>
-                              {text.rate}{sort.col === "rate" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                              {t("gearOptimize.rate")}{sort.col === "rate" ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                             </th>
                             {GEAR_SLOTS.map(({ label }) => (
                               <th
@@ -406,7 +351,7 @@ export default function GearOptimizeDialog({
                                 {label}
                               </th>
                             ))}
-                            <th style={{ backgroundColor: "hsl(var(--background))" }} className="text-center p-3 font-semibold">{text.action}</th>
+                            <th style={{ backgroundColor: "hsl(var(--background))" }} className="text-center p-3 font-semibold">{t("gearOptimize.action")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -616,7 +561,7 @@ export default function GearOptimizeDialog({
                                           </span>
                                         )
                                       ) : (
-                                        <span className="text-muted-foreground text-xs">{text.noResultCell}</span>
+                                        <span className="text-muted-foreground text-xs">{t("gearOptimize.noResultCell")}</span>
                                       )}
                                     </td>
                                   );
@@ -628,7 +573,7 @@ export default function GearOptimizeDialog({
                                     onClick={() => onApply(r.selection)}
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                                   >
-                                    {text.equip}
+                                    {t("gearOptimize.equip")}
                                   </Button>
                                 </td>
                               </tr>
@@ -640,7 +585,7 @@ export default function GearOptimizeDialog({
                   </div>
                 ) : (
                   <div className="rounded-lg border bg-muted/20 p-10 text-center text-muted-foreground flex items-center justify-center">
-                    {text.empty}
+                    {t("gearOptimize.empty")}
                   </div>
                 )}
               </div>

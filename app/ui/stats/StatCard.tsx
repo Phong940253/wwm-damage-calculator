@@ -43,24 +43,7 @@ export default function StatCard({
   onIncreaseChange,
   onIncreaseBlur,
 }: StatCardProps) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      total: "Tổng",
-      increase: "Tăng",
-      base: "Gốc",
-      gear: "Trang bị",
-      attr: "Thuộc tính",
-      passive: "Nội tại",
-    }
-    : {
-      total: "Total",
-      increase: "Increase",
-      base: "Base",
-      gear: "Gear",
-      attr: "Attr",
-      passive: "Passive",
-    };
+  const { t } = useI18n();
 
   return (
     <Card className="group bg-card/55 border border-white/10 ring-1 ring-white/5 backdrop-blur-xl transition-all hover:bg-card/65 hover:border-emerald-500/20 hover:shadow-[0_18px_45px_-22px_rgba(0,0,0,0.55)] focus-within:border-emerald-500/30 focus-within:ring-emerald-500/20">
@@ -91,7 +74,7 @@ export default function StatCard({
 
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-2 space-y-1">
-            <div className="text-[11px] text-muted-foreground">{text.total}</div>
+            <div className="text-[11px] text-muted-foreground">{t("stats.statTotal")}</div>
             <Input
               data-tour={statKey === "Agility" ? "stat-input" : undefined}
               type="number"
@@ -104,7 +87,7 @@ export default function StatCard({
           </div>
 
           <div className="col-span-1 space-y-1">
-            <div className="text-[11px] text-muted-foreground">{text.increase}</div>
+            <div className="text-[11px] text-muted-foreground">{t("stats.statIncrease")}</div>
             <Input
               type="number"
               value={
@@ -126,24 +109,24 @@ export default function StatCard({
           <div className="flex flex-wrap gap-2 pt-1">
             {base !== 0 && (
               <Badge className="bg-gray-500/15 text-gray-300 border border-gray-500/25">
-                {text.base} {base.toFixed(2)}
+                {t("stats.statBase")} {base.toFixed(2)}
               </Badge>
             )}
             {gear !== 0 && (
               <Badge className="bg-blue-500/15 text-blue-300 border border-blue-500/25">
-                {text.gear} {gear > 0 ? "+" : ""}
+                {t("stats.statGear")} {gear > 0 ? "+" : ""}
                 {gear.toFixed(2)}
               </Badge>
             )}
             {derivedValue !== 0 && (
               <Badge className="bg-purple-500/15 text-purple-300 border border-purple-500/25">
-                {text.attr} {derivedValue > 0 ? "+" : ""}
+                {t("stats.statAttr")} {derivedValue > 0 ? "+" : ""}
                 {derivedValue.toFixed(2)}
               </Badge>
             )}
             {passiveValue !== 0 && (
               <Badge className="bg-amber-500/15 text-amber-300 border border-amber-500/25">
-                {text.passive} {passiveValue > 0 ? "+" : ""}
+                {t("stats.statPassive")} {passiveValue > 0 ? "+" : ""}
                 {passiveValue.toFixed(2)}
               </Badge>
             )}

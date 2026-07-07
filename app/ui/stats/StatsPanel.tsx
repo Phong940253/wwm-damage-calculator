@@ -70,42 +70,7 @@ export default function StatsPanel({
   onApplyIncrease,
   onSaveCurrent,
 }: Props) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      levels: "Cấp độ",
-      playerLevel: "Cấp nhân vật",
-      enemyLevel: "Cấp kẻ địch",
-      elements: "Nguyên tố",
-      martialArt: "Võ học",
-      autoSync: "Tự đồng bộ nguyên tố chính",
-      actions: "Hành động",
-      applyIncrease: "Áp dụng tăng vào hiện tại",
-      saveCurrent: "Lưu hiện tại",
-      heatmap: "Ưu tiên stat (Heatmap)",
-      lineCount: "Số dòng affix (n)",
-      gainRange: "Mức tăng DMG",
-      affixGain: "Affix cộng",
-      noHeatmap: "Chưa đủ dữ liệu để tính heatmap",
-      rankHint: "Ưu tiên farm từ trên xuống",
-    }
-    : {
-      levels: "Levels",
-      playerLevel: "Player level",
-      enemyLevel: "Enemy level",
-      elements: "Elements",
-      martialArt: "Martial Art",
-      autoSync: "Auto-syncs main element",
-      actions: "Actions",
-      applyIncrease: "Apply Increase → Current",
-      saveCurrent: "Save Current",
-      heatmap: "Stat Priority Heatmap",
-      lineCount: "Affix line count (n)",
-      gainRange: "DMG gain",
-      affixGain: "Affix gain",
-      noHeatmap: "Not enough data to compute heatmap",
-      rankHint: "Farm priority from top to bottom",
-    };
+  const { t } = useI18n();
 
   const safeLevelContext = levelContext ?? { playerLevel: 81, enemyLevel: 81 };
   const safeSetPlayerLevel = setPlayerLevel ?? (() => { });
@@ -203,10 +168,10 @@ export default function StatsPanel({
       const base64Array = await Promise.all(files.map(fileToBase64));
       const result = await callGeminiVision(base64Array, STATS_OCR_PROMPT) as StatsOcrResult;
       applyOcrResult(result);
-      alert(language === "vi" ? `OCR thành công ${files.length} ảnh!` : `OCR succeeded for ${files.length} image(s)!`);
+      alert(t("ocr.statsSuccess").replace("{count}", String(files.length)));
     } catch (e) {
       console.error(e);
-      alert(language === "vi" ? "OCR thất bại. Vui lòng thử lại." : "OCR failed. Please try again.");
+      alert(t("ocr.statsFail"));
     }
     setOcrLoading(false);
   };
@@ -386,7 +351,7 @@ export default function StatsPanel({
             onClick={() => setLevelsCollapsed(!levelsCollapsed)}
             className="flex w-full items-center gap-3 group/header cursor-pointer"
           >
-            <h2 className="text-lg font-semibold">{text.levels}</h2>
+            <h2 className="text-lg font-semibold">{t("stats.levels")}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
             <ChevronDown
               size={16}
@@ -399,7 +364,7 @@ export default function StatsPanel({
           {!levelsCollapsed && (
             <div className="grid gap-3 md:grid-cols-2 sm:gap-4 animate-in fade-in-0 duration-200">
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground">{text.playerLevel}</label>
+                <label className="text-xs text-muted-foreground">{t("stats.playerLevel")}</label>
                 <select
                   data-tour="player-level"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -415,7 +380,7 @@ export default function StatsPanel({
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground">{text.enemyLevel}</label>
+                <label className="text-xs text-muted-foreground">{t("stats.enemyLevel")}</label>
                 <select
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   value={safeLevelContext.enemyLevel}
@@ -439,7 +404,7 @@ export default function StatsPanel({
             onClick={() => setElementsCollapsed(!elementsCollapsed)}
             className="flex w-full items-center gap-3 group/header cursor-pointer"
           >
-            <h2 className="text-lg font-semibold">{text.elements}</h2>
+            <h2 className="text-lg font-semibold">{t("stats.elements")}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
             <ChevronDown
               size={16}
@@ -452,9 +417,9 @@ export default function StatsPanel({
           {!elementsCollapsed && (
             <div className="space-y-2 animate-in fade-in-0 duration-200">
               <div className="flex items-baseline justify-between gap-3">
-                <label className="text-xs text-muted-foreground">{text.martialArt}</label>
+                <label className="text-xs text-muted-foreground">{t("stats.martialArt")}</label>
                 <span className="text-[11px] text-muted-foreground">
-                  {text.autoSync}
+                  {t("stats.autoSync")}
                 </span>
               </div>
               <select
@@ -489,7 +454,7 @@ export default function StatsPanel({
             onClick={() => setHeatmapCollapsed(!heatmapCollapsed)}
             className="flex w-full items-center gap-3 group/header cursor-pointer"
           >
-            <h2 className="text-lg font-semibold">{text.heatmap}</h2>
+            <h2 className="text-lg font-semibold">{t("stats.heatmap")}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
             <ChevronDown
               size={16}
@@ -503,7 +468,7 @@ export default function StatsPanel({
             <div className="space-y-4 animate-in fade-in-0 duration-200">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">{text.lineCount}</label>
+                  <label className="text-xs text-muted-foreground">{t("stats.lineCount")}</label>
                   <Input
                     type="number"
                     min={1}
@@ -517,12 +482,12 @@ export default function StatsPanel({
                     className="h-10 w-44 bg-background border-input focus-visible:ring-ring/25 focus-visible:border-ring"
                   />
                 </div>
-                <span className="text-xs text-muted-foreground">{text.rankHint}</span>
+                <span className="text-xs text-muted-foreground">{t("stats.rankHint")}</span>
               </div>
 
               {statHeatmap.length === 0 ? (
                 <div className="rounded-xl border border-white/10 bg-background/30 px-4 py-3 text-sm text-muted-foreground">
-                  {text.noHeatmap}
+                  {t("stats.noHeatmap")}
                 </div>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2 sm:gap-4">
@@ -556,14 +521,14 @@ export default function StatsPanel({
                             </div>
                           </div>
                           <Badge className={`${impactClass} ${impactTextClass} border`}>
-                            {text.gainRange} {row.minImpactPct >= 0 ? "+" : ""}
+                            {t("stats.gainRange")} {row.minImpactPct >= 0 ? "+" : ""}
                             {row.minImpactPct.toFixed(2)}% → {row.maxImpactPct >= 0 ? "+" : ""}
                             {row.maxImpactPct.toFixed(2)}%
                           </Badge>
                         </div>
 
                         <div className="text-xs text-muted-foreground">
-                          {text.affixGain}: +{row.minDelta.toFixed(1)} ~ +{row.maxDelta.toFixed(1)}
+                          {t("stats.affixGain")}: +{row.minDelta.toFixed(1)} ~ +{row.maxDelta.toFixed(1)}
                         </div>
 
                         <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
@@ -649,7 +614,7 @@ export default function StatsPanel({
 
         <section className="space-y-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">{text.actions}</h2>
+            <h2 className="text-lg font-semibold">{t("stats.actions")}</h2>
             <Separator className="flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
@@ -660,7 +625,7 @@ export default function StatsPanel({
               variant="secondary"
               type="button"
             >
-              {text.applyIncrease}
+              {t("stats.applyIncrease")}
             </Button>
 
             <Button
@@ -669,11 +634,12 @@ export default function StatsPanel({
               variant="secondary"
               type="button"
             >
-              {text.saveCurrent}
+              {t("stats.saveCurrent")}
             </Button>
           </div>
 
           <Button
+            data-tour="stats-ocr"
             onClick={() => statsFileRef.current?.click()}
             className="w-full rounded-xl bg-sky-500/15 text-sky-300 border border-sky-500/25 hover:bg-sky-500/25 hover:text-sky-200"
             variant="secondary"
@@ -683,10 +649,10 @@ export default function StatsPanel({
             {ocrLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {language === "vi" ? "Đang xử lý..." : "Processing..."}
+                {t("ocr.processing")}
               </>
             ) : (
-              language === "vi" ? "Nhập Stats từ Ảnh (OCR)" : "Import Stats from Images (OCR)"
+              t("ocr.statsButton")
             )}
           </Button>
 

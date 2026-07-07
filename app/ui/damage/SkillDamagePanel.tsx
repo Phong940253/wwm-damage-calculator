@@ -17,20 +17,7 @@ interface Props {
 }
 
 export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEven = false }: Props) {
-    const { language } = useI18n();
-    const text = language === "vi"
-        ? {
-            abrasion: "Mức tối thiểu",
-            average: "Trung bình",
-            critical: "Chí mạng",
-            affinity: "Affinity",
-        }
-        : {
-            abrasion: "Abrasion",
-            average: "Average",
-            critical: "Critical",
-            affinity: "Affinity",
-        };
+    const { t } = useI18n();
 
     const [open, setOpen] = useState(false);
     const total = result.total;
@@ -44,10 +31,10 @@ export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEve
     const perHitAffinity = result.perHit.map((hit) => hit.affinity.value);
 
     const hitsTooltip = [
-        `${text.abrasion}: ${formatList(perHitMin)}`,
-        `${text.average}: ${formatList(perHitNormal)}`,
-        `${text.critical}: ${formatList(perHitCritical)}`,
-        `${text.affinity}: ${formatList(perHitAffinity)}`,
+        `${t("damage.abrasion")}: ${formatList(perHitMin)}`,
+        `${t("damage.average")}: ${formatList(perHitNormal)}`,
+        `${t("damage.critical")}: ${formatList(perHitCritical)}`,
+        `${t("damage.affinity")}: ${formatList(perHitAffinity)}`,
     ].join("\n");
 
     const hitTooltipByType = {
@@ -69,10 +56,10 @@ export function SkillDamagePanel({ skill, result, ctx, showHeader = false, isEve
                     `}
                 >
                     <div className="col-span-2 md:col-span-1 lg:col-span-1"></div>
-                    <div className="text-right">{text.abrasion}</div>
-                    <div className="text-right">{text.average}</div>
-                    <div className="text-right">{text.critical}</div>
-                    <div className="text-right">{text.affinity}</div>
+                    <div className="text-right">{t("damage.abrasion")}</div>
+                    <div className="text-right">{t("damage.average")}</div>
+                    <div className="text-right">{t("damage.critical")}</div>
+                    <div className="text-right">{t("damage.affinity")}</div>
                 </div>
             )}
 

@@ -55,26 +55,7 @@ export default function GearHoverDetail({
   baseGearBonus,
   baseDamage,
 }: Props) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      newBadge: "Mới",
-      newCol: "Mới",
-      equipped: "Đang trang bị",
-      stat: "Chỉ số",
-      old: "Cũ",
-      topContrib: "Top contributor được đánh dấu bằng chấm; mức ảnh hưởng được ước tính bằng cách áp riêng từng thay đổi chỉ số.",
-      dmg: "sát thương",
-    }
-    : {
-      newBadge: "New",
-      newCol: "New",
-      equipped: "Equipped",
-      stat: "Stat",
-      old: "Old",
-      topContrib: "Top contributors are marked with a dot; impact is estimated by applying each stat delta alone.",
-      dmg: "dmg",
-    };
+  const { t } = useI18n();
 
   const newTotals = getGearStatTotals(gear);
   const oldTotals = getGearStatTotals(oldGear);
@@ -224,7 +205,7 @@ export default function GearHoverDetail({
           <div className="text-sm font-semibold truncate">{gear.name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             <Badge className="bg-emerald-500/15 text-emerald-700" variant="outline">
-              {text.newBadge}
+              {t("gearCard.hoverNew")}
             </Badge>
             <Badge variant="outline">Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}</Badge>
             <Badge variant="secondary">{gear.slot}</Badge>
@@ -242,7 +223,7 @@ export default function GearHoverDetail({
         <>
           <Separator className="my-3" />
           <div className="text-xs text-muted-foreground">
-            {text.equipped}: <span className="font-medium text-foreground">{oldGear.name}</span>
+            {t("gearCard.hoverEquipped")}: <span className="font-medium text-foreground">{oldGear.name}</span>
           </div>
         </>
       )}
@@ -250,9 +231,9 @@ export default function GearHoverDetail({
       <Separator className="my-3" />
 
       <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-xs">
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{text.stat}</div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{text.newCol}</div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{text.old}</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("gearCard.hoverStat")}</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{t("gearCard.hoverNewCol")}</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{t("gearCard.hoverOld")}</div>
         <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">Δ</div>
 
         {rows.map((r) => {
@@ -268,7 +249,7 @@ export default function GearHoverDetail({
           const impactLabel =
             impactPct === undefined
               ? null
-              : `${impactPct >= 0 ? "+" : ""}${impactPct.toFixed(2)}% ${text.dmg}`;
+              : `${impactPct >= 0 ? "+" : ""}${impactPct.toFixed(2)}% ${t("gearCard.hoverDmg")}`;
 
           return (
             <div key={r.statKey} className="contents">
@@ -315,7 +296,7 @@ export default function GearHoverDetail({
       </div>
 
       <div className="mt-3 text-[11px] text-muted-foreground">
-        {text.topContrib}
+        {t("gearCard.hoverTopContrib")}
       </div>
     </div>
   );

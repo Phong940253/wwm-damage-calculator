@@ -176,72 +176,7 @@ function calcRotationAwareNormalDamage(
 }
 
 export default function GearEquippedTab() {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      impactTitle: "📈 Tác động sát thương của trang bị",
-      impactDesc: "Hiển thị mức tăng khi so với việc để trống ô đó (có tính rotation).",
-      avgDamage: "Sát thương TB",
-      equipped: "đang trang bị",
-      empty: "Trống",
-      noMain: "Không-main",
-      worst: "Yếu nhất",
-      withoutSlot: "Không có ô này",
-      withCurrentGear: "Với trang bị hiện tại",
-      deltaFromSlot: "Δ từ ô này",
-      emptyOption: "Trống",
-      tuneTitle: "🎲 Tune advisor",
-      tuneDesc:
-        "Gợi ý dòng phụ đáng roll nhất (chỉ tune 1 dòng, random trong hệ hiện tại).",
-      tuneUnsupported:
-        "Hệ Bellstrike chưa mở rule tune trong tool (đợi game cập nhật).",
-      avgGain: "Avg gain",
-      successRate: "Success rate",
-      bestCase: "Best-case",
-      recommend: "Nên roll",
-      targetPool: "Pool hệ",
-      currentLine: "Dòng hiện tại",
-      toStat: "Có thể ra",
-      noSubLine: "Không có dòng phụ hợp lệ để tune (hoặc trang bị đã tune).",
-      line: "Dòng",
-      allLines: "Tất cả dòng có thể tune",
-      gear: "Trang bị",
-      current: "Hiện tại",
-      availableStat: "Stat có thể ra",
-      editGear: "Sửa trang bị",
-    }
-    : {
-      impactTitle: "📈 Gear DMG Impact",
-      impactDesc: "Shows gain vs leaving that slot empty (rotation-aware).",
-      avgDamage: "Avg DMG",
-      equipped: "equipped",
-      empty: "Empty",
-      noMain: "No-main",
-      worst: "Worst",
-      withoutSlot: "Without this slot",
-      withCurrentGear: "With current gear",
-      deltaFromSlot: "Δ from this slot",
-      emptyOption: "Empty",
-      tuneTitle: "🎲 Tune advisor",
-      tuneDesc:
-        "Suggests the best sub-line to reroll (single line tune, random within current system).",
-      tuneUnsupported:
-        "Bellstrike tune rules are not available yet in this tool (waiting game update).",
-      avgGain: "Avg gain",
-      successRate: "Success rate",
-      bestCase: "Best-case",
-      recommend: "Recommended",
-      targetPool: "System pool",
-      currentLine: "Current line",
-      toStat: "Possible outcomes",
-      noSubLine: "No valid sub-line available to tune (or gear already tuned).",
-      line: "Line",
-      allLines: "All tunable lines",
-      gear: "Gear",
-      current: "Current",
-      availableStat: "Available stat",
-      editGear: "Edit gear",
-    };
+  const { t } = useI18n();
 
   const { customGears, equipped, setEquipped } = useGear();
   const [editingGear, setEditingGear] = useState<CustomGear | null>(null);
@@ -632,19 +567,19 @@ export default function GearEquippedTab() {
       <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-0.5">
-            <div className="text-sm font-semibold">{text.impactTitle}</div>
+            <div className="text-sm font-semibold">{t("gearEquipped.impactTitle")}</div>
             <div className="text-xs text-muted-foreground">
-              {text.impactDesc}
+              {t("gearEquipped.impactDesc")}
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">
-              {text.avgDamage}: {Math.round(fullDamage).toLocaleString()}
+              {t("gearEquipped.avgDamage")}: {Math.round(fullDamage).toLocaleString()}
             </Badge>
             <Badge variant="outline" className="text-muted-foreground">
               {slotsWithImpact.rows.filter((r) => r.equippedGear).length}/
-              {GEAR_SLOTS.length} {text.equipped}
+              {GEAR_SLOTS.length} {t("gearEquipped.equipped")}
             </Badge>
           </div>
         </div>
@@ -687,12 +622,12 @@ export default function GearEquippedTab() {
                         <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
                         {isWorst && (
                           <Badge className="bg-amber-500/15 text-amber-700" variant="outline">
-                            {text.worst}
+                            {t("gearEquipped.worst")}
                           </Badge>
                         )}
                       </div>
                       <p className="truncate text-sm font-semibold">
-                        {row.equippedGear?.name ?? text.empty}
+                        {row.equippedGear?.name ?? t("gearEquipped.empty")}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         <Badge
@@ -713,7 +648,7 @@ export default function GearEquippedTab() {
                               className="h-6 border-amber-400/30 bg-amber-500/10 px-2 text-[11px] text-amber-700"
                               title="Gear impact excluding main stats (subs + bonus only)"
                             >
-                              {text.noMain} {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
+                              {t("gearEquipped.noMain")} {row.perStat.impactPctNoMain >= 0 ? "+" : ""}
                               {row.perStat.impactPctNoMain.toFixed(2)}%
                             </Badge>
                           )}
@@ -727,24 +662,24 @@ export default function GearEquippedTab() {
                         variant="ghost"
                         className="h-8 shrink-0 gap-1.5 rounded-full px-3 text-[11px] text-muted-foreground hover:bg-white/5 hover:text-foreground"
                         onClick={() => setEditingGear(row.equippedGear ?? null)}
-                        title={text.editGear}
+                        title={t("gearEquipped.editGear")}
                       >
                         <PencilLine className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">{text.editGear}</span>
+                        <span className="hidden sm:inline">{t("gearEquipped.editGear")}</span>
                       </Button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                    <div className="text-muted-foreground">{text.withoutSlot}</div>
+                    <div className="text-muted-foreground">{t("gearEquipped.withoutSlot")}</div>
                     <div className="text-right">
                       {Math.round(row.damageWithoutSlot).toLocaleString()}
                     </div>
-                    <div className="text-muted-foreground">{text.withCurrentGear}</div>
+                    <div className="text-muted-foreground">{t("gearEquipped.withCurrentGear")}</div>
                     <div className="text-right">
                       {Math.round(fullDamage).toLocaleString()}
                     </div>
-                    <div className="text-muted-foreground">{text.deltaFromSlot}</div>
+                    <div className="text-muted-foreground">{t("gearEquipped.deltaFromSlot")}</div>
                     <div className={cn("text-right font-medium", diffTone)}>
                       {row.diff > 0 ? "+" : ""}
                       {Math.round(row.diff).toLocaleString()}
@@ -755,7 +690,7 @@ export default function GearEquippedTab() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>{text.gear}</span>
+                      <span>{t("gearEquipped.gear")}</span>
                       <span>{available.length} options</span>
                     </div>
                     <select
@@ -777,7 +712,7 @@ export default function GearEquippedTab() {
                         "border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
                       )}
                     >
-                      <option value="">{text.emptyOption}</option>
+                      <option value="">{t("gearEquipped.emptyOption")}</option>
                       {available.map((g) => (
                         <option key={g.id} value={g.id}>
                           {g.name}
@@ -807,7 +742,7 @@ export default function GearEquippedTab() {
       <Dialog open={Boolean(editingGear)} onOpenChange={(open) => !open && setEditingGear(null)}>
         <DialogContent className="max-h-[92dvh] w-[98vw] max-w-[98vw] overflow-y-auto p-4 sm:max-h-[90dvh] sm:w-[96vw] sm:max-w-2xl sm:p-6">
           <DialogHeader>
-            <DialogTitle>{text.editGear}</DialogTitle>
+            <DialogTitle>{t("gearEquipped.editGear")}</DialogTitle>
           </DialogHeader>
           {editingGear && (
             <GearForm initialGear={editingGear} onSuccess={() => setEditingGear(null)} />
@@ -818,18 +753,18 @@ export default function GearEquippedTab() {
       <Card className="border border-white/10 bg-card/60 p-3 shadow-lg sm:p-4">
         <div className="space-y-3">
           <div className="space-y-0.5">
-            <div className="text-sm font-semibold">{text.tuneTitle}</div>
-            <div className="text-xs text-muted-foreground">{text.tuneDesc}</div>
+            <div className="text-sm font-semibold">{t("gearEquipped.tuneTitle")}</div>
+            <div className="text-xs text-muted-foreground">{t("gearEquipped.tuneDesc")}</div>
           </div>
 
           {tuneStatPool.length === 0 ? (
             <div className="rounded-md border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
-              {text.tuneUnsupported}
+              {t("gearEquipped.tuneUnsupported")}
             </div>
           ) : groupedTuneAdvice.length > 0 ? (
             <div className="space-y-3">
               <div className="text-[11px] text-muted-foreground">
-                {text.targetPool}: {tuneStatPool.map((k) => getStatLabel(k, elementStats)).join(", ")}
+                {t("gearEquipped.targetPool")}: {tuneStatPool.map((k) => getStatLabel(k, elementStats)).join(", ")}
               </div>
 
               <div className="space-y-2">
@@ -840,7 +775,7 @@ export default function GearEquippedTab() {
                   >
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <Badge variant="outline" className="border-white/15">
-                        {text.gear}: {group.slotLabel} - {group.gearName}
+                        {t("gearEquipped.gear")}: {group.slotLabel} - {group.gearName}
                       </Badge>
                       <Badge
                         variant="outline"
@@ -849,7 +784,7 @@ export default function GearEquippedTab() {
                           group.items[0].bestCaseGainPct >= 0 ? "text-emerald-700" : "text-red-700"
                         )}
                       >
-                        {text.bestCase} {group.items[0].bestCaseGainPct >= 0 ? "+" : ""}
+                        {t("gearEquipped.bestCase")} {group.items[0].bestCaseGainPct >= 0 ? "+" : ""}
                         {group.items[0].bestCaseGainPct.toFixed(2)}%
                       </Badge>
                     </div>
@@ -866,7 +801,7 @@ export default function GearEquippedTab() {
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="min-w-0">
                               <span className="text-muted-foreground">
-                                {text.line} #{item.subIndex + 1}
+                                {t("gearEquipped.line")} #{item.subIndex + 1}
                               </span>
                               <span className="mx-1 text-muted-foreground">•</span>
                               <span
@@ -881,7 +816,7 @@ export default function GearEquippedTab() {
                             <div className="flex items-center gap-1.5">
                               {item.rank === 1 && (
                                 <Badge className="h-5 bg-emerald-500/15 px-1.5 text-[10px] text-emerald-700" variant="secondary">
-                                  {text.recommend}
+                                  {t("gearEquipped.recommend")}
                                 </Badge>
                               )}
                               <div className="flex items-center gap-1.5 whitespace-nowrap">
@@ -889,14 +824,14 @@ export default function GearEquippedTab() {
                                   variant="outline"
                                   className="border-emerald-400/25 text-emerald-700"
                                 >
-                                  {text.avgGain} {item.avgGainPct >= 0 ? "+" : ""}
+                                  {t("gearEquipped.avgGain")} {item.avgGainPct >= 0 ? "+" : ""}
                                   {item.avgGainPct.toFixed(2)}%
                                 </Badge>
                                 <Badge
                                   variant="outline"
                                   className={cn("border-white/15", getTuneSuccessRateToneClass(item.successRatePct))}
                                 >
-                                  {text.successRate} {item.successRatePct.toFixed(2)}%
+                                  {t("gearEquipped.successRate")} {item.successRatePct.toFixed(2)}%
                                 </Badge>
                               </div>
                               <Badge
@@ -908,7 +843,7 @@ export default function GearEquippedTab() {
                                     : "text-red-700"
                                 )}
                               >
-                                {text.bestCase} {item.bestCaseGainPct >= 0 ? "+" : ""}
+                                {t("gearEquipped.bestCase")} {item.bestCaseGainPct >= 0 ? "+" : ""}
                                 {item.bestCaseGainPct.toFixed(2)}%
                               </Badge>
                             </div>
@@ -916,7 +851,7 @@ export default function GearEquippedTab() {
 
                           <div className="mt-1.5 space-y-1">
                             <div className="text-[11px] text-muted-foreground">
-                              {text.availableStat}
+                              {t("gearEquipped.availableStat")}
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {(() => {
@@ -971,7 +906,7 @@ export default function GearEquippedTab() {
             </div>
           ) : (
             <div className="rounded-md border border-white/10 bg-background/30 px-3 py-2 text-xs text-muted-foreground">
-              {text.noSubLine}
+              {t("gearEquipped.noSubLine")}
             </div>
           )}
         </div>

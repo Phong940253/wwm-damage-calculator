@@ -23,128 +23,28 @@ type GuideDefinition = {
     steps: Step[];
 };
 
-const SETUP_STEPS: Step[] = [
-    {
-        selector: "[data-tour='player-level']",
-        title: "Step 1: Choose Level",
-        description: "Select your Player level before optimizing damage.",
-        listenEvents: ["change", "click"],
-    },
-    {
-        selector: "[data-tour='martial-art']",
-        title: "Step 2: Choose Martial Art",
-        description: "Pick your Martial Art to sync the main element.",
-        listenEvents: ["change", "click"],
-    },
-    {
-        selector: "[data-tour='tab-rotation']",
-        title: "Step 3: Open Rotation",
-        description: "Click the Rotation tab to set up your skill sequence.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='tab-gear-root']",
-        title: "Step 4: Open Gear",
-        description: "Click the Gear root tab to manage gear.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='gear-add-open']",
-        title: "Step 5: Open Add Gear",
-        description: "Click + Add Gear to open the gear form.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='gear-ocr']",
-        title: "Step 6: Use OCR",
-        description: "Click OCR and pick a gear image to auto-fill fields.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='gear-add-submit']",
-        title: "Step 7: Add Gear",
-        description: "Click Add Gear to save the item.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='tab-main-root']",
-        title: "Step 8: Open Main",
-        description: "Click the Main root tab to return to the main calculator.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='tab-stats']",
-        title: "Step 9: Back to Stats",
-        description: "Click the Stats tab to continue with stat inputs.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='stat-input']",
-        title: "Step 10: Enter Stat",
-        description: "Enter values in a Total field to complete the flow.",
-        listenEvents: ["input", "change", "click"],
-    },
+const SETUP_SELECTORS: Pick<Step, "selector" | "listenEvents" | "advanceDelayMs" | "waitForSelector" | "waitForSelectorCycle" | "waitTimeoutMs">[] = [
+    { selector: "[data-tour='player-level']", listenEvents: ["change", "click"] },
+    { selector: "[data-tour='martial-art']", listenEvents: ["change", "click"] },
+    { selector: "[data-tour='tab-rotation']", listenEvents: ["click"] },
+    { selector: "[data-tour='tab-gear-root']", listenEvents: ["click"] },
+    { selector: "[data-tour='gear-add-open']", listenEvents: ["click"] },
+    { selector: "[data-tour='gear-ocr']", listenEvents: ["click"] },
+    { selector: "[data-tour='gear-add-submit']", listenEvents: ["click"] },
+    { selector: "[data-tour='tab-main-root']", listenEvents: ["click"] },
+    { selector: "[data-tour='tab-stats']", listenEvents: ["click"] },
+    { selector: "[data-tour='stats-ocr']", listenEvents: ["click"] },
+    { selector: "[data-tour='stat-input']", listenEvents: ["input", "change", "click"] },
 ];
 
-const OPTIMIZE_STEPS: Step[] = [
-    {
-        selector: "[data-tour='tab-gear-root']",
-        title: "Step 1: Open Gear",
-        description: "Click the Gear root tab.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='gear-optimize-open']",
-        title: "Step 2: Open Optimize",
-        description: "Click Optimize to open the optimizer dialog.",
-        listenEvents: ["click"],
-        advanceDelayMs: 250,
-        waitForSelector: "[data-tour='gear-optimize-recalculate']",
-        waitTimeoutMs: 120000,
-    },
-    {
-        selector: "[data-tour='gear-optimize-recalculate']",
-        title: "Step 3: Recalculate",
-        description: "Adjust limits if needed, then click Recalculate.",
-        listenEvents: ["click"],
-        advanceDelayMs: 300,
-        waitForSelectorCycle: "[data-tour='gear-optimize-progress']",
-        waitTimeoutMs: 120000,
-    },
-    {
-        selector: "[data-tour='gear-optimize-equip']",
-        title: "Step 4: Equip Result",
-        description: "Click Equip on the result you want to apply.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='tab-main-root']",
-        title: "Step 5: Back to Main",
-        description: "Click the Main root tab to return.",
-        listenEvents: ["click"],
-    },
-    {
-        selector: "[data-tour='tab-stats']",
-        title: "Step 6: Open Stats",
-        description: "Click Stats to review updated values.",
-        listenEvents: ["click"],
-    },
+const OPTIMIZE_SELECTORS: Pick<Step, "selector" | "listenEvents" | "advanceDelayMs" | "waitForSelector" | "waitForSelectorCycle" | "waitTimeoutMs">[] = [
+    { selector: "[data-tour='tab-gear-root']", listenEvents: ["click"] },
+    { selector: "[data-tour='gear-optimize-open']", listenEvents: ["click"], advanceDelayMs: 250, waitForSelector: "[data-tour='gear-optimize-recalculate']", waitTimeoutMs: 120000 },
+    { selector: "[data-tour='gear-optimize-recalculate']", listenEvents: ["click"], advanceDelayMs: 300, waitForSelectorCycle: "[data-tour='gear-optimize-progress']", waitTimeoutMs: 120000 },
+    { selector: "[data-tour='gear-optimize-equip']", listenEvents: ["click"] },
+    { selector: "[data-tour='tab-main-root']", listenEvents: ["click"] },
+    { selector: "[data-tour='tab-stats']", listenEvents: ["click"] },
 ];
-
-const GUIDES: Record<GuideId, GuideDefinition> = {
-    setup: {
-        id: "setup",
-        doneKey: "wwm_interactive_guide_done",
-        startLabel: "Start Setup Guide",
-        steps: SETUP_STEPS,
-    },
-    optimize: {
-        id: "optimize",
-        doneKey: "wwm_interactive_optimize_guide_done",
-        startLabel: "Start Optimize Guide",
-        steps: OPTIMIZE_STEPS,
-    },
-};
 
 const FEEDBACK_URL = "https://github.com/Phong940253/wwm-damage-calculator/issues/new";
 
@@ -159,7 +59,24 @@ export function InteractiveGuideOverlay() {
     const isAdvancingRef = useRef(false);
     const [tooltipHeight, setTooltipHeight] = useState(170);
 
-    const activeGuide = activeGuideId ? GUIDES[activeGuideId] : null;
+    const setupSteps = useMemo<Step[]>(() => SETUP_SELECTORS.map((s, i) => ({
+        ...s,
+        title: t(`guide.steps.setupTitle${i + 1}`),
+        description: t(`guide.steps.setupDesc${i + 1}`),
+    })), [t]);
+
+    const optimizeSteps = useMemo<Step[]>(() => OPTIMIZE_SELECTORS.map((s, i) => ({
+        ...s,
+        title: t(`guide.steps.optimizeTitle${i + 1}`),
+        description: t(`guide.steps.optimizeDesc${i + 1}`),
+    })), [t]);
+
+    const guides = useMemo<Record<GuideId, GuideDefinition>>(() => ({
+        setup: { id: "setup", doneKey: "wwm_interactive_guide_done", startLabel: "", steps: setupSteps },
+        optimize: { id: "optimize", doneKey: "wwm_interactive_optimize_guide_done", startLabel: "", steps: optimizeSteps },
+    }), [setupSteps, optimizeSteps]);
+
+    const activeGuide = activeGuideId ? guides[activeGuideId] : null;
     const currentSteps = activeGuide?.steps ?? [];
     const currentStep = currentSteps[stepIndex];
 
@@ -169,13 +86,13 @@ export function InteractiveGuideOverlay() {
     }, [isActive, currentStep]);
 
     useEffect(() => {
-        const alreadyDone = localStorage.getItem(GUIDES.setup.doneKey) === "1";
+        const alreadyDone = localStorage.getItem(guides.setup.doneKey) === "1";
         if (!alreadyDone) {
             setActiveGuideId("setup");
             setIsActive(true);
             setStepIndex(0);
         }
-    }, []);
+    }, [guides.setup.doneKey]);
 
     useEffect(() => {
         if (!isActive) return;
@@ -282,14 +199,14 @@ export function InteractiveGuideOverlay() {
             isAdvancingRef.current = false;
         };
 
-        currentStep.listenEvents.forEach((eventName) => {
+        (currentStep.listenEvents as string[]).forEach((eventName) => {
             currentElement.addEventListener(eventName, onEvent);
         });
 
         return () => {
             canceled = true;
             isAdvancingRef.current = false;
-            currentStep.listenEvents.forEach((eventName) => {
+            (currentStep.listenEvents as string[]).forEach((eventName) => {
                 currentElement.removeEventListener(eventName, onEvent);
             });
         };
@@ -530,7 +447,7 @@ export function InteractiveGuideOverlay() {
 
                 {!rect && (
                     <p className="mt-2 text-[11px] text-amber-300">
-                        Target is not visible yet. Switch to the required tab and continue.
+                        {t("guide.steps.targetNotVisible")}
                     </p>
                 )}
 
@@ -543,7 +460,7 @@ export function InteractiveGuideOverlay() {
                         }}
                         className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
                     >
-                        Skip
+                        {t("guide.steps.skip")}
                     </button>
 
                     <button
@@ -558,7 +475,7 @@ export function InteractiveGuideOverlay() {
                         }}
                         className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/20"
                     >
-                        {stepIndex >= currentSteps.length - 1 ? "Finish" : "Next"}
+                        {stepIndex >= currentSteps.length - 1 ? t("guide.steps.finish") : t("guide.steps.next")}
                     </button>
                 </div>
 

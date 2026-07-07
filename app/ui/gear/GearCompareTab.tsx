@@ -44,44 +44,7 @@ export default function GearCompareTab({
   elementStats,
   rotation,
 }: GearCompareTabProps) {
-  const { language } = useI18n();
-  const text = language === "vi"
-    ? {
-      title: "So sánh trang bị",
-      swap: "Đổi chỗ",
-      gearA: "Trang bị A",
-      gearB: "Trang bị B",
-      selectGear: "Chọn trang bị...",
-      mainAttributes: "Thuộc tính chính",
-      subAttributes: "Thuộc tính phụ",
-      damageComparison: "So sánh sát thương",
-      stat: "Chỉ số",
-      damageType: "Loại sát thương",
-      difference: "Chênh lệch",
-      changePct: "% thay đổi",
-      minDamage: "Sát thương thấp nhất",
-      avgDamage: "Sát thương trung bình",
-      affinityDamage: "Sát thương affinity",
-      selectTwo: "Chọn hai trang bị để so sánh chỉ số",
-    }
-    : {
-      title: "Gear Comparison",
-      swap: "Swap",
-      gearA: "Gear A",
-      gearB: "Gear B",
-      selectGear: "Select a gear...",
-      mainAttributes: "Main Attributes",
-      subAttributes: "Sub Attributes",
-      damageComparison: "Damage Comparison",
-      stat: "Stat",
-      damageType: "Damage Type",
-      difference: "Difference",
-      changePct: "Change %",
-      minDamage: "Min Damage",
-      avgDamage: "Average Damage",
-      affinityDamage: "Affinity Damage",
-      selectTwo: "Select two gears to compare their stats",
-    };
+  const { t } = useI18n();
 
   const { customGears, equipped } = useGear();
 
@@ -100,7 +63,7 @@ export default function GearCompareTab({
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold sm:text-xl">{text.title}</h2>
+        <h2 className="text-lg font-semibold sm:text-xl">{t("gearCompare.title")}</h2>
         <Button
           variant="outline"
           size="sm"
@@ -108,21 +71,21 @@ export default function GearCompareTab({
           disabled={!gearA || !gearB}
         >
           <ArrowLeftRight className="w-4 h-4 mr-2" />
-          {text.swap}
+          {t("gearCompare.swap")}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="rounded-lg border p-3 sm:p-4">
           <label className="block text-sm font-medium mb-2 text-emerald-500">
-            {text.gearA}
+            {t("gearCompare.gearA")}
           </label>
           <select
             className="w-full border rounded px-3 py-2 bg-background"
             value={gearA}
             onChange={(e) => setGearA(e.target.value)}
           >
-            <option value="">{text.selectGear}</option>
+            <option value="">{t("gearCompare.selectGear")}</option>
             {customGears.map((gear) => (
               <option key={gear.id} value={gear.id}>
                 {gear.name} (Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
@@ -133,14 +96,14 @@ export default function GearCompareTab({
 
         <div className="rounded-lg border p-3 sm:p-4">
           <label className="block text-sm font-medium mb-2 text-blue-500">
-            {text.gearB}
+            {t("gearCompare.gearB")}
           </label>
           <select
             className="w-full border rounded px-3 py-2 bg-background"
             value={gearB}
             onChange={(e) => setGearB(e.target.value)}
           >
-            <option value="">{text.selectGear}</option>
+            <option value="">{t("gearCompare.selectGear")}</option>
             {customGears.map((gear) => (
               <option key={gear.id} value={gear.id}>
                 {gear.name} (Lv. {typeof gear.level === "number" && Number.isFinite(gear.level) ? gear.level : 91}, {gear.slot})
@@ -156,13 +119,13 @@ export default function GearCompareTab({
             selectedGearB.mains.length > 0) && (
               <div className="overflow-hidden rounded-lg border">
                 <div className="bg-muted/50 px-4 py-2">
-                  <h3 className="font-medium">{text.mainAttributes}</h3>
+                  <h3 className="font-medium">{t("gearCompare.mainAttributes")}</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[520px]">
                     <thead className="bg-muted/30">
                       <tr>
-                        <th className="px-4 py-2 text-left text-sm">{text.stat}</th>
+                        <th className="px-4 py-2 text-left text-sm">{t("gearCompare.stat")}</th>
                         <th className="px-4 py-2 text-right text-sm text-emerald-500">
                           Gear A
                         </th>
@@ -207,13 +170,13 @@ export default function GearCompareTab({
           {(selectedGearA.subs.length > 0 || selectedGearB.subs.length > 0) && (
             <div className="overflow-hidden rounded-lg border">
               <div className="bg-muted/50 px-4 py-2">
-                <h3 className="font-medium">{text.subAttributes}</h3>
+                <h3 className="font-medium">{t("gearCompare.subAttributes")}</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px]">
                   <thead className="bg-muted/30">
                     <tr>
-                      <th className="px-4 py-2 text-left text-sm">{text.stat}</th>
+                      <th className="px-4 py-2 text-left text-sm">{t("gearCompare.stat")}</th>
                       <th className="px-4 py-2 text-right text-sm text-emerald-500">
                         Gear A
                       </th>
@@ -258,21 +221,21 @@ export default function GearCompareTab({
           {/* Damage Comparison */}
           <div className="overflow-hidden rounded-lg border">
             <div className="bg-muted/50 px-4 py-2">
-              <h3 className="font-medium">{text.damageComparison}</h3>
+              <h3 className="font-medium">{t("gearCompare.damageComparison")}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px]">
                 <thead className="bg-muted/30">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm">{text.damageType}</th>
+                    <th className="px-4 py-2 text-left text-sm">{t("gearCompare.damageType")}</th>
                     <th className="px-4 py-2 text-right text-sm text-emerald-500">
                       Gear A
                     </th>
                     <th className="px-4 py-2 text-right text-sm text-blue-500">
                       Gear B
                     </th>
-                    <th className="px-4 py-2 text-right text-sm">{text.difference}</th>
-                    <th className="px-4 py-2 text-right text-sm">{text.changePct}</th>
+                    <th className="px-4 py-2 text-right text-sm">{t("gearCompare.difference")}</th>
+                    <th className="px-4 py-2 text-right text-sm">{t("gearCompare.changePct")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -410,17 +373,17 @@ export default function GearCompareTab({
 
                     const rows = [
                       {
-                        label: text.minDamage,
+                        label: t("gearCompare.minDamage"),
                         valueA: damageA.min,
                         valueB: damageB.min,
                       },
                       {
-                        label: text.avgDamage,
+                        label: t("gearCompare.avgDamage"),
                         valueA: damageA.normal,
                         valueB: damageB.normal,
                       },
                       {
-                        label: text.affinityDamage,
+                        label: t("gearCompare.affinityDamage"),
                         valueA: damageA.affinity,
                         valueB: damageB.affinity,
                       },
@@ -481,7 +444,7 @@ export default function GearCompareTab({
         </div>
       ) : (
         <div className="rounded-lg border p-6 text-center text-muted-foreground sm:p-8">
-          {text.selectTwo}
+          {t("gearCompare.selectTwo")}
         </div>
       )}
     </div>

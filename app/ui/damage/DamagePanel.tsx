@@ -43,27 +43,8 @@ export default function DamagePanel({
   rotation,
   warnings = [],
 }: Props) {
-  const { language } = useI18n();
+  const { t } = useI18n();
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
-  const text = language === "vi"
-    ? {
-      stats: "Chỉ số",
-      damageOutput: "Kết quả sát thương",
-      averageDamageComposition: "Thành phần sát thương trung bình",
-      rotationDamageBreakdown: "Phân rã sát thương rotation",
-      hideFormula: "Ẩn công thức",
-      showFormula: "Hiện công thức",
-      autoUpdate: "Tự động cập nhật · Công thức Min–Max",
-    }
-    : {
-      stats: "Stats",
-      damageOutput: "Damage output",
-      averageDamageComposition: "Average Damage Composition",
-      rotationDamageBreakdown: "Rotation Damage Breakdown",
-      hideFormula: "Hide Formula",
-      showFormula: "Show Formula",
-      autoUpdate: "Auto update · Min–Max formula",
-    };
 
   const finalStats = buildFinalStatSections(ctx);
   const selectedMartialArtId = elementStats?.martialArtsId;
@@ -107,12 +88,12 @@ export default function DamagePanel({
   ];
 
   const categoryLabels: Record<Skill["category"], string> = {
-    "martial-art-skill": language === "vi" ? "Kỹ năng võ học" : "Martial Art Skill",
-    "special-skill": language === "vi" ? "Kỹ năng đặc biệt" : "Special Skill",
-    "dual-weapon-skill": language === "vi" ? "Kỹ năng song vũ khí" : "Dual-Weapon Skill",
-    basic: language === "vi" ? "Cơ bản" : "Basic",
-    ultimate: language === "vi" ? "Tối thượng" : "Ultimate",
-    "mystic-skill": language === "vi" ? "Kỹ năng huyền thuật" : "Mystic Skill",
+    "martial-art-skill": t("damage.catMartialArtSkill"),
+    "special-skill": t("damage.catSpecialSkill"),
+    "dual-weapon-skill": t("damage.catDualWeaponSkill"),
+    basic: t("damage.catBasic"),
+    ultimate: t("damage.catUltimate"),
+    "mystic-skill": t("damage.catMysticSkill"),
   };
 
   const groupedSkillDamages = categoryOrder
@@ -137,12 +118,12 @@ export default function DamagePanel({
         "
       >
         <div className="flex flex-col">
-          <div className="pb-3 text-base font-bold sm:pb-4 sm:text-lg">{text.stats}</div>
+          <div className="pb-3 text-base font-bold sm:pb-4 sm:text-lg">{t("damage.stats")}</div>
 
           <FinalStatPanel sections={finalStats} ctx={ctx} />
 
           <div className="flex flex-row gap-x-2 pt-3 text-base font-bold sm:pt-4 sm:text-lg">
-            <Zap className="text-yellow-500" /> {text.damageOutput}
+            <Zap className="text-yellow-500" /> {t("damage.damageOutput")}
           </div>
 
           {groupedSkillDamages.map((group) => (
@@ -194,7 +175,7 @@ export default function DamagePanel({
           {result.averageBreakdown && (
             <div className="flex flex-1 flex-col mt-6">
               <div className="text-lg font-bold mb-2 text-foreground align-center">
-                {text.averageDamageComposition}
+                {t("damage.averageDamageComposition")}
               </div>
               <AverageDamagePie data={result.averageBreakdown} />
             </div>
@@ -203,7 +184,7 @@ export default function DamagePanel({
           {rotation && rotation.skills.length > 0 && (
             <div className="flex flex-1 flex-col mt-6">
               <div className="text-lg font-bold mb-2 text-foreground align-center">
-                {text.rotationDamageBreakdown}
+                {t("damage.rotationDamageBreakdown")}
               </div>
               <RotationDamagePie rotation={rotation} ctx={ctx} />
             </div>
@@ -221,7 +202,7 @@ export default function DamagePanel({
             hover:bg-secondary/80
           "
         >
-          {showFormula ? text.hideFormula : text.showFormula}
+          {showFormula ? t("damage.hideFormula") : t("damage.showFormula")}
         </button>
 
         <Dialog open={showFormula} onOpenChange={() => toggleFormula()}>
@@ -241,7 +222,7 @@ export default function DamagePanel({
 
         <div className="text-xs text-muted-foreground flex items-center gap-1">
           <ArrowUpRight size={14} />
-          {text.autoUpdate}
+          {t("damage.autoUpdate")}
         </div>
       </CardContent>
     </Card>

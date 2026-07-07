@@ -1,117 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { MESSAGES } from "./i18nMessages";
 
 export type UILanguage = "en" | "vi";
 
 export const LANGUAGE_STORAGE_KEY = "wwm_ui_language";
-
-const MESSAGES = {
-    en: {
-        app: {
-            title: "Where Winds Meet – DMG Optimizer",
-            realtime: "Realtime",
-            loading: "Loading...",
-        },
-        status: {
-            main: "Main",
-            gear: "Gear",
-            stats: "Stats",
-            rotation: "Rotation",
-            simulation: "Simulation",
-            importExport: "Import / Export",
-            settings: "Settings",
-            customizeGear: "Customize Gear",
-            equippedGear: "Equipped Gear",
-            compareGear: "Compare Gear",
-            idealGear: "Ideal Gear",
-            gearLab: "Gear Lab",
-        },
-        settings: {
-            language: "Language",
-            english: "English",
-            vietnamese: "Vietnamese",
-            settingsTitle: "Gemini Settings",
-            settingsDescription: "Configure Gemini OCR runtime settings. Values are stored in the current browser.",
-            apiKeyLabel: "Gemini API Key",
-            hideApiKey: "Hide API key",
-            showApiKey: "Show API key",
-            apiKeyStored: "Using the locally stored API key.",
-            apiKeyFallback: "No local key found, falling back to NEXT_PUBLIC_GEMINI_API_KEY.",
-            apiKeyMissing: "No API key configured. OCR will fail unless a valid key is provided.",
-            modelLabel: "Gemini Model",
-            modelDescription: "Model used for the generateContent endpoint (for example: gemini-2.5-flash).",
-            saveSettings: "Save Settings",
-            resetDefaults: "Reset to Env Defaults",
-            saved: "Saved",
-        },
-        mainTab: {
-            saveCurrentConfirm: "Save current stats?",
-            saveSuccess: "Stats saved!",
-        },
-        guide: {
-            sendFeedback: "Send Feedback",
-            feedback: "Feedback",
-            setupGuide: "Setup Guide",
-            optimizeGuide: "Optimize Guide",
-            startSetupGuide: "Start Setup Guide",
-            startOptimizeGuide: "Start Optimize Guide",
-            openHelpActions: "Open help actions",
-        },
-    },
-    vi: {
-        app: {
-            title: "Where Winds Meet – Trình tối ưu sát thương",
-            realtime: "Thời gian thực",
-            loading: "Đang tải...",
-        },
-        status: {
-            main: "Chính",
-            gear: "Trang bị",
-            stats: "Chỉ số",
-            rotation: "Chuỗi chiêu",
-            simulation: "Mô phỏng",
-            importExport: "Nhập / Xuất",
-            settings: "Cài đặt",
-            customizeGear: "Tùy chỉnh trang bị",
-            equippedGear: "Đang trang bị",
-            compareGear: "So sánh trang bị",
-            idealGear: "Trang bị lý tưởng",
-            gearLab: "Phòng thí nghiệm",
-        },
-        settings: {
-            language: "Ngôn ngữ",
-            english: "Tiếng Anh",
-            vietnamese: "Tiếng Việt",
-            settingsTitle: "Cài đặt Gemini",
-            settingsDescription: "Cấu hình OCR runtime cho Gemini. Giá trị được lưu trong trình duyệt hiện tại.",
-            apiKeyLabel: "Gemini API Key",
-            hideApiKey: "Ẩn API key",
-            showApiKey: "Hiện API key",
-            apiKeyStored: "Đang dùng API key đã lưu local.",
-            apiKeyFallback: "Chưa có key local, đang fallback sang NEXT_PUBLIC_GEMINI_API_KEY.",
-            apiKeyMissing: "Chưa có API key. OCR sẽ lỗi nếu không nhập key hợp lệ.",
-            modelLabel: "Gemini Model",
-            modelDescription: "Model dùng cho endpoint generateContent (ví dụ: gemini-2.5-flash).",
-            saveSettings: "Lưu cài đặt",
-            resetDefaults: "Khôi phục mặc định từ biến môi trường",
-            saved: "Đã lưu",
-        },
-        mainTab: {
-            saveCurrentConfirm: "Lưu chỉ số hiện tại?",
-            saveSuccess: "Đã lưu chỉ số!",
-        },
-        guide: {
-            sendFeedback: "Gửi phản hồi",
-            feedback: "Phản hồi",
-            setupGuide: "Hướng dẫn thiết lập",
-            optimizeGuide: "Hướng dẫn tối ưu",
-            startSetupGuide: "Bắt đầu hướng dẫn thiết lập",
-            startOptimizeGuide: "Bắt đầu hướng dẫn tối ưu",
-            openHelpActions: "Mở trợ giúp",
-        },
-    },
-} as const;
 
 interface MessageNode {
     [key: string]: string | MessageNode;

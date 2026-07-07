@@ -28,84 +28,8 @@ type StatusState =
   | null;
 
 export default function ImportExportTab() {
-  const { language } = useI18n();
+  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const text = language === "vi"
-    ? {
-      clearConfirm:
-        "Thao tác này sẽ xóa toàn bộ dữ liệu đã lưu (chỉ số, trang bị, rotation) trên trình duyệt này. Tiếp tục?",
-      cleared: "Đã xóa dữ liệu local. Tải lại để áp dụng.",
-      clearFailed: "Xóa thất bại",
-      exported: "Đã xuất vào clipboard",
-      exportedFile: "Đã tải xuống file JSON",
-      exportFailed: "Xuất thất bại",
-      importedMerged: "Đã nhập (đã gộp trang bị). Tải lại để áp dụng.",
-      imported: "Đã nhập. Tải lại để áp dụng.",
-      invalidClipboard: "Dữ liệu không hợp lệ",
-      title: "Nhập / Xuất dữ liệu",
-      export: "Xuất",
-      exportDesc: "Chọn phần dữ liệu cần đưa vào payload clipboard hoặc file JSON.",
-      stats: "Chỉ số",
-      statsExportDesc: "Chỉ số hiện tại + chỉ số nguyên tố",
-      gear: "Trang bị",
-      gearExportDesc: "Trang bị custom + ô đang trang bị",
-      rotations: "Rotations",
-      rotationsExportDesc: "Rotation đã lưu + rotation đang chọn",
-      exportClipboard: "Xuất vào Clipboard",
-      exportFile: "Xuất File JSON",
-      import: "Nhập",
-      importDesc: "Dán payload từ clipboard hoặc file JSON và chọn mục muốn áp dụng.",
-      statsImportDesc: "Ghi đè chỉ số local",
-      gearImportDesc: "Ghi đè hoặc gộp (bên dưới)",
-      rotationsImportDesc: "Ghi đè rotation đã lưu",
-      mergeGear: "Gộp trang bị",
-      mergeGearDesc: "Giữ item local; chỉ thêm item còn thiếu",
-      importClipboard: "Nhập từ Clipboard",
-      importFile: "Nhập từ File JSON",
-      reload: "Tải lại",
-      dangerZone: "Vùng nguy hiểm",
-      dangerDesc: "Xóa vĩnh viễn toàn bộ dữ liệu đã lưu trong trình duyệt này.",
-      clearData: "Xóa dữ liệu",
-      overwriteSavedRotations: "Ghi đè rotation đã lưu",
-    }
-    : {
-      clearConfirm:
-        "This will clear all saved calculator data (stats, gear, rotations) from this browser. Continue?",
-      cleared: "Cleared local data. Reload to apply.",
-      clearFailed: "Clear failed",
-      exported: "Exported to clipboard",
-      exportedFile: "Downloaded JSON file",
-      exportFailed: "Export failed",
-      importedMerged: "Imported (gear merged). Reload to apply.",
-      imported: "Imported. Reload to apply.",
-      invalidClipboard: "Invalid data",
-      title: "Import / Export Data",
-      export: "Export",
-      exportDesc: "Choose what to include in the clipboard or JSON file payload.",
-      stats: "Stats",
-      statsExportDesc: "Current stats + element stats",
-      gear: "Gear",
-      gearExportDesc: "Custom gear + equipped slots",
-      rotations: "Rotations",
-      rotationsExportDesc: "Saved rotations + selected rotation",
-      exportClipboard: "Export to Clipboard",
-      exportFile: "Export JSON File",
-      import: "Import",
-      importDesc: "Paste a payload from clipboard or import JSON file and choose which sections to apply.",
-      statsImportDesc: "Overwrite local stats",
-      gearImportDesc: "Overwrite or merge (below)",
-      rotationsImportDesc: "Overwrite saved rotations",
-      mergeGear: "Merge gear",
-      mergeGearDesc: "Keep local items; only add missing",
-      importClipboard: "Import from Clipboard",
-      importFile: "Import JSON File",
-      reload: "Reload",
-      dangerZone: "Danger zone",
-      dangerDesc: "Permanently deletes all saved data in this browser.",
-      clearData: "Clear Data",
-      overwriteSavedRotations: "Overwrite saved rotations",
-    };
 
   const [exportStats, setExportStats] = useState(true);
   const [exportGear, setExportGear] = useState(true);
@@ -123,7 +47,7 @@ export default function ImportExportTab() {
   ======================= */
 
   const handleClearData = () => {
-    const ok = window.confirm(text.clearConfirm);
+    const ok = window.confirm(t("importExport.clearConfirm"));
     if (!ok) return;
 
     try {
@@ -134,9 +58,9 @@ export default function ImportExportTab() {
         localStorage.removeItem(key);
       }
 
-      setStatus({ variant: "secondary", text: text.cleared });
+      setStatus({ variant: "secondary", text: t("importExport.cleared") });
     } catch {
-      setStatus({ variant: "destructive", text: text.clearFailed });
+      setStatus({ variant: "destructive", text: t("importExport.clearFailed") });
     }
   };
 
@@ -194,9 +118,9 @@ export default function ImportExportTab() {
     try {
       const payload = buildExportPayload();
       await exportToClipboard(payload);
-      setStatus({ variant: "default", text: text.exported });
+      setStatus({ variant: "default", text: t("importExport.exported") });
     } catch {
-      setStatus({ variant: "destructive", text: text.exportFailed });
+      setStatus({ variant: "destructive", text: t("importExport.exportFailed") });
     }
   };
 
@@ -204,9 +128,9 @@ export default function ImportExportTab() {
     try {
       const payload = buildExportPayload();
       exportToJsonFile(payload);
-      setStatus({ variant: "default", text: text.exportedFile });
+      setStatus({ variant: "default", text: t("importExport.exportedFile") });
     } catch {
-      setStatus({ variant: "destructive", text: text.exportFailed });
+      setStatus({ variant: "destructive", text: t("importExport.exportFailed") });
     }
   };
 
@@ -274,8 +198,8 @@ export default function ImportExportTab() {
       variant: "default",
       text:
         importGear && mergeGear
-          ? text.importedMerged
-          : text.imported,
+          ? t("importExport.importedMerged")
+          : t("importExport.imported"),
     });
   };
 
@@ -288,7 +212,7 @@ export default function ImportExportTab() {
       const data = await importFromClipboard();
       processImportPayload(data);
     } catch {
-      setStatus({ variant: "destructive", text: text.invalidClipboard });
+      setStatus({ variant: "destructive", text: t("importExport.invalidClipboard") });
     }
   };
 
@@ -304,7 +228,7 @@ export default function ImportExportTab() {
       const data = await importFromJsonFile(file);
       processImportPayload(data);
     } catch {
-      setStatus({ variant: "destructive", text: text.invalidClipboard });
+      setStatus({ variant: "destructive", text: t("importExport.invalidClipboard") });
     } finally {
       // clear input
       if (fileInputRef.current) {
@@ -322,7 +246,7 @@ export default function ImportExportTab() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle>{text.title}</CardTitle>
+          <CardTitle>{t("importExport.title")}</CardTitle>
           {status && (
             <Badge variant={status.variant} className="shrink-0">
               {status.text}
@@ -335,9 +259,9 @@ export default function ImportExportTab() {
         {/* Export */}
         <div className="space-y-3">
           <div className="space-y-1">
-            <div className="text-sm font-medium">{text.export}</div>
+            <div className="text-sm font-medium">{t("importExport.export")}</div>
             <div className="text-xs text-muted-foreground">
-              {text.exportDesc}
+              {t("importExport.exportDesc")}
             </div>
           </div>
 
@@ -348,9 +272,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setExportStats(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">{text.stats}</div>
+                <div className="text-sm">{t("importExport.stats")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {text.statsExportDesc}
+                  {t("importExport.statsExportDesc")}
                 </div>
               </div>
             </label>
@@ -361,9 +285,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setExportGear(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">{text.gear}</div>
+                <div className="text-sm">{t("importExport.gear")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {text.gearExportDesc}
+                  {t("importExport.gearExportDesc")}
                 </div>
               </div>
             </label>
@@ -374,17 +298,17 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setExportRotations(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">{text.rotations}</div>
+                <div className="text-sm">{t("importExport.rotations")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {text.rotationsExportDesc}
+                  {t("importExport.rotationsExportDesc")}
                 </div>
               </div>
             </label>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleExport}>{text.exportClipboard}</Button>
-            <Button variant="outline" onClick={handleExportFile}>{text.exportFile}</Button>
+            <Button onClick={handleExport}>{t("importExport.exportClipboard")}</Button>
+            <Button variant="outline" onClick={handleExportFile}>{t("importExport.exportFile")}</Button>
           </div>
         </div>
 
@@ -393,9 +317,9 @@ export default function ImportExportTab() {
         {/* Import */}
         <div className="space-y-3">
           <div className="space-y-1">
-            <div className="text-sm font-medium">{text.import}</div>
+            <div className="text-sm font-medium">{t("importExport.import")}</div>
             <div className="text-xs text-muted-foreground">
-              {text.importDesc}
+              {t("importExport.importDesc")}
             </div>
           </div>
 
@@ -406,9 +330,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setImportStats(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">{text.stats}</div>
+                <div className="text-sm">{t("importExport.stats")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {text.statsImportDesc}
+                  {t("importExport.statsImportDesc")}
                 </div>
               </div>
             </label>
@@ -419,9 +343,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setImportGear(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">{text.gear}</div>
+                <div className="text-sm">{t("importExport.gear")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {text.gearImportDesc}
+                  {t("importExport.gearImportDesc")}
                 </div>
               </div>
             </label>
@@ -432,9 +356,9 @@ export default function ImportExportTab() {
                 onCheckedChange={(v) => setImportRotations(!!v)}
               />
               <div className="leading-tight">
-                <div className="text-sm">{text.rotations}</div>
+                <div className="text-sm">{t("importExport.rotations")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {text.overwriteSavedRotations}
+                  {t("importExport.overwriteSavedRotations")}
                 </div>
               </div>
             </label>
@@ -446,9 +370,9 @@ export default function ImportExportTab() {
                 disabled={!importGear}
               />
               <div className="leading-tight">
-                <div className="text-sm">{text.mergeGear}</div>
+                <div className="text-sm">{t("importExport.mergeGear")}</div>
                 <div className="text-xs text-muted-foreground">
-                  {text.mergeGearDesc}
+                  {t("importExport.mergeGearDesc")}
                 </div>
               </div>
             </label>
@@ -456,7 +380,7 @@ export default function ImportExportTab() {
 
           <div className="flex flex-wrap gap-2 items-center">
             <Button data-tour="import-gear-button" variant="outline" onClick={handleImport}>
-              {text.importClipboard}
+              {t("importExport.importClipboard")}
             </Button>
             
             <input
@@ -467,7 +391,7 @@ export default function ImportExportTab() {
               onChange={handleFileChange}
             />
             <Button variant="outline" onClick={handleImportFileClick}>
-              {text.importFile}
+              {t("importExport.importFile")}
             </Button>
 
             <Button
@@ -475,7 +399,7 @@ export default function ImportExportTab() {
               onClick={() => window.location.reload()}
               type="button"
             >
-              {text.reload}
+              {t("importExport.reload")}
             </Button>
           </div>
         </div>
@@ -486,23 +410,23 @@ export default function ImportExportTab() {
         <div className="space-y-3">
           <div className="space-y-1">
             <div className="text-sm font-medium text-destructive">
-              {text.dangerZone}
+              {t("importExport.dangerZone")}
             </div>
             <div className="text-xs text-muted-foreground">
-              {text.dangerDesc}
+              {t("importExport.dangerDesc")}
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button variant="destructive" onClick={handleClearData} type="button">
-              {text.clearData}
+              {t("importExport.clearData")}
             </Button>
             <Button
               variant="secondary"
               onClick={() => window.location.reload()}
               type="button"
             >
-              {text.reload}
+              {t("importExport.reload")}
             </Button>
           </div>
         </div>
