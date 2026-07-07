@@ -48,3 +48,23 @@ settings.json
 pnpm-lock.yaml
 
 /images/**
+
+# Ad-hoc debug/scripts
+*.log
+*.cjs
+*.mjs
+test.py
+note.md
+order.md
+rule.md
+baseline.md
+check*.js
+click*.js
+close*.js
+deepSwapRaw.js
+directOptimize.js
+findConsiderTune.js
+getDialogContent.js
+showAllResults.js
+testSwapPipeline*
+test-results/
