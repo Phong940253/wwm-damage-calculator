@@ -13,7 +13,7 @@ import {
   Legend,
 } from "recharts";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
-import { Rotation } from "@/app/types";
+import { Rotation, ElementStats } from "@/app/types";
 import { SKILLS } from "@/app/domain/skill/skills";
 import { DamageContext } from "@/app/domain/damage/damageContext";
 import {
@@ -25,12 +25,14 @@ import {
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
+import { computeExhaustedBonuses } from "@/app/domain/skill/modifierEngine";
 import { Button } from "@/components/ui/button";
 import { ROTATION_SKILL_GROUP_BY_SKILL_ID } from "@/app/utils/skillGroups";
 
 interface RotationDamagePieProps {
   rotation: Rotation;
   ctx: DamageContext;
+  elementStats?: ElementStats;
 }
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
@@ -44,8 +46,10 @@ const DEFAULT_ROTATION_SECONDS = 60;
 export default function RotationDamagePie({
   rotation,
   ctx,
+  elementStats,
 }: RotationDamagePieProps) {
   const [isGroupedView, setIsGroupedView] = useState(true);
+  const exhaustedBonuses = elementStats ? computeExhaustedBonuses(rotation, elementStats.martialArtsId) : undefined;
 
   const formatHitCount = (v: number) => {
     if (!Number.isFinite(v)) return "0";
@@ -82,6 +86,7 @@ export default function RotationDamagePie({
       runtimeState.priorHitsBySkill,
       rotSkill.cancelled,
       rotSkill.exhausted,
+      exhaustedBonuses,
     );
     entryOpts.rotationSkills = rotation.skills;
 
@@ -107,6 +112,8 @@ export default function RotationDamagePie({
               rotation.activePassiveSkills,
               runtimeState.priorHitsBySkill,
               rotSkill.cancelled,
+              rotSkill.exhausted,
+              exhaustedBonuses,
             );
             baseOpts.rotationSkills = rotation.skills;
             return baseOpts;

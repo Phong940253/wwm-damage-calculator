@@ -14,8 +14,7 @@ export default function GearTabLayout() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") ?? "custom";
 
-  // stats & elementStats vẫn cần cho customize / compare
-  const { stats, elementStats } = useDMGOptimizer(
+  const { stats, elementStats, levelContext } = useDMGOptimizer(
     INITIAL_STATS,
     INITIAL_ELEMENT_STATS
   );
@@ -34,10 +33,10 @@ export default function GearTabLayout() {
       "
     >
       {tab === "custom" && (
-        <GearCustomizeTab stats={stats} elementStats={elementStats} rotation={selectedRotation} />
+        <GearCustomizeTab stats={stats} elementStats={elementStats} rotation={selectedRotation} levelContext={levelContext} />
       )}
 
-      {tab === "equipped" && <GearEquippedTab />}
+      {tab === "equipped" && <GearEquippedTab stats={stats} elementStats={elementStats} rotation={selectedRotation} levelContext={levelContext} />}
 
       {tab === "compare" && (
         <GearCompareTab stats={stats} elementStats={elementStats} rotation={selectedRotation} />

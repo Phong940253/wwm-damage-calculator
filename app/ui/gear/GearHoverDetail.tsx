@@ -15,9 +15,10 @@ import {
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
-import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { computeRotationBonuses, sumBonuses, computeExhaustedBonuses } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 
 interface Props {
   gear: CustomGear;
@@ -27,6 +28,7 @@ interface Props {
   rotation?: Rotation;
   baseGearBonus: Record<string, number>;
   baseDamage?: number;
+  levelContext?: Partial<LevelContext>;
 }
 
 function getGearStatTotals(gear?: CustomGear | null): Map<string, number> {
@@ -54,6 +56,7 @@ export default function GearHoverDetail({
   rotation,
   baseGearBonus,
   baseDamage,
+  levelContext,
 }: Props) {
   const { t } = useI18n();
 
@@ -116,23 +119,31 @@ export default function GearHoverDetail({
 
         let totalNormal = 0;
         const runtimeState = createRotationSkillRuntimeState();
+
+        const exhaustedBonuses = computeExhaustedBonuses(
+          rotation,
+          normalizedElementStats.martialArtsId,
+        );
+
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
 
-      const entryOpts = buildRotationSkillDamageOptions(
-        rotSkill.id,
-        rotSkill.params,
-        rotation.activeInnerWays,
-        skillUseCountsInRotation,
-        rotSkill.count,
-        rotation.activePassiveSkills,
-        runtimeState.priorHitsBySkill,
-        rotSkill.cancelled,
-      );
-      entryOpts.rotationSkills = rotation.skills;
+          const entryOpts = buildRotationSkillDamageOptions(
+            rotSkill.id,
+            rotSkill.params,
+            rotation.activeInnerWays,
+            skillUseCountsInRotation,
+            rotSkill.count,
+            rotation.activePassiveSkills,
+            runtimeState.priorHitsBySkill,
+            rotSkill.cancelled,
+            rotSkill.exhausted,
+            exhaustedBonuses,
+          );
+          entryOpts.rotationSkills = rotation.skills;
 
-      const dmg = calculateSkillDamage(
+          const dmg = calculateSkillDamage(
             ctx,
             skill,
             entryOpts,
@@ -169,7 +180,9 @@ export default function GearHoverDetail({
       return buildDamageContext(
         normalizedStats,
         normalizedElementStats,
-        sumBonuses(effectiveGearBonus, passiveBonuses)
+        sumBonuses(effectiveGearBonus, passiveBonuses),
+        undefined,
+        levelContext,
       );
     };
 
@@ -196,7 +209,7 @@ export default function GearHoverDetail({
 
     const top = new Set<string>(ranked.slice(0, 3).map((x) => x.statKey));
     return { contributions, top, base };
-  }, [rows, stats, elementStats, rotation, baseGearBonus, baseDamage]);
+  }, [rows, stats, elementStats, rotation, baseGearBonus, baseDamage, levelContext]);
 
   return (
     <div className="w-[380px] p-3">

@@ -186,7 +186,7 @@ export default function DamagePanel({
               <div className="text-lg font-bold mb-2 text-foreground align-center">
                 {t("damage.rotationDamageBreakdown")}
               </div>
-              <RotationDamagePie rotation={rotation} ctx={ctx} />
+              <RotationDamagePie rotation={rotation} ctx={ctx} elementStats={elementStats} />
             </div>
           )}
         </div>

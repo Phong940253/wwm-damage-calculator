@@ -17,7 +17,7 @@ import {
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "@/app/domain/skill/skillDamage";
-import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { computeRotationBonuses, sumBonuses, computeExhaustedBonuses } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
 
@@ -311,6 +311,7 @@ export default function GearCompareTab({
                         const skill = SKILLS.find((s) => s.id === rotSkill.id);
                         if (!skill) continue;
 
+                        const exhaustedBonuses = computeExhaustedBonuses(rotation, elementStats.martialArtsId);
                         const entryOpts = buildRotationSkillDamageOptions(
                           rotSkill.id,
                           rotSkill.params,
@@ -320,6 +321,8 @@ export default function GearCompareTab({
                           rotation.activePassiveSkills,
                           runtimeState.priorHitsBySkill,
                           rotSkill.cancelled,
+                          rotSkill.exhausted,
+                          exhaustedBonuses,
                         );
                         entryOpts.rotationSkills = rotation.skills;
 

@@ -34,6 +34,7 @@ import GearHoverDetail from "./GearHoverDetail";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { getTuneSuccessRateToneClass, computeSingleTuneSuccessRate } from "@/app/domain/gear/tuneAdvisor";
 import { exportOptimizerResultsToFile, importOptimizerResultsFromFile } from "@/app/utils/importExport";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 
 type GearWithTune = CustomGear & { __tuneId?: string; __tuneLabel?: string; __tuneFrom?: string };
 const getTuneMeta = (g: CustomGear | undefined): GearWithTune | undefined => g as GearWithTune;
@@ -49,6 +50,7 @@ interface Props {
   stats: InputStats;
   elementStats: ElementStats;
   rotation?: Rotation;
+  levelContext?: Partial<LevelContext>;
   maxDisplay: number;
   setMaxDisplay: (v: number) => void;
   perSlotCap: number;
@@ -71,6 +73,7 @@ export default function GearOptimizeDialog({
   stats,
   elementStats,
   rotation,
+  levelContext,
   maxDisplay,
   setMaxDisplay,
   perSlotCap,
@@ -95,7 +98,7 @@ export default function GearOptimizeDialog({
       const id = meta?.__tuneId;
       if (!id) continue;
       if (id.startsWith("::swap::")) continue;
-      if (id.startsWith("::tune::")) {
+      if (id.startsWith("::tune::") || id.startsWith("::tune-swap::")) {
         const parts = id.split("::");
         const subIndex = parseInt(parts[2], 10);
         const targetStat = parts[3];
@@ -468,6 +471,34 @@ export default function GearOptimizeDialog({
                                           toText: meta.__tuneLabel?.replace(/^→ /, "") ?? "",
                                           successRate: rate * 100,
                                         });
+                                      } else if (meta && id?.startsWith("::tune-swap::")) {
+                                        tune++;
+                                        swap++;
+                                        const parts = id.split("::");
+                                        const subIndex = parseInt(parts[2], 10);
+                                        const targetStat = parts[3];
+                                        const rate = computeSingleTuneSuccessRate(
+                                          meta as CustomGear,
+                                          subIndex,
+                                          targetStat,
+                                          elementStats.selected,
+                                        );
+                                        const labelSplit = meta.__tuneLabel?.split(" + Swap →") ?? [];
+                                        const fromSplit = meta.__tuneFrom?.split(",") ?? [];
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "T",
+                                          fromText: fromSplit[0]?.trim() ?? "",
+                                          toText: labelSplit[0]?.replace(/^→ /, "") ?? "",
+                                          successRate: rate * 100,
+                                        });
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "A",
+                                          fromText: fromSplit[1]?.trim() ?? "",
+                                          toText: labelSplit[1]?.trim() ?? "",
+                                          successRate: 100,
+                                        });
                                       } else if (meta && id?.startsWith("::swap::")) {
                                         swap++;
                                         tuneDetail.push({
@@ -559,7 +590,15 @@ export default function GearOptimizeDialog({
                                                 {(() => {
                                                   const meta = getTuneMeta(g);
                                                   if (!meta?.__tuneId) return null;
-                                                  const isTune = meta.__tuneId.startsWith("::tune::");
+                                                  const id = meta.__tuneId;
+                                                  if (id.startsWith("::tune-swap::")) {
+                                                    return (
+                                                      <span className="text-[10px] font-bold rounded-sm px-1 leading-tight text-amber-600 bg-amber-200/40" title={meta.__tuneLabel}>
+                                                        <span className="text-amber-600">T</span>+<span className="text-sky-600">A</span>
+                                                      </span>
+                                                    );
+                                                  }
+                                                  const isTune = id.startsWith("::tune::");
                                                   return (
                                                     <span className={`text-[10px] font-bold rounded-sm px-1 leading-tight ${isTune ? "text-amber-600 bg-amber-200/40" : "text-sky-600 bg-sky-200/40"}`} title={meta.__tuneLabel}>
                                                       {isTune ? "T" : "A"}
@@ -579,6 +618,7 @@ export default function GearOptimizeDialog({
                                                 elementStats={elementStats}
                                                 stats={stats}
                                                 rotation={rotation}
+                                                levelContext={levelContext}
                                                 baseGearBonus={baseGearBonus}
                                                 baseDamage={baseDamage}
                                               />
@@ -590,7 +630,15 @@ export default function GearOptimizeDialog({
                                             {(() => {
                                               const meta = getTuneMeta(g);
                                               if (!meta?.__tuneId) return null;
-                                              const isTune = meta.__tuneId.startsWith("::tune::");
+                                              const id = meta.__tuneId;
+                                              if (id.startsWith("::tune-swap::")) {
+                                                return (
+                                                  <span className="text-[10px] font-bold rounded-sm px-1 leading-tight text-amber-600 bg-amber-200/40" title={meta.__tuneLabel}>
+                                                    <span className="text-amber-600">T</span>+<span className="text-sky-600">A</span>
+                                                  </span>
+                                                );
+                                              }
+                                              const isTune = id.startsWith("::tune::");
                                               return (
                                                 <span className={`text-[10px] font-bold rounded-sm px-1 leading-tight ${isTune ? "text-amber-600 bg-amber-200/40" : "text-sky-600 bg-sky-200/40"}`} title={meta.__tuneLabel}>
                                                   {isTune ? "T" : "A"}

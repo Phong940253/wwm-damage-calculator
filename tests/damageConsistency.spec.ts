@@ -15,6 +15,8 @@ import {
 } from "@/app/domain/skill/skillDamage";
 import {
   computeRotationBonuses,
+  computeRotationBonusesWithBreakdown,
+  computeExhaustedBonuses,
   sumBonuses,
 } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
@@ -609,16 +611,21 @@ const levelContext = { playerLevel: 91, enemyLevel: 91 };
 // Helper: replicate the main damage loop (like useDamage.ts)
 // ============================================================
 
-function computeMainLoopDamage(
+/**
+ * Replicate the gear-tab damage path (GearCard / GearEquippedTab).
+ * Uses computeRotationBonuses + computeExhaustedBonuses separately.
+ */
+function computeGearTabDamage(
   stats: InputStats,
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
   rotation: Rotation,
-  levelContext: { playerLevel: number; enemyLevel: number },
+  levelContext?: { playerLevel: number; enemyLevel: number },
 ): number {
   const includedAbs = computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus);
   const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
   const rotationBonuses = computeRotationBonuses(stats, elementStats, effectiveGearBonus, rotation);
+  const exhaustedBonuses = computeExhaustedBonuses(rotation, elementStats.martialArtsId);
   const finalBonus = sumBonuses(effectiveGearBonus, rotationBonuses);
   const ctx = buildDamageContext(stats, elementStats, finalBonus, undefined, levelContext);
 
@@ -639,6 +646,76 @@ function computeMainLoopDamage(
       rotation.activePassiveSkills,
       state.priorHitsBySkill,
       entry.cancelled,
+      entry.exhausted,
+      exhaustedBonuses,
+    );
+    opts.rotationSkills = rotation.skills;
+
+    const dmg = calculateSkillDamage(ctx, skill, opts);
+    total += dmg.total.normal.value * entry.count;
+
+    advanceRotationSkillRuntimeState(state, skill, opts, entry.count);
+  }
+
+  return total;
+}
+
+/**
+ * Replicate the DamagePanel / useDamage path.
+ * Uses computeRotationBonusesWithBreakdown (which includes the full
+ * passives/inner-ways breakdown object).
+ */
+function computeDamagePanelDamage(
+  stats: InputStats,
+  elementStats: ElementStats,
+  gearBonus: Record<string, number>,
+  rotation: Rotation,
+  levelContext: { playerLevel: number; enemyLevel: number },
+): number {
+  const includedAbs = computeIncludedInStatsGearBonus(stats, elementStats, rotation, gearBonus);
+  const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
+  const breakdown = computeRotationBonusesWithBreakdown(stats, elementStats, effectiveGearBonus, rotation);
+  const finalBonus = sumBonuses(effectiveGearBonus, breakdown.total);
+  const ctx = buildDamageContext(stats, elementStats, finalBonus, {
+    gear: effectiveGearBonus,
+    passives: Object.fromEntries(
+      Object.entries(breakdown.byPassive).map(([id, bonus]) => [
+        id,
+        {
+          name: breakdown.meta.passives[id]?.name ?? id,
+          uptimePct: breakdown.meta.passives[id]?.uptimePct,
+          bonus,
+        },
+      ]),
+    ),
+    innerWays: Object.fromEntries(
+      Object.entries(breakdown.byInnerWay).map(([id, bonus]) => [
+        id,
+        { name: breakdown.meta.innerWays[id]?.name ?? id, bonus },
+      ]),
+    ),
+  }, levelContext);
+  const exhaustedBonuses = breakdown.exhaustedBonuses;
+
+  const counts = buildSkillUseCountsInRotation(rotation.skills);
+  const state = createRotationSkillRuntimeState();
+  let total = 0;
+
+  for (const entry of rotation.skills) {
+    const skill = SKILLS.find((s) => s.id === entry.id);
+    if (!skill) continue;
+
+    const opts = buildRotationSkillDamageOptions(
+      entry.id,
+      entry.params,
+      rotation.activeInnerWays,
+      counts,
+      entry.count,
+      rotation.activePassiveSkills,
+      state.priorHitsBySkill,
+      entry.cancelled,
+      entry.exhausted,
+      exhaustedBonuses,
     );
     opts.rotationSkills = rotation.skills;
 
@@ -663,17 +740,17 @@ describe("Damage consistency across panels", () => {
     expect(Object.keys(gearBonus).length).toBeGreaterThan(0);
   });
 
-  it("main loop matches evaluateDamage", () => {
-    const main = computeMainLoopDamage(stats, elementStats, gearBonus, rotation, levelContext);
+  it("gear tab path matches evaluateDamage (close)", () => {
+    const gearTab = computeGearTabDamage(stats, elementStats, gearBonus, rotation, levelContext);
     const evalResult = evaluateDamage(gearBonus, "bellstrike", rotation, stats, elementStats);
 
-    expect(main).toBeGreaterThan(0);
+    expect(gearTab).toBeGreaterThan(0);
     expect(evalResult.dmg).toBeGreaterThan(0);
-    expect(main).toBeCloseTo(evalResult.dmg, 4);
+    expect(gearTab).toBeCloseTo(evalResult.dmg, 4);
   });
 
-  it("main loop matches computeOptimizeResultsAsync baseDamage", async () => {
-    const main = computeMainLoopDamage(stats, elementStats, gearBonus, rotation, levelContext);
+  it("gear tab path matches computeOptimizeResultsAsync baseDamage (close)", async () => {
+    const gearTab = computeGearTabDamage(stats, elementStats, gearBonus, rotation, levelContext);
 
     const result = await computeOptimizeResultsAsync(
       stats,
@@ -686,6 +763,35 @@ describe("Damage consistency across panels", () => {
     );
 
     expect(result.baseDamage).toBeGreaterThan(0);
-    expect(main).toBeCloseTo(result.baseDamage, 4);
+    expect(gearTab).toBeCloseTo(result.baseDamage, 4);
   }, 30_000);
+
+  it("gear tab path equals damage panel path (exact, same inputs)", () => {
+    const gearTab = computeGearTabDamage(stats, elementStats, gearBonus, rotation, levelContext);
+    const panel = computeDamagePanelDamage(stats, elementStats, gearBonus, rotation, levelContext);
+
+    expect(gearTab).toBeGreaterThan(0);
+    expect(panel).toBeGreaterThan(0);
+    expect(gearTab).toBe(panel);
+  });
+
+  it("gear tab path, damage panel path, and evaluateDamage all agree", () => {
+    const gearTab = computeGearTabDamage(stats, elementStats, gearBonus, rotation, levelContext);
+    const panel = computeDamagePanelDamage(stats, elementStats, gearBonus, rotation, levelContext);
+    const evalResult = evaluateDamage(gearBonus, "bellstrike", rotation, stats, elementStats);
+
+    expect(gearTab).toBe(panel);
+    expect(gearTab).toBeCloseTo(evalResult.dmg, 4);
+  });
+
+  it("levelContext affects damage (higher boss resistance → lower damage)", () => {
+    // Path 1: with levelContext (player 91, enemy 91 → 45% boss resistance)
+    const withLevel = computeGearTabDamage(stats, elementStats, gearBonus, rotation, levelContext);
+
+    // Path 2: without levelContext → fallback to default 81/81 (GearCard / GearEquippedTab)
+    const withoutLevel = computeGearTabDamage(stats, elementStats, gearBonus, rotation);
+
+    // level 91 → 45% boss resistance vs level 81 → 15% → damage is LOWER at level 91
+    expect(withLevel).toBeLessThan(withoutLevel);
+  });
 });

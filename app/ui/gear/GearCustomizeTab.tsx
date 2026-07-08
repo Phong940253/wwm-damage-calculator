@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { useGearOptimize } from "../../hooks/useGearOptimize";
 import { useI18n } from "@/app/providers/I18nProvider";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 
 /* =======================
    Helpers
@@ -91,13 +92,14 @@ interface Props {
   stats: InputStats;
   elementStats: ElementStats;
   rotation?: Rotation;
+  levelContext?: Partial<LevelContext>;
 }
 
 /* =======================
    Component
 ======================= */
 
-export default function GearCustomizeTab({ stats, elementStats, rotation }: Props) {
+export default function GearCustomizeTab({ stats, elementStats, rotation, levelContext }: Props) {
   const { t } = useI18n();
 
   const router = useRouter();
@@ -595,6 +597,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
             elementStats={elementStats}
             stats={stats}
             rotation={rotation}
+            levelContext={levelContext}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -664,6 +667,7 @@ export default function GearCustomizeTab({ stats, elementStats, rotation }: Prop
         stats={stats}
         elementStats={elementStats}
         rotation={rotation}
+        levelContext={levelContext}
         maxDisplay={maxDisplay}
         setMaxDisplay={setMaxDisplay}
         perSlotCap={perSlotCap}

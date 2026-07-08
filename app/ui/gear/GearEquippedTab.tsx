@@ -14,13 +14,9 @@ import GearDetailCard from "@/app/ui/gear/GearDetailCard";
 import GearForm from "@/app/ui/gear/GearForm";
 import GearAnalysisPanel from "./GearAnalysisPanel";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
-import { useStats } from "@/app/hooks/useStats";
-import { useElementStats } from "@/app/hooks/useElementStats";
-import { useRotation } from "@/app/hooks/useRotation";
-import { INITIAL_ELEMENT_STATS, INITIAL_STATS } from "@/app/constants";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
-import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { computeRotationBonuses, computeExhaustedBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
   calculateSkillDamage,
@@ -33,6 +29,7 @@ import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInSt
 import type { ElementStats, GearSlot, InputStats, Rotation } from "@/app/types";
 import type { CustomGear } from "@/app/types";
 import { useI18n } from "@/app/providers/I18nProvider";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 import { getStatLabel } from "@/app/utils/statLabel";
 import {
   type TuneStatKey,
@@ -100,6 +97,7 @@ function calcRotationAwareNormalDamage(
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
   rotation?: Rotation,
+  levelContext?: Partial<LevelContext>,
 ): number {
   const includedAbs = computeIncludedInStatsGearBonus(
     stats,
@@ -116,12 +114,17 @@ function calcRotationAwareNormalDamage(
     rotation
   );
 
-  console.log('=== DEBUG EQUIPPED includedAbs+ ===', {includedAbs: {...includedAbs}, effectiveGearBonus: {...effectiveGearBonus}, rotationBonuses: {...rotationBonuses}});
+  const exhaustedBonuses = computeExhaustedBonuses(
+    rotation,
+    elementStats.martialArtsId,
+  );
 
   const ctx = buildDamageContext(
     stats,
     elementStats,
-    sumBonuses(effectiveGearBonus, rotationBonuses)
+    sumBonuses(effectiveGearBonus, rotationBonuses),
+    undefined,
+    levelContext,
   );
 
   if (rotation && rotation.skills.length > 0) {
@@ -144,6 +147,8 @@ function calcRotationAwareNormalDamage(
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
         rotSkill.cancelled,
+        rotSkill.exhausted,
+        exhaustedBonuses,
       );
       entryOpts.rotationSkills = rotation.skills;
 
@@ -175,16 +180,21 @@ function calcRotationAwareNormalDamage(
   return calculateDamage(ctx).normal || 0;
 }
 
-export default function GearEquippedTab() {
+export default function GearEquippedTab({
+  stats,
+  elementStats,
+  rotation,
+  levelContext,
+}: {
+  stats: InputStats;
+  elementStats: ElementStats;
+  rotation?: Rotation;
+  levelContext?: Partial<LevelContext>;
+}) {
   const { t } = useI18n();
 
   const { customGears, equipped, setEquipped } = useGear();
   const [editingGear, setEditingGear] = useState<CustomGear | null>(null);
-
-  // Pull the same saved Stats/Element/Rotation that drive the rest of the app
-  const { stats } = useStats(INITIAL_STATS);
-  const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
-  const { selectedRotation } = useRotation();
 
   const bonus = useMemo(
     () => aggregateEquippedGearBonus(customGears, equipped),
@@ -197,7 +207,7 @@ export default function GearEquippedTab() {
   useEffect(() => {
     // Clear cache whenever inputs that affect damage change
     damageCacheRef.current.clear();
-  }, [stats, elementStats, bonus, selectedRotation]);
+  }, [stats, elementStats, bonus, rotation]);
 
   const makeDamageKey = useCallback((
     s: InputStats,
@@ -242,14 +252,14 @@ export default function GearEquippedTab() {
     const cache = damageCacheRef.current;
     const cached = cache.get(key);
     if (typeof cached === "number") return cached;
-    const val = calcRotationAwareNormalDamage(s, es, b, rot);
+    const val = calcRotationAwareNormalDamage(s, es, b, rot, levelContext);
     cache.set(key, val);
     return val;
-  }, [makeDamageKey]);
+  }, [makeDamageKey, levelContext]);
 
   const fullDamage = useMemo(() => {
-    return calcWithCache(stats, elementStats, bonus, selectedRotation);
-  }, [stats, elementStats, bonus, selectedRotation, calcWithCache]);
+    return calcWithCache(stats, elementStats, bonus, rotation);
+  }, [stats, elementStats, bonus, rotation, calcWithCache]);
 
   const slotsWithImpact = useMemo(() => {
     const rows = GEAR_SLOTS.map(({ key, label }) => {
@@ -269,7 +279,7 @@ export default function GearEquippedTab() {
         stats,
         elementStats,
         bonusWithoutSlot,
-        selectedRotation
+        rotation
       );
 
       const perStat = (() => {
@@ -289,7 +299,7 @@ export default function GearEquippedTab() {
             stats,
             elementStats,
             testBonus,
-            selectedRotation
+            rotation
           );
           impactPctByLineKey[line.lineKey] =
             ((dmg - damageWithoutSlot) / damageWithoutSlot) * 100;
@@ -308,7 +318,7 @@ export default function GearEquippedTab() {
             stats,
             elementStats,
             testBonus,
-            selectedRotation
+            rotation
           );
           impactPctNoMain = ((dmgNoMain - damageWithoutSlot) / damageWithoutSlot) * 100;
         }
@@ -337,7 +347,7 @@ export default function GearEquippedTab() {
       .sort((a, b) => a.percent - b.percent)[0]?.key;
 
     return { rows, worstKey: worst };
-  }, [customGears, equipped, stats, elementStats, selectedRotation, fullDamage, calcWithCache]);
+  }, [customGears, equipped, stats, elementStats, rotation, fullDamage, calcWithCache]);
 
   const rowsByKey = useMemo(() => {
     const map = new Map<GearSlot, (typeof slotsWithImpact.rows)[number]>();
@@ -380,7 +390,7 @@ export default function GearEquippedTab() {
     }>;
 
     const calcWithBonus = (nextBonus: Record<string, number>) =>
-      calcWithCache(stats, elementStats, nextBonus, selectedRotation);
+      calcWithCache(stats, elementStats, nextBonus, rotation);
 
     const candidates: Array<{
       slot: GearSlot;
@@ -487,9 +497,10 @@ export default function GearEquippedTab() {
     elementStats,
     equipped,
     fullDamage,
-    selectedRotation,
+    rotation,
     stats,
     tuneStatPool,
+    calcWithCache,
   ]);
 
   const groupedTuneAdvice = useMemo(() => {
@@ -525,7 +536,7 @@ export default function GearEquippedTab() {
   // Load cached ideal result (if the user previously saved it via "Find Max Damage")
   useEffect(() => {
     try {
-      const rotationKey = (selectedRotation?.skills ?? []).map((s) => s.id).join(",") || "no-rot";
+      const rotationKey = (rotation?.skills ?? []).map((s) => s.id).join(",") || "no-rot";
       const key = `idealGearResult:${elementStats.selected}:${rotationKey}`;
       const raw = localStorage.getItem(key);
       if (raw) {
@@ -538,7 +549,7 @@ export default function GearEquippedTab() {
       // ignore
       setCachedIdealResult(null);
     }
-  }, [elementStats.selected, selectedRotation]);
+  }, [elementStats.selected, rotation]);
 
   const idealGearResult = useMemo(() => {
     return cachedIdealResult;
@@ -550,9 +561,9 @@ export default function GearEquippedTab() {
       stats,
       elementStats,
       idealGearResult.stats,
-      selectedRotation
+      rotation
     );
-  }, [stats, elementStats, idealGearResult, selectedRotation, calcWithCache]);
+  }, [stats, elementStats, idealGearResult, rotation, calcWithCache]);
 
   return (
     <div className="space-y-4">

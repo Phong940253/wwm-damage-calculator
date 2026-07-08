@@ -17,7 +17,7 @@ import {
   buildSkillUseCountsInRotation,
   buildRotationSkillDamageOptions,
 } from "../skill/skillDamage";
-import { computeRotationBonuses, sumBonuses } from "../skill/modifierEngine";
+import { computeRotationBonuses, sumBonuses, computeExhaustedBonuses } from "../skill/modifierEngine";
 import type { LevelContext } from "../level/levelSettings";
 import { computeIncludedInStatsGearBonus } from "../skill/includedInStatsImpact";
 import { LIST_MARTIAL_ARTS, MartialArtWeaponType } from "../skill/types";
@@ -279,6 +279,11 @@ export async function computeOptimizeResultsAsync(
       let rotationTotal = 0;
       const runtimeState = createRotationSkillRuntimeState();
 
+      const exhaustedBonuses = computeExhaustedBonuses(
+        rotation,
+        elementStats.martialArtsId,
+      );
+
       for (const rotSkill of rotationPlan) {
         throwIfCancelled();
         const skill = rotSkill.skill;
@@ -293,6 +298,8 @@ export async function computeOptimizeResultsAsync(
           rotation?.activePassiveSkills,
           runtimeState.priorHitsBySkill,
           rotSkill.cancelled,
+          rotSkill.exhausted,
+          exhaustedBonuses,
         );
         entryOpts.rotationSkills = rotation?.skills;
 
@@ -336,8 +343,8 @@ export async function computeOptimizeResultsAsync(
   const slotOptions = GEAR_SLOTS.filter(({ key }) =>
     optimizeSlots ? optimizeSlots.has(key) : true,
   ).map(({ key }) => {
-    const equippedGear =
-      equipped[key] && customGears.find((g) => g.id === equipped[key]);
+    const equippedGear: CustomGear | undefined =
+      equipped[key] ? customGears.find((g) => g.id === equipped[key]) : undefined;
 
     // If this slot is locked, override candidates to exactly the locked choice.
     if (lockedSlots && Object.prototype.hasOwnProperty.call(lockedSlots, key)) {
@@ -396,6 +403,34 @@ export async function computeOptimizeResultsAsync(
 
   // Expand gear candidates with tune + addition swap variants when considerTune is enabled.
   if (options?.considerTune) {
+    // Find the sub line (index 1..n-1) that contributes least to total damage
+    // (used to decide which line to tune on an untuned item).
+    function findWeakestSubLineIndex(
+      item: CustomGear,
+      equippedGear: CustomGear | undefined,
+    ): number {
+      const scratch = { ...baseBonus };
+      if (equippedGear) applyGear(scratch, equippedGear, -1);
+      applyGear(scratch, item, 1);
+      const fullDmg = computeTotalDamage(scratch);
+      let weakest = 1;
+      let minDelta = Infinity;
+      for (let si = 1; si < item.subs.length; si++) {
+        const sub = item.subs[si];
+        if (!sub) continue;
+        const key = String(sub.stat);
+        scratch[key] = (scratch[key] || 0) - sub.value;
+        const dmg = computeTotalDamage(scratch);
+        scratch[key] = (scratch[key] || 0) + sub.value;
+        const delta = fullDmg - dmg;
+        if (delta < minDelta) {
+          minDelta = delta;
+          weakest = si;
+        }
+      }
+      return weakest;
+    }
+
     // Pre-compute the best addition stat per slot (marginal gain vs equipped addition)
     const bestSwapStatBySlot = new Map<GearSlot, { stat: string; value: number }>();
     for (const slotDef of slotOptions) {
@@ -434,19 +469,36 @@ export async function computeOptimizeResultsAsync(
       const expanded: Array<CustomGear | null> = [];
       for (const item of slotDef.items) {
         expanded.push(item);
-        // Tune variants — generate for ALL tunable sub lines (indices 1..n-1)
-        // Chỉ cho gear có tunedSubIndex > 0 (đang được tune)
-        if (item && item.tunedSubIndex && item.tunedSubIndex > 0 && item.subs && item.subs.length >= 2) {
-          for (let si = 1; si < item.subs.length; si++) {
-            for (const v of generateTuneVariants(item, elementStats.selected, si)) {
-              const variantGear: GearWithTune = {
-                ...item,
-                subs: v.overrideSubs,
-                __tuneId: `::tune::${v.subIndex}::${v.targetStat}`,
-                __tuneLabel: v.label,
-                __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}`,
-              };
-              expanded.push(variantGear);
+        // Tune variants — only for the relevant sub line:
+        //   - already tuned → re-tune that same line
+        //   - untuned → tune the weakest-contributing sub line
+        if (item && item.subs && item.subs.length >= 2) {
+          const tuneSubIndex = item.tunedSubIndex && item.tunedSubIndex > 0
+            ? item.tunedSubIndex
+            : findWeakestSubLineIndex(item, slotDef.equippedGear);
+          for (const v of generateTuneVariants(item, elementStats.selected, tuneSubIndex)) {
+            const variantGear: GearWithTune = {
+              ...item,
+              subs: v.overrideSubs,
+              __tuneId: `::tune::${v.subIndex}::${v.targetStat}`,
+              __tuneLabel: v.label,
+              __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}`,
+            };
+            expanded.push(variantGear);
+            // Combined tune + swap variant
+            const swapBest = bestSwapStatBySlot.get(slotDef.slot);
+            if (swapBest && item.addition) {
+              const currentStat = String(item.addition.stat);
+              if (currentStat !== swapBest.stat || item.addition.value !== swapBest.value) {
+                expanded.push({
+                  ...item,
+                  subs: v.overrideSubs,
+                  addition: { stat: swapBest.stat, value: swapBest.value },
+                  __tuneId: `::tune-swap::${v.subIndex}::${v.targetStat}::${swapBest.stat}`,
+                  __tuneLabel: `${v.label} + Swap → ${swapBest.stat} +${swapBest.value}`,
+                  __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}, ${String(item.addition.stat)} +${item.addition.value}`,
+                } as GearWithTune);
+              }
             }
           }
         }
@@ -514,6 +566,10 @@ export async function computeOptimizeResultsAsync(
       if (!g) return "__null__";
       return g.id + ((g as GearWithTune).__tuneId ?? "");
     };
+    const getItemGroupKey = (g: CustomGear | null): string => {
+      if (!g) return "__null__";
+      return g.id;
+    };
 
     for (let i = 0; i < slotCount; i++) {
       throwIfCancelled();
@@ -534,12 +590,14 @@ export async function computeOptimizeResultsAsync(
         continue;
       }
 
-      // Phase A: Score each item across all beam contexts
-      const itemBest = new Map<string, number>();
+      // Phase A: Score each item across all beam contexts.
+      // Track both per-item (for extended beam) and per-group (for ranking).
+      const groupBest = new Map<string, number>();
       const extended: Array<{
         bonus: Record<string, number>;
         dmg: number;
         itemKey: string;
+        groupKey: string;
       }> = [];
 
       for (const bonus of beam) {
@@ -550,35 +608,52 @@ export async function computeOptimizeResultsAsync(
           const dmg = computeTotalDamage(bonus);
 
           const key = getItemKey(gear);
-          itemBest.set(key, Math.max(dmg, itemBest.get(key) ?? -Infinity));
-          extended.push({ bonus: { ...bonus }, dmg, itemKey: key });
+          const gKey = getItemGroupKey(gear);
+          groupBest.set(gKey, Math.max(dmg, groupBest.get(gKey) ?? -Infinity));
+          extended.push({ bonus: { ...bonus }, dmg, itemKey: key, groupKey: gKey });
 
           if (gear) applyGear(bonus, gear, -1);
         }
         if (equippedGear) applyGear(bonus, equippedGear, +1);
       }
 
-      // Phase B: Rank items and keep top N
-      const ranked = Array.from(itemBest.entries())
+      // Phase B: Rank groups (by their best variant's damage) and keep top N groups.
+      // This ensures items with great tune/swap potential get group-level credit.
+      const ranked = Array.from(groupBest.entries())
         .sort((a, b) => b[1] - a[1]);
-      const keptIds = new Set<string>();
-      // Always keep equipped
-      if (equippedGear) keptIds.add(getItemKey(equippedGear));
-      for (const [key] of ranked) {
-        if (keptIds.size >= perSlotCap) break;
-        keptIds.add(key);
+      const keptGroupKeys = new Set<string>();
+      if (equippedGear) keptGroupKeys.add(getItemGroupKey(equippedGear));
+      for (const [groupKey] of ranked) {
+        if (keptGroupKeys.size >= perSlotCap) break;
+        keptGroupKeys.add(groupKey);
       }
 
-      // Apply reduction to slot options
+      // From kept groups, pick the top perSlotCap individual items by their
+      // own best-context damage.  This bounds the output size while still
+      // benefiting from group-level ranking (keeping groups with high potential).
+      const individualBest = new Map<string, number>();
+      for (const e of extended) {
+        if (keptGroupKeys.has(e.groupKey)) {
+          individualBest.set(e.itemKey, Math.max(e.dmg, individualBest.get(e.itemKey) ?? -Infinity));
+        }
+      }
+      const keptIndividual = Array.from(individualBest.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, perSlotCap)
+        .map(([key]) => key);
+      const keptIndividualSet = new Set(keptIndividual);
+      if (equippedGear) keptIndividualSet.add(getItemKey(equippedGear));
+
+      // Apply reduction — keep only the selected individual items
       result[i] = {
         slot,
-        items: items.filter((g) => keptIds.has(getItemKey(g))),
+        items: items.filter((g) => keptIndividualSet.has(getItemKey(g))),
         equippedGear,
       };
 
-      // Phase C: Build new beam from extended entries that use kept items
+      // Phase C: Build new beam from extended entries with kept individual items
       const scoredBeam = extended
-        .filter((e) => keptIds.has(e.itemKey))
+        .filter((e) => keptIndividualSet.has(e.itemKey))
         .sort((a, b) => b.dmg - a.dmg);
       beam = scoredBeam.slice(0, beamWidth).map((e) => e.bonus);
     }

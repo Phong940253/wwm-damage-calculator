@@ -11,6 +11,7 @@ import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInSt
 import {
   computeRotationBonuses,
   sumBonuses,
+  computeExhaustedBonuses,
 } from "@/app/domain/skill/modifierEngine";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
@@ -147,6 +148,11 @@ export function evaluateDamage(
     let totalNormal = 0;
     const runtimeState = createRotationSkillRuntimeState();
 
+    const exhaustedBonuses = computeExhaustedBonuses(
+      rotation,
+      elementStats.martialArtsId,
+    );
+
     for (const rotSkill of rotation.skills) {
       const skill = SKILLS.find((s) => s.id === rotSkill.id);
       if (!skill) continue;
@@ -160,6 +166,8 @@ export function evaluateDamage(
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
         rotSkill.cancelled,
+        rotSkill.exhausted,
+        exhaustedBonuses,
       );
       entryOpts.rotationSkills = rotation.skills;
 

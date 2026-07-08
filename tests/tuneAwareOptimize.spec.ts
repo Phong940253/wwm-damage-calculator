@@ -513,14 +513,8 @@ describe("computeOptimizeResultsAsync with considerTune", () => {
         id: "g_head_notunable",
         name: "Non-tunable Head",
         slot: "head",
-        // no tunedSubIndex
-        subs: [
-          { stat: "Momentum", value: 35 },
-          { stat: "CriticalRate", value: 7.4 },
-          { stat: "Power", value: 38 },
-          { stat: "AffinityRate", value: 3.5 },
-          { stat: "bellstrikeMax", value: 35 },
-        ],
+        // no subs at all → non-tunable
+        subs: [],
       }),
     ];
     const equipped: Partial<Record<string, string>> = {};
@@ -543,6 +537,38 @@ describe("computeOptimizeResultsAsync with considerTune", () => {
     });
     expect(hasTune).toBe(false);
   }); // 0 tunable gear → same as false
+
+  it("considerTune = true generates tune variants for untuned gear", async () => {
+    // Gear with subs but no tunedSubIndex → should still get tune variants
+    const gears: CustomGear[] = [
+      makeGear({
+        id: "g_head_untuned",
+        name: "Untuned Head",
+        slot: "head",
+        tunedSubIndex: undefined,
+        subs: [
+          { stat: "Momentum", value: 35 },
+          { stat: "CriticalRate", value: 7.4 },
+          { stat: "MaxPhysicalAttack", value: 60 },
+          { stat: "AffinityRate", value: 3.5 },
+          { stat: "bellstrikeMax", value: 35 },
+        ],
+      }),
+    ];
+    const equipped: Partial<Record<string, string>> = {};
+
+    const r = await computeOptimizeResultsAsync(
+      baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
+      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+    );
+
+    // Should have at least one tune variant result
+    const hasTuneResult = r.results.some((res) => {
+      const g = res.selection["head"];
+      return g && (g as any).__tuneId?.startsWith("::tune::");
+    });
+    expect(hasTuneResult).toBe(true);
+  }); // untuned gear → tune variants
 });
 
 // ============================================================
@@ -833,7 +859,7 @@ describe("tune variants cover all sub lines in optimizer", () => {
       { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
     );
 
-    // Should have tune variants for multiple sub lines (1, 2, 3, 4)
+    // Should only have tune variants for the tuned sub line (index 2)
     const seenSubIndices = new Set<number>();
     for (const res of r.results) {
       const g = res.selection["head"];
@@ -843,7 +869,8 @@ describe("tune variants cover all sub lines in optimizer", () => {
         seenSubIndices.add(parseInt(parts[2], 10));
       }
     }
-    // Should have variants from at least 2 different sub lines
-    expect(seenSubIndices.size).toBeGreaterThanOrEqual(2);
+    // Only the tuned sub line (2) should have variants
+    expect(seenSubIndices.size).toBe(1);
+    expect(seenSubIndices.has(2)).toBe(true);
   });
 });

@@ -28,7 +28,7 @@ import {
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
-import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
+import { computeRotationBonuses, computeExhaustedBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { SKILLS } from "@/app/domain/skill/skills";
 import {
   calculateSkillDamage,
@@ -39,6 +39,7 @@ import {
 } from "@/app/domain/skill/skillDamage";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { useI18n } from "@/app/providers/I18nProvider";
+import type { LevelContext } from "@/app/domain/level/levelSettings";
 import {
   type TuneStatKey,
   canTuneGearSubIndex,
@@ -55,6 +56,7 @@ function calcRotationAwareNormalDamage(
   elementStats: ElementStats,
   gearBonus: Record<string, number>,
   rotation?: Rotation,
+  levelContext?: Partial<LevelContext>,
 ): number {
   const includedAbs = computeIncludedInStatsGearBonus(
     stats,
@@ -71,10 +73,17 @@ function calcRotationAwareNormalDamage(
     rotation
   );
 
+  const exhaustedBonuses = computeExhaustedBonuses(
+    rotation,
+    elementStats.martialArtsId,
+  );
+
   const ctx = buildDamageContext(
     stats,
     elementStats,
-    sumBonuses(effectiveGearBonus, rotationBonuses)
+    sumBonuses(effectiveGearBonus, rotationBonuses),
+    undefined,
+    levelContext,
   );
 
   if (rotation && rotation.skills.length > 0) {
@@ -97,6 +106,8 @@ function calcRotationAwareNormalDamage(
         rotation.activePassiveSkills,
         runtimeState.priorHitsBySkill,
         rotSkill.cancelled,
+        rotSkill.exhausted,
+        exhaustedBonuses,
       );
       entryOpts.rotationSkills = rotation.skills;
 const dmg = calculateSkillDamage(ctx, skill, entryOpts);
@@ -148,6 +159,7 @@ interface Props {
   elementStats?: ElementStats;
   stats: InputStats;
   rotation?: Rotation;
+  levelContext?: Partial<LevelContext>;
   onEdit: (gear: CustomGear) => void;
   onDelete: (gearId: string) => void;
 }
@@ -156,7 +168,7 @@ interface Props {
    Component
 ======================= */
 
-export default function GearCard({ gear, elementStats, stats, rotation, onEdit, onDelete }: Props) {
+export default function GearCard({ gear, elementStats, stats, rotation, levelContext, onEdit, onDelete }: Props) {
   const { t } = useI18n();
 
   const { customGears, equipped, setEquipped } = useGear();
@@ -259,14 +271,15 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       stats,
       elementStats,
       bonusWithoutSlot,
-      rotation
+      rotation,
+      levelContext
     );
 
     return {
       base,
       bonusWithoutSlot,
     };
-  }, [impactEnabled, elementStats, equipped, gear.slot, customGears, stats, rotation]);
+  }, [impactEnabled, elementStats, equipped, gear.slot, customGears, stats, rotation, levelContext]);
 
   const impactPctByLineKey = useMemo(() => {
     if (!baseline || baseline.base <= 0 || !elementStats) {
@@ -287,7 +300,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         stats,
         elementStats,
         testBonus,
-        rotation
+        rotation,
+        levelContext
       );
       result[`mains:${i}`] = ((dmg - base) / base) * 100;
     });
@@ -303,7 +317,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
         stats,
         elementStats,
         testBonus,
-        rotation
+        rotation,
+        levelContext
       );
       result[`subs:${i}`] = ((dmg - base) / base) * 100;
     });
@@ -319,14 +334,15 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           stats,
           elementStats,
           testBonus,
-          rotation
+          rotation,
+          levelContext
         );
         result["addition:0"] = ((dmg - base) / base) * 100;
       }
     }
 
     return result;
-  }, [baseline, elementStats, gear.subs, gear.addition, mains, stats, rotation]);
+  }, [baseline, elementStats, gear.subs, gear.addition, mains, stats, rotation, levelContext]);
 
   const impactPctNoMain = useMemo(() => {
     if (!baseline || baseline.base <= 0 || !elementStats) return 0;
@@ -352,10 +368,11 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       stats,
       elementStats,
       testBonus,
-      rotation
+      rotation,
+      levelContext
     );
     return ((dmg - base) / base) * 100;
-  }, [baseline, elementStats, gear.subs, gear.addition, stats, rotation]);
+  }, [baseline, elementStats, gear.subs, gear.addition, stats, rotation, levelContext]);
 
   const impactPctTotal = useMemo(() => {
     if (!baseline || baseline.base <= 0 || !elementStats) return 0;
@@ -388,10 +405,11 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       stats,
       elementStats,
       testBonus,
-      rotation
+      rotation,
+      levelContext
     );
     return ((dmg - base) / base) * 100;
-  }, [baseline, elementStats, gear.subs, gear.addition, mains, stats, rotation]);
+  }, [baseline, elementStats, gear.subs, gear.addition, mains, stats, rotation, levelContext]);
 
   const tuneStatPool = useMemo(
     () => (elementStats ? getTuneSystemStatPool(elementStats.selected) : []),
@@ -433,7 +451,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
       stats,
       elementStats,
       gearCurrentBonus,
-      rotation
+      rotation,
+      levelContext
     );
 
     const rows: Array<{
@@ -488,7 +507,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           stats,
           elementStats,
           testBonus,
-          rotation
+          rotation,
+          levelContext
         );
 
         const bestCaseBonus = { ...bonusWithoutLine };
@@ -497,7 +517,8 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
           stats,
           elementStats,
           bestCaseBonus,
-          rotation
+          rotation,
+          levelContext
         );
 
         outcomes.push({
@@ -533,6 +554,7 @@ export default function GearCard({ gear, elementStats, stats, rotation, onEdit, 
     rotation,
     stats,
     tuneStatPool,
+    levelContext,
   ]);
 
   return (
