@@ -6,6 +6,7 @@ export const ELEMENT_TYPES = [
   { key: "stonesplit", label: "Stonesplit" },
   { key: "silkbind", label: "Silkbind" },
   { key: "bamboocut", label: "Bamboocut" },
+  { key: "void", label: "Void" },
 ] as const;
 
 export type ElementKey = (typeof ELEMENT_TYPES)[number]["key"];
@@ -18,6 +19,7 @@ export const ELEMENT_DEFAULTS: Record<
   stonesplit: { min: 10, max: 30, penetration: 0, bonus: 0 },
   silkbind: { min: 10, max: 30, penetration: 0, bonus: 0 },
   bamboocut: { min: 10, max: 30, penetration: 0, bonus: 0 },
+  void: { min: 0, max: 0, penetration: 0, bonus: 0 },
 };
 
 const ELEMENT_STAT_KEYS = ELEMENT_TYPES.flatMap(({ key }) => [
@@ -34,7 +36,7 @@ const ELEMENT_STAT_KEYS = ELEMENT_TYPES.flatMap(({ key }) => [
 export const STAT_GROUPS: Record<string, (keyof InputStats)[]> = {
   Core: ["MinPhysicalAttack", "MaxPhysicalAttack"],
   Attributes: ["Body", "Power", "Defense", "Agility", "Momentum"],
-  Element: [...ELEMENT_STAT_KEYS],
+  Element: [...ELEMENT_STAT_KEYS, "voidMin", "voidMax"],
   Rates: [
     "PrecisionRate",
     "CriticalRate",
@@ -67,6 +69,8 @@ export type StatHeatmapKey =
   | "stonesplitPenetration"
   | "silkbindPenetration"
   | "bamboocutPenetration"
+  | "voidMin"
+  | "voidMax"
   | "PhysicalPenetration"
   | "PhysicalResistance"
   | "CriticalRate"
@@ -354,6 +358,16 @@ export const INITIAL_ELEMENT_STATS: ElementStats = {
   },
   bamboocutDMGBonus: {
     current: ELEMENT_DEFAULTS.bamboocut.bonus,
+    increase: 0,
+  },
+
+  /* ---------- Void ---------- */
+  voidMin: {
+    current: ELEMENT_DEFAULTS.void.min,
+    increase: 0,
+  },
+  voidMax: {
+    current: ELEMENT_DEFAULTS.void.max,
     increase: 0,
   },
 };

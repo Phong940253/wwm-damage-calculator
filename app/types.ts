@@ -34,6 +34,8 @@ export interface ElementStats {
   bamboocutMax: Stat;
   bamboocutPenetration: Stat;
   bamboocutDMGBonus: Stat;
+  voidMin: Stat;
+  voidMax: Stat;
 }
 
 export type ElementStatSuffix = "Min" | "Max" | "Penetration" | "DMGBonus";
@@ -55,6 +57,8 @@ export type ElementStatKey =
   | "bamboocutMax"
   | "bamboocutPenetration"
   | "bamboocutDMGBonus"
+  | "voidMin"
+  | "voidMax"
   | "MainElementMultiplier";
 
 /* =======================

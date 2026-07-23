@@ -81,6 +81,7 @@ Bellstrike
 Stonesplit
 Silkbind
 Bamboocut
+Void
 
 # ATTRIBUTE STATS (SUB ONLY)
 The following attributes:
@@ -126,6 +127,14 @@ Element attacks (SUB ONLY, NO RANGES):
 
 - "Bellstrike Damage Bonus 1.6%"
   → bellstrikeDMGBonus = 1.6
+
+Void attacks (SUB ONLY, NO RANGES):
+
+- "Min Void Attack +xx.x"
+  → voidMin = xx.x
+
+- "Max Void Attack +xx.x"
+  → voidMax = xx.x
 
 
 # ADDITION STAT RULES (STRICT)
@@ -282,6 +291,7 @@ Element (SUB ONLY):
 - stonesplitMin / Max / DMGBonus
 - silkbindMin / Max / DMGBonus
 - bamboocutMin / Max / DMGBonus
+- voidMin / Max
 
 Element Penetration (ADDITION ONLY):
 - bellstrikePenetration

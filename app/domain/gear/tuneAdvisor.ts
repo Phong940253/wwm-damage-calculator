@@ -23,6 +23,8 @@ export type TuneStatKey =
   | "stonesplitPenetration"
   | "silkbindPenetration"
   | "bamboocutPenetration"
+  | "voidMin"
+  | "voidMax"
   | "PhysicalPenetration"
   | "PhysicalResistance"
   | "CriticalRate"
@@ -46,11 +48,12 @@ const COMMON_TUNE_STATS: TuneStatKey[] = [
 ];
 
 function getElementAttackTuneStats(
-  element: "silkbind" | "stonesplit" | "bamboocut",
+  element: "silkbind" | "stonesplit" | "bamboocut" | "void",
 ): TuneStatKey[] {
   if (element === "silkbind") return ["silkbindMin", "silkbindMax"];
   if (element === "stonesplit") return ["stonesplitMin", "stonesplitMax"];
-  return ["bamboocutMin", "bamboocutMax"];
+  if (element === "bamboocut") return ["bamboocutMin", "bamboocutMax"];
+  return ["voidMin", "voidMax"];
 }
 
 const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
@@ -68,6 +71,8 @@ const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
   stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
   silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
   bamboocutPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+  voidMin: { minPerLine: 22.1, maxPerLine: 44.2 },
+  voidMax: { minPerLine: 22.1, maxPerLine: 44.2 },
   PhysicalPenetration: { minPerLine: 5.4, maxPerLine: 9.0 },
   PhysicalResistance: { minPerLine: 5.4, maxPerLine: 9.0 },
   CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
@@ -100,6 +105,16 @@ export const LEVEL_91_PENETRATION_TUNE_LIMITS: Partial<
   silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
   bamboocutPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
   PhysicalPenetration: { minPerLine: 5.4, maxPerLine: 9.0 },
+};
+
+export const LEVEL_96_TUNE_LIMITS: Partial<Record<TuneStatKey, TuneStatRange>> = {
+  MaxPhysicalAttack: { minPerLine: 38.9, maxPerLine: 77.8 },
+  CriticalRate: { minPerLine: 4.5, maxPerLine: 9.0 },
+  AffinityRate: { minPerLine: 2.2, maxPerLine: 4.4 },
+  Power: { minPerLine: 24.7, maxPerLine: 49.4 },
+  Momentum: { minPerLine: 24.7, maxPerLine: 49.4 },
+  Agility: { minPerLine: 24.7, maxPerLine: 49.4 },
+  voidMax: { minPerLine: 22.1, maxPerLine: 44.2 },
 };
 
 export function getTuneSystemStatPool(
@@ -141,11 +156,34 @@ export function getGearTuneStatRange(
   return DEFAULT_TUNE_LIMITS[stat];
 }
 
+export function getGearTuneStatRange96(
+  selectedElement: ElementKey,
+  stat: TuneStatKey,
+): TuneStatRange {
+  const lv96Range = LEVEL_96_TUNE_LIMITS[stat];
+  if (lv96Range) return lv96Range;
+
+  if (selectedElement === "bellstrike") {
+    return (
+      BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat] || DEFAULT_TUNE_LIMITS[stat]
+    );
+  }
+
+  return DEFAULT_TUNE_LIMITS[stat];
+}
+
 export function getPlayerTuneStatRange(
   stat: TuneStatKey,
   enemyLevel: number = 0,
 ): TuneStatRange {
   const baseRange = DEFAULT_TUNE_LIMITS[stat];
+
+  if (enemyLevel >= 96) {
+    const lv96Range = LEVEL_96_TUNE_LIMITS[stat];
+    if (lv96Range) {
+      return lv96Range;
+    }
+  }
 
   if (enemyLevel >= 91) {
     const penRange = LEVEL_91_PENETRATION_TUNE_LIMITS[stat];
@@ -457,6 +495,11 @@ export function getStatTheoreticalMaxPercentage(
 
   const tKey = statKey as TuneStatKey;
   let maxPerLine = DEFAULT_TUNE_LIMITS[tKey].maxPerLine;
+
+  const lv96Limit = LEVEL_96_TUNE_LIMITS[tKey]?.maxPerLine;
+  if (lv96Limit && lv96Limit > maxPerLine) {
+    maxPerLine = lv96Limit;
+  }
 
   const penLimit = LEVEL_91_PENETRATION_TUNE_LIMITS[tKey]?.maxPerLine;
   if (penLimit && penLimit > maxPerLine) {
