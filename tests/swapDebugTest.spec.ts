@@ -81,7 +81,7 @@ describe("User data: swap variant debug", () => {
       {
         candidateGears: gearData,
         slotsToOptimize: ["pendant"] as any,
-        considerTune: true,
+        tuneEnabled: true, swapEnabled: true,
         autoReduceIfOverCombos: 1,
         reduceTargetCombos: 200000,
         reducePerSlotCap: 0,
@@ -137,7 +137,7 @@ describe("User data: swap variant debug", () => {
       {
         candidateGears: gearData,
         slotsToOptimize: ["weapon_1","weapon_2","disc","pendant","head","chest","hand","leg"] as any,
-        considerTune: true,
+        tuneEnabled: true, swapEnabled: true,
         autoReduceIfOverCombos: 1,
         reduceTargetCombos: 200000,
         reducePerSlotCap: 0,

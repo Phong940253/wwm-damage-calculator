@@ -7,8 +7,7 @@ import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { buildFinalStatSections } from "@/app/domain/damage/buildFinalStatSections";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
-import { computeRelayedSubValue } from "@/app/domain/gear/tuneAdvisor";
-import { MAIN_STAT_BY_LEVEL } from "@/app/domain/gear/gearConstants";
+import { buildRelayedGear } from "@/app/domain/gear/gearRelay";
 import { GEAR_SLOTS } from "@/app/constants";
 import { getStatLabel } from "@/app/utils/statLabel";
 import type { CustomGear, GearSlot, InputStats, ElementStats, Rotation } from "@/app/types";
@@ -25,42 +24,56 @@ interface Props {
   levelContext?: Partial<LevelContext>;
 }
 
-function buildRelayedGear(gear: CustomGear, slot: GearSlot): CustomGear {
-  const lv96Mains = MAIN_STAT_BY_LEVEL[96]?.[slot];
-  return {
-    ...gear,
-    mains: lv96Mains
-      ? gear.mains.map(m => {
-          const override = lv96Mains[m.stat];
-          return override !== undefined ? { stat: m.stat, value: override } : m;
-        })
-      : gear.mains,
-    subs: gear.subs.map(s => ({
-      ...s,
-      value: computeRelayedSubValue(String(s.stat) as Parameters<typeof computeRelayedSubValue>[0]),
-    })),
-    tunedSubIndex: undefined,
-    tuneHistory: undefined,
-  };
+function getMergedAttrs(
+  base: Record<string, number>,
+  override: Record<string, number>,
+): Array<{ stat: string; base: number; override: number; diff: number }> {
+  const keys = new Set([...Object.keys(base), ...Object.keys(override)]);
+  return Array.from(keys)
+    .map(stat => {
+      const b = base[stat] ?? 0;
+      const o = override[stat] ?? 0;
+      return { stat, base: b, override: o, diff: o - b };
+    })
+    .filter(l => l.base !== 0 || l.override !== 0);
 }
 
-function mergeStatLines(
-  originalGear: CustomGear,
-  relayedGear: CustomGear,
-): Array<{ stat: string; orig: number; relay: number; diff: number }> {
-  const map = new Map<string, { orig: number; relay: number }>();
-  const add = (gear: CustomGear, field: "orig" | "relay") => {
-    for (const attr of [gear.main, ...gear.mains, ...gear.subs, gear.addition]) {
-      if (!attr) continue;
-      const key = String(attr.stat);
-      if (!map.has(key)) map.set(key, { orig: 0, relay: 0 });
-      map.get(key)![field] += typeof attr.value === "number" ? attr.value : 0;
-    }
-  };
-  add(originalGear, "orig");
-  add(relayedGear, "relay");
-  return Array.from(map.entries())
-    .map(([stat, { orig, relay }]) => ({ stat, orig, relay, diff: relay - orig }));
+function StatTable({
+  lines, elementStats,
+}: {
+  lines: Array<{ stat: string; base: number; override: number; diff: number }>;
+  elementStats: ElementStats;
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-0.5 text-xs">
+      <div className="text-muted-foreground">Stat</div>
+      <div className="text-right text-muted-foreground">Base</div>
+      <div className="text-right text-muted-foreground">Relay</div>
+      <div className="text-right text-muted-foreground">Δ</div>
+      {lines.map(l => (
+        <div key={l.stat} className="contents">
+          <div className="truncate">{getStatLabel(l.stat, elementStats)}</div>
+          <div className="text-right tabular-nums">+{l.base.toFixed(1)}</div>
+          <div className="text-right tabular-nums font-medium text-emerald-600">+{l.override.toFixed(1)}</div>
+          <div className={`text-right tabular-nums font-semibold ${
+            l.diff > 0 ? 'text-emerald-500' : l.diff < 0 ? 'text-red-400' : 'text-muted-foreground'
+          }`}>
+            {l.diff > 0 ? '+' : ''}{l.diff.toFixed(1)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function getAttrMap(items: Array<{ stat: string | number; value: number } | null | undefined>): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const item of items) {
+    if (!item) continue;
+    const key = String(item.stat);
+    map[key] = (map[key] || 0) + (typeof item.value === "number" ? item.value : 0);
+  }
+  return map;
 }
 
 function GearRelayRow({
@@ -71,34 +84,32 @@ function GearRelayRow({
   relayedGear: CustomGear;
   elementStats: ElementStats;
 }) {
-  const lines = useMemo(
-    () => mergeStatLines(originalGear, relayedGear),
-    [originalGear, relayedGear],
-  );
+  const sections = useMemo(() => {
+    const origMains = getAttrMap(originalGear.mains);
+    const relayMains = getAttrMap(relayedGear.mains);
+    const origSubs = getAttrMap([...originalGear.subs, originalGear.addition]);
+    const relaySubs = getAttrMap([...relayedGear.subs, relayedGear.addition]);
+    return [
+      { key: "mains", label: "Main Stats", lines: getMergedAttrs(origMains, relayMains) },
+      { key: "subs", label: "Sub Stats", lines: getMergedAttrs(origSubs, relaySubs) },
+    ];
+  }, [originalGear, relayedGear]);
 
   return (
-    <div className="rounded-lg border border-white/10 p-3 space-y-1.5">
+    <div className="rounded-lg border border-white/10 p-3 space-y-2">
       <div className="text-xs font-medium text-muted-foreground">
         {label}: <span className="text-foreground font-semibold">{originalGear.name}</span>
       </div>
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-0.5 text-xs">
-        <div className="text-muted-foreground">Stat</div>
-        <div className="text-right text-muted-foreground">Orig</div>
-        <div className="text-right text-muted-foreground">Relay</div>
-        <div className="text-right text-muted-foreground">Δ</div>
-        {lines.map(l => (
-          <div key={l.stat} className="contents">
-            <div className="truncate">{getStatLabel(l.stat, elementStats)}</div>
-            <div className="text-right tabular-nums">+{l.orig.toFixed(1)}</div>
-            <div className="text-right tabular-nums font-medium text-emerald-600">+{l.relay.toFixed(1)}</div>
-            <div className={`text-right tabular-nums font-semibold ${
-              l.diff > 0 ? 'text-emerald-500' : l.diff < 0 ? 'text-red-400' : 'text-muted-foreground'
-            }`}>
-              {l.diff > 0 ? '+' : ''}{l.diff.toFixed(1)}
+      {sections.map(s => (
+        s.lines.length > 0 && (
+          <div key={s.key} className="space-y-1">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              {s.label}
             </div>
+            <StatTable lines={s.lines} elementStats={elementStats} />
           </div>
-        ))}
-      </div>
+        )
+      ))}
     </div>
   );
 }
@@ -126,7 +137,7 @@ export default function RelayedPreviewDialog({
   const relayedBonus = useMemo(() => {
     const bonus: Record<string, number> = {};
     for (const { relayedGear } of relayedSlots) {
-      for (const attr of [relayedGear.main, ...relayedGear.mains, ...relayedGear.subs, relayedGear.addition]) {
+      for (const attr of [...relayedGear.mains, ...relayedGear.subs, relayedGear.addition]) {
         if (!attr) continue;
         const key = String(attr.stat);
         bonus[key] = (bonus[key] || 0) + (typeof attr.value === "number" ? attr.value : 0);

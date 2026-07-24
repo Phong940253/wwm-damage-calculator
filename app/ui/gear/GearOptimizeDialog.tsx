@@ -34,6 +34,7 @@ import GearHoverDetail from "./GearHoverDetail";
 import GearStatDialog from "./GearStatDialog";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { getTuneSuccessRateToneClass, computeSingleTuneSuccessRate } from "@/app/domain/gear/tuneAdvisor";
+import { buildRelayedGear } from "@/app/domain/gear/gearRelay";
 import { exportOptimizerResultsToFile, importOptimizerResultsFromFile } from "@/app/utils/importExport";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
 
@@ -663,6 +664,10 @@ export default function GearOptimizeDialog({
                                     ? customGears.find((gear) => gear.id === currentEquipped)
                                     : null;
 
+                                  const isRelayed = r.originalDamage !== undefined;
+                                  const hoverGear = isRelayed && g ? buildRelayedGear(g, key as GearSlot) : g!;
+                                  const hoverOldGear = isRelayed && oldGear ? buildRelayedGear(oldGear, key as GearSlot) : oldGear;
+
                                   return (
                                     <td key={key} className="p-3">
                                       {g ? (
@@ -698,8 +703,8 @@ export default function GearOptimizeDialog({
                                               className="p-0 w-auto"
                                             >
                                               <GearHoverDetail
-                                                gear={g}
-                                                oldGear={oldGear}
+                                                gear={hoverGear}
+                                                oldGear={hoverOldGear}
                                                 elementStats={elementStats}
                                                 stats={stats}
                                                 rotation={rotation}
@@ -785,6 +790,7 @@ export default function GearOptimizeDialog({
         customGears={customGears}
         rotation={rotation}
         levelContext={levelContext}
+        relayEnabled={statTarget?.originalDamage !== undefined}
       />
     </Dialog>
   );

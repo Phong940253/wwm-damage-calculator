@@ -126,7 +126,7 @@ describe("optimizer result dedup", () => {
     ];
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, {} as any, DESIRED, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: true, swapEnabled: true },
     );
     expectUniqueKeys(r.results);
     // Base gear + tune variants for g_tunable + g_plain
@@ -148,7 +148,7 @@ describe("optimizer result dedup", () => {
     ];
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, {} as any, DESIRED, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["disc"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["disc"], tuneEnabled: true, swapEnabled: true },
     );
     expectUniqueKeys(r.results);
   });
@@ -181,7 +181,7 @@ describe("optimizer result dedup", () => {
     ];
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, {} as any, DESIRED, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head", "disc"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head", "disc"], tuneEnabled: true, swapEnabled: true },
     );
     expectUniqueKeys(r.results);
   });
@@ -236,7 +236,7 @@ describe("optimizer result dedup", () => {
     ];
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, {} as any, DESIRED, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: true, swapEnabled: true },
     );
     expectUniqueKeys(r.results);
     // dup_tune (base) + tune variants should appear only once per unique key

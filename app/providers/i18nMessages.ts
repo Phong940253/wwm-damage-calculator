@@ -285,7 +285,9 @@ const EN = {
     loadingMoreGear: "Loading more gear",
     editGear: "Edit Gear",
     addNewGear: "Add New Gear",
-    considerTune: "Consider Tune",
+    tune: "Tune",
+    swap: "Swap",
+    relay: "Relay",
   },
   gearAnalysis: {
     title: "📊 Gear Analysis",
@@ -769,7 +771,9 @@ const VI: typeof EN = {
     loadingMoreGear: "Đang tải thêm trang bị",
     editGear: "Sửa trang bị",
     addNewGear: "Thêm trang bị mới",
-    considerTune: "Cân nhắc Tune",
+    tune: "Tune",
+    swap: "Swap",
+    relay: "Relay",
   },
   gearAnalysis: {
     title: "📊 Phân tích Trang bị",

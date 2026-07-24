@@ -13,6 +13,7 @@ import { buildFinalStatSections } from "@/app/domain/damage/buildFinalStatSectio
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
 import { computeRotationBonuses, sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
+import { buildRelayedGear } from "@/app/domain/gear/gearRelay";
 import type { CustomGear, GearSlot, InputStats, ElementStats, Rotation } from "@/app/types";
 import type { LevelContext } from "@/app/domain/level/levelSettings";
 
@@ -26,6 +27,7 @@ interface Props {
   customGears?: CustomGear[];
   rotation?: Rotation;
   levelContext?: Partial<LevelContext>;
+  relayEnabled?: boolean;
 }
 
 function modifyGearStats(
@@ -33,8 +35,7 @@ function modifyGearStats(
   gear: CustomGear,
   sign: 1 | -1,
 ): void {
-  const items = [gear.main, ...gear.mains, ...gear.subs, gear.addition];
-  for (const a of items) {
+  for (const a of [...gear.mains, ...gear.subs, gear.addition]) {
     if (!a) continue;
     const key = String(a.stat);
     const val = typeof a.value === "number" ? a.value : 0;
@@ -46,12 +47,15 @@ function buildGearBonusFromSelection(
   customGears: CustomGear[],
   equipped: Partial<Record<GearSlot, string | undefined>>,
   selection: Partial<Record<GearSlot, CustomGear>>,
+  relayEnabled?: boolean,
 ): Record<string, number> {
   const bonus = aggregateEquippedGearBonus(customGears, equipped);
 
   for (const [slotStr, selectedGear] of Object.entries(selection)) {
     const slot = slotStr as GearSlot;
     if (!selectedGear) continue;
+
+    const equipGear = relayEnabled ? buildRelayedGear(selectedGear, slot) : selectedGear;
 
     const equippedId = equipped[slot];
     if (equippedId) {
@@ -60,7 +64,7 @@ function buildGearBonusFromSelection(
         modifyGearStats(bonus, equippedGear, -1);
       }
     }
-    modifyGearStats(bonus, selectedGear, 1);
+    modifyGearStats(bonus, equipGear, 1);
   }
 
   return bonus;
@@ -76,10 +80,11 @@ export default function GearStatDialog({
   customGears = [],
   rotation,
   levelContext,
+  relayEnabled = false,
 }: Props) {
   const gearBonus = useMemo(
-    () => buildGearBonusFromSelection(customGears, equipped, selection),
-    [customGears, equipped, selection],
+    () => buildGearBonusFromSelection(customGears, equipped, selection, relayEnabled),
+    [customGears, equipped, selection, relayEnabled],
   );
 
   const ctx = useMemo(() => {

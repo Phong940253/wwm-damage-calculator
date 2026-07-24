@@ -177,8 +177,12 @@ export async function computeOptimizeResultsAsync(
     reduceTargetCombos?: number;
     /** Hard cap per slot after reduction (minimum 2). */
     reducePerSlotCap?: number;
-    /** If true, expand gear candidates with tune variants for slots that have tunable gears. */
-    considerTune?: boolean;
+    /** If true, generate tune variants. */
+    tuneEnabled?: boolean;
+    /** If true, generate addition swap variants. */
+    swapEnabled?: boolean;
+    /** If true, post-process results with relayed lv96 damage. */
+    relayEnabled?: boolean;
     /** Beam width for context-aware pre-reduction (default 200). */
     beamWidth?: number;
   },
@@ -408,8 +412,10 @@ export async function computeOptimizeResultsAsync(
     };
   });
 
-  // Expand gear candidates with tune + addition swap variants when considerTune is enabled.
-  if (options?.considerTune) {
+  // Expand gear candidates with tune + addition swap variants.
+  if (options?.tuneEnabled || options?.swapEnabled) {
+    const tuneOk = options?.tuneEnabled ?? false;
+    const swapOk = options?.swapEnabled ?? false;
     // Find the sub line (index 1..n-1) that contributes least to total damage
     // (used to decide which line to tune on an untuned item).
     function findWeakestSubLineIndex(
@@ -479,7 +485,7 @@ export async function computeOptimizeResultsAsync(
         // Tune variants — only for the relevant sub line:
         //   - already tuned → re-tune that same line
         //   - untuned → tune the weakest-contributing sub line
-        if (item && item.subs && item.subs.length >= 2) {
+        if (tuneOk && item && item.subs && item.subs.length >= 2) {
           const tuneSubIndex = item.tunedSubIndex && item.tunedSubIndex > 0
             ? item.tunedSubIndex
             : findWeakestSubLineIndex(item, slotDef.equippedGear);
@@ -492,25 +498,27 @@ export async function computeOptimizeResultsAsync(
               __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}`,
             };
             expanded.push(variantGear);
-            // Combined tune + swap variant
-            const swapBest = bestSwapStatBySlot.get(slotDef.slot);
-            if (swapBest && item.addition) {
-              const currentStat = String(item.addition.stat);
-              if (currentStat !== swapBest.stat || item.addition.value !== swapBest.value) {
-                expanded.push({
-                  ...item,
-                  subs: v.overrideSubs,
-                  addition: { stat: swapBest.stat, value: swapBest.value },
-                  __tuneId: `::tune-swap::${v.subIndex}::${v.targetStat}::${swapBest.stat}`,
-                  __tuneLabel: `${v.label} + Swap → ${swapBest.stat} +${swapBest.value}`,
-                  __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}, ${String(item.addition.stat)} +${item.addition.value}`,
-                } as GearWithTune);
+            // Combined tune + swap variant (only if swap is also enabled)
+            if (swapOk) {
+              const swapBest = bestSwapStatBySlot.get(slotDef.slot);
+              if (swapBest && item.addition) {
+                const currentStat = String(item.addition.stat);
+                if (currentStat !== swapBest.stat || item.addition.value !== swapBest.value) {
+                  expanded.push({
+                    ...item,
+                    subs: v.overrideSubs,
+                    addition: { stat: swapBest.stat, value: swapBest.value },
+                    __tuneId: `::tune-swap::${v.subIndex}::${v.targetStat}::${swapBest.stat}`,
+                    __tuneLabel: `${v.label} + Swap → ${swapBest.stat} +${swapBest.value}`,
+                    __tuneFrom: `${String(item.subs[v.subIndex]?.stat ?? "")} +${item.subs[v.subIndex]?.value ?? 0}, ${String(item.addition.stat)} +${item.addition.value}`,
+                  } as GearWithTune);
+                }
               }
             }
           }
         }
         // Addition swap variant (only if best stat differs from current)
-        if (item && item.addition) {
+        if (swapOk && item && item.addition) {
           const best = bestSwapStatBySlot.get(slotDef.slot);
           if (best) {
             const currentStat = String(item.addition.stat);
@@ -523,11 +531,9 @@ export async function computeOptimizeResultsAsync(
                 __tuneFrom: `${String(item.addition.stat)} +${item.addition.value}`,
               };
               expanded.push(swapGear);
-            } else {
             }
           }
         }
-
       }
       slotDef.items = expanded;
     }
@@ -556,7 +562,7 @@ export async function computeOptimizeResultsAsync(
       2,
       Math.floor(Math.pow(reduceTargetCombos, 1 / slotCount)),
     );
-    const autoCap = options?.considerTune && reducePerSlotCap === 0
+    const autoCap = (options?.tuneEnabled || options?.swapEnabled) && reducePerSlotCap === 0
       ? Math.max(12, capFromTarget)
       : capFromTarget;
     const perSlotCap = reducePerSlotCap > 0 ? reducePerSlotCap : autoCap;
@@ -745,6 +751,7 @@ export async function computeOptimizeResultsAsync(
   };
 
   const applyRelayedDamageToResults = (results: OptimizeResult[]): void => {
+    if (!(options?.relayEnabled ?? true)) return;
     if (!rotationPlan || rotationPlan.length === 0) return;
     for (const r of results) {
       if (r.originalDamage !== undefined) continue;

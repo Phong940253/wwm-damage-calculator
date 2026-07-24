@@ -31,22 +31,102 @@ interface Props {
   levelContext?: Partial<LevelContext>;
 }
 
-function getGearStatTotals(gear?: CustomGear | null): Map<string, number> {
+function getGearMainTotals(gear?: CustomGear | null): Map<string, number> {
   const totals = new Map<string, number>();
   if (!gear) return totals;
-
-  const attrs = [gear.main, ...gear.mains, ...gear.subs, gear.addition].filter(Boolean);
-  for (const a of attrs) {
-    const key = String(a!.stat);
-    totals.set(key, (totals.get(key) ?? 0) + (a!.value ?? 0));
+  for (const a of gear.mains) {
+    if (!a) continue;
+    totals.set(String(a.stat), (totals.get(String(a.stat)) ?? 0) + (a.value ?? 0));
   }
   return totals;
+}
+
+function getGearSubTotals(gear?: CustomGear | null): Map<string, number> {
+  const totals = new Map<string, number>();
+  if (!gear) return totals;
+  for (const a of [...gear.subs, gear.addition]) {
+    if (!a) continue;
+    totals.set(String(a.stat), (totals.get(String(a.stat)) ?? 0) + (a.value ?? 0));
+  }
+  return totals;
+}
+
+function computeRows(
+  newTotals: Map<string, number>,
+  oldTotals: Map<string, number>,
+  elementStats: ElementStats,
+) {
+  const keys = new Set([...newTotals.keys(), ...oldTotals.keys()]);
+  return Array.from(keys)
+    .map((statKey) => {
+      const newValue = newTotals.get(statKey) ?? 0;
+      const oldValue = oldTotals.get(statKey) ?? 0;
+      return { statKey, label: getStatLabel(statKey, elementStats), newValue, oldValue, diff: newValue - oldValue };
+    })
+    .filter((r) => r.newValue !== 0 || r.oldValue !== 0)
+    .sort((a, b) => {
+      const da = Math.abs(a.diff);
+      const db = Math.abs(b.diff);
+      if (da !== db) return db - da;
+      return a.label.localeCompare(b.label);
+    });
 }
 
 const isElementStatKey = (
   k: keyof ElementStats
 ): k is Exclude<keyof ElementStats, "selected" | "martialArtsId"> =>
   k !== "selected" && k !== "martialArtsId";
+
+function StatRow({
+  r, contribution, t, isTop,
+}: {
+  r: { statKey: string; label: string; newValue: number; oldValue: number; diff: number };
+  contribution: { contributions: Map<string, number>; top: Set<string> };
+  t: (key: string) => string;
+  isTop: boolean;
+}) {
+  const diffTone =
+    r.diff > 0 ? "text-emerald-600" : r.diff < 0 ? "text-red-600" : "text-muted-foreground";
+  const impactPct = contribution.contributions.get(r.statKey);
+  const impactLabel =
+    impactPct === undefined ? null : `${impactPct >= 0 ? "+" : ""}${impactPct.toFixed(2)}% ${t("gearCard.hoverDmg")}`;
+
+  return (
+    <div className="contents">
+      <div className={`min-w-0 truncate flex items-center gap-2 ${isTop ? "font-semibold" : ""}`} title={r.label}>
+        {isTop ? (
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+            {r.label}
+          </span>
+        ) : (
+          r.label
+        )}
+        {impactLabel && (
+          <Badge
+            variant="outline"
+            className={
+              isTop
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-700"
+                : "text-muted-foreground"
+            }
+          >
+            {impactLabel}
+          </Badge>
+        )}
+      </div>
+      <div className="text-right tabular-nums font-medium text-emerald-700">
+        {r.newValue > 0 ? "+" : ""}{r.newValue.toFixed(1)}
+      </div>
+      <div className="text-right tabular-nums text-muted-foreground">
+        {r.oldValue > 0 ? "+" : ""}{r.oldValue.toFixed(1)}
+      </div>
+      <div className={`text-right tabular-nums font-semibold ${diffTone}`}>
+        {r.diff > 0 ? "+" : ""}{r.diff.toFixed(1)}
+      </div>
+    </div>
+  );
+}
 
 export default function GearHoverDetail({
   gear,
@@ -60,38 +140,26 @@ export default function GearHoverDetail({
 }: Props) {
   const { t } = useI18n();
 
-  const newTotals = getGearStatTotals(gear);
-  const oldTotals = getGearStatTotals(oldGear);
+  const sections = useMemo(() => {
+    const newMains = getGearMainTotals(gear);
+    const oldMains = getGearMainTotals(oldGear);
+    const newSubs = getGearSubTotals(gear);
+    const oldSubs = getGearSubTotals(oldGear);
 
-  const allKeys = new Set<string>([...newTotals.keys(), ...oldTotals.keys()]);
+    return {
+      mainRows: computeRows(newMains, oldMains, elementStats),
+      subRows: computeRows(newSubs, oldSubs, elementStats),
+    };
+  }, [gear, oldGear, elementStats]);
 
-  const rows = Array.from(allKeys)
-    .map((statKey) => {
-      const newValue = newTotals.get(statKey) ?? 0;
-      const oldValue = oldTotals.get(statKey) ?? 0;
-      const diff = newValue - oldValue;
-      return {
-        statKey,
-        label: getStatLabel(statKey, elementStats),
-        newValue,
-        oldValue,
-        diff,
-      };
-    })
-    .filter((r) => r.newValue !== 0 || r.oldValue !== 0)
-    .sort((a, b) => {
-      const da = Math.abs(a.diff);
-      const db = Math.abs(b.diff);
-      if (da !== db) return db - da;
-      return a.label.localeCompare(b.label);
-    });
+  const allRows = useMemo(() => [...sections.mainRows, ...sections.subRows], [sections]);
 
-  const changedCount = rows.reduce((acc, r) => acc + (r.diff !== 0 ? 1 : 0), 0);
+  const changedCount = allRows.reduce((acc, r) => acc + (r.diff !== 0 ? 1 : 0), 0);
 
   const contribution = useMemo(() => {
     const contributions = new Map<string, number>();
 
-    const diffs = rows.filter((r) => r.diff !== 0);
+    const diffs = allRows.filter((r) => r.diff !== 0);
     if (diffs.length === 0) return { contributions, top: new Set<string>(), base: 0 };
 
     const normalizedStats: InputStats = Object.fromEntries(
@@ -113,49 +181,23 @@ export default function GearHoverDetail({
 
     const calcNormal = (ctx: ReturnType<typeof buildDamageContext>): number => {
       if (rotation && rotation.skills.length > 0) {
-        const skillUseCountsInRotation = buildSkillUseCountsInRotation(
-          rotation.skills,
-        );
-
+        const skillUseCountsInRotation = buildSkillUseCountsInRotation(rotation.skills);
         let totalNormal = 0;
         const runtimeState = createRotationSkillRuntimeState();
-
-        const exhaustedBonuses = computeExhaustedBonuses(
-          rotation,
-          normalizedElementStats.martialArtsId,
-        );
-
+        const exhaustedBonuses = computeExhaustedBonuses(rotation, normalizedElementStats.martialArtsId);
         for (const rotSkill of rotation.skills) {
           const skill = SKILLS.find((s) => s.id === rotSkill.id);
           if (!skill) continue;
-
           const entryOpts = buildRotationSkillDamageOptions(
-            rotSkill.id,
-            rotSkill.params,
-            rotation.activeInnerWays,
-            skillUseCountsInRotation,
-            rotSkill.count,
-            rotation.activePassiveSkills,
-            runtimeState.priorHitsBySkill,
-            rotSkill.cancelled,
-            rotSkill.exhausted,
-            exhaustedBonuses,
+            rotSkill.id, rotSkill.params, rotation.activeInnerWays,
+            skillUseCountsInRotation, rotSkill.count,
+            rotation.activePassiveSkills, runtimeState.priorHitsBySkill,
+            rotSkill.cancelled, rotSkill.exhausted, exhaustedBonuses,
           );
           entryOpts.rotationSkills = rotation.skills;
-
-          const dmg = calculateSkillDamage(
-            ctx,
-            skill,
-            entryOpts,
-          );
+          const dmg = calculateSkillDamage(ctx, skill, entryOpts);
           totalNormal += dmg.total.normal.value * rotSkill.count;
-
-          advanceRotationSkillRuntimeState(
-            runtimeState,
-            skill,
-            entryOpts,
-            rotSkill.count,
-          );
+          advanceRotationSkillRuntimeState(runtimeState, skill, entryOpts, rotSkill.count);
         }
         return totalNormal;
       }
@@ -163,27 +205,10 @@ export default function GearHoverDetail({
     };
 
     const buildCtx = (gearBonus: Record<string, number>) => {
-      const includedAbs = computeIncludedInStatsGearBonus(
-        normalizedStats,
-        normalizedElementStats,
-        rotation,
-        gearBonus,
-      );
+      const includedAbs = computeIncludedInStatsGearBonus(normalizedStats, normalizedElementStats, rotation, gearBonus);
       const effectiveGearBonus = sumBonuses(gearBonus, includedAbs);
-
-      const passiveBonuses = computeRotationBonuses(
-        normalizedStats,
-        normalizedElementStats,
-        effectiveGearBonus,
-        rotation
-      );
-      return buildDamageContext(
-        normalizedStats,
-        normalizedElementStats,
-        sumBonuses(effectiveGearBonus, passiveBonuses),
-        undefined,
-        levelContext,
-      );
+      const passiveBonuses = computeRotationBonuses(normalizedStats, normalizedElementStats, effectiveGearBonus, rotation);
+      return buildDamageContext(normalizedStats, normalizedElementStats, sumBonuses(effectiveGearBonus, passiveBonuses), undefined, levelContext);
     };
 
     const base = baseDamage && baseDamage > 0 ? baseDamage : calcNormal(buildCtx(baseGearBonus));
@@ -209,7 +234,27 @@ export default function GearHoverDetail({
 
     const top = new Set<string>(ranked.slice(0, 3).map((x) => x.statKey));
     return { contributions, top, base };
-  }, [rows, stats, elementStats, rotation, baseGearBonus, baseDamage, levelContext]);
+  }, [allRows, stats, elementStats, rotation, baseGearBonus, baseDamage, levelContext]);
+
+  const renderStatSection = (title: string, rows: typeof sections.mainRows) => {
+    if (rows.length === 0) return null;
+    return (
+      <div className="space-y-1">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          {title}
+        </div>
+        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-xs">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("gearCard.hoverStat")}</div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{t("gearCard.hoverNewCol")}</div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{t("gearCard.hoverOld")}</div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">Δ</div>
+          {rows.map(r => (
+            <StatRow key={r.statKey} r={r} contribution={contribution} t={t} isTop={contribution.top.has(r.statKey)} />
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="w-[380px] p-3">
@@ -243,69 +288,9 @@ export default function GearHoverDetail({
 
       <Separator className="my-3" />
 
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-xs">
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("gearCard.hoverStat")}</div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{t("gearCard.hoverNewCol")}</div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">{t("gearCard.hoverOld")}</div>
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground text-right">Δ</div>
-
-        {rows.map((r) => {
-          const diffTone =
-            r.diff > 0
-              ? "text-emerald-600"
-              : r.diff < 0
-                ? "text-red-600"
-                : "text-muted-foreground";
-
-          const impactPct = contribution.contributions.get(r.statKey);
-          const isTop = contribution.top.has(r.statKey);
-          const impactLabel =
-            impactPct === undefined
-              ? null
-              : `${impactPct >= 0 ? "+" : ""}${impactPct.toFixed(2)}% ${t("gearCard.hoverDmg")}`;
-
-          return (
-            <div key={r.statKey} className="contents">
-              <div
-                className={`min-w-0 truncate flex items-center gap-2 ${isTop ? "font-semibold" : ""}`}
-                title={r.label}
-              >
-                {isTop ? (
-                  <span className="inline-flex items-center gap-1">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    {r.label}
-                  </span>
-                ) : (
-                  r.label
-                )}
-                {impactLabel && (
-                  <Badge
-                    variant="outline"
-                    className={
-                      isTop
-                        ? "border-amber-500/30 bg-amber-500/10 text-amber-700"
-                        : "text-muted-foreground"
-                    }
-                  >
-                    {impactLabel}
-                  </Badge>
-                )}
-              </div>
-              <div className="text-right tabular-nums font-medium text-emerald-700">
-                {r.newValue > 0 ? "+" : ""}
-                {r.newValue.toFixed(1)}
-              </div>
-              <div className="text-right tabular-nums text-muted-foreground">
-                {r.oldValue > 0 ? "+" : ""}
-                {r.oldValue.toFixed(1)}
-              </div>
-              <div className={`text-right tabular-nums font-semibold ${diffTone}`}>
-                {r.diff > 0 ? "+" : ""}
-                {r.diff.toFixed(1)}
-              </div>
-            </div>
-          );
-        })}
+      <div className="space-y-3">
+        {renderStatSection("Main Stats", sections.mainRows)}
+        {renderStatSection("Sub Stats", sections.subRows)}
       </div>
 
       <div className="mt-3 text-[11px] text-muted-foreground">

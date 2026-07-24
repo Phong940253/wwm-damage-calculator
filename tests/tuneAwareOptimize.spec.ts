@@ -465,7 +465,7 @@ describe("computeOptimizeResultsAsync with considerTune", () => {
     );
     const r2 = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: false },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: false, swapEnabled: false },
     );
 
     expect(r1.baseDamage).toBe(r2.baseDamage);
@@ -497,7 +497,7 @@ describe("computeOptimizeResultsAsync with considerTune", () => {
 
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: true, swapEnabled: true },
     );
 
     expect(r.results.length).toBeGreaterThan(0);
@@ -523,11 +523,11 @@ describe("computeOptimizeResultsAsync with considerTune", () => {
 
     const r1 = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: false },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: false, swapEnabled: false },
     );
     const r2 = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: true, swapEnabled: true },
     );
 
     expect(r1.baseDamage).toBe(r2.baseDamage);
@@ -561,7 +561,7 @@ describe("computeOptimizeResultsAsync with considerTune", () => {
 
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: true, swapEnabled: true },
     );
 
     // Should have at least one tune variant result
@@ -669,7 +669,7 @@ describe("computeOptimizeResultsAsync with addition swap", () => {
 
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["disc"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["disc"], tuneEnabled: true, swapEnabled: true },
     );
 
     expect(r.results.length).toBeGreaterThan(0);
@@ -696,7 +696,7 @@ describe("computeOptimizeResultsAsync with addition swap", () => {
 
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 10, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: true, swapEnabled: true },
     );
 
     const hasSwap = r.results.some((res) => {
@@ -821,7 +821,7 @@ describe("considerTune with perSlotCap", () => {
       {
         candidateGears: gears,
         slotsToOptimize: ["pendant"],
-        considerTune: true,
+        tuneEnabled: true, swapEnabled: true,
         reducePerSlotCap: 5,
         autoReduceIfOverCombos: 1,
       },
@@ -860,7 +860,7 @@ describe("tune variants cover all sub lines in optimizer", () => {
 
     const r = await computeOptimizeResultsAsync(
       baseStats, baseElementStats, gears, equipped as any, 100, undefined, undefined,
-      { candidateGears: gears, slotsToOptimize: ["head"], considerTune: true },
+      { candidateGears: gears, slotsToOptimize: ["head"], tuneEnabled: true, swapEnabled: true },
     );
 
     // Should only have tune variants for the tuned sub line (index 2)

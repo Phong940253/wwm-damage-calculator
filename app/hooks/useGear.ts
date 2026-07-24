@@ -35,6 +35,10 @@ function migrateGear(g: CustomGear): CustomGear {
     newG.addition = newG.additions[0];
     delete newG.additions;
   }
+  if (newG.main && !newG.mains?.some(m => m.stat === newG.main!.stat)) {
+    newG.mains = [...(newG.mains || []), newG.main];
+  }
+  newG.main = undefined;
   return newG;
 }
 

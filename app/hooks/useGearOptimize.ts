@@ -50,7 +50,9 @@ export function useGearOptimize(
     autoReduceIfOverCombos?: number;
     reduceTargetCombos?: number;
     reducePerSlotCap?: number;
-    considerTune?: boolean;
+    tuneEnabled?: boolean;
+    swapEnabled?: boolean;
+    relayEnabled?: boolean;
     desiredDisplay?: number;
   },
 ) {

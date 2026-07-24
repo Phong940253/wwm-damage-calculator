@@ -225,17 +225,21 @@ export default function GearCustomizeTab({ stats, elementStats, rotation, levelC
   }, [customGears, slotFilter, statFilter]);
 
   const [perSlotCap, setPerSlotCap] = useState<number>(0);
-  const [considerTune, setConsiderTune] = useState(false);
+  const [tuneEnabled, setTuneEnabled] = useState(false);
+  const [swapEnabled, setSwapEnabled] = useState(false);
+  const [relayEnabled, setRelayEnabled] = useState(true);
 
   const optimizeOptions = useMemo(() => {
     return {
       candidateGears: filteredGears,
       slotsToOptimize: slotFilter.size > 0 ? Array.from(slotFilter) : undefined,
       reducePerSlotCap: perSlotCap,
-      considerTune,
+      tuneEnabled,
+      swapEnabled,
+      relayEnabled,
       desiredDisplay: maxDisplay,
     };
-  }, [filteredGears, slotFilter, perSlotCap, considerTune, maxDisplay]);
+  }, [filteredGears, slotFilter, perSlotCap, tuneEnabled, swapEnabled, relayEnabled, maxDisplay]);
 
   const opt = useGearOptimize(
     stats,
@@ -380,8 +384,16 @@ export default function GearCustomizeTab({ stats, elementStats, rotation, levelC
         <h3 className="text-lg font-semibold">{t("gearCustomize.customGear")}</h3>
         <div className="flex flex-wrap gap-2">
           <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none px-2 py-1 rounded-md border border-border/40 hover:bg-muted/40 transition-colors">
-            <Checkbox checked={considerTune} onCheckedChange={(v) => setConsiderTune(Boolean(v))} />
-            <span className="text-muted-foreground">{t("gearCustomize.considerTune")}</span>
+            <Checkbox checked={tuneEnabled} onCheckedChange={(v) => setTuneEnabled(Boolean(v))} />
+            <span className="text-muted-foreground">{t("gearCustomize.tune")}</span>
+          </label>
+          <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none px-2 py-1 rounded-md border border-border/40 hover:bg-muted/40 transition-colors">
+            <Checkbox checked={swapEnabled} onCheckedChange={(v) => setSwapEnabled(Boolean(v))} />
+            <span className="text-muted-foreground">{t("gearCustomize.swap")}</span>
+          </label>
+          <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none px-2 py-1 rounded-md border border-border/40 hover:bg-muted/40 transition-colors">
+            <Checkbox checked={relayEnabled} onCheckedChange={(v) => setRelayEnabled(Boolean(v))} />
+            <span className="text-muted-foreground">{t("gearCustomize.relay")}</span>
           </label>
           <Button data-tour="gear-optimize-open" variant="outline" onClick={() => setOptOpen(true)}>
             {t("gearCustomize.optimize")}
