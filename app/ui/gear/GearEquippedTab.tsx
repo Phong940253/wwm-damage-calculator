@@ -13,6 +13,7 @@ import { GEAR_SLOTS } from "../../constants";
 import GearDetailCard from "@/app/ui/gear/GearDetailCard";
 import GearForm from "@/app/ui/gear/GearForm";
 import GearAnalysisPanel from "./GearAnalysisPanel";
+import RelayedPreviewDialog from "./RelayedPreviewDialog";
 import { aggregateEquippedGearBonus } from "@/app/domain/gear/gearAggregate";
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import { calculateDamage } from "@/app/domain/damage/damageCalculator";
@@ -195,6 +196,7 @@ export default function GearEquippedTab({
 
   const { customGears, equipped, setEquipped } = useGear();
   const [editingGear, setEditingGear] = useState<CustomGear | null>(null);
+  const [previewRelayedOpen, setPreviewRelayedOpen] = useState(false);
 
   const bonus = useMemo(
     () => aggregateEquippedGearBonus(customGears, equipped),
@@ -592,6 +594,9 @@ export default function GearEquippedTab({
               {slotsWithImpact.rows.filter((r) => r.equippedGear).length}/
               {GEAR_SLOTS.length} {t("gearEquipped.equipped")}
             </Badge>
+            <Button size="sm" variant="outline" onClick={() => setPreviewRelayedOpen(true)}>
+              Relay Preview
+            </Button>
           </div>
         </div>
       </Card>
@@ -922,6 +927,17 @@ export default function GearEquippedTab({
           )}
         </div>
       </Card>
+
+      <RelayedPreviewDialog
+        open={previewRelayedOpen}
+        onOpenChange={setPreviewRelayedOpen}
+        stats={stats}
+        elementStats={elementStats}
+        customGears={customGears}
+        equipped={equipped}
+        rotation={rotation}
+        levelContext={levelContext}
+      />
     </div>
   );
 }
