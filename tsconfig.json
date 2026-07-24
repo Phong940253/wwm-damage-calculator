@@ -26,7 +26,8 @@
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "types": ["@webgpu/types"]
   },
   "include": [
     "**/*.ts",

@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/popover";
 
 import GearHoverDetail from "./GearHoverDetail";
+import GearStatDialog from "./GearStatDialog";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { getTuneSuccessRateToneClass, computeSingleTuneSuccessRate } from "@/app/domain/gear/tuneAdvisor";
 import { exportOptimizerResultsToFile, importOptimizerResultsFromFile } from "@/app/utils/importExport";
@@ -117,6 +118,7 @@ export default function GearOptimizeDialog({
 
   const [resultQuery, setResultQuery] = useState("");
   const [upgradesOnly, setUpgradesOnly] = useState(true);
+  const [statTarget, setStatTarget] = useState<OptimizeResult | null>(null);
   type SortCol = "gain" | "damage" | "changes" | "tune" | "rate";
   type SortAction = { type: "setCol"; col: SortCol } | { type: "toggleDir" };
   const [sort, dispatchSort] = useReducer(
@@ -419,7 +421,7 @@ export default function GearOptimizeDialog({
                                 className="border-b hover:bg-muted/40 transition-colors even:bg-muted/10"
                               >
                                 <td style={{ position: "sticky", left: 0, zIndex: 20, width: 60, backgroundColor: "hsl(var(--card))" }} className="p-3 font-medium">{startIdx + i + 1}</td>
-                                <td style={{ position: "sticky", left: 60, zIndex: 20, width: 120, backgroundColor: "hsl(var(--card))" }} className="text-right p-3 font-bold text-base tabular-nums">
+                                <td style={{ position: "sticky", left: 60, zIndex: 20, width: 120, backgroundColor: "hsl(var(--card))" }} className="text-right p-3 font-bold text-base tabular-nums" title={r.originalDamage !== undefined ? `Base: ${r.originalDamage.toFixed(1)}` : undefined}>
                                   {r.damage.toFixed(1)}
                                 </td>
                                 <td style={{ position: "sticky", left: 180, zIndex: 20, width: 110, backgroundColor: "hsl(var(--card))" }} className="text-right p-3">
@@ -738,14 +740,23 @@ export default function GearOptimizeDialog({
                                   );
                                 })}
                                 <td className="p-3 text-center">
-                                  <Button
-                                    data-tour="gear-optimize-equip"
-                                    size="sm"
-                                    onClick={() => onApply(r.selection)}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                  >
-                                    {t("gearOptimize.equip")}
-                                  </Button>
+                                  <div className="flex gap-1 justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setStatTarget(r)}
+                                    >
+                                      {t("gearOptimize.stats")}
+                                    </Button>
+                                    <Button
+                                      data-tour="gear-optimize-equip"
+                                      size="sm"
+                                      onClick={() => onApply(r.selection)}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    >
+                                      {t("gearOptimize.equip")}
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -762,7 +773,19 @@ export default function GearOptimizeDialog({
               </div>
             </div>
           )}
-      </DialogContent>
+          </DialogContent>
+
+      <GearStatDialog
+        open={statTarget !== null}
+        onOpenChange={(v) => !v && setStatTarget(null)}
+        stats={stats}
+        elementStats={elementStats}
+        selection={statTarget?.selection ?? {}}
+        equipped={equipped}
+        customGears={customGears}
+        rotation={rotation}
+        levelContext={levelContext}
+      />
     </Dialog>
   );
 }

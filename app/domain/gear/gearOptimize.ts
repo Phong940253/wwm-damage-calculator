@@ -21,8 +21,12 @@ import { computeRotationBonuses, sumBonuses, computeExhaustedBonuses } from "../
 import type { LevelContext } from "../level/levelSettings";
 import { computeIncludedInStatsGearBonus } from "../skill/includedInStatsImpact";
 import { LIST_MARTIAL_ARTS, MartialArtWeaponType } from "../skill/types";
-import { generateTuneVariants, computeRelayedSubValue, getTuneSystemStatPool, isTuneTargetAllowedBySubRules } from "./tuneAdvisor";
+import { generateTuneVariants, computeRelayedSubValue } from "./tuneAdvisor";
 import { MAIN_STAT_BY_LEVEL } from "./gearConstants";
+import { STAT_COUNT } from "@/app/workers/gpuFormula";
+import { encodeStatArray } from "@/app/workers/gpuFormula";
+import { computeDamagesOnGpu, isWebGpuAvailable } from "@/app/workers/gearOptimize.gpu";
+import { getBossDef, getBossResistancePct, getStoredLevelContext } from "../level/levelSettings";
 
 /* =======================
    Types
@@ -33,6 +37,8 @@ export interface OptimizeResult {
   damage: number;
   percentGain: number;
   selection: Partial<Record<GearSlot, CustomGear>>;
+  /** Original non-relayed damage before post-processing. */
+  originalDamage?: number;
 }
 
 export interface OptimizeComputation {
@@ -521,91 +527,7 @@ export async function computeOptimizeResultsAsync(
             }
           }
         }
-        // Relayed variants — only for base items (not tune/swap variants)
-        if (item && item.subs && item.subs.length >= 2 && !(item as GearWithTune).__tuneId) {
-          const lv96Mains = MAIN_STAT_BY_LEVEL[96]?.[slotDef.slot];
-          const relayedSubs = item.subs.map(s => ({
-            ...s,
-            value: computeRelayedSubValue(s.stat as Parameters<typeof computeRelayedSubValue>[0]),
-          }));
-          const relayedMains = lv96Mains
-            ? item.mains.map(m => {
-              const override = lv96Mains[m.stat];
-              return override !== undefined ? { stat: m.stat, value: override } : m;
-            })
-            : item.mains;
-          // Base relayed
-          const relayedGear: GearWithTune = {
-            ...item,
-            level: 96,
-            mains: relayedMains,
-            subs: relayedSubs,
-            tunedSubIndex: undefined,
-            tuneHistory: undefined,
-            __tuneId: "::relayed::",
-            __tuneLabel: "Relayed (lv96)",
-            __tuneFrom: "Relayed",
-          };
-          expanded.push(relayedGear);
-          const tuneSubIndex = item.tunedSubIndex && item.tunedSubIndex > 0
-            ? item.tunedSubIndex
-            : findWeakestSubLineIndex(item, slotDef.equippedGear);
-          // Relayed + tune (sub values stay at 94% lv96 max, not 100%)
-          if (tuneSubIndex > 0) {
-            const relayedPool = getTuneSystemStatPool(elementStats.selected);
-            const relayedSubStatKeys = relayedSubs.map((s) => String(s.stat ?? ""));
-            for (const targetStat of relayedPool) {
-              const currentRelayedStat = relayedSubStatKeys[tuneSubIndex];
-              if (currentRelayedStat && currentRelayedStat === targetStat) continue;
-              if (!isTuneTargetAllowedBySubRules(relayedSubStatKeys, tuneSubIndex, targetStat)) continue;
 
-              const relayedTargetValue = computeRelayedSubValue(targetStat);
-              const relayedTuneSubs = relayedSubs.map((s, i) =>
-                i === tuneSubIndex ? { stat: targetStat, value: relayedTargetValue } : { ...s },
-              );
-
-              const label = `→ ${targetStat} (+${relayedTargetValue})`;
-              const relayedTuneGear: GearWithTune = {
-                ...relayedGear,
-                subs: relayedTuneSubs,
-                __tuneId: `::relayed-tune::${tuneSubIndex}::${targetStat}`,
-                __tuneLabel: `Relayed + ${label}`,
-                __tuneFrom: `${String(relayedSubs[tuneSubIndex]?.stat ?? "")} +${relayedSubs[tuneSubIndex]?.value ?? 0}`,
-              };
-              expanded.push(relayedTuneGear);
-              // Relayed + tune + swap
-              const swapBest = bestSwapStatBySlot.get(slotDef.slot);
-              if (swapBest && item.addition) {
-                const currentStat = String(item.addition.stat);
-                if (currentStat !== swapBest.stat || item.addition.value !== swapBest.value) {
-                  expanded.push({
-                    ...relayedTuneGear,
-                    addition: { stat: swapBest.stat, value: swapBest.value },
-                    __tuneId: `::relayed-tune-swap::${tuneSubIndex}::${targetStat}::${swapBest.stat}`,
-                    __tuneLabel: `Relayed + ${label} + Swap → ${swapBest.stat} +${swapBest.value}`,
-                    __tuneFrom: `${String(relayedSubs[tuneSubIndex]?.stat ?? "")} +${relayedSubs[tuneSubIndex]?.value ?? 0}, ${String(item.addition.stat)} +${item.addition.value}`,
-                  } as GearWithTune);
-                }
-              }
-            }
-          }
-          // Relayed + swap
-          if (item.addition) {
-            const best = bestSwapStatBySlot.get(slotDef.slot);
-            if (best) {
-              const currentStat = String(item.addition.stat);
-              if (currentStat !== best.stat || item.addition.value !== best.value) {
-                expanded.push({
-                  ...relayedGear,
-                  addition: { stat: best.stat, value: best.value },
-                  __tuneId: `::relayed-swap::${best.stat}`,
-                  __tuneLabel: `Relayed + Swap → ${best.stat} +${best.value}`,
-                  __tuneFrom: `Relayed + ${String(item.addition.stat)} +${item.addition.value}`,
-                } as GearWithTune);
-              }
-            }
-          }
-        }
       }
       slotDef.items = expanded;
     }
@@ -772,7 +694,317 @@ export async function computeOptimizeResultsAsync(
   }
 
   /* ============================================================
-     3️⃣ ASYNC DFS STATE
+     3️⃣ RELAYED POST-PROCESSING (helper)
+  ============================================================ */
+
+  const computeRelayedDamage = (
+    selection: Partial<Record<GearSlot, CustomGear>>,
+  ): number => {
+    const scratch: Record<string, number> = {};
+    for (const key in baseBonus) scratch[key] = baseBonus[key];
+
+    for (const slotDef of finalSlotOptions) {
+      const selectedGear = selection[slotDef.slot];
+      if (!selectedGear) continue;
+
+      if (slotDef.equippedGear) {
+        applyGear(scratch, slotDef.equippedGear, -1);
+      }
+
+      const lv96Mains = MAIN_STAT_BY_LEVEL[96]?.[slotDef.slot];
+      const relayedSubs = selectedGear.subs.map(s => ({
+        ...s,
+        value: computeRelayedSubValue(s.stat as Parameters<typeof computeRelayedSubValue>[0]),
+      }));
+      const relayedMains = lv96Mains
+        ? selectedGear.mains.map(m => {
+            const override = lv96Mains[m.stat];
+            return override !== undefined ? { stat: m.stat, value: override } : m;
+          })
+        : selectedGear.mains;
+      // Build relayed gear manually — cannot spread selectedGear because it
+      // may carry __tuneId/__tuneLabel/__tuneFrom which would collide with
+      // base gear entries in getGearDeltas cache (cached by id + __tuneId).
+      const relayedGear: GearWithTune = {
+        id: selectedGear.id,
+        name: selectedGear.name,
+        slot: selectedGear.slot,
+        level: 96,
+        weaponType: selectedGear.weaponType,
+        rarity: selectedGear.rarity,
+        mains: relayedMains,
+        subs: relayedSubs,
+        addition: selectedGear.addition,
+        __tuneId: "::relayed-post::",
+      };
+
+      applyGear(scratch, relayedGear, 1);
+    }
+
+    return computeTotalDamage(scratch);
+  };
+
+  const applyRelayedDamageToResults = (results: OptimizeResult[]): void => {
+    if (!rotationPlan || rotationPlan.length === 0) return;
+    for (const r of results) {
+      if (r.originalDamage !== undefined) continue;
+      r.originalDamage = r.damage;
+      r.damage = computeRelayedDamage(r.selection);
+      r.percentGain = baseDamage === 0 ? 0 : ((r.damage - baseDamage) / baseDamage) * 100;
+    }
+    results.sort((a, b) => {
+      if (b.percentGain !== a.percentGain) return b.percentGain - a.percentGain;
+      return b.damage - a.damage;
+    });
+  };
+
+  /* ============================================================
+     4️⃣ GPU-ACCELERATED PATH
+  ============================================================ */
+
+  {
+    const gpuOk = await isWebGpuAvailable();
+    if (gpuOk) {
+      try {
+        const storedLevels = getStoredLevelContext();
+        const enemyLevel = typeof levelContext?.enemyLevel === "number"
+          ? levelContext.enemyLevel
+          : storedLevels.enemyLevel;
+        const bossDefVal = getBossDef(enemyLevel);
+        const bossResistPct = getBossResistancePct(enemyLevel);
+
+        const slotSizes = finalSlotOptions.map((s) => s.items.length);
+        const nSlots = slotSizes.length;
+        const totalCombosGpu = slotSizes.reduce((a, b) => a * b, 1);
+
+        const gpuInput = new Float32Array(totalCombosGpu * STAT_COUNT);
+        const cumProd: number[] = [1];
+        for (let s = 1; s < nSlots; s++) cumProd[s] = cumProd[s - 1] * slotSizes[s - 1];
+
+        if (onProgress) onProgress(0, totalCombosGpu);
+
+        for (let flatIdx = 0; flatIdx < totalCombosGpu; flatIdx++) {
+          throwIfCancelled();
+
+          const scratch: Record<string, number> = {};
+          for (const key in baseBonus) scratch[key] = baseBonus[key];
+
+          for (let s = 0; s < nSlots; s++) {
+            const slotDef = finalSlotOptions[s];
+            const itemIdx = Math.floor(flatIdx / cumProd[s]) % slotSizes[s];
+            const gear = slotDef.items[itemIdx];
+            if (slotDef.equippedGear) {
+              for (const d of getGearDeltas(slotDef.equippedGear)) {
+                scratch[String(d.stat)] -= d.value;
+              }
+            }
+            if (gear) {
+              for (const d of getGearDeltas(gear)) {
+                scratch[String(d.stat)] += d.value;
+              }
+            }
+          }
+
+          const includedAbs = computeIncludedInStatsGearBonus(
+            stats, elementStats, rotation, scratch,
+          );
+          const effective = sumBonuses(scratch, includedAbs);
+          const rotBonuses = computeRotationBonuses(
+            stats, elementStats, effective, rotation,
+          );
+          const totalGear = sumBonuses(effective, rotBonuses);
+
+          const arr = encodeStatArray(
+            stats as unknown as Record<string, { current: number; increase: number }>,
+            elementStats as unknown as Record<string, { current: number; increase: number }>,
+            totalGear,
+            elementStats.selected,
+            bossDefVal,
+            bossResistPct,
+          );
+          gpuInput.set(arr, flatIdx * STAT_COUNT);
+
+          if (onProgress && flatIdx % 1000 === 0) {
+            onProgress(flatIdx, totalCombosGpu);
+          }
+        }
+
+        const gpuResult = await computeDamagesOnGpu(gpuInput, totalCombosGpu);
+
+        if (gpuResult.success) {
+          const isMultiSkill = rotationPlan && rotationPlan.length > 1;
+
+          if (isMultiSkill) {
+            // Multi-skill rotation: GPU filters to top candidates, CPU evaluates full rotation
+            const poolSize = Math.min(totalCombosGpu, Math.max(limit * 3, 100));
+            const candidateHeap = new TopKMinHeap<{ flatIndex: number; damage: number }>(
+              poolSize,
+              (a, b) => a.damage - b.damage,
+            );
+            for (let i = 0; i < totalCombosGpu; i++) {
+              throwIfCancelled();
+              const dmg = gpuResult.damages[i];
+              if (!Number.isFinite(dmg) || dmg < 0) continue;
+              candidateHeap.push({ flatIndex: i, damage: dmg });
+            }
+
+            const candidates = candidateHeap.toArray().sort((a, b) => b.damage - a.damage);
+
+            const rotationHeap = new TopKMinHeap<OptimizeResult>(
+              limit,
+              compareOptimizeResults,
+            );
+            const rotationSeenKeys = new Set<string>();
+
+            for (const entry of candidates) {
+              throwIfCancelled();
+              const flatIdx = entry.flatIndex;
+
+              const scratch: Record<string, number> = {};
+              for (const key in baseBonus) scratch[key] = baseBonus[key];
+              for (let s = 0; s < nSlots; s++) {
+                const slotDef = finalSlotOptions[s];
+                const itemIdx = Math.floor(flatIdx / cumProd[s]) % slotSizes[s];
+                const gear = slotDef.items[itemIdx];
+                if (slotDef.equippedGear) {
+                  for (const d of getGearDeltas(slotDef.equippedGear)) {
+                    scratch[String(d.stat)] -= d.value;
+                  }
+                }
+                if (gear) {
+                  for (const d of getGearDeltas(gear)) {
+                    scratch[String(d.stat)] += d.value;
+                  }
+                }
+              }
+
+              const dmg = computeTotalDamage(scratch);
+              const percentGain = baseDamage === 0 ? 0 : ((dmg - baseDamage) / baseDamage) * 100;
+
+              const sel: Partial<Record<GearSlot, CustomGear>> = {};
+              const parts: string[] = [];
+              for (let s = 0; s < nSlots; s++) {
+                const slotDef = finalSlotOptions[s];
+                const itemIdx = Math.floor(flatIdx / cumProd[s]) % slotSizes[s];
+                const gear = slotDef.items[itemIdx];
+                if (gear) {
+                  sel[slotDef.slot] = gear;
+                  const tuneId = (gear as GearWithTune).__tuneId ?? "";
+                  parts.push(String(gear.id) + tuneId);
+                } else {
+                  parts.push("none");
+                }
+              }
+              const key = parts.join("|");
+              if (rotationSeenKeys.has(key)) continue;
+              rotationSeenKeys.add(key);
+
+              const result: OptimizeResult = { key, damage: dmg, percentGain, selection: sel };
+              if (rotationHeap.size < limit) {
+                rotationHeap.push(result);
+              } else {
+                const worst = rotationHeap.peek();
+                if (worst && compareOptimizeResults(result, worst) > 0) {
+                  rotationHeap.push(result);
+                }
+              }
+            }
+
+            const sorted = rotationHeap.toArray().sort((a, b) =>
+              b.percentGain === a.percentGain
+                ? b.damage - a.damage
+                : b.percentGain - a.percentGain,
+            );
+
+            if (onProgress) onProgress(totalCombosGpu, totalCombosGpu);
+
+            applyRelayedDamageToResults(sorted);
+            return {
+              baseDamage,
+              totalCombos: totalCombosGpu,
+              results: sorted,
+            };
+          }
+
+          // Single-skill: GPU results are final
+          const heapGpu = new TopKMinHeap<{ flatIndex: number; damage: number }>(
+            limit,
+            (a, b) => {
+              const aPct = baseDamage === 0 ? 0 : ((a.damage - baseDamage) / baseDamage) * 100;
+              const bPct = baseDamage === 0 ? 0 : ((b.damage - baseDamage) / baseDamage) * 100;
+              if (aPct !== bPct) return aPct - bPct;
+              return a.damage - b.damage;
+            },
+          );
+
+          for (let i = 0; i < totalCombosGpu; i++) {
+            throwIfCancelled();
+            const dmg = gpuResult.damages[i];
+            if (!Number.isFinite(dmg) || dmg < 0) continue;
+            heapGpu.push({ flatIndex: i, damage: dmg });
+          }
+
+          const raw = heapGpu.toArray().sort((a, b) => {
+            const ap = baseDamage === 0 ? 0 : ((a.damage - baseDamage) / baseDamage) * 100;
+            const bp = baseDamage === 0 ? 0 : ((b.damage - baseDamage) / baseDamage) * 100;
+            if (ap !== bp) return bp - ap;
+            return b.damage - a.damage;
+          });
+
+          const gpuResults: OptimizeResult[] = [];
+          const seenKeys = new Set<string>();
+
+          for (const entry of raw) {
+            throwIfCancelled();
+            const percentGain = baseDamage === 0 ? 0 : ((entry.damage - baseDamage) / baseDamage) * 100;
+            const flatIdx = entry.flatIndex;
+
+            const sel: Partial<Record<GearSlot, CustomGear>> = {};
+            const parts: string[] = [];
+            for (let s = 0; s < nSlots; s++) {
+              const slotDef = finalSlotOptions[s];
+              const itemIdx = Math.floor(flatIdx / cumProd[s]) % slotSizes[s];
+              const gear = slotDef.items[itemIdx];
+              if (gear) {
+                const slot = slotDef.slot;
+                sel[slot] = gear;
+                const tuneId = (gear as GearWithTune).__tuneId ?? "";
+                parts.push(String(gear.id) + tuneId);
+              } else {
+                parts.push("none");
+              }
+            }
+            const key = parts.join("|");
+            if (seenKeys.has(key)) continue;
+            seenKeys.add(key);
+
+            gpuResults.push({
+              key,
+              damage: entry.damage,
+              percentGain,
+              selection: sel,
+            });
+          }
+
+          if (onProgress) onProgress(totalCombosGpu, totalCombosGpu);
+
+          const finalGpuResults = gpuResults.slice(0, limit);
+          applyRelayedDamageToResults(finalGpuResults);
+          return {
+            baseDamage,
+            totalCombos: totalCombosGpu,
+            results: finalGpuResults,
+          };
+        }
+        // GPU failed — fall through to CPU path
+      } catch {
+        // GPU error — fall through to CPU path
+      }
+    }
+  }
+
+  /* ============================================================
+     3️⃣ ASYNC DFS STATE (CPU)
   ============================================================ */
 
   const heap = new TopKMinHeap<OptimizeResult>(limit, compareOptimizeResults);
@@ -900,6 +1132,7 @@ export async function computeOptimizeResultsAsync(
     deduped.push(r);
   }
 
+  applyRelayedDamageToResults(deduped);
   return {
     baseDamage,
     totalCombos: total,
