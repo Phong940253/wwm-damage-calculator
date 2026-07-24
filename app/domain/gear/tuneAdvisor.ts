@@ -56,70 +56,90 @@ function getElementAttackTuneStats(
   return ["voidMin", "voidMax"];
 }
 
-const DEFAULT_TUNE_LIMITS: Record<TuneStatKey, TuneStatRange> = {
-  MinPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
-  MaxPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
-  bellstrikeMin: { minPerLine: 18.1, maxPerLine: 36.2 },
-  bellstrikeMax: { minPerLine: 18.1, maxPerLine: 36.2 },
-  stonesplitMin: { minPerLine: 18.1, maxPerLine: 36.2 },
-  stonesplitMax: { minPerLine: 18.1, maxPerLine: 36.2 },
-  silkbindMin: { minPerLine: 18.1, maxPerLine: 36.2 },
-  silkbindMax: { minPerLine: 18.1, maxPerLine: 36.2 },
-  bamboocutMin: { minPerLine: 18.1, maxPerLine: 36.2 },
-  bamboocutMax: { minPerLine: 18.1, maxPerLine: 36.2 },
-  bellstrikePenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  bamboocutPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  voidMin: { minPerLine: 22.1, maxPerLine: 44.2 },
-  voidMax: { minPerLine: 22.1, maxPerLine: 44.2 },
-  PhysicalPenetration: { minPerLine: 5.4, maxPerLine: 9.0 },
-  PhysicalResistance: { minPerLine: 5.4, maxPerLine: 9.0 },
-  CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
-  AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
-  CombatBoostAgainstBossUnits: { minPerLine: 2.6, maxPerLine: 2.6 },
-  AllMartialArtsBoost: { minPerLine: 2.6, maxPerLine: 2.6 },
-  ArtOfSwordDMGBoost: { minPerLine: 5.2, maxPerLine: 5.2 },
-  NamelessSwordChargedSkillDMGBoost: { minPerLine: 5.0, maxPerLine: 5.0 },
-  Power: { minPerLine: 20.2, maxPerLine: 40.4 },
-  Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
-  Agility: { minPerLine: 20.2, maxPerLine: 40.4 },
-};
-
-export const BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS: Partial<
-  Record<TuneStatKey, TuneStatRange>
+const LEVEL_TUNE_LIMITS: Record<
+  number,
+  Partial<Record<TuneStatKey, TuneStatRange>>
 > = {
-  MaxPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
-  bellstrikeMax: { minPerLine: 18.1, maxPerLine: 36.2 },
-  CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
-  AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
-  Power: { minPerLine: 20.2, maxPerLine: 40.4 },
-  Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
+  91: {
+    MinPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
+    MaxPhysicalAttack: { minPerLine: 31.9, maxPerLine: 63.8 },
+    bellstrikeMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+    bellstrikeMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+    stonesplitMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+    stonesplitMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+    silkbindMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+    silkbindMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+    bamboocutMin: { minPerLine: 18.1, maxPerLine: 36.2 },
+    bamboocutMax: { minPerLine: 18.1, maxPerLine: 36.2 },
+    bellstrikePenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+    stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+    silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+    bamboocutPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
+    voidMin: { minPerLine: 22.1, maxPerLine: 44.2 },
+    voidMax: { minPerLine: 22.1, maxPerLine: 44.2 },
+    PhysicalPenetration: { minPerLine: 5.4, maxPerLine: 9.0 },
+    PhysicalResistance: { minPerLine: 5.4, maxPerLine: 9.0 },
+    CriticalRate: { minPerLine: 3.7, maxPerLine: 7.4 },
+    AffinityRate: { minPerLine: 1.8, maxPerLine: 3.6 },
+    CombatBoostAgainstBossUnits: { minPerLine: 2.6, maxPerLine: 2.6 },
+    AllMartialArtsBoost: { minPerLine: 2.6, maxPerLine: 2.6 },
+    ArtOfSwordDMGBoost: { minPerLine: 5.2, maxPerLine: 5.2 },
+    NamelessSwordChargedSkillDMGBoost: { minPerLine: 5.0, maxPerLine: 5.0 },
+    Power: { minPerLine: 20.2, maxPerLine: 40.4 },
+    Momentum: { minPerLine: 20.2, maxPerLine: 40.4 },
+    Agility: { minPerLine: 20.2, maxPerLine: 40.4 },
+  },
+  96: {
+    MaxPhysicalAttack: { minPerLine: 38.9, maxPerLine: 77.8 },
+    CriticalRate: { minPerLine: 4.5, maxPerLine: 9.0 },
+    AffinityRate: { minPerLine: 2.2, maxPerLine: 4.4 },
+    Power: { minPerLine: 24.7, maxPerLine: 49.4 },
+    Momentum: { minPerLine: 24.7, maxPerLine: 49.4 },
+    Agility: { minPerLine: 24.7, maxPerLine: 49.4 },
+    bellstrikeMin: { minPerLine: 22.1, maxPerLine: 44.2 },
+    bellstrikeMax: { minPerLine: 22.1, maxPerLine: 44.2 },
+    stonesplitMin: { minPerLine: 22.1, maxPerLine: 44.2 },
+    stonesplitMax: { minPerLine: 22.1, maxPerLine: 44.2 },
+    silkbindMin: { minPerLine: 22.1, maxPerLine: 44.2 },
+    silkbindMax: { minPerLine: 22.1, maxPerLine: 44.2 },
+    bamboocutMin: { minPerLine: 22.1, maxPerLine: 44.2 },
+    bamboocutMax: { minPerLine: 22.1, maxPerLine: 44.2 },
+    voidMin: { minPerLine: 22.1, maxPerLine: 44.2 },
+    voidMax: { minPerLine: 22.1, maxPerLine: 44.2 },
+    bellstrikePenetration: { minPerLine: 7.8, maxPerLine: 13.0 },
+    stonesplitPenetration: { minPerLine: 7.8, maxPerLine: 13.0 },
+    silkbindPenetration: { minPerLine: 7.8, maxPerLine: 13.0 },
+    bamboocutPenetration: { minPerLine: 7.8, maxPerLine: 13.0 },
+    PhysicalPenetration: { minPerLine: 6.6, maxPerLine: 11.0 },
+    PhysicalResistance: { minPerLine: 6.6, maxPerLine: 11.0 },
+    ArtOfSwordDMGBoost: { minPerLine: 6.2, maxPerLine: 6.2 },
+    CombatBoostAgainstBossUnits: { minPerLine: 3.1, maxPerLine: 3.1 },
+    AllMartialArtsBoost: { minPerLine: 3.1, maxPerLine: 3.1 },
+    NamelessSwordChargedSkillDMGBoost: { minPerLine: 6.0, maxPerLine: 6.0 },
+  },
 };
 
-export const LEVEL_91_PENETRATION_TUNE_LIMITS: Partial<
-  Record<TuneStatKey, TuneStatRange>
-> = {
-  bellstrikePenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  stonesplitPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  silkbindPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  bamboocutPenetration: { minPerLine: 6.5, maxPerLine: 10.8 },
-  PhysicalPenetration: { minPerLine: 5.4, maxPerLine: 9.0 },
-};
-
-export const LEVEL_96_TUNE_LIMITS: Partial<Record<TuneStatKey, TuneStatRange>> = {
-  MaxPhysicalAttack: { minPerLine: 38.9, maxPerLine: 77.8 },
-  CriticalRate: { minPerLine: 4.5, maxPerLine: 9.0 },
-  AffinityRate: { minPerLine: 2.2, maxPerLine: 4.4 },
-  Power: { minPerLine: 24.7, maxPerLine: 49.4 },
-  Momentum: { minPerLine: 24.7, maxPerLine: 49.4 },
-  Agility: { minPerLine: 24.7, maxPerLine: 49.4 },
-  voidMax: { minPerLine: 22.1, maxPerLine: 44.2 },
+// TODO: thêm các martial art khác
+const MARTIAL_ART_TUNE_POOLS: Record<string, TuneStatKey[]> = {
+  bellstrike_splendor: [
+    "MaxPhysicalAttack",
+    "bellstrikeMax",
+    "CriticalRate",
+    "AffinityRate",
+    "Power",
+    "Momentum",
+  ],
 };
 
 export function getTuneSystemStatPool(
   selectedElement: ElementKey,
+  martialArtId?: string,
 ): TuneStatKey[] {
+  if (martialArtId) {
+    const pool = MARTIAL_ART_TUNE_POOLS[martialArtId];
+    if (pool) return pool;
+  }
+
   if (selectedElement === "bellstrike") {
     return [
       "MaxPhysicalAttack",
@@ -136,63 +156,48 @@ export function getTuneSystemStatPool(
 }
 
 export function getBellstrikeLevel91TuneStatPool(): TuneStatKey[] {
-  return Object.keys(BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS) as TuneStatKey[];
+  return MARTIAL_ART_TUNE_POOLS.bellstrike_splendor ?? [];
 }
 
 export function getAllBellstrikeTuneStatKeys(): TuneStatKey[] {
-  return Object.keys(BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS) as TuneStatKey[];
+  return MARTIAL_ART_TUNE_POOLS.bellstrike_splendor ?? [];
 }
 
 export function getGearTuneStatRange(
   selectedElement: ElementKey,
   stat: TuneStatKey,
 ): TuneStatRange {
+  const range = LEVEL_TUNE_LIMITS[91]?.[stat];
+  if (range) return range;
+
   if (selectedElement === "bellstrike") {
-    return (
-      BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat] || DEFAULT_TUNE_LIMITS[stat]
-    );
+    const bellRange = MARTIAL_ART_TUNE_POOLS.bellstrike_splendor?.includes(stat)
+      ? LEVEL_TUNE_LIMITS[91]?.[stat]
+      : undefined;
+    if (bellRange) return bellRange;
   }
 
-  return DEFAULT_TUNE_LIMITS[stat];
+  return LEVEL_TUNE_LIMITS[91]?.[stat] ?? { minPerLine: 0, maxPerLine: 0 };
 }
 
 export function getGearTuneStatRange96(
   selectedElement: ElementKey,
   stat: TuneStatKey,
 ): TuneStatRange {
-  const lv96Range = LEVEL_96_TUNE_LIMITS[stat];
+  const lv96Range = LEVEL_TUNE_LIMITS[96]?.[stat];
   if (lv96Range) return lv96Range;
 
-  if (selectedElement === "bellstrike") {
-    return (
-      BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[stat] || DEFAULT_TUNE_LIMITS[stat]
-    );
-  }
-
-  return DEFAULT_TUNE_LIMITS[stat];
+  return getGearTuneStatRange(selectedElement, stat);
 }
 
 export function getPlayerTuneStatRange(
   stat: TuneStatKey,
-  enemyLevel: number = 0,
+  playerLevel: number = 91,
 ): TuneStatRange {
-  const baseRange = DEFAULT_TUNE_LIMITS[stat];
+  const exact = LEVEL_TUNE_LIMITS[playerLevel]?.[stat];
+  if (exact) return exact;
 
-  if (enemyLevel >= 96) {
-    const lv96Range = LEVEL_96_TUNE_LIMITS[stat];
-    if (lv96Range) {
-      return lv96Range;
-    }
-  }
-
-  if (enemyLevel >= 91) {
-    const penRange = LEVEL_91_PENETRATION_TUNE_LIMITS[stat];
-    if (penRange) {
-      return penRange;
-    }
-  }
-
-  return baseRange;
+  return LEVEL_TUNE_LIMITS[91]?.[stat] ?? { minPerLine: 0, maxPerLine: 0 };
 }
 
 export function getGearTuneHistory(
@@ -386,6 +391,14 @@ export interface TuneVariant {
   overrideSubs: Array<{ stat: string | number; value: number }>;
 }
 
+/** Compute the relayed sub stat value for a given stat key at level 96.
+ *  Relayed sub values are fixed at 94% of the max per-line value at lv96.
+ */
+export function computeRelayedSubValue(stat: TuneStatKey): number {
+  const range = getPlayerTuneStatRange(stat, 96);
+  return Math.round(range.maxPerLine * 0.94 * 100) / 100;
+}
+
 /** Compute the success rate (0-1) for tuning a specific subIndex to a specific target stat.
  *  Accounts for:
  *  - Current stat on that line (excluded)
@@ -435,6 +448,8 @@ export function generateTuneVariants(
   elementKey: ElementKey,
   /** Override subIndex. If omitted, uses gear.tunedSubIndex (must be > 0). */
   overrideSubIndex?: number,
+  /** Player level used to determine max per-line tune value. Defaults to 91. */
+  playerLevel: number = 91,
 ): TuneVariant[] {
   const subIndex = overrideSubIndex ?? gear.tunedSubIndex;
   if (typeof subIndex !== "number" || subIndex <= 0) return [];
@@ -459,9 +474,10 @@ export function generateTuneVariants(
 
   for (const targetStat of pool) {
     if (excludedStats.has(targetStat)) continue;
-    if (!isTuneTargetAllowedBySubRules(subStatKeys, subIndex, targetStat)) continue;
+    if (!isTuneTargetAllowedBySubRules(subStatKeys, subIndex, targetStat))
+      continue;
 
-    const range = getPlayerTuneStatRange(targetStat);
+    const range = getPlayerTuneStatRange(targetStat, playerLevel);
     const targetValue = range.maxPerLine;
 
     const overrideSubs = subs.map((s, i) =>
@@ -484,33 +500,20 @@ export function getStatTheoreticalMaxPercentage(
   statKey: string,
   totalLines: number,
   actualValue: number,
-  elementKey?: ElementKey,
+  // TODO: add martial art param if bellstrike needs special handling
 ): number | null {
   if (totalLines <= 0 || actualValue <= 0) return null;
 
-  const isValidStat = (Object.keys(DEFAULT_TUNE_LIMITS) as string[]).includes(
-    statKey,
-  );
-  if (!isValidStat) return null;
-
   const tKey = statKey as TuneStatKey;
-  let maxPerLine = DEFAULT_TUNE_LIMITS[tKey].maxPerLine;
+  const lv91Range = LEVEL_TUNE_LIMITS[91]?.[tKey];
+  if (!lv91Range) return null;
 
-  const lv96Limit = LEVEL_96_TUNE_LIMITS[tKey]?.maxPerLine;
-  if (lv96Limit && lv96Limit > maxPerLine) {
-    maxPerLine = lv96Limit;
-  }
+  let maxPerLine = lv91Range.maxPerLine;
 
-  const penLimit = LEVEL_91_PENETRATION_TUNE_LIMITS[tKey]?.maxPerLine;
-  if (penLimit && penLimit > maxPerLine) {
-    maxPerLine = penLimit;
-  }
-
-  if (elementKey === "bellstrike") {
-    const bellstrikeLimit =
-      BELLSTRIKE_SPLENDOR_LEVEL_91_LIMITS[tKey]?.maxPerLine;
-    if (bellstrikeLimit && bellstrikeLimit > maxPerLine) {
-      maxPerLine = bellstrikeLimit;
+  for (const levelRange of Object.values(LEVEL_TUNE_LIMITS)) {
+    const limit = levelRange[tKey]?.maxPerLine;
+    if (limit && limit > maxPerLine) {
+      maxPerLine = limit;
     }
   }
 

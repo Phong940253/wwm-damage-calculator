@@ -21,7 +21,8 @@ import { computeRotationBonuses, sumBonuses, computeExhaustedBonuses } from "../
 import type { LevelContext } from "../level/levelSettings";
 import { computeIncludedInStatsGearBonus } from "../skill/includedInStatsImpact";
 import { LIST_MARTIAL_ARTS, MartialArtWeaponType } from "../skill/types";
-import { generateTuneVariants } from "./tuneAdvisor";
+import { generateTuneVariants, computeRelayedSubValue, getTuneSystemStatPool, isTuneTargetAllowedBySubRules } from "./tuneAdvisor";
+import { MAIN_STAT_BY_LEVEL } from "./gearConstants";
 
 /* =======================
    Types
@@ -517,6 +518,91 @@ export async function computeOptimizeResultsAsync(
               };
               expanded.push(swapGear);
             } else {
+            }
+          }
+        }
+        // Relayed variants — only for base items (not tune/swap variants)
+        if (item && item.subs && item.subs.length >= 2 && !(item as GearWithTune).__tuneId) {
+          const lv96Mains = MAIN_STAT_BY_LEVEL[96]?.[slotDef.slot];
+          const relayedSubs = item.subs.map(s => ({
+            ...s,
+            value: computeRelayedSubValue(s.stat as Parameters<typeof computeRelayedSubValue>[0]),
+          }));
+          const relayedMains = lv96Mains
+            ? item.mains.map(m => {
+              const override = lv96Mains[m.stat];
+              return override !== undefined ? { stat: m.stat, value: override } : m;
+            })
+            : item.mains;
+          // Base relayed
+          const relayedGear: GearWithTune = {
+            ...item,
+            level: 96,
+            mains: relayedMains,
+            subs: relayedSubs,
+            tunedSubIndex: undefined,
+            tuneHistory: undefined,
+            __tuneId: "::relayed::",
+            __tuneLabel: "Relayed (lv96)",
+            __tuneFrom: "Relayed",
+          };
+          expanded.push(relayedGear);
+          const tuneSubIndex = item.tunedSubIndex && item.tunedSubIndex > 0
+            ? item.tunedSubIndex
+            : findWeakestSubLineIndex(item, slotDef.equippedGear);
+          // Relayed + tune (sub values stay at 94% lv96 max, not 100%)
+          if (tuneSubIndex > 0) {
+            const relayedPool = getTuneSystemStatPool(elementStats.selected);
+            const relayedSubStatKeys = relayedSubs.map((s) => String(s.stat ?? ""));
+            for (const targetStat of relayedPool) {
+              const currentRelayedStat = relayedSubStatKeys[tuneSubIndex];
+              if (currentRelayedStat && currentRelayedStat === targetStat) continue;
+              if (!isTuneTargetAllowedBySubRules(relayedSubStatKeys, tuneSubIndex, targetStat)) continue;
+
+              const relayedTargetValue = computeRelayedSubValue(targetStat);
+              const relayedTuneSubs = relayedSubs.map((s, i) =>
+                i === tuneSubIndex ? { stat: targetStat, value: relayedTargetValue } : { ...s },
+              );
+
+              const label = `→ ${targetStat} (+${relayedTargetValue})`;
+              const relayedTuneGear: GearWithTune = {
+                ...relayedGear,
+                subs: relayedTuneSubs,
+                __tuneId: `::relayed-tune::${tuneSubIndex}::${targetStat}`,
+                __tuneLabel: `Relayed + ${label}`,
+                __tuneFrom: `${String(relayedSubs[tuneSubIndex]?.stat ?? "")} +${relayedSubs[tuneSubIndex]?.value ?? 0}`,
+              };
+              expanded.push(relayedTuneGear);
+              // Relayed + tune + swap
+              const swapBest = bestSwapStatBySlot.get(slotDef.slot);
+              if (swapBest && item.addition) {
+                const currentStat = String(item.addition.stat);
+                if (currentStat !== swapBest.stat || item.addition.value !== swapBest.value) {
+                  expanded.push({
+                    ...relayedTuneGear,
+                    addition: { stat: swapBest.stat, value: swapBest.value },
+                    __tuneId: `::relayed-tune-swap::${tuneSubIndex}::${targetStat}::${swapBest.stat}`,
+                    __tuneLabel: `Relayed + ${label} + Swap → ${swapBest.stat} +${swapBest.value}`,
+                    __tuneFrom: `${String(relayedSubs[tuneSubIndex]?.stat ?? "")} +${relayedSubs[tuneSubIndex]?.value ?? 0}, ${String(item.addition.stat)} +${item.addition.value}`,
+                  } as GearWithTune);
+                }
+              }
+            }
+          }
+          // Relayed + swap
+          if (item.addition) {
+            const best = bestSwapStatBySlot.get(slotDef.slot);
+            if (best) {
+              const currentStat = String(item.addition.stat);
+              if (currentStat !== best.stat || item.addition.value !== best.value) {
+                expanded.push({
+                  ...relayedGear,
+                  addition: { stat: best.stat, value: best.value },
+                  __tuneId: `::relayed-swap::${best.stat}`,
+                  __tuneLabel: `Relayed + Swap → ${best.stat} +${best.value}`,
+                  __tuneFrom: `Relayed + ${String(item.addition.stat)} +${item.addition.value}`,
+                } as GearWithTune);
+              }
             }
           }
         }

@@ -22,6 +22,7 @@ export function useIdealGearOptimize(
   stats: InputStats,
   elementStats: ElementStats,
   rotation?: Rotation,
+  playerLevel: number = 91,
 ) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -237,6 +238,7 @@ export function useIdealGearOptimize(
                 stats,
                 elementStats,
                 rotation,
+                playerLevel,
                 mode,
                 timeMs:
                   mode === "fast"
@@ -265,7 +267,7 @@ export function useIdealGearOptimize(
         const initialResult = result?.path === path ? result : undefined;
         const res =
           mode === "fast"
-            ? calculateIdealGearStatsFast(path, rotation, stats, elementStats, {
+            ? calculateIdealGearStatsFast(path, rotation, stats, elementStats, playerLevel, {
                 onProgress: (current, total) => setProgress({ current, total }),
                 signal: controller.signal,
                 timeMs,
@@ -276,6 +278,7 @@ export function useIdealGearOptimize(
                 rotation,
                 stats,
                 elementStats,
+                playerLevel,
                 {
                   onProgress: (current, total) =>
                     setProgress({ current, total }),
@@ -299,7 +302,7 @@ export function useIdealGearOptimize(
         setLoading(false);
       }
     },
-    [cancel, elementStats, result, rotation, stats, terminateWorkers],
+    [cancel, elementStats, playerLevel, result, rotation, stats, terminateWorkers],
   );
 
   return {

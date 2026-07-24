@@ -27,6 +27,7 @@ import {
   SINGLE_LINE_STATS,
   SPECIAL_LINE_POOLS,
   RANDOM_LINES_COUNT,
+  MAIN_STAT_BY_LEVEL,
 } from "./gearConstants";
 
 // Giới hạn kích thước Cache để tránh tràn RAM (Out of Memory)
@@ -112,6 +113,7 @@ export function evaluateDamage(
   rotation?: Rotation,
   baseStats?: InputStats,
   baseElementStats?: ElementStats,
+  playerLevel: number = 91,
 ): DamageEvalResult {
   const elementStats = baseElementStats || {
     ...INITIAL_ELEMENT_STATS,
@@ -135,7 +137,7 @@ export function evaluateDamage(
   const finalBonus = sumBonuses(effectiveGearBonus, rotationBonuses);
 
   const ctx = buildDamageContext(stats, elementStats, finalBonus, undefined, {
-    playerLevel: 91,
+    playerLevel,
     enemyLevel: 91,
   });
   const totalRate = ctx.get("FinalCriticalRate") + ctx.get("FinalAffinityRate");
@@ -195,6 +197,7 @@ export function evaluateDamageCached(
   rotation?: Rotation,
   baseStats?: InputStats,
   baseElementStats?: ElementStats,
+  playerLevel: number = 91,
 ): DamageEvalResult {
   const cached = cache.get(cacheKey);
   if (cached) return cached;
@@ -204,6 +207,7 @@ export function evaluateDamageCached(
     rotation,
     baseStats,
     baseElementStats,
+    playerLevel,
   );
   cache.set(cacheKey, result);
   return result;
@@ -215,7 +219,8 @@ export interface FixedOptimizerContext {
   rotation?: Rotation;
   baseStats?: InputStats;
   baseElementStats?: ElementStats;
-  staticHashKey: string; // Key này chỉ tính 1 lần
+  staticHashKey: string;
+  playerLevel: number;
 }
 
 // 3. Hàm Evaluate tối ưu, nhận context tĩnh và chỉ tạo cache key dựa trên gearBonus
@@ -234,6 +239,7 @@ export function evaluateDamageCachedWithKey(
     ctx.rotation,
     ctx.baseStats,
     ctx.baseElementStats,
+    ctx.playerLevel,
   );
   cache.set(cacheKey, result);
   return result;
@@ -244,7 +250,6 @@ export function evaluateDamageCachedOptimized(
   ctx: FixedOptimizerContext,
   gearBonus: Record<string, number>,
 ): DamageEvalResult {
-  // Chỉ serialize phần thay đổi duy nhất là Gear Bonus (Chuỗi này rất ngắn)
   const scopeKey = serializeNumberMap(gearBonus);
   const cacheKey = `${ctx.staticHashKey}|${scopeKey}`;
 
@@ -257,6 +262,7 @@ export function evaluateDamageCachedOptimized(
     ctx.rotation,
     ctx.baseStats,
     ctx.baseElementStats,
+    ctx.playerLevel,
   );
 
   if (cache.size >= MAX_CACHE_SIZE) {
@@ -268,21 +274,24 @@ export function evaluateDamageCachedOptimized(
   return result;
 }
 
-export function getValPerLine(stat: string): number {
-  return getPlayerTuneStatRange(stat as TuneStatKey, 91).maxPerLine;
+export function getValPerLine(stat: string, playerLevel: number = 91): number {
+  return getPlayerTuneStatRange(stat as TuneStatKey, playerLevel).maxPerLine;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getIdealGearBaseBonus(_path?: ElementKey): Record<string, number> {
+export function getIdealGearBaseBonus(_path?: ElementKey, playerLevel: number = 91): Record<string, number> {
+  const levelData = MAIN_STAT_BY_LEVEL[playerLevel] ?? MAIN_STAT_BY_LEVEL[91];
+  const weapon = levelData.weapon_1 ?? { MinPhysicalAttack: 53, MaxPhysicalAttack: 124 };
+  const disc = levelData.disc ?? { MinPhysicalAttack: 71 };
+  const pendant = levelData.pendant ?? { MaxPhysicalAttack: 106 };
   const baseGearBonus: Record<string, number> = {
-    MinPhysicalAttack: 71 + 53 + 53,
-    MaxPhysicalAttack: 106 + 124 + 124,
+    MinPhysicalAttack: (disc.MinPhysicalAttack ?? 0) + (weapon.MinPhysicalAttack ?? 0) + (weapon.MinPhysicalAttack ?? 0),
+    MaxPhysicalAttack: (pendant.MaxPhysicalAttack ?? 0) + (weapon.MaxPhysicalAttack ?? 0) + (weapon.MaxPhysicalAttack ?? 0),
   };
 
   return baseGearBonus;
 }
 
-export function buildRuleSet(path: ElementKey): RuleSet {
+export function buildRuleSet(path: ElementKey, playerLevel: number = 91): RuleSet {
   const fixedLineStats: Record<
     string,
     { lines: number; valuePerLine: number }
@@ -292,12 +301,12 @@ export function buildRuleSet(path: ElementKey): RuleSet {
           NamelessSwordChargedSkillDMGBoost: { lines: 4, valuePerLine: 5.0 },
           PhysicalPenetration: {
             lines: 4,
-            valuePerLine: getValPerLine("PhysicalPenetration"),
+            valuePerLine: getValPerLine("PhysicalPenetration", playerLevel),
           },
         }
       : {};
 
-  const baseGearBonus = getIdealGearBaseBonus();
+  const baseGearBonus = getIdealGearBaseBonus(undefined, playerLevel);
 
   for (const [stat, { lines, valuePerLine }] of Object.entries(
     fixedLineStats,

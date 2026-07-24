@@ -64,6 +64,8 @@ const baseElementStats: ElementStats = {
   bamboocutMax: { current: 0, increase: 0 },
   bamboocutPenetration: { current: 0, increase: 0 },
   bamboocutDMGBonus: { current: 0, increase: 0 },
+  voidMin: { current: 0, increase: 0 },
+  voidMax: { current: 0, increase: 0 },
 };
 
 function makeGear(overrides: Partial<CustomGear> & { id: string; slot: CustomGear["slot"] }): CustomGear {

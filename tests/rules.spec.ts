@@ -220,6 +220,7 @@ describe("Optimizer Cap Rules", () => {
       undefined,
       undefined,
       undefined,
+      91,
       { beamWidth: 50 },
     );
 
@@ -270,6 +271,7 @@ describe("Optimizer Cap Rules", () => {
       undefined,
       undefined,
       undefined,
+      91,
       { beamWidth: 50 },
     );
 

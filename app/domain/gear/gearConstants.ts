@@ -1,4 +1,5 @@
 import { CandidateStat } from "./types";
+import type { GearSlot } from "@/app/types";
 
 export const TOTAL_LINES = 48;
 export const MAX_LINES_PER_STAT = 8;
@@ -39,3 +40,21 @@ export const SPECIAL_LINE_POOLS: CandidateStat[][] = [
   ["AffinityRate", "CriticalRate", "Power"],
   ["AffinityRate", "CriticalRate", "Power"],
 ];
+
+export const MAIN_STAT_BY_LEVEL: Record<
+  number,
+  Partial<Record<GearSlot, Record<string, number>>>
+> = {
+  91: {
+    weapon_1: { MinPhysicalAttack: 53, MaxPhysicalAttack: 124 },
+    weapon_2: { MinPhysicalAttack: 53, MaxPhysicalAttack: 124 },
+    disc: { MinPhysicalAttack: 71 },
+    pendant: { MaxPhysicalAttack: 106 },
+  },
+  96: {
+    weapon_1: { MinPhysicalAttack: 65, MaxPhysicalAttack: 151 },
+    weapon_2: { MinPhysicalAttack: 65, MaxPhysicalAttack: 151 },
+    disc: { MinPhysicalAttack: 86 },
+    pendant: { MaxPhysicalAttack: 129 },
+  },
+};

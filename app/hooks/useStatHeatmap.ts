@@ -195,7 +195,7 @@ export function useStatHeatmap(
       .map((key) => {
         const range = getPlayerTuneStatRange(
           key as TuneStatKey,
-          levelContext?.enemyLevel,
+          levelContext?.playerLevel,
         );
         if (!range) return null;
 

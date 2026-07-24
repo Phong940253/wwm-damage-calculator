@@ -3,7 +3,7 @@ import { calculateIdealGearStatsBeamSearch } from "../app/domain/gear/idealOptim
 
 describe("Beam Search Gear Optimization", () => {
   it("generates valid stats for bellstrike_splendor", async () => {
-    const result = await calculateIdealGearStatsBeamSearch("bellstrike", undefined, undefined, undefined, {
+    const result = await calculateIdealGearStatsBeamSearch("bellstrike", undefined, undefined, undefined, 91, {
       beamWidth: 50, // Small width for fast testing
     });
 

@@ -441,7 +441,7 @@ export default function GearOptimizeDialog({
                                 </td>
                                 <td style={{ position: "sticky", left: 370, zIndex: 20, width: 120, backgroundColor: "hsl(var(--card))" }} className="p-3 text-center">
                                   {(() => {
-                                    let tune = 0, swap = 0;
+                                    let tune = 0, swap = 0, relayedCount = 0;
                                     interface TuneDetailItem {
                                       slot: string;
                                       type: string;
@@ -451,10 +451,15 @@ export default function GearOptimizeDialog({
                                     }
                                     const tuneDetail: TuneDetailItem[] = [];
                                     for (const { key, label } of GEAR_SLOTS) {
-                                      const meta = getTuneMeta(r.selection[key]);
-                                      const id = meta?.__tuneId;
-                                      if (meta && id?.startsWith("::tune::")) {
-                                        tune++;
+                                      const g = r.selection[key];
+                                      const meta = getTuneMeta(g);
+                                      const id = meta?.__tuneId ?? "";
+                                      if (!id) continue;
+                                      if (/::tune(?:-swap)?::/.test(id) || /::relayed-tune(?:-swap)?::/.test(id)) tune++;
+                                      if (/::swap::|::tune-swap::|::relayed-swap::|::relayed-tune-swap::/.test(id)) swap++;
+                                      if (id.startsWith("::relayed")) relayedCount++;
+                                      if (!meta) continue;
+                                      if (id.startsWith("::tune::") && !id.startsWith("::tune-swap::")) {
                                         const parts = id.split("::");
                                         const subIndex = parseInt(parts[2], 10);
                                         const targetStat = parts[3];
@@ -471,9 +476,7 @@ export default function GearOptimizeDialog({
                                           toText: meta.__tuneLabel?.replace(/^→ /, "") ?? "",
                                           successRate: rate * 100,
                                         });
-                                      } else if (meta && id?.startsWith("::tune-swap::")) {
-                                        tune++;
-                                        swap++;
+                                      } else if (id.startsWith("::tune-swap::")) {
                                         const parts = id.split("::");
                                         const subIndex = parseInt(parts[2], 10);
                                         const targetStat = parts[3];
@@ -499,8 +502,7 @@ export default function GearOptimizeDialog({
                                           toText: labelSplit[1]?.trim() ?? "",
                                           successRate: 100,
                                         });
-                                      } else if (meta && id?.startsWith("::swap::")) {
-                                        swap++;
+                                      } else if (id.startsWith("::swap::")) {
                                         tuneDetail.push({
                                           slot: label,
                                           type: "A",
@@ -508,11 +510,91 @@ export default function GearOptimizeDialog({
                                           toText: meta.__tuneLabel?.replace(/^Swap → /, "") ?? "",
                                           successRate: 100,
                                         });
+                                      } else if (id.startsWith("::relayed::")) {
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "R",
+                                          fromText: "",
+                                          toText: "Relayed (lv96)",
+                                          successRate: 100,
+                                        });
+                                      } else if (id.startsWith("::relayed-tune::") && !id.includes("::relayed-tune-swap::")) {
+                                        const parts = id.split("::");
+                                        const subIndex = parseInt(parts[2], 10);
+                                        const targetStat = parts[3];
+                                        const rate = computeSingleTuneSuccessRate(
+                                          meta as CustomGear,
+                                          subIndex,
+                                          targetStat,
+                                          elementStats.selected,
+                                        );
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "R",
+                                          fromText: "",
+                                          toText: "Relayed (lv96)",
+                                          successRate: 100,
+                                        });
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "T",
+                                          fromText: meta.__tuneFrom ?? "",
+                                          toText: meta.__tuneLabel?.replace(/^Relayed \+ /, "") ?? "",
+                                          successRate: rate * 100,
+                                        });
+                                      } else if (id.startsWith("::relayed-tune-swap::")) {
+                                        const parts = id.split("::");
+                                        const subIndex = parseInt(parts[2], 10);
+                                        const targetStat = parts[3];
+                                        const rate = computeSingleTuneSuccessRate(
+                                          meta as CustomGear,
+                                          subIndex,
+                                          targetStat,
+                                          elementStats.selected,
+                                        );
+                                        const fromSplit = meta.__tuneFrom?.split(",") ?? [];
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "R",
+                                          fromText: "",
+                                          toText: "Relayed (lv96)",
+                                          successRate: 100,
+                                        });
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "T",
+                                          fromText: fromSplit[0]?.trim() ?? "",
+                                          toText: meta.__tuneLabel?.replace(/^Relayed \+ /, "").split(" + Swap →")[0] ?? "",
+                                          successRate: rate * 100,
+                                        });
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "A",
+                                          fromText: fromSplit[1]?.trim() ?? "",
+                                          toText: meta.__tuneLabel?.split(" + Swap → ")[1] ?? "",
+                                          successRate: 100,
+                                        });
+                                      } else if (id.startsWith("::relayed-swap::")) {
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "R",
+                                          fromText: "",
+                                          toText: "Relayed (lv96)",
+                                          successRate: 100,
+                                        });
+                                        tuneDetail.push({
+                                          slot: label,
+                                          type: "A",
+                                          fromText: meta.__tuneFrom?.replace(/^Relayed \+ /, "") ?? "",
+                                          toText: meta.__tuneLabel?.replace(/^Relayed \+ Swap → /, "") ?? "",
+                                          successRate: 100,
+                                        });
                                       }
                                     }
                                     const parts: string[] = [];
                                     if (tune > 0) parts.push(`${tune}T`);
                                     if (swap > 0) parts.push(`${swap}A`);
+                                    if (relayedCount > 0) parts.push(`${relayedCount}R`);
                                     return parts.length > 0 ? (
                                       <div className="inline-flex items-center gap-1">
                                         <Badge variant="outline" className="tabular-nums text-amber-600 border-amber-300 bg-amber-500/10">
@@ -591,17 +673,18 @@ export default function GearOptimizeDialog({
                                                   const meta = getTuneMeta(g);
                                                   if (!meta?.__tuneId) return null;
                                                   const id = meta.__tuneId;
-                                                  if (id.startsWith("::tune-swap::")) {
-                                                    return (
-                                                      <span className="text-[10px] font-bold rounded-sm px-1 leading-tight text-amber-600 bg-amber-200/40" title={meta.__tuneLabel}>
-                                                        <span className="text-amber-600">T</span>+<span className="text-sky-600">A</span>
-                                                      </span>
-                                                    );
-                                                  }
-                                                  const isTune = id.startsWith("::tune::");
+                                                  let badge = "";
+                                                  if (id.startsWith("::relayed-tune-swap::")) badge = "R+T+A";
+                                                  else if (id.startsWith("::relayed-tune::")) badge = "R+T";
+                                                  else if (id.startsWith("::relayed-swap::")) badge = "R+A";
+                                                  else if (id.startsWith("::relayed::")) badge = "R";
+                                                  else if (id.startsWith("::tune-swap::")) badge = "T+A";
+                                                  else if (id.startsWith("::tune::")) badge = "T";
+                                                  else if (id.startsWith("::swap::")) badge = "A";
+                                                  if (!badge) return null;
                                                   return (
-                                                    <span className={`text-[10px] font-bold rounded-sm px-1 leading-tight ${isTune ? "text-amber-600 bg-amber-200/40" : "text-sky-600 bg-sky-200/40"}`} title={meta.__tuneLabel}>
-                                                      {isTune ? "T" : "A"}
+                                                    <span className="text-[10px] font-bold rounded-sm px-1 leading-tight text-amber-600 bg-amber-200/40" title={meta.__tuneLabel}>
+                                                      {badge}
                                                     </span>
                                                   );
                                                 })()}
@@ -631,17 +714,18 @@ export default function GearOptimizeDialog({
                                               const meta = getTuneMeta(g);
                                               if (!meta?.__tuneId) return null;
                                               const id = meta.__tuneId;
-                                              if (id.startsWith("::tune-swap::")) {
-                                                return (
-                                                  <span className="text-[10px] font-bold rounded-sm px-1 leading-tight text-amber-600 bg-amber-200/40" title={meta.__tuneLabel}>
-                                                    <span className="text-amber-600">T</span>+<span className="text-sky-600">A</span>
-                                                  </span>
-                                                );
-                                              }
-                                              const isTune = id.startsWith("::tune::");
+                                              let badge = "";
+                                              if (id.startsWith("::relayed-tune-swap::")) badge = "R+T+A";
+                                              else if (id.startsWith("::relayed-tune::")) badge = "R+T";
+                                              else if (id.startsWith("::relayed-swap::")) badge = "R+A";
+                                              else if (id.startsWith("::relayed::")) badge = "R";
+                                              else if (id.startsWith("::tune-swap::")) badge = "T+A";
+                                              else if (id.startsWith("::tune::")) badge = "T";
+                                              else if (id.startsWith("::swap::")) badge = "A";
+                                              if (!badge) return null;
                                               return (
-                                                <span className={`text-[10px] font-bold rounded-sm px-1 leading-tight ${isTune ? "text-amber-600 bg-amber-200/40" : "text-sky-600 bg-sky-200/40"}`} title={meta.__tuneLabel}>
-                                                  {isTune ? "T" : "A"}
+                                                <span className="text-[10px] font-bold rounded-sm px-1 leading-tight text-amber-600 bg-amber-200/40" title={meta.__tuneLabel}>
+                                                  {badge}
                                                 </span>
                                               );
                                             })()}

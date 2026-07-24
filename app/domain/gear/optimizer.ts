@@ -42,6 +42,7 @@ export function calculateIdealGearStats(
   rotation?: Rotation,
   baseStats?: InputStats,
   baseElementStats?: ElementStats,
+  playerLevel: number = 91,
   options?: {
     onProgress?: (current: number, total: number) => void;
     signal?: AbortSignal;
@@ -53,7 +54,7 @@ export function calculateIdealGearStats(
   const onProgress = options?.onProgress;
   const signal = options?.signal;
   const startTime = Date.now();
-  const ruleSet = buildRuleSet(path);
+  const ruleSet = buildRuleSet(path, playerLevel);
   const {
     candidateStats,
     specialLinePools: ruleSpecialLinePools,
@@ -143,6 +144,7 @@ export function calculateIdealGearStats(
       rotation,
       baseStats,
       baseElementStats,
+      playerLevel,
     );
 
   const currentBonus: Record<string, number> = { ...baseGearBonus };
@@ -373,6 +375,7 @@ export function calculateIdealGearStatsFast(
   rotation?: Rotation,
   baseStats?: InputStats,
   baseElementStats?: ElementStats,
+  playerLevel: number = 91,
   options?: {
     onProgress?: (current: number, total: number) => void;
     signal?: AbortSignal;
@@ -385,14 +388,14 @@ export function calculateIdealGearStatsFast(
   const signal = options?.signal;
   const timeMs = Math.max(1000, Math.floor(options?.timeMs ?? 60_000));
   const startTime = Date.now();
-  const ruleSet = buildRuleSet(path);
+  const ruleSet = buildRuleSet(path, playerLevel);
 
   const candidateStats = ruleSet.candidateStats;
   const candidateCount = candidateStats.length;
   const randomLineCount = ruleSet.randomLineCount;
   const baseGearBonus = ruleSet.baseGearBonus;
   const fixedLineStats = ruleSet.fixedLineStats;
-  const perLineValues = candidateStats.map((stat) => getValPerLine(stat));
+  const perLineValues = candidateStats.map((stat) => getValPerLine(stat, playerLevel));
   const maxCaps = candidateStats.map((stat) =>
     MAX_LINES_PER_STAT_OVERRIDES[stat] ??
     (SINGLE_LINE_STATS.has(stat) ? 1 : MAX_LINES_PER_STAT),
@@ -416,6 +419,7 @@ export function calculateIdealGearStatsFast(
       rotation,
       baseStats,
       baseElementStats,
+      playerLevel,
     );
 
   let bestDamage = -Infinity;
@@ -647,6 +651,7 @@ export async function calculateIdealGearStatsBeamSearch(
   rotation?: Rotation,
   baseStats?: InputStats,
   baseElementStats?: ElementStats,
+  playerLevel: number = 91,
   options?: {
     beamWidth?: number;
     onProgress?: (current: number, total: number) => void;
@@ -659,9 +664,9 @@ export async function calculateIdealGearStatsBeamSearch(
   const shardIndex = options?.shardIndex ?? 0;
   const shardCount = options?.shardCount ?? 1;
   const startTime = Date.now();
-  const ruleSet = buildRuleSet(path);
+  const ruleSet = buildRuleSet(path, playerLevel);
   const { candidateStats, randomLineCount, baseGearBonus } = ruleSet;
-  const perLineValues = candidateStats.map((stat) => getValPerLine(stat));
+  const perLineValues = candidateStats.map((stat) => getValPerLine(stat, playerLevel));
   const candidateCount = candidateStats.length;
 
   // TÍNH TOÁN TRƯỚC KEY TĨNH Ở ĐÂY (CHỈ CÓ 1 CHUỖI ĐƯỢC TẠO RA)
@@ -677,6 +682,7 @@ export async function calculateIdealGearStatsBeamSearch(
     baseStats,
     baseElementStats,
     staticHashKey,
+    playerLevel,
   };
 
   const damageCache = new Map<string, DamageEvalResult>();

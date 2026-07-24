@@ -486,6 +486,7 @@ export default function GearForm({ initialGear, onSuccess }: GearFormProps) {
             <option value="Legendary" />
           </datalist>
         </div>
+
       </div>
 
       {/* 🔥 Main attributes */}

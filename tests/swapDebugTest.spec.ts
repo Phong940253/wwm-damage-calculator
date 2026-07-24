@@ -59,6 +59,8 @@ const elementStats: ElementStats = {
   silkbindPenetration: { current: 0, increase: 0 }, silkbindDMGBonus: { current: 0, increase: 0 },
   bamboocutMin: { current: 0, increase: 0 }, bamboocutMax: { current: 0, increase: 0 },
   bamboocutPenetration: { current: 0, increase: 0 }, bamboocutDMGBonus: { current: 0, increase: 0 },
+  voidMin: { current: 0, increase: 0 },
+  voidMax: { current: 0, increase: 0 },
 };
 
 const equipped: Partial<Record<string, string>> = {

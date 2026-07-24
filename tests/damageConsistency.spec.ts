@@ -98,6 +98,8 @@ const elementStats: ElementStats = {
   bamboocutMax: { current: 0, increase: 0 },
   bamboocutPenetration: { current: 0, increase: 0 },
   bamboocutDMGBonus: { current: 0, increase: 0 },
+  voidMin: { current: 0, increase: 0 },
+  voidMax: { current: 0, increase: 0 },
 };
 
 const customGears: CustomGear[] = [

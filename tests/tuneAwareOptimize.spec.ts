@@ -94,6 +94,8 @@ const baseElementStats: ElementStats = {
   bamboocutMax: { current: 0, increase: 0 },
   bamboocutPenetration: { current: 0, increase: 0 },
   bamboocutDMGBonus: { current: 0, increase: 0 },
+  voidMin: { current: 0, increase: 0 },
+  voidMax: { current: 0, increase: 0 },
 };
 
 // ============================================================
@@ -671,10 +673,12 @@ describe("computeOptimizeResultsAsync with addition swap", () => {
     );
 
     expect(r.results.length).toBeGreaterThan(0);
-    // The low-addition gear should have a swap variant pointing to the high addition
+    // The low-addition gear should have a swap variant pointing to the high addition.
+    // With relayed variants, swap may also appear as ::relayed-swap:: or ::relayed-tune-swap::.
     const hasSwapResult = r.results.some((res) => {
       const g = res.selection["disc"];
-      return g && (g as any).__tuneId?.startsWith("::swap::");
+      const id: string = (g as any).__tuneId ?? "";
+      return id.includes("::swap::") || id.includes("::relayed-swap::") || id.includes("::relayed-tune-swap::");
     });
     expect(hasSwapResult).toBe(true);
   });

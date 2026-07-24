@@ -19,6 +19,7 @@ import { computeRotationBonusesWithBreakdown, sumBonuses } from "@/app/domain/sk
 import { buildDamageContext } from "@/app/domain/damage/damageContext";
 import DamagePanel from "@/app/ui/damage/DamagePanel";
 import { useIdealGearOptimize } from "@/app/hooks/useIdealGearOptimize";
+import { useLevelContext } from "@/app/hooks/useLevelContext";
 
 import {
   distributeStatsToGears,
@@ -50,8 +51,9 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
 
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
+  const { levelContext } = useLevelContext();
   const { loading, progress, result, setResult, error, run, cancel, mode } =
-    useIdealGearOptimize(stats, elementStats, rotation);
+    useIdealGearOptimize(stats, elementStats, rotation, levelContext.playerLevel);
 
   const gears = React.useMemo(() => {
     if (!result) return [];
@@ -199,7 +201,7 @@ export default function GearIdealTab({ rotation }: { rotation?: Rotation }) {
             Calculate the mathematically perfect distribution of 48 tune lines to maximize Normal Damage.
             <br />
             <span className="text-xs text-amber-500/80 mt-1 block">
-              * Optimization based on {rotation?.skills.length ? "the active Skill Rotation" : "a single normal attack"} and Level 91 stats.
+              * Optimization based on {rotation?.skills.length ? "the active Skill Rotation" : "a single normal attack"} and Level {levelContext.playerLevel} stats.
             </span>
           </CardDescription>
         </CardHeader>

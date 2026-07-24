@@ -15,6 +15,7 @@ type StartMessage = {
     stats: InputStats;
     elementStats: ElementStats;
     rotation?: Rotation;
+    playerLevel?: number;
     mode?: "exhaustive" | "fast";
     timeMs?: number;
     seed?: number;
@@ -86,6 +87,7 @@ self.addEventListener("message", async (event: MessageEvent) => {
       post({ type: "progress", jobId, current, total });
 
     const mode = payload.mode ?? "exhaustive";
+    const playerLevel = payload.playerLevel ?? 91;
 
     let result: IdealGearResult;
     if (mode === "fast") {
@@ -94,6 +96,7 @@ self.addEventListener("message", async (event: MessageEvent) => {
         payload.rotation,
         payload.stats,
         payload.elementStats,
+        playerLevel,
         {
           onProgress,
           signal: controller.signal,
@@ -108,6 +111,7 @@ self.addEventListener("message", async (event: MessageEvent) => {
         payload.rotation,
         payload.stats,
         payload.elementStats,
+        playerLevel,
         {
           onProgress,
           signal: controller.signal,
