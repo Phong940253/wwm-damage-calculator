@@ -196,7 +196,7 @@ export function calculateIdealGearStats(
     allocations[statIndex] += delta;
     currentBonus[stat] =
       (currentBonus[stat] || 0) +
-      delta * getPlayerTuneStatRange(stat as TuneStatKey, 91).maxPerLine;
+      delta * getPlayerTuneStatRange(stat as TuneStatKey, playerLevel).maxPerLine;
   };
 
   const snapshotAllocations = () => {

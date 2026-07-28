@@ -298,7 +298,10 @@ export function buildRuleSet(path: ElementKey, playerLevel: number = 91): RuleSe
   > =
     path === "bellstrike"
       ? {
-          NamelessSwordChargedSkillDMGBoost: { lines: 4, valuePerLine: 5.0 },
+          NamelessSwordChargedSkillDMGBoost: {
+            lines: 4,
+            valuePerLine: getValPerLine("NamelessSwordChargedSkillDMGBoost", playerLevel),
+          },
           PhysicalPenetration: {
             lines: 4,
             valuePerLine: getValPerLine("PhysicalPenetration", playerLevel),

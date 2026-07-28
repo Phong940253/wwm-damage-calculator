@@ -11,6 +11,7 @@ import { useDamage } from "@/app/hooks/useDamage";
 import { Rotation } from "@/app/types";
 import { useStats } from "@/app/hooks/useStats";
 import { useElementStats } from "@/app/hooks/useElementStats";
+import { useLevelContext } from "@/app/hooks/useLevelContext";
 import { INITIAL_STATS, INITIAL_ELEMENT_STATS } from "@/app/constants";
 import { sumBonuses } from "@/app/domain/skill/modifierEngine";
 import { computeIncludedInStatsGearBonus } from "@/app/domain/skill/includedInStatsImpact";
@@ -35,8 +36,8 @@ interface IdealGearWithValues extends IdealGear {
 /**
  * Finds a valid sequence of 8 special lines from the total allocations that satisfies pool rules.
  */
-function findValidSpecialLines(allocations: Record<string, number>, path: ElementKey): string[] | null {
-  const ruleSet = buildRuleSet(path);
+function findValidSpecialLines(allocations: Record<string, number>, path: ElementKey, playerLevel: number = 91): string[] | null {
+  const ruleSet = buildRuleSet(path, playerLevel);
   const pools = ruleSet.specialLinePools;
   const result: string[] = [];
   const currentCounts = { ...allocations };
@@ -188,6 +189,7 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
   const [hoveredStat, setHoveredStat] = useState<string | null>(null);
   const [solveError, setSolveError] = useState<string | null>(null);
   const [result, setResult] = useState<IdealGearResult | null>(null);
+  const { levelContext } = useLevelContext();
 
   const { stats } = useStats(INITIAL_STATS);
   const { elementStats } = useElementStats(INITIAL_ELEMENT_STATS);
@@ -209,7 +211,7 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
 
   const handleDistribute = () => {
     setSolveError(null);
-    const ruleSet = buildRuleSet(path);
+    const ruleSet = buildRuleSet(path, levelContext.playerLevel);
 
     // Validate exclusive stats
     const exclusiveStats = ["CombatBoostAgainstBossUnits", "ArtOfSwordDMGBoost", "AllMartialArtsBoost"];
@@ -226,7 +228,7 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
     }
 
     // Try to find valid special lines
-    const specialLines = findValidSpecialLines(userCounts, path);
+    const specialLines = findValidSpecialLines(userCounts, path, levelContext.playerLevel);
     if (!specialLines) {
       setSolveError("Cannot find a valid distribution for special slots 1-8 based on your counts.");
       return;
@@ -240,9 +242,9 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
     }
 
     const finalStats: Record<string, number> = {};
-    const baseGearBonus = getIdealGearBaseBonus(path);
+    const baseGearBonus = getIdealGearBaseBonus(path, levelContext.playerLevel);
     for (const stat of Object.keys(allocations)) {
-      const val = getValPerLine(stat);
+      const val = getValPerLine(stat, levelContext.playerLevel);
       finalStats[stat] = (baseGearBonus[stat] || 0) + allocations[stat] * val;
     }
 
@@ -259,11 +261,12 @@ export default function GearLabTab({ rotation }: { rotation?: Rotation }) {
     if (!result) return [];
     const distributed = distributeStatsToGears(result);
     return distributed.map((gear) => {
+      const pl = levelContext.playerLevel;
       const lineValues: Record<string, number | null> = {
-        [gear.specialLine]: getValPerLine(gear.specialLine),
+        [gear.specialLine]: getValPerLine(gear.specialLine, pl),
       };
       for (const stat of gear.tuningLines) {
-        lineValues[stat] = getValPerLine(stat);
+        lineValues[stat] = getValPerLine(stat, pl);
       }
       return { ...gear, lineValues };
     });
